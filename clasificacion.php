@@ -64,12 +64,12 @@ $clasificacion = $liga_id ? epl_clasificacion($liga_id) : [];
             <td>
               <div class="equipo-cell">
                 <div class="equipo-avatars">
-                  <img class="equipo-avatar"
-                       src="<?= epl_h(epl_foto_jugador($row['j1_foto'], $row['j1_nombre'].' '.$row['j1_apellido'])) ?>"
-                       alt="<?= epl_h($row['j1_nombre']) ?>">
-                  <img class="equipo-avatar"
-                       src="<?= epl_h(epl_foto_jugador($row['j2_foto'], $row['j2_nombre'].' '.$row['j2_apellido'])) ?>"
-                       alt="<?= epl_h($row['j2_nombre']) ?>">
+                   <img class="equipo-avatar"
+                        src="<?= epl_h(epl_foto_jugador($row['j1_foto'], $row['j1_nombre'].' '.$row['j1_apellido'])) ?>"
+                        alt="<?= epl_h($row['j1_nombre']) ?>">
+                   <img class="equipo-avatar"
+                        src="<?= epl_h(epl_foto_jugador($row['j2_foto'], $row['j2_nombre'].' '.$row['j2_apellido'])) ?>"
+                        alt="<?= epl_h($row['j2_nombre']) ?>">
                 </div>
                 <div>
                   <div class="equipo-nombre"><?= epl_h($row['equipo_nombre']) ?></div>

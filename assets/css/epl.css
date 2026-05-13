@@ -1158,3 +1158,86 @@ button { cursor: pointer; font-family: inherit; border: none; }
   color: var(--gold);
   border-color: var(--navy);
 }
+
+/* ── Tablas (Clasificación / Listados) ───────────────────── */
+.tabla-clasificacion {
+  background: var(--white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+}
+.tabla-clasificacion table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tabla-clasificacion th {
+  background: var(--navy);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  padding: 1rem;
+  border: none;
+}
+.tabla-clasificacion td {
+  padding: .85rem 1rem;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: .88rem;
+  vertical-align: middle;
+  text-align: center;
+  transition: background .2s;
+}
+.tabla-clasificacion tr:last-child td { border-bottom: none; }
+
+/* Zebra Striping sutil */
+.tabla-clasificacion tbody tr:nth-child(even) {
+  background: rgba(28, 47, 72, 0.02);
+}
+
+/* Hover sutil con identidad */
+.tabla-clasificacion tbody tr:hover {
+  background: rgba(201, 167, 98, 0.06);
+}
+
+.tabla-clasificacion .posicion-num {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: .75rem;
+}
+.tabla-clasificacion .pos-1 { background: var(--gold); color: var(--navy); }
+.tabla-clasificacion .pos-2 { background: var(--gray-200); color: var(--gray-600); }
+.tabla-clasificacion .pos-3 { background: #cd7f3233; color: #cd7f32; }
+.tabla-clasificacion .pos-n { color: var(--gray-400); }
+
+.equipo-cell { display: flex; align-items: center; gap: .75rem; text-align: left; }
+.equipo-avatars { display: flex; align-items: center; }
+.equipo-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--white);
+  object-fit: cover;
+}
+.equipo-avatar + .equipo-avatar { margin-left: -12px; }
+.equipo-nombre { font-weight: 700; color: var(--navy); font-size: .9rem; }
+
+/* Estilos globales para tablas en tarjetas (Admin/Dashboard) */
+.card table tbody tr:nth-child(even) {
+  background: rgba(28, 47, 72, 0.015);
+}
+.card table tbody tr:hover {
+  background: rgba(201, 167, 98, 0.04);
+}
+.card table td {
+  transition: background .2s;
+}
+
+
