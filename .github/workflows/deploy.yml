@@ -22,3 +22,17 @@ jobs:
           source: "."
           target: "/home/${{ secrets.SERVER_USER }}/htdocs/padel.207.246.68.77.nip.io"
           strip_components: 0
+
+      - name: Configurando entorno en servidor
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd /home/${{ secrets.SERVER_USER }}/htdocs/padel.207.246.68.77.nip.io
+            if [ -f .env.prod ]; then
+              mv .env.prod .env
+              echo ".env configurado con éxito"
+            fi
