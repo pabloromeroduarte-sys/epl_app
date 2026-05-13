@@ -2,7 +2,7 @@
     /* Reset para el Footer */
     .epl-global-footer-wrapper {
         font-family: 'Montserrat', sans-serif !important;
-        background-color: #0A1421 !important;
+        background-color: #1C2F48 !important;
         width: 100vw !important;
         position: relative;
         left: 50%;
