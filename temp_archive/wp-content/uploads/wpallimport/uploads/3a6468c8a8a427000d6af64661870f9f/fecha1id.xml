@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+	<node>
+		<titulo><![CDATA[Amaro Castro VS Sica Pizarro]]></titulo>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos_ids><![CDATA[494,598]]></equipos_ids>
+		<cancha><![CDATA[]]></cancha>
+	</node>
+	<node>
+		<titulo><![CDATA[Vogel Silva VS Martiz Kattan]]></titulo>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos_ids><![CDATA[616,627]]></equipos_ids>
+		<cancha><![CDATA[]]></cancha>
+	</node>
+	<node>
+		<titulo><![CDATA[Álvares Velez VS Botero Verástegui]]></titulo>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos_ids><![CDATA[549,503]]></equipos_ids>
+		<cancha><![CDATA[Cancha 5]]></cancha>
+	</node>
+	<node>
+		<titulo><![CDATA[Eyzaguirre VS Freyre Brosky]]></titulo>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos_ids><![CDATA[472,605]]></equipos_ids>
+		<cancha><![CDATA[Cancha 6]]></cancha>
+	</node>
+	<node>
+		<titulo><![CDATA[Giusti Rivera VS Hurtado Cuadro]]></titulo>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos_ids><![CDATA[574,611]]></equipos_ids>
+		<cancha><![CDATA[Cancha 7]]></cancha>
+	</node>
+	<node>
+		<titulo><![CDATA[Montaner Reyes VS Ponce Unda]]></titulo>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos_ids><![CDATA[486,628]]></equipos_ids>
+		<cancha><![CDATA[Cancha 8]]></cancha>
+	</node>
+	<node>
+		<titulo><![CDATA[Romero Duarte VS Sfeir Amigo]]></titulo>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos_ids><![CDATA[587,592]]></equipos_ids>
+		<cancha><![CDATA[Cancha 9]]></cancha>
+	</node>
+	<node>
+		<titulo><![CDATA[Valenzuela Garcia VS Vargas Diaz]]></titulo>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos_ids><![CDATA[619,602]]></equipos_ids>
+		<cancha><![CDATA[Cancha 11]]></cancha>
+	</node>
+	<node>
+		<titulo><![CDATA[Vera Viel VS Vidal Benítez]]></titulo>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos_ids><![CDATA[595,553]]></equipos_ids>
+		<cancha><![CDATA[Cancha 13]]></cancha>
+	</node>
+</data>

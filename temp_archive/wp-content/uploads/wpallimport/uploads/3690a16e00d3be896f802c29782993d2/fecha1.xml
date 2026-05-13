@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+	<node>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos><![CDATA[Amaro Castro – Arance Ibieta, Sica – Pizarro]]></equipos>
+		<recinto><![CDATA[]]></recinto>
+	</node>
+	<node>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos><![CDATA[Vogel – Silva, Martiz – Kattan]]></equipos>
+		<recinto><![CDATA[]]></recinto>
+	</node>
+	<node>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos><![CDATA[Álvares Jara – Álvarez Velez, Botero Piedrahita – Verástegui]]></equipos>
+		<recinto><![CDATA[Cancha 5]]></recinto>
+	</node>
+	<node>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos><![CDATA[Eyzaguirre – Casasempere, Freyre – Brosky]]></equipos>
+		<recinto><![CDATA[Cancha 6]]></recinto>
+	</node>
+	<node>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos><![CDATA[Giusti – Rivera, Hurtado Sotomayor – Martínez Cuadro]]></equipos>
+		<recinto><![CDATA[Cancha 7]]></recinto>
+	</node>
+	<node>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos><![CDATA[Montaner Reyes – Montaner Covarrubias, Ponce – Unda]]></equipos>
+		<recinto><![CDATA[Cancha 8]]></recinto>
+	</node>
+	<node>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos><![CDATA[Romero Duarte – Valenzuela, Sfeir – Amigo]]></equipos>
+		<recinto><![CDATA[Cancha 9]]></recinto>
+	</node>
+	<node>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos><![CDATA[Valenzuela Niedbalski – Garcia, Vargas – Diaz]]></equipos>
+		<recinto><![CDATA[Cancha 11]]></recinto>
+	</node>
+	<node>
+		<fecha><![CDATA[2026-03-26]]></fecha>
+		<hora><![CDATA[21:00]]></hora>
+		<equipos><![CDATA[Vera – Viel, Vidal – Benítez]]></equipos>
+		<recinto><![CDATA[Cancha 13]]></recinto>
+	</node>
+</data>

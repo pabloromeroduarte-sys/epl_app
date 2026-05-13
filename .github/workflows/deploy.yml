@@ -1,0 +1,24 @@
+name: Despliegue EPL App a Vultr
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargando codigo
+        uses: actions/checkout@v3
+
+      - name: Desplegando en servidor
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "."
+          target: "/home/${{ secrets.SERVER_USER }}/htdocs/padel.207.246.68.77.nip.io"
+          strip_components: 0

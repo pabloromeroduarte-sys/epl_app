@@ -1,0 +1,446 @@
+# Translation of Plugins - GoSMTP &#8211; SMTP for WordPress - Stable (latest release) in Spanish (Spain)
+# This file is distributed under the same license as the Plugins - GoSMTP &#8211; SMTP for WordPress - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2025-11-28 11:58:43+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/4.0.3\n"
+"Language: es\n"
+"Project-Id-Version: Plugins - GoSMTP &#8211; SMTP for WordPress - Stable (latest release)\n"
+
+#: main/mailer/maileroo.php:203
+msgid ""
+"Follow this link to get a Sending Key from Maileroo: %1$sGet Sending Key%2$s%3$s\n"
+"\t\t\t\t\t\tSpecial Offer: Get 7,000 emails/month for first 4 months! %4$sClaim Offer%5$s"
+msgstr ""
+"Sigue este enlace para obtener una clave de envío de Maileroo: %1$sobtener clave de envío%2$s%3$s\n"
+"\t\t\t\t\t\toferta especial: ¡Consigue 7.000 correos electrónicos/mes durante los 4 primeros meses! %4$sReclama la Oferta%5$s"
+
+#: main/mailer/maileroo.php:201
+msgid "Sending Key"
+msgstr "Clave de envío"
+
+#: main/functions.php:31
+msgid "Maileroo"
+msgstr "Maileroo"
+
+#. translators: %1$s is replaced with a "string" of name of plugins, and %2$s
+#. is replaced with "string" which can be "is" or "are" based on the count of
+#. the plugin
+#: main/admin.php:48
+msgid "New versions of %1$s %2$s available. Updating ensures better performance, security, and access to the latest features."
+msgstr "Nuevas versiones de %1$s %2$s disponibles. La actualización garantiza un mejor rendimiento, seguridad y acceso a las últimas características."
+
+#: main/mailer/sendinblue.php:193
+msgid "Follow this link to get an API Key: <a href=\"https://app.brevo.com/settings/keys/api\" target=\"_blank\">Get v3 API Key.</a>"
+msgstr "Sigue este enlace para obtener una clave API: <a href=\"https://app.brevo.com/settings/keys/api\" target=\"_blank\">obtén la clave API v3.</a>"
+
+#: main/functions.php:30
+msgid "SMTP2Go"
+msgstr "SMTP2Go"
+
+#: main/functions.php:24
+msgid "Brevo"
+msgstr "Brevo"
+
+#: main/settings.php:499
+msgid "WordPress"
+msgstr "WordPress"
+
+#: main/settings.php:658
+msgid "(No Name)"
+msgstr "(Sin nombre)"
+
+#: main/settings.php:648
+msgid "None"
+msgstr "Ninguno"
+
+#: main/settings.php:645
+msgid "Backup Connection"
+msgstr "Conexión de respaldo"
+
+#: main/settings.php:519
+msgid "Connection Nickname"
+msgstr "Alias de la conexión"
+
+#: main/mailer/sendlayer.php:214
+msgid "Follow this link to get an API Key from SendLayer: <a href=\"https://app.sendlayer.com/settings/api/\" target=\"_blank\">Get API Key.</a>"
+msgstr "Sigue este enlace para obtener una Clave de la API de SendLayer: <a href=\"https://app.sendlayer.com/settings/api/\" target=\"_blank\">Obtener clave de API.</a>"
+
+#: main/mailer/loader.php:358
+msgid "GoSMTP Pro"
+msgstr "GoSMTP Pro"
+
+#: main/functions.php:134
+msgid "It seems that you haven't configured GoSMTP mailer yet or it is set to default PHP. You need to setup mailer to send emails via SMTP. To setup the mailer settings click"
+msgstr "Parece que aún no has configurado el servicio de envío de GoSMTP o está configurado por defecto en PHP. Necesitas configurar el servicio de envío para enviar correos a través de SMTP. Para configurar el servicio de envío haz clic en"
+
+#: main/functions.php:128
+msgid "settings"
+msgstr "ajustes"
+
+#: main/functions.php:128
+msgid "Email log is disabled. To store and view email logs, please enable email logs from GoSMTP "
+msgstr "El registro de correo electrónico está desactivado. Para almacenar y ver los registros de correo electrónico, por favor, activa los registros de correo electrónico desde GoSMTP "
+
+#: init.php:268
+msgid "Weekly Email"
+msgstr "Correo electrónico semanal"
+
+#: init.php:265
+msgid "Export"
+msgstr "Exportar"
+
+#: main/settings.php:781
+msgid "Message coppied Successfully"
+msgstr "Mensaje copiado correctamente"
+
+#: main/functions.php:134 main/settings.php:469
+msgid "here"
+msgstr "aquí"
+
+#: main/settings.php:469
+msgid "or through Our Premium Support Ticket System at"
+msgstr "o a través de nuestro Sistema de tickes de soporte premium en"
+
+#: main/settings.php:469
+msgid "You can contact the GoSMTP Team via email. Our email address is"
+msgstr "Puedes ponerte en contacto con el equipo de GoSMTP por correo electrónico. Nuestra dirección de correo electrónico es"
+
+#: main/settings.php:454
+msgid "Write your email message"
+msgstr "Escribe tu mensaje de correo electrónico"
+
+#: main/settings.php:453
+msgid "This is a test mail!"
+msgstr "¡Este es un correo de prueba!"
+
+#: main/settings.php:451
+msgid "Message"
+msgstr "Mensaje"
+
+#: main/settings.php:447
+msgid "Enter a subject for your message."
+msgstr "Introduce un asunto para tu mensaje."
+
+#: main/settings.php:444
+msgid "Subject"
+msgstr "Asunto"
+
+#: main/settings.php:440
+msgid "Enter the recipient's email address."
+msgstr "Introduce la dirección de correo electrónico del destinatario."
+
+#: main/settings.php:437
+msgid "To"
+msgstr "Para"
+
+#: main/settings.php:583
+msgid "Mailer"
+msgstr "Servicio de envío"
+
+#: main/settings.php:578
+msgid "Set return-path to match the From Email, the return path indicates where non-delivery receipts or bounce messages are to be sent. If unchecked, non-delivery messages may be lost."
+msgstr "Establece la ruta de retorno para que coincida con el correo electrónico del remitente, la ruta de retorno indica dónde deben enviarse los recibos de no entrega o los mensajes rebotados. Si no está marcada, los mensajes no entregados pueden perderse."
+
+#: main/settings.php:577
+msgid "Set return-path"
+msgstr "Establecer ruta de retorno"
+
+#: main/settings.php:572
+msgid "Return Path"
+msgstr "Ruta de retorno"
+
+#: main/settings.php:566
+msgid "If checked, From name set by other plugins will be ignored and the above Form Name setting will be used."
+msgstr "Si está marcado, se ignorará el nombre «De» establecido por otros plugins y se utilizará el ajuste anterior de «Nombre de remitente»."
+
+#: main/settings.php:565
+msgid "Force From Name"
+msgstr "Forzar nombre de remitente"
+
+#: main/settings.php:560
+msgid "Set the from name that emails are sent from."
+msgstr "Establece el nombre del remitente desde el que los correos electrónicos son enviados."
+
+#: main/settings.php:555
+msgid "From Name"
+msgstr "Nombre del remitente"
+
+#: main/settings.php:549
+msgid "If checked, From email set by other plugins will be ignored and the above Form Email setting will be used."
+msgstr "Si está marcada, se ignorará el correo electrónico del remitente establecido por otros plugins y se utilizará el ajuste del correo electrónico del formulario anterior."
+
+#: main/settings.php:548
+msgid "Force From Email"
+msgstr "Forzar el correo electrónico del remitente"
+
+#: main/settings.php:543
+msgid "Please note, enable the below setting to apply this setting."
+msgstr "Por favor, activa el siguiente ajuste para aplicar este ajuste."
+
+#: main/settings.php:538
+msgid "Set the from email address for your %s emails. If you're using an email provider (Gmail, Outlook.com, etc.), this should be your email address for that account"
+msgstr "Establece la dirección de correo electrónico de origen para tus correos de %s. Si utilizas un proveedor de correo electrónico (Gmail, Outlook.com, etc.), ésta debe ser tu dirección de correo electrónico para esa cuenta"
+
+#: main/settings.php:530
+msgid "From Email"
+msgstr "Correo electrónico del remitente"
+
+#: main/settings.php:402
+msgid "Test Mail"
+msgstr "Correo de prueba"
+
+#: main/settings.php:401
+msgid "SMTP Settings"
+msgstr "Ajustes SMTP"
+
+#: main/settings.php:394
+msgid "Mail sent successfully!"
+msgstr "¡Correo electrónico enviado correctamente!"
+
+#: main/settings.php:390
+msgid "SMTP settings have been saved successfully!"
+msgstr "¡Los ajustes SMTP se han guardado correctamente!"
+
+#: main/mailer/sparkpost.php:237
+msgid "Select your SparkPost account region. <a href=\"https://support.sparkpost.com/docs/getting-started/getting-started-sparkpost\" target=\"_blank\">More information </a>on SparkPost."
+msgstr "Selecciona la región de tu cuenta SparkPost. <a href=\"https://support.sparkpost.com/docs/getting-started/getting-started-sparkpost\" target=\"_blank\">Más información </a>sobre SparkPost."
+
+#: main/mailer/sparkpost.php:227
+msgid "Follow this link to get an API Key from SparkPost: <a href=\"https://app.sparkpost.com/account/api-keys\" target=\"_blank\">Get API Key.</a>"
+msgstr "Sigue este enlace para obtener una clave de la API de SparkPost: <a href=\"https://app.sparkpost.com/account/api-keys\" target=\"_blank\">Obtener clave de API.</a>"
+
+#: main/mailer/smtpcom.php:256
+msgid "Follow this link to get a Sender Name from SMTP.com: <a href=\"https://my.smtp.com/senders/\" target=\"_blank\">Get Sender Name.</a>"
+msgstr "Sigue este enlace para obtener un nombre de remitente de SMTP.com: <a href=\"https://my.smtp.com/senders/\" target=\"_blank\">Obtener el nombre de remitente.</a>"
+
+#: main/mailer/smtpcom.php:254
+msgid "Sender Name"
+msgstr "Nombre del remitente"
+
+#: main/mailer/smtpcom.php:251
+msgid "Follow this link to get an API Key from SMTP.com: <a href=\"https://my.smtp.com/settings/api\" target=\"_blank\">Get API Key.</a>"
+msgstr "Sigue este enlace para obtener una clave de API de SMTP.com: <a href=\"https://my.smtp.com/settings/api\" target=\"_blank\">Obtener Clave de API.</a>"
+
+#: main/mailer/smtp.php:132
+msgid "As of PHP 5.6 you will get a warning/error if the SSL certificate on the server is not properly configured. You can check this option to disable that default behaviour. Please note that PHP 5.6 made this change for a good reason. So you should get your host to fix the SSL configurations instead of bypassing it"
+msgstr "A partir de PHP 5.6, obtendrás una advertencia/error si el certificado SSL en el servidor no está configurado correctamente. Puedes marcar esta opción para desactivar ese comportamiento por defecto. Por favor, ten en cuenta que PHP 5.6 ha hecho este cambio por una buena razón. Así que deberías contactar con tu alojamiento para corregir las configuraciones SSL en lugar de saltárselas"
+
+#: main/mailer/smtp.php:130
+msgid "Disable SSL Certificate Verification"
+msgstr "Desactivar la verificación del certificado SSL"
+
+#: main/mailer/smtp.php:127
+msgid "The SMTP Password to login to your mail server. The saved password is not shown for security reasons. You need enter it every time you update the settings."
+msgstr "La contraseña SMTP para acceder a tu servidor de correo. La contraseña guardada no se muestra por motivos de seguridad. Debes introducirla cada vez que actualices los ajustes."
+
+#: main/mailer/smtp.php:123
+msgid "SMTP Password"
+msgstr "Contraseña SMTP"
+
+#: main/mailer/smtp.php:120
+msgid "The username to login to your mail server"
+msgstr "El nombre de usuario para acceder a tu servidor de correo"
+
+#: main/mailer/smtp.php:116
+msgid "SMTP Username"
+msgstr "Nombre de usuario SMTP"
+
+#: main/mailer/smtp.php:109
+msgid "This options should always be checked Yes"
+msgstr "Esta opción debería estar siempre marcada como ​​«Sí»"
+
+#: main/mailer/smtp.php:107
+msgid "SMTP Authentication"
+msgstr "Identificación SMTP"
+
+#: main/mailer/smtp.php:104
+msgid "The port to your mail server"
+msgstr "El puerto a tu servidor de correo"
+
+#: main/mailer/smtp.php:101
+msgid "SMTP Port"
+msgstr "Puerto SMTP"
+
+#: main/mailer/smtp.php:93
+msgid "For most servers TLS is the recommended option. If your SMTP provider offers both SSL and TLS options, we recommend using TLS."
+msgstr "Para la mayoría de los servidores, TLS es la opción recomendada. Si tu proveedor de SMTP ofrece ambas opciones de SSL y TLS, te recomendamos que uses TLS."
+
+#: main/mailer/smtp.php:91
+msgid "Type of Encryption"
+msgstr "Tipo de cifrado"
+
+#: main/mailer/smtp.php:88
+msgid "Your mail server"
+msgstr "Tu servidor de correo"
+
+#: main/mailer/smtp.php:85
+msgid "SMTP Host"
+msgstr "Servidor SMTP"
+
+#: main/mailer/sendgrid.php:219 main/mailer/sendinblue.php:191
+#: main/mailer/sendlayer.php:212 main/mailer/smtpcom.php:249
+#: main/mailer/sparkpost.php:225
+msgid "API Key"
+msgstr "Clave de API"
+
+#: main/mailer/sendgrid.php:73 main/mailer/sendinblue.php:113
+msgid "Mail Sent successfully"
+msgstr "Correo electrónico enviado correctamente"
+
+#: main/mailer/postmark.php:199
+msgid "Message Stream ID"
+msgstr "ID del flujo de mensajes"
+
+#: main/mailer/postmark.php:196 main/mailer/postmark.php:201
+msgid "Follow this link to get a Server API Token from Postmark: <a href=\"https://account.postmarkapp.com/login\" target=\"_blank\">Get Server API Token.</a>"
+msgstr "Sigue este enlace para obtener un Server API Token de Postmark: <a href=\"https://account.postmarkapp.com/login\" target=\"_blank\">Obtén Server API Token.</a>"
+
+#: main/mailer/postmark.php:194
+msgid "Server API Token"
+msgstr "Server API Token"
+
+#: main/mailer/mailgun.php:239
+msgid "Define which endpoint you want to use for sending messages.<br>If you are operating under EU laws, you may be required to use EU region. <a href=\"https://www.mailgun.com/about/regions/\" target=\"_blank\">More information</a> on Mailgun.com."
+msgstr "Define qué punto final quieres utilizar para enviar mensajes.<br>Si operas bajo las leyes de la UE, es posible que tengas que utilizar la región de la UE. <a href=\"https://www.mailgun.com/about/regions/\" target=\"_blank\">Más información</a> en Mailgun.com."
+
+#: main/mailer/mailgun.php:232 main/mailer/sparkpost.php:230
+msgid "Region"
+msgstr "Región"
+
+#: main/mailer/mailgun.php:229
+msgid "Follow this link to get a Domain Name from Mailgun: <a href=\"https://app.mailgun.com/app/domains\" target=\"_blank\">Get a Domain Name.</a>"
+msgstr "Sigue este enlace para obtener un nombre de dominio de Mailgun: <a href=\"https://app.mailgun.com/app/domains\" target=\"_blank\">Consigue un nombre de dominio.</a>"
+
+#: main/mailer/mailgun.php:227
+msgid "Domain Name"
+msgstr "Nombre de dominio"
+
+#: main/mailer/mailgun.php:224
+msgid "Follow this link to get a Private API Key from Mailgun: <a href=\"https://app.mailgun.com/app/account/security/api_keys\" target=\"_blank\">Get a Private API Key.</a>"
+msgstr "Sigue este enlace para obtener una clave de API Privada de Mailgun: <a href=\"https://app.mailgun.com/app/account/security/api_keys\" target=\"_blank\">Consigue una Clave de API Privada.</a>"
+
+#: main/mailer/mailgun.php:222
+msgid "Private API Key"
+msgstr "Clave privada de la API"
+
+#: main/mailer/loader.php:297
+msgid "NA"
+msgstr "ND"
+
+#: main/mailer/loader.php:255 main/settings.php:397
+msgid "Unable to send mail, Please check your SMTP details"
+msgstr "No ha sido posible enviar el correo, por favor, comprueba los detalles de tu SMTP"
+
+#: main/functions.php:28
+msgid "Sparkpost"
+msgstr "Sparkpost"
+
+#: main/functions.php:27
+msgid "Sendgrid"
+msgstr "SendGrid"
+
+#: main/functions.php:26
+msgid "Postmark"
+msgstr "Postmark"
+
+#: main/functions.php:25
+msgid "Mailgun"
+msgstr "Mailgun"
+
+#: main/functions.php:23
+msgid "SMTPcom"
+msgstr "SMTPcom"
+
+#: main/functions.php:22
+msgid "Sendlayer"
+msgstr "SendLayer"
+
+#: main/functions.php:21
+msgid "Zoho"
+msgstr "Zoho"
+
+#: main/functions.php:20
+msgid "Outlook"
+msgstr "Outlook"
+
+#: main/functions.php:19
+msgid "Gmail"
+msgstr "Gmail"
+
+#: main/functions.php:18
+msgid "AmazonSES"
+msgstr "AmazonSES"
+
+#: main/functions.php:17
+msgid "Other SMTP"
+msgstr "Otro SMTP"
+
+#: main/functions.php:16
+msgid "Mail"
+msgstr "Correo electrónico"
+
+#: main/ajax.php:53
+msgid "Message sent successfully !"
+msgstr "¡Mensaje enviado correctamente!"
+
+#: main/ajax.php:51
+msgid "Error : "
+msgstr "Error: "
+
+#: main/ajax.php:51
+msgid "Unable to send mail !"
+msgstr "¡No se ha podido enviar el correo electrónico!"
+
+#: main/ajax.php:40
+msgid "You have not configured SMTP settings yet !"
+msgstr "¡Aún no has configurado los ajustes SMTP!"
+
+#: init.php:278 main/settings.php:406
+msgid "Support"
+msgstr "Soporte"
+
+#: init.php:272
+msgid "License"
+msgstr "Licencia"
+
+#: init.php:262 init.php:268
+msgid "Email Reports"
+msgstr "Informes de correo electrónico"
+
+#: init.php:259
+msgid "Email Logs"
+msgstr "Registros de correo electrónico"
+
+#: init.php:251
+msgid "Settings"
+msgstr "Ajustes"
+
+#. Author URI of the plugin
+#: gosmtp.php
+msgid "https://softaculous.com"
+msgstr "https://softaculous.com"
+
+#. Author of the plugin
+#: gosmtp.php
+msgid "Softaculous Team"
+msgstr "Softaculous Team"
+
+#. Description of the plugin
+#: gosmtp.php
+msgid "Send emails from your WordPress site using your preferred SMTP provider like Gmail, Outlook, AWS, Zoho, SMTP.com, Brevo (formerly Sendinblue), Mailgun, Postmark, Sendgrid, Sparkpost, Sendlayer or any custom SMTP provider."
+msgstr "Envía correos electrónicos desde tu sitio WordPress utilizando tu proveedor SMTP preferido como Gmail, Outlook, AWS, Zoho, SMTP.com, Brevo (anteriormente Sendinblue), Mailgun, Postmark, Sendgrid, Sparkpost, Sendlayer o cualquier proveedor SMTP personalizado."
+
+#. Plugin URI of the plugin
+#: gosmtp.php
+msgid "https://gosmtp.net"
+msgstr "https://gosmtp.net"
+
+#. Plugin Name of the plugin
+#: gosmtp.php init.php:248
+msgid "GoSMTP"
+msgstr "GoSMTP"

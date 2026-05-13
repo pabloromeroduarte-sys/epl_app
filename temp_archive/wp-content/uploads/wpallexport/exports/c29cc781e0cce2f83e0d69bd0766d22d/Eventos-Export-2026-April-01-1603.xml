@@ -1,0 +1,1523 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+	<node>
+		<title><![CDATA[Amaro Castro &#8211; Arance Ibieta vs Sica - Pizarro]]></title>
+		<nombre_jornada><![CDATA[Fecha 1]]></nombre_jornada>
+		<recintos><![CDATA[]]></recintos>
+		<date><![CDATA[26-03-26]]></date>
+		<status><![CDATA[publish]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel &#8211; Silva vs Martiz - Kattan]]></title>
+		<nombre_jornada><![CDATA[Fecha 1]]></nombre_jornada>
+		<recintos><![CDATA[]]></recintos>
+		<date><![CDATA[26-03-26]]></date>
+		<status><![CDATA[publish]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvarez Jara &#8211; Álvarez Velez vs Botero Piedrahita - Verástegui]]></title>
+		<nombre_jornada><![CDATA[Fecha 1]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[27-03-26]]></date>
+		<status><![CDATA[publish]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre &#8211; Casasempere vs Freyre - Brosky]]></title>
+		<nombre_jornada><![CDATA[Fecha 1]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[27-03-26]]></date>
+		<status><![CDATA[publish]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti &#8211; Rivera vs Hurtado Sotomayor - Martínez Cuadro]]></title>
+		<nombre_jornada><![CDATA[Fecha 1]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[27-03-26]]></date>
+		<status><![CDATA[publish]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes &#8211; Montaner Covarrubias vs Ponce - Unda]]></title>
+		<nombre_jornada><![CDATA[Fecha 1]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[27-03-26]]></date>
+		<status><![CDATA[publish]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte &#8211; Valenzuela vs Sfeir - Amigo]]></title>
+		<nombre_jornada><![CDATA[Fecha 1]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[27-03-26]]></date>
+		<status><![CDATA[publish]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski &#8211; Garcia vs Vargas - Diaz]]></title>
+		<nombre_jornada><![CDATA[Fecha 1]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[27-03-26]]></date>
+		<status><![CDATA[publish]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera &#8211; Viel vs Vidal - Benítez]]></title>
+		<nombre_jornada><![CDATA[Fecha 1]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[27-03-26]]></date>
+		<status><![CDATA[publish]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero &#8211; Merino vs Amaro Castro - Arance Ibieta]]></title>
+		<nombre_jornada><![CDATA[Fecha 2]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 3]]></recintos>
+		<date><![CDATA[08-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Ponce &#8211; Unda vs Vogel - Silva]]></title>
+		<nombre_jornada><![CDATA[Fecha 2]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[02-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sica &#8211; Pizarro vs Álvares Jara - Álvarez Velez]]></title>
+		<nombre_jornada><![CDATA[Fecha 2]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[02-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Martiz &#8211; Kattan vs Eyzaguirre - Casasempere]]></title>
+		<nombre_jornada><![CDATA[Fecha 2]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[02-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Botero Piedrahita &#8211; Verástegui vs Giusti - Rivera]]></title>
+		<nombre_jornada><![CDATA[Fecha 2]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[02-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Freyre &#8211; Brosky vs Romero Duarte - Valenzuela]]></title>
+		<nombre_jornada><![CDATA[Fecha 2]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[02-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Hurtado Sotomayor &#8211; Martínez Cuadro vs Valenzuela Niedbalski - Garcia]]></title>
+		<nombre_jornada><![CDATA[Fecha 2]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 2]]></recintos>
+		<date><![CDATA[08-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sfeir &#8211; Amigo vs Vera - Viel]]></title>
+		<nombre_jornada><![CDATA[Fecha 2]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[02-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vargas &#8211; Diaz vs Vidal - Benítez]]></title>
+		<nombre_jornada><![CDATA[Fecha 2]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[02-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes &#8211; Montaner Covarrubias vs Vogel - Silva]]></title>
+		<nombre_jornada><![CDATA[Fecha 3]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[10-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero &#8211; Merino vs Álvares Jara - Álvarez Velez]]></title>
+		<nombre_jornada><![CDATA[Fecha 3]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[10-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Ponce &#8211; Unda vs Eyzaguirre - Casasempere]]></title>
+		<nombre_jornada><![CDATA[Fecha 3]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[10-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sica &#8211; Pizarro vs Giusti - Rivera]]></title>
+		<nombre_jornada><![CDATA[Fecha 3]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[10-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Martiz &#8211; Kattan vs Romero Duarte - Valenzuela]]></title>
+		<nombre_jornada><![CDATA[Fecha 3]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[10-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Botero Piedrahita &#8211; Verástegui vs Valenzuela Niedbalski - Garcia]]></title>
+		<nombre_jornada><![CDATA[Fecha 3]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[10-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Freyre &#8211; Brosky vs Vera - Viel]]></title>
+		<nombre_jornada><![CDATA[Fecha 3]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[10-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Hurtado Sotomayor &#8211; Martínez Cuadro vs Vidal - Benítez]]></title>
+		<nombre_jornada><![CDATA[Fecha 3]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[10-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sfeir &#8211; Amigo vs Vargas - Diaz]]></title>
+		<nombre_jornada><![CDATA[Fecha 3]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[10-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Amaro Castro &#8211; Arance Ibieta vs Álvares Jara - Álvarez Velez]]></title>
+		<nombre_jornada><![CDATA[Fecha 4]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[17-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes &#8211; Montaner Covarrubias vs Eyzaguirre - Casasempere]]></title>
+		<nombre_jornada><![CDATA[Fecha 4]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[17-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero &#8211; Merino vs Giusti - Rivera]]></title>
+		<nombre_jornada><![CDATA[Fecha 4]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[17-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Ponce &#8211; Unda vs Romero Duarte - Valenzuela]]></title>
+		<nombre_jornada><![CDATA[Fecha 4]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[17-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sica &#8211; Pizarro vs Valenzuela Niedbalski - Garcia]]></title>
+		<nombre_jornada><![CDATA[Fecha 4]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[17-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Martiz &#8211; Kattan vs Vera - Viel]]></title>
+		<nombre_jornada><![CDATA[Fecha 4]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[17-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Botero Piedrahita &#8211; Verástegui vs Vidal - Benítez]]></title>
+		<nombre_jornada><![CDATA[Fecha 4]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[17-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Freyre &#8211; Brosky vs Vargas - Diaz]]></title>
+		<nombre_jornada><![CDATA[Fecha 4]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[17-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Hurtado Sotomayor &#8211; Martínez Cuadro vs Sfeir - Amigo]]></title>
+		<nombre_jornada><![CDATA[Fecha 4]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[17-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel &#8211; Silva vs Eyzaguirre - Casasempere]]></title>
+		<nombre_jornada><![CDATA[Fecha 5]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[24-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Amaro Castro &#8211; Arance Ibieta vs Giusti - Rivera]]></title>
+		<nombre_jornada><![CDATA[Fecha 5]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[24-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes &#8211; Montaner Covarrubias vs Romero Duarte - Valenzuela]]></title>
+		<nombre_jornada><![CDATA[Fecha 5]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[24-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero &#8211; Merino vs Valenzuela Niedbalski - Garcia]]></title>
+		<nombre_jornada><![CDATA[Fecha 5]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[24-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Ponce &#8211; Unda vs Vera - Viel]]></title>
+		<nombre_jornada><![CDATA[Fecha 5]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[24-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sica &#8211; Pizarro vs Vidal - Benítez]]></title>
+		<nombre_jornada><![CDATA[Fecha 5]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[24-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Martiz &#8211; Kattan vs Vargas - Diaz]]></title>
+		<nombre_jornada><![CDATA[Fecha 5]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[24-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Botero Piedrahita &#8211; Verástegui vs Sfeir - Amigo]]></title>
+		<nombre_jornada><![CDATA[Fecha 5]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[24-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Freyre &#8211; Brosky vs Hurtado Sotomayor - Martínez Cuadro]]></title>
+		<nombre_jornada><![CDATA[Fecha 5]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[24-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvares Jara &#8211; Álvarez Velez vs Giusti - Rivera]]></title>
+		<nombre_jornada><![CDATA[Fecha 6]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[30-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel &#8211; Silva vs Romero Duarte - Valenzuela]]></title>
+		<nombre_jornada><![CDATA[Fecha 6]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[30-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Amaro Castro &#8211; Arance Ibieta vs Valenzuela Niedbalski - Garcia]]></title>
+		<nombre_jornada><![CDATA[Fecha 6]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[30-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes &#8211; Montaner Covarrubias vs Vera - Viel]]></title>
+		<nombre_jornada><![CDATA[Fecha 6]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[30-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero &#8211; Merino vs Vidal - Benítez]]></title>
+		<nombre_jornada><![CDATA[Fecha 6]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[30-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Ponce &#8211; Unda vs Vargas - Diaz]]></title>
+		<nombre_jornada><![CDATA[Fecha 6]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[30-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sica &#8211; Pizarro vs Sfeir - Amigo]]></title>
+		<nombre_jornada><![CDATA[Fecha 6]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[30-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Martiz &#8211; Kattan vs Hurtado Sotomayor - Martínez Cuadro]]></title>
+		<nombre_jornada><![CDATA[Fecha 6]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[30-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Botero Piedrahita &#8211; Verástegui vs Freyre - Brosky]]></title>
+		<nombre_jornada><![CDATA[Fecha 6]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[30-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre &#8211; Casasempere vs Romero Duarte - Valenzuela]]></title>
+		<nombre_jornada><![CDATA[Fecha 7]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[08-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvares Jara &#8211; Álvarez Velez vs Valenzuela Niedbalski - Garcia]]></title>
+		<nombre_jornada><![CDATA[Fecha 7]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[08-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel &#8211; Silva vs Vera - Viel]]></title>
+		<nombre_jornada><![CDATA[Fecha 7]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[08-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Amaro Castro &#8211; Arance Ibieta vs Vidal - Benítez]]></title>
+		<nombre_jornada><![CDATA[Fecha 7]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[08-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes &#8211; Montaner Covarrubias vs Vargas - Diaz]]></title>
+		<nombre_jornada><![CDATA[Fecha 7]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[08-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero &#8211; Merino vs Sfeir - Amigo]]></title>
+		<nombre_jornada><![CDATA[Fecha 7]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[08-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Ponce &#8211; Unda vs Hurtado Sotomayor - Martínez Cuadro]]></title>
+		<nombre_jornada><![CDATA[Fecha 7]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[08-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sica &#8211; Pizarro vs Freyre - Brosky]]></title>
+		<nombre_jornada><![CDATA[Fecha 7]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[08-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Martiz &#8211; Kattan vs Botero Piedrahita - Verástegui]]></title>
+		<nombre_jornada><![CDATA[Fecha 7]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[08-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti &#8211; Rivera vs Valenzuela Niedbalski - Garcia]]></title>
+		<nombre_jornada><![CDATA[Fecha 8]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[15-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre &#8211; Casasempere vs Vera - Viel]]></title>
+		<nombre_jornada><![CDATA[Fecha 8]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[15-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvares Jara &#8211; Álvarez Velez vs Vidal - Benítez]]></title>
+		<nombre_jornada><![CDATA[Fecha 8]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[15-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel &#8211; Silva vs Vargas - Diaz]]></title>
+		<nombre_jornada><![CDATA[Fecha 8]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[15-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Amaro Castro &#8211; Arance Ibieta vs Sfeir - Amigo]]></title>
+		<nombre_jornada><![CDATA[Fecha 8]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[15-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes &#8211; Montaner Covarrubias vs Hurtado Sotomayor - Martínez Cuadro]]></title>
+		<nombre_jornada><![CDATA[Fecha 8]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[15-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero &#8211; Merino vs Freyre - Brosky]]></title>
+		<nombre_jornada><![CDATA[Fecha 8]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[15-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Ponce &#8211; Unda vs Botero Piedrahita - Verástegui]]></title>
+		<nombre_jornada><![CDATA[Fecha 8]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[15-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sica &#8211; Pizarro vs Martiz - Kattan]]></title>
+		<nombre_jornada><![CDATA[Fecha 8]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[15-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte &#8211; Valenzuela vs Vera - Viel]]></title>
+		<nombre_jornada><![CDATA[Fecha 9]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[29-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti &#8211; Rivera vs Vidal - Benítez]]></title>
+		<nombre_jornada><![CDATA[Fecha 9]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[29-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre &#8211; Casasempere vs Vargas - Diaz]]></title>
+		<nombre_jornada><![CDATA[Fecha 9]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[29-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvares Jara &#8211; Álvarez Velez vs Sfeir - Amigo]]></title>
+		<nombre_jornada><![CDATA[Fecha 9]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[29-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel &#8211; Silva vs Hurtado Sotomayor - Martínez Cuadro]]></title>
+		<nombre_jornada><![CDATA[Fecha 9]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[29-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Amaro Castro &#8211; Arance Ibieta vs Freyre - Brosky]]></title>
+		<nombre_jornada><![CDATA[Fecha 9]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[29-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes &#8211; Montaner Covarrubias vs Botero Piedrahita - Verástegui]]></title>
+		<nombre_jornada><![CDATA[Fecha 9]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[29-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero &#8211; Merino vs Martiz - Kattan]]></title>
+		<nombre_jornada><![CDATA[Fecha 9]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[29-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Ponce &#8211; Unda vs Sica - Pizarro]]></title>
+		<nombre_jornada><![CDATA[Fecha 9]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[29-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski &#8211; Garcia vs Vidal - Benítez]]></title>
+		<nombre_jornada><![CDATA[Fecha 10]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[05-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte &#8211; Valenzuela vs Vargas - Diaz]]></title>
+		<nombre_jornada><![CDATA[Fecha 10]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[05-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti &#8211; Rivera vs Sfeir - Amigo]]></title>
+		<nombre_jornada><![CDATA[Fecha 10]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[05-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre &#8211; Casasempere vs Hurtado Sotomayor - Martínez Cuadro]]></title>
+		<nombre_jornada><![CDATA[Fecha 10]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[05-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvares Jara &#8211; Álvarez Velez vs Freyre - Brosky]]></title>
+		<nombre_jornada><![CDATA[Fecha 10]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[05-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel &#8211; Silva vs Botero Piedrahita - Verástegui]]></title>
+		<nombre_jornada><![CDATA[Fecha 10]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[05-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Amaro Castro &#8211; Arance Ibieta vs Martiz - Kattan]]></title>
+		<nombre_jornada><![CDATA[Fecha 10]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[05-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes &#8211; Montaner Covarrubias vs Sica - Pizarro]]></title>
+		<nombre_jornada><![CDATA[Fecha 10]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[05-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero &#8211; Merino vs Ponce - Unda]]></title>
+		<nombre_jornada><![CDATA[Fecha 10]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[05-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera &#8211; Viel vs Vargas - Diaz]]></title>
+		<nombre_jornada><![CDATA[Fecha 11]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[12-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski &#8211; Garcia vs Sfeir - Amigo]]></title>
+		<nombre_jornada><![CDATA[Fecha 11]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[12-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte &#8211; Valenzuela vs Hurtado Sotomayor - Martínez Cuadro]]></title>
+		<nombre_jornada><![CDATA[Fecha 11]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[12-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti &#8211; Rivera vs Freyre - Brosky]]></title>
+		<nombre_jornada><![CDATA[Fecha 11]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[12-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre &#8211; Casasempere vs Botero Piedrahita - Verástegui]]></title>
+		<nombre_jornada><![CDATA[Fecha 11]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[12-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvares Jara &#8211; Álvarez Velez vs Martiz - Kattan]]></title>
+		<nombre_jornada><![CDATA[Fecha 11]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[12-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel &#8211; Silva vs Sica - Pizarro]]></title>
+		<nombre_jornada><![CDATA[Fecha 11]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[12-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Amaro Castro &#8211; Arance Ibieta vs Ponce - Unda]]></title>
+		<nombre_jornada><![CDATA[Fecha 11]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[12-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes &#8211; Montaner Covarrubias vs Romero - Merino]]></title>
+		<nombre_jornada><![CDATA[Fecha 11]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[12-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vidal &#8211; Benítez vs Sfeir - Amigo]]></title>
+		<nombre_jornada><![CDATA[Fecha 12]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[19-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera &#8211; Viel vs Hurtado Sotomayor - Martínez Cuadro]]></title>
+		<nombre_jornada><![CDATA[Fecha 12]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[19-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski &#8211; Garcia vs Freyre - Brosky]]></title>
+		<nombre_jornada><![CDATA[Fecha 12]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[19-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte &#8211; Valenzuela vs Botero Piedrahita - Verástegui]]></title>
+		<nombre_jornada><![CDATA[Fecha 12]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[19-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti &#8211; Rivera vs Martiz - Kattan]]></title>
+		<nombre_jornada><![CDATA[Fecha 12]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[19-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre &#8211; Casasempere vs Sica - Pizarro]]></title>
+		<nombre_jornada><![CDATA[Fecha 12]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[19-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvares Jara &#8211; Álvarez Velez vs Ponce - Unda]]></title>
+		<nombre_jornada><![CDATA[Fecha 12]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[19-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel &#8211; Silva vs Romero - Merino]]></title>
+		<nombre_jornada><![CDATA[Fecha 12]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[19-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Amaro Castro &#8211; Arance Ibieta vs Montaner Reyes - Montaner Covarrubias]]></title>
+		<nombre_jornada><![CDATA[Fecha 12]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[19-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vargas &#8211; Diaz vs Hurtado Sotomayor - Martínez Cuadro]]></title>
+		<nombre_jornada><![CDATA[Fecha 13]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[26-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vidal &#8211; Benítez vs Freyre - Brosky]]></title>
+		<nombre_jornada><![CDATA[Fecha 13]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[26-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera &#8211; Viel vs Botero Piedrahita - Verástegui]]></title>
+		<nombre_jornada><![CDATA[Fecha 13]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[26-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski &#8211; Garcia vs Martiz - Kattan]]></title>
+		<nombre_jornada><![CDATA[Fecha 13]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[26-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte &#8211; Valenzuela vs Sica - Pizarro]]></title>
+		<nombre_jornada><![CDATA[Fecha 13]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[26-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti &#8211; Rivera vs Ponce - Unda]]></title>
+		<nombre_jornada><![CDATA[Fecha 13]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[26-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre &#8211; Casasempere vs Romero - Merino]]></title>
+		<nombre_jornada><![CDATA[Fecha 13]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[26-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvares Jara &#8211; Álvarez Velez vs Montaner Reyes - Montaner Covarrubias]]></title>
+		<nombre_jornada><![CDATA[Fecha 13]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[26-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel &#8211; Silva vs Amaro Castro - Arance Ibieta]]></title>
+		<nombre_jornada><![CDATA[Fecha 13]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[26-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sfeir &#8211; Amigo vs Freyre - Brosky]]></title>
+		<nombre_jornada><![CDATA[Fecha 14]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[03-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vargas &#8211; Diaz vs Botero Piedrahita - Verástegui]]></title>
+		<nombre_jornada><![CDATA[Fecha 14]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[03-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vidal &#8211; Benítez vs Martiz - Kattan]]></title>
+		<nombre_jornada><![CDATA[Fecha 14]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[03-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera &#8211; Viel vs Sica - Pizarro]]></title>
+		<nombre_jornada><![CDATA[Fecha 14]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[03-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski &#8211; Garcia vs Ponce - Unda]]></title>
+		<nombre_jornada><![CDATA[Fecha 14]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[03-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte &#8211; Valenzuela vs Romero - Merino]]></title>
+		<nombre_jornada><![CDATA[Fecha 14]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[03-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti &#8211; Rivera vs Montaner Reyes - Montaner Covarrubias]]></title>
+		<nombre_jornada><![CDATA[Fecha 14]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[03-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre &#8211; Casasempere vs Amaro Castro - Arance Ibieta]]></title>
+		<nombre_jornada><![CDATA[Fecha 14]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[03-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvares Jara &#8211; Álvarez Velez vs Vogel - Silva]]></title>
+		<nombre_jornada><![CDATA[Fecha 14]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[03-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Hurtado Sotomayor &#8211; Martínez Cuadro vs Botero Piedrahita - Verástegui]]></title>
+		<nombre_jornada><![CDATA[Fecha 15]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[10-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sfeir &#8211; Amigo vs Martiz - Kattan]]></title>
+		<nombre_jornada><![CDATA[Fecha 15]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[10-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vargas &#8211; Diaz vs Sica - Pizarro]]></title>
+		<nombre_jornada><![CDATA[Fecha 15]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[10-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vidal &#8211; Benítez vs Ponce - Unda]]></title>
+		<nombre_jornada><![CDATA[Fecha 15]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[10-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera &#8211; Viel vs Romero - Merino]]></title>
+		<nombre_jornada><![CDATA[Fecha 15]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[10-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski &#8211; Garcia vs Montaner Reyes - Montaner Covarrubias]]></title>
+		<nombre_jornada><![CDATA[Fecha 15]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[10-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte &#8211; Valenzuela vs Amaro Castro - Arance Ibieta]]></title>
+		<nombre_jornada><![CDATA[Fecha 15]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[10-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti &#8211; Rivera vs Vogel - Silva]]></title>
+		<nombre_jornada><![CDATA[Fecha 15]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[10-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre &#8211; Casasempere vs Álvares Jara - Álvarez Velez]]></title>
+		<nombre_jornada><![CDATA[Fecha 15]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[10-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Freyre &#8211; Brosky vs Martiz - Kattan]]></title>
+		<nombre_jornada><![CDATA[Fecha 16]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[24-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Hurtado Sotomayor &#8211; Martínez Cuadro vs Sica - Pizarro]]></title>
+		<nombre_jornada><![CDATA[Fecha 16]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[24-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sfeir &#8211; Amigo vs Ponce - Unda]]></title>
+		<nombre_jornada><![CDATA[Fecha 16]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[24-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vargas &#8211; Diaz vs Romero - Merino]]></title>
+		<nombre_jornada><![CDATA[Fecha 16]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[24-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vidal &#8211; Benítez vs Montaner Reyes - Montaner Covarrubias]]></title>
+		<nombre_jornada><![CDATA[Fecha 16]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[24-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera &#8211; Viel vs Amaro Castro - Arance Ibieta]]></title>
+		<nombre_jornada><![CDATA[Fecha 16]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[24-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski &#8211; Garcia vs Vogel - Silva]]></title>
+		<nombre_jornada><![CDATA[Fecha 16]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[24-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte &#8211; Valenzuela vs Álvares Jara - Álvarez Velez]]></title>
+		<nombre_jornada><![CDATA[Fecha 16]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[24-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti &#8211; Rivera vs Eyzaguirre - Casasempere]]></title>
+		<nombre_jornada><![CDATA[Fecha 16]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[24-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Botero Piedrahita &#8211; Verástegui vs Sica - Pizarro]]></title>
+		<nombre_jornada><![CDATA[Fecha 17]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[31-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Freyre &#8211; Brosky vs Ponce - Unda]]></title>
+		<nombre_jornada><![CDATA[Fecha 17]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[31-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Hurtado Sotomayor &#8211; Martínez Cuadro vs Romero - Merino]]></title>
+		<nombre_jornada><![CDATA[Fecha 17]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[31-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sfeir &#8211; Amigo vs Montaner Reyes - Montaner Covarrubias]]></title>
+		<nombre_jornada><![CDATA[Fecha 17]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[31-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vargas &#8211; Diaz vs Amaro Castro - Arance Ibieta]]></title>
+		<nombre_jornada><![CDATA[Fecha 17]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[31-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vidal &#8211; Benítez vs Vogel - Silva]]></title>
+		<nombre_jornada><![CDATA[Fecha 17]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[31-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera &#8211; Viel vs Álvares Jara - Álvarez Velez]]></title>
+		<nombre_jornada><![CDATA[Fecha 17]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[31-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski &#8211; Garcia vs Eyzaguirre - Casasempere]]></title>
+		<nombre_jornada><![CDATA[Fecha 17]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[31-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte &#8211; Valenzuela vs Giusti - Rivera]]></title>
+		<nombre_jornada><![CDATA[Fecha 17]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[31-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Martiz &#8211; Kattan vs Ponce - Unda]]></title>
+		<nombre_jornada><![CDATA[Fecha 18]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[07-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Botero Piedrahita &#8211; Verástegui vs Romero - Merino]]></title>
+		<nombre_jornada><![CDATA[Fecha 18]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[07-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Freyre &#8211; Brosky vs Montaner Reyes - Montaner Covarrubias]]></title>
+		<nombre_jornada><![CDATA[Fecha 18]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[07-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Hurtado Sotomayor &#8211; Martínez Cuadro vs Amaro Castro - Arance Ibieta]]></title>
+		<nombre_jornada><![CDATA[Fecha 18]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[07-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sfeir &#8211; Amigo vs Vogel - Silva]]></title>
+		<nombre_jornada><![CDATA[Fecha 18]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[07-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vargas &#8211; Diaz vs Álvares Jara - Álvarez Velez]]></title>
+		<nombre_jornada><![CDATA[Fecha 18]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[07-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vidal &#8211; Benítez vs Eyzaguirre - Casasempere]]></title>
+		<nombre_jornada><![CDATA[Fecha 18]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[07-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera &#8211; Viel vs Giusti - Rivera]]></title>
+		<nombre_jornada><![CDATA[Fecha 18]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[07-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski &#8211; Garcia vs Romero Duarte - Valenzuela]]></title>
+		<nombre_jornada><![CDATA[Fecha 18]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[07-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sica &#8211; Pizarro vs Romero - Merino]]></title>
+		<nombre_jornada><![CDATA[Fecha 19]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 5]]></recintos>
+		<date><![CDATA[14-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Martiz &#8211; Kattan vs Montaner Reyes - Montaner Covarrubias]]></title>
+		<nombre_jornada><![CDATA[Fecha 19]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 6]]></recintos>
+		<date><![CDATA[14-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Botero Piedrahita &#8211; Verástegui vs Amaro Castro - Arance Ibieta]]></title>
+		<nombre_jornada><![CDATA[Fecha 19]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 7]]></recintos>
+		<date><![CDATA[14-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Freyre &#8211; Brosky vs Vogel - Silva]]></title>
+		<nombre_jornada><![CDATA[Fecha 19]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 8]]></recintos>
+		<date><![CDATA[14-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Hurtado Sotomayor &#8211; Martínez Cuadro vs Álvares Jara - Álvarez Velez]]></title>
+		<nombre_jornada><![CDATA[Fecha 19]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 9]]></recintos>
+		<date><![CDATA[14-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sfeir &#8211; Amigo vs Eyzaguirre - Casasempere]]></title>
+		<nombre_jornada><![CDATA[Fecha 19]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 10]]></recintos>
+		<date><![CDATA[14-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vargas &#8211; Diaz vs Giusti - Rivera]]></title>
+		<nombre_jornada><![CDATA[Fecha 19]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 11]]></recintos>
+		<date><![CDATA[14-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vidal &#8211; Benítez vs Romero Duarte - Valenzuela]]></title>
+		<nombre_jornada><![CDATA[Fecha 19]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 12]]></recintos>
+		<date><![CDATA[14-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera &#8211; Viel vs Valenzuela Niedbalski - Garcia]]></title>
+		<nombre_jornada><![CDATA[Fecha 19]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 13]]></recintos>
+		<date><![CDATA[14-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Merino - Concha Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 1]]></nombre_jornada>
+		<recintos><![CDATA[Reprogramado]]></recintos>
+		<date><![CDATA[01-04-26]]></date>
+		<status><![CDATA[publish]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Amaro Castro – Arance Ibieta vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 3]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[10-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vogel – Silva vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 4]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[17-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Álvares Jara – Álvarez Velez vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 5]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[24-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Eyzaguirre – Casasempere vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 6]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[30-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Giusti – Rivera vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 7]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[08-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Montaner Reyes – Montaner Covarrubias vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 2]]></nombre_jornada>
+		<recintos><![CDATA[Reprogramado]]></recintos>
+		<date><![CDATA[02-04-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Romero Duarte – Valenzuela vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 8]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[15-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Valenzuela Niedbalski – Garcia vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 9]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[29-05-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vera – Viel vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 10]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[05-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vidal – Benítez vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 11]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[12-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Vargas – Diaz vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 12]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[19-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sfeir – Amigo vs Concha - Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 13]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[26-06-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Ponce – Unda vs Concha -Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 14]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[03-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Hurtado Sotomayor – Martínez Cuadro vs Concha -Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 15]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[10-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Freyre – Brosky vs Concha -Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 16]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[24-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Botero Piedrahita – Verástegui vs Concha -Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 17]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[31-07-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Martiz – Kattan vs Concha -Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 18]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[07-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+	<node>
+		<title><![CDATA[Sica – Pizarro vs Concha -Vial]]></title>
+		<nombre_jornada><![CDATA[Fecha 19]]></nombre_jornada>
+		<recintos><![CDATA[Conecta Santa Blanca>Cancha 14]]></recintos>
+		<date><![CDATA[14-08-26]]></date>
+		<status><![CDATA[future]]></status>
+		<commentstatus><![CDATA[closed]]></commentstatus>
+	</node>
+</data>

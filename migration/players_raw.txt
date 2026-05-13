@@ -1,0 +1,50 @@
+﻿wp_id	nombre_completo	rut	telefono	nivel	lado	email_meta	wp_user_id
+603	Alfredo Freyre		56966595908	5ta CategorÃ­a	Drive	NULL	NULL
+621	Amaro Amaro Bermudez			5ta CategorÃ­a	Drive	NULL	NULL
+2114	Andres Silva Perez	19.522.117-0	+56940908691	4ta CategorÃ­a	Ambos	NULL	81
+607	Anibal Flores			5ta CategorÃ­a	RevÃ©s	NULL	NULL
+572	Augusto Giusti	13.249.174-7	56995194165	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+471	Baltazar Casasempere	22.619.830-k	56979991271	5ta CategorÃ­a	Ambos	NULL	NULL
+504	Benjamin Merino Marin	17.404.231-4	56994796241	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+615	Borja Silva		56978762417	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+501	Camilo Botero Piedrahita		56944299577	5ta CategorÃ­a	Ambos	camiloboterop@hotmail.com	NULL
+620	Carlos Garcia		56991344821	5ta CategorÃ­a	Ambos	NULL	NULL
+626	Carlos Kattan	29.142.058-3	56973719617	5ta CategorÃ­a	Ambos	NULL	NULL
+2092	Cristian Fierro Montes	9.921.311-6	+56996399600	5ta CategorÃ­a	Ambos	NULL	80
+614	Cristobal Vogel	8.362.721-2	56998274229	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+475	Diego Eyzaguirre	15.380.220-3	56995455852	5ta CategorÃ­a	Ambos	NULL	NULL
+610	Eduardo MartÃ­nez Cuadro	10.401.271-k	56989004222	5ta CategorÃ­a	Drive	NULL	NULL
+527	Esteban Romero	17.961.246-1	56942695651	4ta CategorÃ­a	RevÃ©s	NULL	NULL
+591	Francisco Amigo	17.409.657-0	56942580088	5ta CategorÃ­a	Ambos	NULL	NULL
+609	Francisco Hurtado Sotomayor		56974085482	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+597	Francisco Pizarro	8.016.531-5	56998744498	5ta CategorÃ­a	Drive	NULL	NULL
+521	Gonzalo Vera	7.029.982-8	56998269135	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+573	Guillermo Rivera		56982398734	5ta CategorÃ­a	Drive	NULL	NULL
+2009	Ignacio Pinto	16.453.250-k	+56999160987	4ta CategorÃ­a	RevÃ©s	NULL	73
+1495	Ignacio Santiago Concha Arrau	15.641.034-9	56966686809	4ta CategorÃ­a	Ambos	NULL	NULL
+596	Ignacio Sica	13.270.469-4	56999999245	5ta CategorÃ­a	Drive	NULL	NULL
+600	Javier Vargas	7.774.101-1	56965773523	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+622	Jose Alonso Ponce Sepulveda	17.150.987-4	56933323292	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+511	Jose Diuana yunis			5ta CategorÃ­a	Ambos	NULL	NULL
+485	Jose Francisco Montaner Covarrubias	19.514.132-0	56978879065	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+487	Jose Francisco Montaner Reyes	9.907.717-4	56952069703	5ta CategorÃ­a	Drive	NULL	NULL
+623	Juan Martiz	28.021.896-0	56975124445	4ta CategorÃ­a	Ambos	NULL	NULL
+518	Marcelo Ãlvarez Jara	13.027.507-3	56988182431	4ta CategorÃ­a	Drive	NULL	NULL
+604	Marcelo Brosky		56993598962	5ta CategorÃ­a	Ambos	NULL	NULL
+576	Marcelo Valenzuela Niedbalski		56998877532	5ta CategorÃ­a	Ambos	NULL	NULL
+585	Mario Sfeir	15.336.593-8	56992503310	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+552	Mauricio BenÃ­tez	8.712.909-k	56992282044	4ta CategorÃ­a	Drive	NULL	NULL
+625	Mauricio Unda	15.781.759-0	50762318973	5ta CategorÃ­a	Drive	NULL	NULL
+1878	Maximiliano Apey	17.036.873-8	+56983415623	5ta CategorÃ­a	Ambos	NULL	67
+524	NicolÃ¡s Ãlvarez VÃ©lez	19.962.029-0	56987613771	5ta CategorÃ­a	RevÃ©s	NULL	NULL
+492	Oscar Amaro Castro		56976083969	5ta CategorÃ­a	Ambos	oscamarocas@gmail.com	NULL
+365	Pablo Romero	16.611.552-3	+56969193867	4ta CategorÃ­a	Drive	NULL	NULL
+515	Pablo Vidal	8.661.009-4	56962370515	4ta CategorÃ­a	Ambos	NULL	NULL
+512	Patricio Diuana CastaÃ±o			5ta CategorÃ­a	Drive	NULL	NULL
+2087	Prueba Final	55.555.555-5	12312312321	3ra CategorÃ­a	RevÃ©s	NULL	79
+1496	Ricardo Vial Cox	15.958.898-k	56978475702	4ta CategorÃ­a	Drive	NULL	NULL
+493	Roberto Arance Ibieta	19.201.242-2	56962055899	5ta CategorÃ­a	Ambos	NULL	NULL
+502	Roberto VerÃ¡stegui	10.426.757-2	56990798314	5ta CategorÃ­a	Drive	NULL	NULL
+594	Sebastian Viel	9.211.024-9	56990572636	5ta CategorÃ­a	Ambos	NULL	NULL
+586	Tomas Valenzuela	20.810.456-K	56964901286	4ta CategorÃ­a	Drive	NULL	NULL
+601	VÃ­ctor Diaz		56961924056	4ta CategorÃ­a	Drive	NULL	NULL

@@ -1,0 +1,1 @@
+ERROR 1050 (42S01) at line 12: Table 'wpqu_actionscheduler_actions' already exists

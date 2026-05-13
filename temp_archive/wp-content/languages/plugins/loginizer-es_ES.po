@@ -1,0 +1,2358 @@
+# Translation of Plugins - Loginizer - Stable (latest release) in Spanish (Spain)
+# This file is distributed under the same license as the Plugins - Loginizer - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2026-02-16 10:34:10+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/4.0.3\n"
+"Language: es\n"
+"Project-Id-Version: Plugins - Loginizer - Stable (latest release)\n"
+
+#: main/settings/recaptcha.php:621
+msgid "WooCommerce Block based Checkout"
+msgstr "Página de pago por bloques de WooCommerce"
+
+#: main/settings/recaptcha.php:630
+msgid "Before Order Button"
+msgstr "Antes de las notas de pedido"
+
+#: main/settings/recaptcha.php:629
+msgid "Before Payment"
+msgstr "Antes del pago"
+
+#: main/settings/recaptcha.php:626
+msgid "WooCommerce Checkout Position"
+msgstr "Posición de pago WooCommerce"
+
+#: main/settings/recaptcha.php:473
+msgid "Google returns a score between 0.0 and 1.0 — with 0.0 meaning it's likely a bot and 1.0 meaning it's likely a human. The default threshold is 0.5, but you can change it based on your needs."
+msgstr "Google devuelve una puntuación entre 0,0 y 1,0: 0,0 significa que es probable que sea un bot y 1,0 significa que es probable que sea un humano. El umbral por defecto es 0,5, pero puedes cambiarlo en función de tus necesidades."
+
+#: main/settings/recaptcha.php:472
+msgid "reCaptcha threshold"
+msgstr "Umbral de reCaptcha"
+
+#. translators: %1$s is replaced with a "string" of name of plugins, and %2$s
+#. is replaced with "string" which can be "is" or "are" based on the count of
+#. the plugin
+#: main/admin.php:984
+msgid "New versions of %1$s %2$s available. Updating ensures better performance, security, and access to the latest features."
+msgstr "Nuevas versiones de %1$s %2$s disponibles. La actualización garantiza un mejor rendimiento, seguridad y acceso a las últimas características."
+
+#: main/settings/social_login.php:640
+msgid "Ultimate Member Settings"
+msgstr "Ajustes de Ultimate Member"
+
+#: main/settings/social_login.php:517 main/settings/social_login.php:580
+#: main/settings/social_login.php:627
+msgid "Button Alignment"
+msgstr "Alineación del botón"
+
+#: main/settings/social_login.php:513 main/settings/social_login.php:521
+#: main/settings/social_login.php:576 main/settings/social_login.php:584
+#: main/settings/social_login.php:623 main/settings/social_login.php:631
+msgid "Right"
+msgstr "Derecha"
+
+#: main/settings/social_login.php:512 main/settings/social_login.php:520
+#: main/settings/social_login.php:575 main/settings/social_login.php:583
+#: main/settings/social_login.php:622 main/settings/social_login.php:630
+msgid "Center"
+msgstr "Centrar"
+
+#: main/settings/social_login.php:509 main/settings/social_login.php:572
+#: main/settings/social_login.php:619
+msgid "Container Alignment"
+msgstr "Alineación del contenedor"
+
+#: main/settings/social_login.php:367
+msgid "Ultimate Member"
+msgstr "Ultimate Member"
+
+#: main/settings/social_login.php:309
+msgid "Personal Microsoft accounts only"
+msgstr "Sólo cuentas personales de Microsoft"
+
+#: main/settings/social_login.php:308
+msgid "Accounts in any Organizational directory and Personal Microsoft accounts"
+msgstr "Cuentas de cualquier directorio de la organización y cuentas personales de Microsoft"
+
+#: main/settings/social_login.php:307
+msgid "Accounts in any Organizational directory"
+msgstr "Cuentas en cualquier directorio de la organización"
+
+#: main/settings/social_login.php:306
+msgid "Which type of accounts you want to allow to be able to signin"
+msgstr "Qué tipo de cuentas quieres permitir para poder iniciar sesión"
+
+#: main/settings/social_login.php:305
+msgid "Account Type"
+msgstr "Tipo de cuenta"
+
+#: main/settings/security.php:371
+msgid "Default: HomePage."
+msgstr "Por defecto: Página de inicio."
+
+#: main/settings/security.php:370
+msgid "Which page should be shown when someone tries to access wp-admin when it is hidden."
+msgstr "Qué página debería mostrarse cuando alguien trate de acceder a wp-admin cuando esté oculto."
+
+#: main/settings/security.php:369
+msgid "Redirect URL"
+msgstr "URL de redirección"
+
+#: main/settings/security.php:361
+msgid "If the user is not logged in they wont be able to access wp-admin url."
+msgstr "Si el usuario no está conectado no podrá acceder a la URL de wp-admin."
+
+#: main/settings/security.php:360
+msgid "Hide WP Admin"
+msgstr "Ocultar WP Admin"
+
+#: main/settings/recaptcha.php:652
+msgid "Disable Login Button"
+msgstr "Desactivar botón de acceso"
+
+#: main/settings/passwordless.php:192
+msgid "Which login form you want to disable passwordless login for"
+msgstr "Para qué formulario de acceso quieres desactivar el acceso sin contraseña"
+
+#: main/settings/passwordless.php:191
+msgid "Disable for"
+msgstr "Desactivar para"
+
+#: main/settings/security.php:658
+msgid "This prevents CSRF attacks by adding a session string to admin URLs, making them nearly impossible for attackers to predict."
+msgstr "Esto evita los ataques CSRF añadiendo una cadena de sesión a las URL de administración, lo que las hace casi imposibles de predecir para los atacantes."
+
+#: main/admin.php:890
+msgid "How to Install the Pro plugins"
+msgstr "Cómo instalar los plugins Pro"
+
+#: main/admin.php:890
+msgid "Generate SoftWP License"
+msgstr "Generar licencia SoftWP"
+
+#: main/admin.php:889
+msgid "Hey, you might be eligible to access Premium plugins provided by Softaculous for Free ! Please refer to these documents for details on how to avail them."
+msgstr "¡Oye, podrías tener acceso gratuito a los plugins Pro proporcionados por Softaculous! Revisa estos documentos para obtener más información sobre cómo acceder a ellos."
+
+#: main/admin.php:887
+msgid "Dismiss Forever"
+msgstr "Descartar para siempre"
+
+#: main/social-base.php:274
+msgid "Download of the avatar failed with error code %s!"
+msgstr "¡La descarga del avatar ha fallado con el código de error %s!"
+
+#: main/social-base.php:266
+msgid "Download of the avatar failed!"
+msgstr "¡Falló la descarga del avatar!"
+
+#: main/social-base.php:254
+msgid "Unable to create a tmp file!"
+msgstr "¡No se puede crear un archivo tmp!"
+
+#: main/social-base.php:247
+msgid "The URL provided to download avatar is empty"
+msgstr "La URL proporcionada para descargar el avatar está vacía"
+
+#: main/social-base.php:229
+msgid "Unable to create an attachment of the Avatar"
+msgstr "No se puede crear un archivo adjunto del zvatar"
+
+#: main/social-base.php:210
+msgid "Unable to copy the avatar from the tmp file"
+msgstr "No se puede copiar el avatar del archivo tmp"
+
+#: main/social-base.php:198
+msgid "Unable to create Directory to save avatars"
+msgstr "No se puede crear un directorio para guardar avatares"
+
+#: main/social-base.php:190
+msgid "The avatar has unsupported mime type."
+msgstr "El avatar tiene un tipo mime no soportado."
+
+#: main/social-base.php:156
+msgid "Login Successful"
+msgstr "Acceso correcto"
+
+#: main/social-base.php:91
+msgid "Unable to register your account, try again later!"
+msgstr "No se ha podido registrar tu cuenta, ¡inténtalo más tarde!"
+
+#: main/social-base.php:86
+msgid "Something went wrong while creating the user"
+msgstr "Algo ha ido mal al crear el usuario"
+
+#: main/social-login.php:190
+msgid "Oops, we ran into an issue! "
+msgstr "¡Vaya!, ¡nos hemos encontrado con un problema! "
+
+#: main/social-login.php:174
+msgid "User with this email does not exists."
+msgstr "El usuario con este correo electrónico no existe."
+
+#: main/social-login.php:167
+msgid "You can not register through Social Login"
+msgstr "No puedes registrarte a través de Social Login"
+
+#: main/social-login.php:156
+msgid "The email you are using for the test is not registered on this website. So register this email first."
+msgstr "El correo electrónico que estás utilizando para el test no está registrado en este sitio web. Registra primero este correo electrónico."
+
+#: main/social-login.php:141
+msgid "No email details were returned !"
+msgstr "No se devolvió ningún correo electrónico."
+
+#: main/social-login.php:123
+msgid "The social account you are using does not have a verified email."
+msgstr "La cuenta social que utilizas no tiene un correo electrónico verificado."
+
+#: main/social-login.php:80 main/social-login.php:89
+msgid "The app you are trying to login through is not configured"
+msgstr "La aplicación a través de la que intentas acceder no está configurada"
+
+#: main/social-login.php:41
+msgid "No Provider is configured, please contact the admin about this issue"
+msgstr "No se ha configurado ningún proveedor, ponte en contacto con el administrador para solucionar este problema"
+
+#: main/social-login.php:33
+msgid "Security check failed when trying to login"
+msgstr "Falló la comprobación de seguridad al intentar iniciar sesión"
+
+#: main/settings/social_login.php:674
+msgid "After that you can test in the Loginizer dashboard to see if it is working without any issue"
+msgstr "Después puedes probar en el panel de Loginizer si funciona sin problemas"
+
+#: main/settings/social_login.php:673
+msgid "Now on LinkedIn Auth page you will need to add Redirect URL, for that add this URL there"
+msgstr "Ahora en la página LinkedIn Auth tendrás que añadir la URL de redireccionamiento, para ello añade esta URL allí"
+
+#: main/settings/social_login.php:672
+msgid "On the Auth tab copy the Client ID and Client Secret and place those keys in Client ID and CLient Secret of the Loginizer LinkedIn Social provider respectively and enable it and save it"
+msgstr "En la pestaña Auth copia el Client ID y Client Secret y coloca esas claves en Client ID y CLient Secret del proveedor Loginizer LinkedIn Social respectivamente, habilítalo y guárdalo"
+
+#: main/settings/social_login.php:671
+msgid "You will be redirect to your App page in Product Tab, there look for \"Sign In with LinkedIn using OpenID Connect\" and click on Request Access, now go to the Auth tab as we need to access Oauth 2.0"
+msgstr "Se te redirigirá a la página de tu App en la pestaña Producto, allí busca \"Iniciar sesión con LinkedIn utilizando OpenID Connect\" y haz clic en Solicitar acceso, ahora ve a la pestaña Auth ya que necesitamos acceder a Oauth 2.0"
+
+#: main/settings/social_login.php:670
+msgid "After you have filled the LinkedIn page details, upload your logo and read terms and conditions and check the field which say I have read and agreed to these terms and then click on Create App"
+msgstr "Una vez que hayas rellenado los datos de la página de LinkedIn, sube tu logotipo y lee los términos y condiciones y marca el campo que dice He leído y acepto estos términos y, a continuación, haz clic en Crear aplicación."
+
+#: main/settings/social_login.php:669
+msgid "On that form fill the App Name and LinkedIn page, if you dont have a linked in page then create once as its required to create a App."
+msgstr "En ese formulario, rellena el nombre de la aplicación y la página de LinkedIn. Si no tienes una página vinculada, créala una vez, ya que es necesaria para crear una aplicación."
+
+#: main/settings/social_login.php:668
+msgid "Once you open the Apps page, click on Create App button, which will take you to fill a form."
+msgstr "Una vez que abras la página de Apps, haz clic en el botón Crear App, que te llevará a rellenar un formulario."
+
+#: main/settings/social_login.php:667
+msgid "Go to LinkedIn Apps page for that"
+msgstr "Para ello, ve a la página de aplicaciones de LinkedIn"
+
+#: main/settings/social_login.php:665
+msgid "To allow your users to be able to login through their LinkedIn Account, you first need to create a LinkedIn App. For that follow the Project creation steps below."
+msgstr "Para que tus usuarios puedan iniciar sesión a través de su cuenta de LinkedIn, primero tienes que crear una aplicación de LinkedIn. Para ello, sigue los pasos de creación de Proyectos que se indican a continuación."
+
+#: main/settings/social_login.php:664
+msgid "Last Updated"
+msgstr "Última actualización"
+
+#: main/settings/social_login.php:663
+msgid "Create LinkedIn App"
+msgstr "Crear aplicación LinkedIn"
+
+#: main/settings/social_login.php:601
+msgid "Do you want to show social buttons on Comments."
+msgstr "¿Quieres mostrar botones sociales en los comentarios?"
+
+#: main/settings/social_login.php:598
+msgid "Show buttons"
+msgstr "Muestra botones"
+
+#: main/settings/social_login.php:565
+msgid "Below"
+msgstr "Abajo"
+
+#: main/settings/social_login.php:563
+msgid "Button Position"
+msgstr "Posición del botón"
+
+#: main/settings/social_login.php:552 main/settings/social_login.php:608
+msgid "Icon"
+msgstr "Icono"
+
+#: main/settings/social_login.php:551 main/settings/social_login.php:607
+msgid "Full Length"
+msgstr "Longitud completa"
+
+#: main/settings/social_login.php:545
+msgid "Do you want to show social login on the WooCommerce registration form."
+msgstr "¿Quieres mostrar el login social en el formulario de registro de WooCommerce?"
+
+#: main/settings/social_login.php:538
+msgid "Do you want to show social buttons on WooCommerce login form."
+msgstr "¿Quieres mostrar botones sociales en el formulario de inicio de sesión de WooCommerce?"
+
+#: main/settings/social_login.php:505 main/settings/social_login.php:568
+msgid "Above with Seperator"
+msgstr "Arriba con separador"
+
+#: main/settings/social_login.php:504 main/settings/social_login.php:567
+msgid "Above"
+msgstr "Arriba"
+
+#: main/settings/social_login.php:503 main/settings/social_login.php:566
+msgid "Below with Seperator"
+msgstr "Abajo con separador"
+
+#: main/settings/social_login.php:496 main/settings/social_login.php:559
+#: main/settings/social_login.php:615
+msgid "Pill/Circle"
+msgstr "Píldora/Círculo"
+
+#: main/settings/social_login.php:495 main/settings/social_login.php:558
+#: main/settings/social_login.php:614
+msgid "Square"
+msgstr "Cuadrado"
+
+#: main/settings/social_login.php:493 main/settings/social_login.php:556
+#: main/settings/social_login.php:612
+msgid "Button Shape"
+msgstr "Forma del botón"
+
+#: main/settings/social_login.php:486 main/settings/social_login.php:549
+#: main/settings/social_login.php:605
+msgid "Button Style"
+msgstr "Estilo de botón"
+
+#: main/settings/social_login.php:472 main/settings/social_login.php:480
+msgid "Do you want to show social login on the WordPress registration form."
+msgstr "¿Quieres mostrar el inicio de sesión social en el formulario de registro de WordPress?"
+
+#: main/settings/social_login.php:463
+msgid "Do you want to show social buttons on WordPress login form."
+msgstr "¿Quieres mostrar botones sociales en el formulario de inicio de sesión de WordPress?"
+
+#: main/settings/social_login.php:414 main/settings/social_login.php:445
+msgid "Do you want the new user to see the Admin Bar in the Front end? Checked means you want to hide it."
+msgstr "¿Quieres que el nuevo usuario vea la barra de administración en el panel de control? Si está marcada, significa que quieres ocultarla."
+
+#: main/settings/social_login.php:411 main/settings/social_login.php:442
+msgid "Hide Admin Bar"
+msgstr "Ocultar la barra de administración"
+
+#: main/settings/social_login.php:407 main/settings/social_login.php:438
+msgid "What role you want to assign to the user created through social login?"
+msgstr "¿Qué rol quieres asignar al usuario creado a través del inicio de sesión social?"
+
+#: main/settings/social_login.php:398 main/settings/social_login.php:429
+msgid "If the user is not present then should loginizer create new user?"
+msgstr "Si el usuario no está presente, ¿debe Loginizer crear un nuevo usuario?"
+
+#: main/settings/social_login.php:391 main/settings/social_login.php:422
+msgid "On registration save and update user avatar, if possible"
+msgstr "Al registrarte, guarda y actualiza el avatar del usuario, si es posible"
+
+#: main/settings/social_login.php:382
+msgid "Where you want the App Authentication to be visible in"
+msgstr "¿Dónde quieres que sea visible la Autenticación de Aplicaciones en"
+
+#: main/settings/social_login.php:381
+msgid "Prefer Popup"
+msgstr "Preferir ventana emergente"
+
+#: main/settings/social_login.php:380
+msgid "Prefer Same window"
+msgstr "Prefiero la misma ventana"
+
+#: main/settings/social_login.php:364
+msgid "Comment"
+msgstr "Comentario"
+
+#: main/settings/social_login.php:363
+msgid "WooCommerce"
+msgstr "WooCommerce"
+
+#: main/settings/social_login.php:361
+msgid "General"
+msgstr "General"
+
+#: main/settings/social_login.php:253
+msgid "Test Now"
+msgstr "Prueba ahora"
+
+#: main/settings/social_login.php:252
+msgid "Please use the same email with which you have created this account."
+msgstr "Utiliza el mismo correo electrónico con el que has creado esta cuenta."
+
+#: main/settings/social_login.php:251
+msgid "You have added/updated the keys of this provider so you will need to test it to be able to use it."
+msgstr "Has añadido/actualizado las claves de este proveedor, por lo que tendrás que probarlo para poder utilizarlo."
+
+#: main/settings/social_login.php:250
+msgid "Test %s to be able to use it"
+msgstr "Prueba %s para poder utilizarlo"
+
+#: main/settings/social_login.php:246
+msgid "Go Back"
+msgstr "Volver atrás"
+
+#: main/settings/social_login.php:156 main/settings/social_login.php:338
+msgid "Security Check failed"
+msgstr "Error en la comprobación de seguridad"
+
+#: main/settings/social_login.php:120
+msgid "Saving Order"
+msgstr "Guardando pedido"
+
+#: main/settings/2fa.php:17 main/settings/checksum.php:42
+#: main/settings/passwordless.php:17 main/settings/recaptcha.php:21
+#: main/settings/security.php:17 main/settings/social_login.php:100
+msgid "Upgrade to Pro"
+msgstr "Mejora a Pro"
+
+#: main/settings/social_login.php:95
+msgid "Settings"
+msgstr "Ajustes"
+
+#: main/settings/social_login.php:93
+msgid "Get Started"
+msgstr "Primeros pasos"
+
+#: main/settings/social_login.php:46
+msgid "Something went wrong can't load social App details"
+msgstr "Algo ha ido mal no se pueden cargar los detalles de la App social"
+
+#: main/settings/recaptcha.php:343
+msgid "Get the Site Key and Secret Key from <a href=\"https://www.hcaptcha.com/\" target=\"_blank\">hcaptcha</a>"
+msgstr "Obtén la Clave del Sitio y la Clave Secreta de <a href=\"https://www.hcaptcha.com/\" target=\"_blank\">hcaptcha</a>"
+
+#: main/settings/recaptcha.php:331
+msgid "Cloudflare Turnstile"
+msgstr "Cloudflare Turnstile"
+
+#: main/settings/recaptcha.php:330
+msgid "hCAPTCHA"
+msgstr "hCAPTCHA"
+
+#: main/settings/recaptcha.php:211
+msgid "The Turnstile theme is invalid"
+msgstr "El tema Turnstile no es válido"
+
+#: main/settings/recaptcha.php:206
+msgid "The Turnstile secret key is invalid"
+msgstr "La clave secreta de Turnstile no es válida"
+
+#: main/settings/recaptcha.php:201
+msgid "The Turnstile Site key is invalid"
+msgstr "La clave del sitio Turnstile no es válida"
+
+#: main/settings/recaptcha.php:195 main/settings/recaptcha.php:221
+msgid "The Turnstile language is invalid"
+msgstr "El idioma Turnstile no es válido"
+
+#: main/settings/recaptcha.php:190 main/settings/recaptcha.php:216
+msgid "The Turnstile size is invalid"
+msgstr "El tamaño Turnstile no es válido"
+
+#: main/settings/recaptcha.php:185
+msgid "The hCaptcha theme is invalid"
+msgstr "El tema hCaptcha no es válido"
+
+#: main/settings/recaptcha.php:180
+msgid "The hCAPTCHA secret is invalid"
+msgstr "El secreto hCAPTCHA no es válido"
+
+#: main/settings/recaptcha.php:175
+msgid "The hCAPTCHA key is invalid"
+msgstr "La clave hCAPTCHA no es válida"
+
+#: main/settings/dashboard.php:86
+msgid "Your Server IP Address seems to match the Client IP detected by Loginizer. You might want to change the IP detection method to HTTP_X_FORWARDED_FOR under System Information section."
+msgstr "La dirección IP de tu servidor parece coincidir con la IP del cliente detectada por Loginizer. Tal vez quieras cambiar el método de detección de IP a HTTP_X_FORWARDED_FOR en la sección Información del sistema."
+
+#: main/settings/brute-force.php:1185
+msgid "Select the user roles for whom you want to send successful login notification."
+msgstr "Selecciona los roles de usuario para los que quieres enviar una notificación de inicio de sesión exitoso."
+
+#: main/settings/brute-force.php:1184
+msgid "Select Roles"
+msgstr "Seleccionar perfiles"
+
+#: main/settings/brute-force.php:1135
+msgid "If checked, don't notify whitelisted IPs."
+msgstr "Si está marcada, no notificar a las IPs de la lista blanca."
+
+#: main/settings/brute-force.php:1134
+msgid "Disable for whitelisted IPs"
+msgstr "Desactivar para IPs de la lista blanca"
+
+#: main/settings/brute-force.php:1124
+msgid "If enabled, user will get notified about successful login attempt."
+msgstr "Si está activada, el usuario recibirá una notificación cuando intente iniciar sesión correctamente."
+
+#: main/settings/brute-force.php:1123
+msgid "Enable Notification"
+msgstr "Activar el aviso"
+
+#: main/settings/brute-force.php:1114
+msgid "Login Notification"
+msgstr "Notificación de inicio de sesión"
+
+#: main/settings/brute-force.php:726
+msgid "Shows an error page in place of the login page if the user is locked out or blacklisted, to prevent attackers from attempting to log in when locked out, which saves resources"
+msgstr "Muestra una página de error en lugar de la página de inicio de sesión si el usuario está bloqueado o en la lista negra, para evitar que los atacantes intenten iniciar sesión cuando está bloqueado, lo que ahorra recursos."
+
+#: main/settings/brute-force.php:723
+msgid "Blocked Screen"
+msgstr "Pantalla bloqueada"
+
+#: main/settings/brute-force.php:411
+msgid "The IP - %s is invalid !"
+msgstr "¡La IP - %s no es válida !"
+
+#: main/ajax.php:185 main/ajax.php:201 main/ajax.php:213
+msgid "Sorry, but you do not have permissions to change settings."
+msgstr "Lo siento, pero no tienes permiso para cambiar los ajustes."
+
+#: main/admin.php:945
+msgid "Alert: Your Loginizer Premium license has expired. Please renew immediately to keep getting updates "
+msgstr "Alerta: Tu licencia Loginizer Premium ha caducado. Renuévala inmediatamente para seguir recibiendo actualizaciones "
+
+#: main/admin.php:935 main/admin.php:946
+msgid "Click here to renew"
+msgstr "Haz clic aquí para renovar"
+
+#: main/admin.php:934
+msgid "Alert : Your Loginizer Premium license will expire in %s. Renew to keep getting updates!"
+msgstr "Alerta : Tu licencia Loginizer Premium caducará en %s. ¡Renueva para seguir recibiendo actualizaciones!"
+
+#: main/admin.php:932 main/admin.php:943
+msgid "Dismiss for 60 days"
+msgstr "Descartar durante 60 días"
+
+#: main/admin.php:842
+msgid "I have fixed this issue"
+msgstr "He solucionado este problema"
+
+#: main/admin.php:840
+msgid "When you created secret keys for the social apps, you also provided a Redirect URI. To fix this issue, you need to update that Redirect URI."
+msgstr "Cuando creaste claves secretas para las aplicaciones sociales, también proporcionaste un URI de redirección. Para solucionar este problema, tienes que actualizar ese URI de redirección."
+
+#: main/admin.php:839
+msgid "How to fix:"
+msgstr "Cómo corregirlo:"
+
+#: main/admin.php:837
+msgid "You changed the login slug and have some social login apps enabled. These social login apps use the login URL as the redirect URI. This means that since the login URL has changed, the social login will now break."
+msgstr "Has cambiado el slug de inicio de sesión y tienes activadas algunas aplicaciones de inicio de sesión social. Estas aplicaciones de inicio de sesión social utilizan la URL de inicio de sesión como URI de redirección. Esto significa que, como la URL de inicio de sesión ha cambiado, el inicio de sesión social se romperá."
+
+#: main/admin.php:836
+msgid "You changed login slug!"
+msgstr "¡Has cambiado el slug de acceso!"
+
+#: main/admin.php:582
+msgid "Social Login"
+msgstr "Inicio de sesión social"
+
+#: init.php:726
+msgid "There was a problem sending your email."
+msgstr "Ha habido un problema al enviar tu correo electrónico."
+
+#: init.php:395 init.php:399
+msgid "You are restricted from logging in as your IP is not whitelisted."
+msgstr "No puedes conectarte porque tu IP no está en la lista blanca."
+
+#: init.php:854
+msgid ""
+"Hello $user_login,\n"
+"\n"
+"Your account was recently logged in from the IP : $ip\n"
+"Time : $date \n"
+"If it was not you who logged in then please report this to us immediately.\n"
+"\n"
+"Regards,\n"
+"$sitename"
+msgstr ""
+"Hola $user_login,\n"
+"\n"
+"Tu cuenta se ha conectado recientemente desde la IP : $ip\n"
+"Hora : $fecha\n"
+"Si no has sido tú quien ha iniciado sesión, infórmanos inmediatamente.\n"
+"\n"
+"Saludos,\n"
+"$nombre del sitio"
+
+#: init.php:853
+msgid "Login Successful at $sitename"
+msgstr "Acceso con éxito en $siteame"
+
+#: functions.php:511
+msgid "No Auth Provider configured"
+msgstr "No se ha configurado ningún proveedor de autenticación"
+
+#: functions.php:503
+msgid "Login With"
+msgstr "Acceder con"
+
+#: functions.php:327 functions.php:334
+msgid "You can not access this page"
+msgstr "No puedes acceder a esta página"
+
+#: main/settings/sso.php:258
+msgid "Attempts Remaining"
+msgstr "Intentos restantes"
+
+#: main/settings/sso.php:233
+msgid "Number of times you want your user to be able to login through same link by default it's 1 time and maximum is 15 times"
+msgstr "El número de veces que quieres que tu usuario pueda acceder a través del mismo enlace por defecto es de 1 vez y un máximo de 15 veces"
+
+#: main/settings/sso.php:215
+msgid "Select the duration for which the SSO stays alive"
+msgstr "Selecciona la duración durante la cual el SSO permanece vivo"
+
+#: main/settings/sso.php:214
+msgid "Time to Live"
+msgstr "Tiempo de actividad"
+
+#: main/settings/sso.php:309
+msgid "Delete Selected Links"
+msgstr "Borrar los enlaces seleccionados"
+
+#: main/settings/sso.php:265
+msgid "No SSO link has been created yet."
+msgstr "No se ha creado todavía ningún enlace SSO."
+
+#: main/settings/sso.php:259
+msgid "Expiring in"
+msgstr "Caduca en"
+
+#: main/settings/sso.php:257
+msgid "SSO Link"
+msgstr "Enlace SSO"
+
+#: main/settings/sso.php:256
+msgid "Username"
+msgstr "Nombre de usuario"
+
+#: main/settings/sso.php:255
+msgid "User ID"
+msgstr "ID de usuario"
+
+#: main/settings/sso.php:206
+msgid "User for who's account you want to generate the SSO"
+msgstr "Usuario para cuya cuenta quieres generar el SSO"
+
+#: main/settings/sso.php:205
+msgid "User"
+msgstr "Usuario"
+
+#: main/settings/sso.php:200
+msgid "You can leave it empty if you just want to create a SSO link"
+msgstr "Puedes dejarlo vacío si solo quieres crear un enlace SSO"
+
+#: main/settings/sso.php:196
+msgid "Email of the person you want to send the SSO to"
+msgstr "Correo electrónico de la persona a la que quieres enviar el SSO"
+
+#: main/settings/sso.php:195
+msgid "Email"
+msgstr "Correo electrónico"
+
+#: main/settings/sso.php:190
+msgid "You can generate SSO link or send it to an email, to give them access to your site's admin panel"
+msgstr "Puedes generar un enlace SSO o enviarlo a un correo electrónico, para darles acceso al panel de administración de tu sitio."
+
+#: main/settings/sso.php:169
+msgid "Generate SSO"
+msgstr "Genera SSO"
+
+#: main/settings/sso.php:76
+msgid "Please select SSO Links to delete!"
+msgstr "¡Por favor, selecciona los enlaces SSO a borrar!"
+
+#: main/settings/sso.php:62
+msgid "The given user was not found !"
+msgstr "¡El usuario dado no se encontró!"
+
+#: main/settings/sso.php:38
+msgid "Please select a user for whom you want to generate the link"
+msgstr "Por favor, selecciona un usuario para el que quieres generar el enlace"
+
+#: main/settings/sso.php:20
+msgid "SSO is a Pro feature so it can not be used with the free version."
+msgstr "SSO es una característica PRO, por lo que no puede usarse con la versión gratuita."
+
+#: main/settings/sso.php:84
+msgid "SSO IDs were malformed"
+msgstr "Los IDs SSP fueron malformados"
+
+#: main/settings/sso.php:27
+msgid "Security Check Failed!"
+msgstr "¡La comprobación de seguridad ha fallado!"
+
+#: main/admin.php:579
+msgid "Single Sign On"
+msgstr "Acceso único"
+
+#: main/settings/security.php:928
+msgid "Excluded roles won't face session limit checks"
+msgstr "Los perfiles excluidos no se enfrentarán a comprobaciones de límite de sesión"
+
+#: main/settings/security.php:927
+msgid "Exclude Roles"
+msgstr "Excluir perfiles"
+
+#: main/settings/security.php:918
+msgid "Set Maximum number of sessions can be created"
+msgstr "Establecer número máximo de sesiones que se pueden crear"
+
+#: main/settings/security.php:917
+msgid "Max Session Count"
+msgstr "Número máximo de sesiones"
+
+#: main/settings/security.php:912
+msgid "Revokes all the sessions on successful login"
+msgstr "Revoca todas las sesiones al acceder con éxito"
+
+#: main/settings/security.php:912
+msgid "Destroy"
+msgstr "Destruir"
+
+#: main/settings/security.php:910
+msgid "Blocks all the login attempts if limit is reached"
+msgstr "Bloquea todos los intentos de acceso si se alcanza el límite"
+
+#: main/settings/security.php:910
+msgid "Block"
+msgstr "Bloqueo"
+
+#: main/settings/security.php:906
+msgid "Limit Type"
+msgstr "Tipo de límite"
+
+#: main/settings/security.php:898
+msgid "Enabling it will start limiting number of devices the user can login on concurrently"
+msgstr "Al activarlo, se empezará a limitar el número de dispositivos en los que el usuario puede estar conectado simultáneamente"
+
+#: main/settings/security.php:897
+msgid "Enable"
+msgstr "Activar"
+
+#: main/settings/security.php:892
+msgid "This feature will help limit the number of devices your user can login to concurrently"
+msgstr "Esta función te ayudará a limitar el número de dispositivos en los que tu usuario puede estar conectado simultáneamente"
+
+#: main/settings/security.php:882
+msgid "Limit Concurrent Sessions"
+msgstr "Limitar sesiones simultáneas"
+
+#: main/settings/dashboard.php:296
+msgid "Failed"
+msgstr "Fallido"
+
+#: main/settings/dashboard.php:222
+msgid "Data For Last 24 hours"
+msgstr "Datos de las últimas 24 horas"
+
+#: main/settings/dashboard.php:219
+msgid "Total Attempts:"
+msgstr "Total de intentos:"
+
+#: main/settings/dashboard.php:212 main/settings/sso.php:232
+msgid "Login Attempts"
+msgstr "Intentos de acceso"
+
+#: main/settings/dashboard.php:203
+msgid "Your website is being protected by Loginizer Security."
+msgstr "Tu sitio web está protegido por Loginizer Security."
+
+#: main/settings/dashboard.php:198
+msgid "Your website is under heavy brute-force attacks.<br/> <a href=\"https://loginizer.com/pricing?utm_source=stats_block\" target=\"_blank\">Upgrade to a premium version</a> for added protection if this trend persists. Act fast to secure your site."
+msgstr "Tu web está siendo objeto de fuertes ataques de fuerza bruta.<br/> Si esta tendencia persiste, <a href=\"https://loginizer.com/pricing?utm_source=stats_block\" target=\"_blank\">actualiza a una versión Premium</a> para una mayor protección. Actúa rápido para proteger tu sitio."
+
+#: main/settings/dashboard.php:195
+msgid "Brute-force attacks on your websites are on rise"
+msgstr "Aumentan los ataques de fuerza bruta a tus webs"
+
+#: main/settings/dashboard.php:192
+msgid "Risk from Brute-force attacks is low, attacks are under control"
+msgstr "El riesgo de ataques de fuerza bruta es bajo, los ataques están bajo control"
+
+#: main/settings/dashboard.php:188
+msgid "Your Website is safe"
+msgstr "Tu web está a salvo"
+
+#: main/admin.php:306
+msgid "Done! Backuply is now installed and activated."
+msgstr "¡Ya está! Ahora Backuply está instalado y activado."
+
+#: main/admin.php:236
+msgid "Install Backuply"
+msgstr "Instalar Backuply"
+
+#: main/admin.php:234
+msgid "Stress Free Migrations"
+msgstr "Migraciones sin estrés"
+
+#: main/admin.php:233
+msgid "Easy One-Click restores"
+msgstr "Restauraciones fáciles con un solo clic"
+
+#: main/admin.php:231
+msgid "Backup to remote locations like FTP, FTPS, SFTP, WebDAV, Google Drive, OneDrive, Dropbox, Amazon S3"
+msgstr "Copia de seguridad en ubicaciones remotas como FTP, FTPS, SFTP, WebDAV, Google Drive, OneDrive, Dropbox, Amazon S3"
+
+#: main/admin.php:229
+msgid "Backups are the best form of security. Secure your WordPress site by creating backups with Backuply"
+msgstr "Las copias de seguridad son la mejor forma de seguridad. Asegura tu sitio de WordPress creando copias de seguridad con Backuply"
+
+#: main/settings/security.php:1017
+msgid "You can manually update your .htaccess by adding the given code at the top of your .htaccess file"
+msgstr "Puedes actualizar manualmente tu .htaccess añadiendo el código indicado en la parte superior de tu archivo .htaccess"
+
+#: main/settings/security.php:1016
+msgid "Manually Update .htaccess"
+msgstr "Actualizar manualmente el .htaccess"
+
+#: main/settings/security.php:1004
+msgid "Rewrites rule to change wp-admin and if you have a Multisite then check"
+msgstr "Reescribe la regla para cambiar el wp-admin y si tienes un Multisitio entonces compruébalo"
+
+#: main/settings/security.php:1004
+msgid "Rewrites rule for CSRF session URL"
+msgstr "Regla de reescritura para la URL de sesión CSRF"
+
+#: main/settings/security.php:1003
+msgid "Update .htaccess"
+msgstr "Actualizar archivo .htaccess"
+
+#: main/settings/security.php:664
+msgid "If enabled, it will update the URL of wp-admin with a random session string in the URL making it hard to predict the URL."
+msgstr "Si está activado, actualizará la URL de wp-admin con una cadena de sesión aleatoria en la URL, lo que dificultará la predicción de la misma."
+
+#: main/settings/security.php:663
+msgid "Enable CSRF Protection"
+msgstr "Activar la protección CSRF"
+
+#: main/settings/security.php:648
+msgid "CSRF Protection"
+msgstr "Protección CSRF"
+
+#: main/settings/security.php:627
+msgid "Was unable to update the .htaccess file so please update it manually"
+msgstr "No he podido actualizar el archivo .htaccess, así que actualízalo manualmente"
+
+#: main/settings/security.php:622
+msgid ".htaccess has been updated !"
+msgstr "¡.htaccess ha sido actualizado !"
+
+#: main/settings/security.php:535
+msgid "Note: Be careful while changing the Admin name as your CSRF Protection is on"
+msgstr "Nota: Ten cuidado al cambiar el nombre del administrador ya que la protección CSRF está activada"
+
+#: main/settings/passwordless.php:166
+msgid "Select the user roles for whom this custom redirect will be used"
+msgstr "Selecciona los perfiles de usuario desde los que se usará esta redirección personalizada"
+
+#: main/settings/passwordless.php:165
+msgid "Custom redirect for"
+msgstr "Redirección personalizada para"
+
+#: main/settings/passwordless.php:156
+msgid "Redirects user to a page of your website other than the admin panel"
+msgstr "Redirige al usuario a una página de tu web distinta del panel de administración"
+
+#: main/settings/passwordless.php:155
+msgid "Custom redirect to"
+msgstr "Redirección personalizada a"
+
+#: main/settings/2fa.php:758
+msgid "Save Custom URLs"
+msgstr "Guardar URLs personalizadas"
+
+#: main/settings/2fa.php:738
+msgid "Here you can set the URL, which you wish your user to get redirected to after login via 2FA."
+msgstr "Aquí puedes configurar la URL, a la que deseas que tu usuario sea redirigido después de acceder mediante 2FA."
+
+#: main/settings/2fa.php:727
+msgid "Custom Redirects based on roles"
+msgstr "Redirecciones personalizadas basadas en perfiles"
+
+#: main/settings/brute-force.php:719
+msgid "If enabled Loginizer will only allow whitlisted IP's to Login."
+msgstr "Si se activa Loginizer solo permitirá acceder a las IPs en lista blanca."
+
+#: main/settings/brute-force.php:716
+msgid "Trusted IP's"
+msgstr "IPs de confianza"
+
+#: main/settings/brute-force.php:114
+msgid "Email Notification value is invalid"
+msgstr "El valor de la notificación por correo electrónico no es válido"
+
+#: main/settings/brute-force.php:110
+msgid "Reset Retries value is invalid"
+msgstr "El valor de los reintentos no es válido"
+
+#: main/settings/brute-force.php:106
+msgid "Extended Lockout value is invalid"
+msgstr "El valor del bloqueo ampliado no es válido"
+
+#: main/settings/brute-force.php:102
+msgid "Max Lockouts value is invalid"
+msgstr "El valor de los bloqueos máximos no es válido"
+
+#: main/settings/brute-force.php:90
+msgid "Add your IP to whitelist to enable Trusted IP's"
+msgstr "Añade tu IP a la lista blanca para activar las IPs de confianza"
+
+#: main/admin.php:236 main/admin.php:408
+msgid "Visit Backuply"
+msgstr "Visita Backuply"
+
+#: main/admin.php:406
+msgid "Backup to FTP,FTPS and many more ..."
+msgstr "Copia de seguridad en FTP, FTPS y muchos más ..."
+
+#: main/admin.php:405
+msgid "Backup to Dropbox"
+msgstr "Copia de seguridad en Dropbox"
+
+#: main/admin.php:404
+msgid "Backup to Amazon S3"
+msgstr "Copia de seguridad en Amazon S3"
+
+#: main/admin.php:403
+msgid "Backup to Google Drive"
+msgstr "Copia de seguridad en Google Drive"
+
+#: main/admin.php:402
+msgid "Stress-free Migration"
+msgstr "Migración sin estrés"
+
+#: main/admin.php:401
+msgid "One-Click Restore"
+msgstr "Restauración con un solo clic"
+
+#: main/admin.php:400
+msgid "Backup Rotation"
+msgstr "Rotación de copias de seguridad"
+
+#: main/admin.php:232 main/admin.php:399
+msgid "Auto Backups"
+msgstr "Copias de seguridad automáticas"
+
+#: main/admin.php:398
+msgid "Remote Backup to 8 location"
+msgstr "Copia de seguridad remota en 8 lugares"
+
+#: main/admin.php:396
+msgid "Secure your WordPress site by creating backups with Backuply"
+msgstr "Asegura tu sitio de WordPress creando copias de seguridad con Backuply"
+
+#: main/admin.php:521
+msgid "You have enabled CSRF protection but the .htaccess file has not been updated"
+msgstr "Has activado la protección CSRF pero el archivo .htaccess no se ha actualizado"
+
+#: main/settings/security.php:541
+msgid "on how to do so !"
+msgstr "¡sobre cómo hacerlo!"
+
+#: main/settings/security.php:541
+msgid "our guide"
+msgstr "nuestra guía"
+
+#: main/settings/security.php:541
+msgid "You can rename your WordPress Admin access URL <b>wp-admin</b> to anything of your choice e.g. my-admin. This will require you to change .htaccess, so please follow"
+msgstr "Puedes cambiar el nombre de tu URL de acceso a la administración de WordPress <b>wp-admin</b> por cualquier cosa que elijas, por ejemplo, mi-admin. Esto requerirá que cambies el .htaccess, así que sigue"
+
+#: main/settings/security.php:331
+msgid " to anything of your choice e.g. mylogin. This would make it very difficult for automated attack bots to know where to login !"
+msgstr " a cualquier cosa que elijas, por ejemplo, milogin. ¡Esto haría muy difícil que los bots de ataque automatizados supieran dónde conectarse!"
+
+#: main/settings/security.php:331
+msgid "You can rename your Login page from"
+msgstr "Puedes cambiar el nombre de tu página de inicio de sesión desde"
+
+#: main/settings/brute-force.php:511
+msgid "Past"
+msgstr "Últimas"
+
+#: main/settings/brute-force.php:511
+msgid "Failed Login Attempts Logs"
+msgstr "Registros de intentos de inicio de sesión fallidos"
+
+#: main/settings/brute-force.php:98
+msgid "Lockout Time value is invalid"
+msgstr "El valor del tiempo de bloqueo no es válido"
+
+#: main/settings/brute-force.php:94
+msgid "Max Retries value is invalid"
+msgstr "El valor de reintentos máximos no es válido"
+
+#: main/settings/dashboard.php:247
+msgid "Security PRO Version"
+msgstr "Versión de Security PRO"
+
+#: main/settings/dashboard.php:135
+msgid "Upgrade to Pro</a> for more features like <b>reCAPTCHA, Two Factor Auth, Rename wp-admin and wp-login.php pages, Email based PasswordLess</b> login and more. These features will improve your website's security."
+msgstr "Actualiza a la versión Pro</a> para disponer de más características, como <b>reCAPTCHA, identificación de dos. factores, renombrar las páginas de wp-admin y wp-login.php, acceso sin contraseñas basado en correo electrónico</b> y más. Estas características mejorarán la seguridad de tu web."
+
+#: main/settings/dashboard.php:133
+msgid "In the Premium version of Loginizer you have many more features. We recommend you enable features like <b>reCAPTCHA, Two Factor Auth or Email based PasswordLess</b> login. These features will improve your websites security"
+msgstr "En la versión Premium de Loginizer tienes muchas más características. Te recomendamos que habilites características como <b>reCAPTCHA, Two Factor Auth o LoginLess basado en el correo electrónico</b>. Estas funciones mejorarán la seguridad de tus sitios web"
+
+#: main/settings/dashboard.php:130
+msgid "Welcome to Loginizer Security. By default the <b>Brute Force Protection</b> is immediately enabled. You should start by going over the default settings and tweaking them as per your needs."
+msgstr "Bienvenido a Loginizer Security. Por defecto, la <b>Protección contra la fuerza bruta</b> está inmediatamente activada. Deberías empezar por revisar la configuración por defecto y ajustarla según tus necesidades."
+
+#: main/settings/dashboard.php:100
+msgid "Add Review"
+msgstr "Añadir reseña"
+
+#: main/settings/dashboard.php:100
+msgid "Thank you for choosing Loginizer! Many more features coming soon... &nbsp; Review Loginizer at WordPress &nbsp; &nbsp;"
+msgstr "¡Gracias por elegir Loginizer! Pronto habrá muchas más funciones...   Puntúa Loginizer en WordPress"
+
+#: main/admin.php:463
+msgid "here"
+msgstr "aquí"
+
+#: main/admin.php:448
+msgid "I just secured my @WordPress site against #bruteforce using @loginizer"
+msgstr "Acabo de asegurar mi sitio de @WordPress contra #bruteforce usando @loginizer"
+
+#: main/admin.php:446
+msgid "Let your friends know that you have secured your website :"
+msgstr "Haz saber a tus amigos que has asegurado tu sitio web:"
+
+#: main/admin.php:432
+msgid "Visit Pagelayer"
+msgstr "Visita Pagelayer"
+
+#: main/admin.php:429
+msgid "Popup Builder"
+msgstr "Constructor de ventanas emergentes"
+
+#: main/admin.php:428
+msgid "Form Builder"
+msgstr "Constructor de formularios"
+
+#: main/admin.php:427
+msgid "Theme Creator and Exporter"
+msgstr "Creador y exportador de temas"
+
+#: main/admin.php:426
+msgid "WooCommerce Builder"
+msgstr "Constructor de WooCommerce"
+
+#: main/admin.php:425
+msgid "Theme Builder"
+msgstr "Constructor de temas"
+
+#: main/admin.php:424
+msgid "400+ Premium Sections"
+msgstr "Más de 400 Secciones Premium"
+
+#: main/admin.php:423
+msgid "60+ Premium Widgets"
+msgstr "60+ Widgets Premium"
+
+#: main/admin.php:422
+msgid "30+ Free Widgets"
+msgstr "30+ Widgets gratuitos"
+
+#: main/admin.php:420
+msgid "Easily manage and make professional pages and content with our Pagelayer builder"
+msgstr "Gestiona y crea fácilmente páginas y contenidos profesionales con nuestro constructor Pagelayer"
+
+#: main/admin.php:382
+msgid "Change 'admin' Username"
+msgstr "Cambiar el nombre de usuario 'admin'"
+
+#: main/admin.php:375
+msgid "We recommed that you enable atleast one of the following security features"
+msgstr "Te recomendamos que actives al menos una de las siguientes características de seguridad."
+
+#: main/admin.php:371
+msgid "Recommendations"
+msgstr "Recomendaciones"
+
+#: main/admin.php:359 main/admin.php:430
+msgid "And many more ..."
+msgstr "Y muchos más..."
+
+#: main/admin.php:355 main/admin.php:378
+msgid "Login Challenge Question"
+msgstr "Pregunta sobre el desafío de inicio de sesión"
+
+#: main/admin.php:354 main/admin.php:381
+msgid "Two Factor Auth - App"
+msgstr "Autenticación de dos factores - Aplicación"
+
+#: main/admin.php:353 main/admin.php:380
+msgid "Two Factor Auth - Email"
+msgstr "Autenticación de dos factores - Correo electrónico"
+
+#: main/admin.php:352
+msgid "PasswordLess Login"
+msgstr "Inicio de sesión sin contraseña"
+
+#: main/admin.php:350
+msgid "Upgrade to the premium version and get the following features"
+msgstr "Actualiza a la versión premium y obtén las siguientes funciones"
+
+#: main/admin.php:345
+msgid "Premium Version"
+msgstr "Versión Premium"
+
+#: main/admin.php:503
+msgid "Refer and Earn"
+msgstr "Refiere y gana"
+
+#: main/settings/security.php:46 main/settings/security.php:164
+msgid "The wp-login.php and wp-admin slugs cannot be the same. Choose unique names for login and admin slugs"
+msgstr "Los slugs de wp-login.php y wp-admin no pueden ser el mismo. Elige nombres únicos para los slugs de acceso y administración."
+
+#: main/settings/recaptcha.php:463
+msgid "(Default)"
+msgstr "(Por defecto)"
+
+#: main/settings/recaptcha.php:457
+msgid "If Google is not accessible or blocked in your country select other one"
+msgstr "Si Google no es accesible o está bloqueado en tu país, selecciona otro"
+
+#: main/settings/recaptcha.php:456
+msgid "reCAPTCHA Domain"
+msgstr "Dominio de reCAPTCHA"
+
+#: main/settings/recaptcha.php:328
+msgid "Google reCAPTCHA"
+msgstr "Google reCAPTCHA"
+
+#: main/settings/recaptcha.php:327
+msgid "Disabled"
+msgstr "Desactivado"
+
+#: main/settings/recaptcha.php:323
+msgid "Captcha Status"
+msgstr "Estado del captcha"
+
+#: main/settings/recaptcha.php:252
+msgid "The reCAPTCHA domain is invalid"
+msgstr "El dominio de reCAPTCHA no es válido"
+
+#: main/settings/brute-force.php:712
+msgid "failed login attempts notifications will be sent to this email"
+msgstr "los avisos de intentos fallidos de acceso se enviarán a este correo electrónico"
+
+#: main/settings/brute-force.php:710
+msgid "Email Address"
+msgstr "Dirección de correo electrónico"
+
+#: main/settings/brute-force.php:86
+msgid "Email address is invalid"
+msgstr "La dirección de correo electrónico no es válida"
+
+#: main/settings/brute-force.php:1225
+msgid "Line no."
+msgstr "Línea nº."
+
+#: main/ajax.php:94 main/ajax.php:147
+msgid "No data to export"
+msgstr "No hay datos para exportar"
+
+#: main/settings/brute-force.php:991
+msgid "Import Whitelist IPs (CSV)"
+msgstr "Importar la lista de IP permitidas (CSV)"
+
+#: main/settings/brute-force.php:653 main/settings/brute-force.php:901
+#: main/settings/brute-force.php:1005
+msgid "Export CSV"
+msgstr "Exportar CSV"
+
+#: main/settings/brute-force.php:900 main/settings/brute-force.php:1004
+msgid "Import CSV"
+msgstr "Importar CSV"
+
+#: main/settings/brute-force.php:890 main/settings/brute-force.php:994
+msgid "Submit"
+msgstr "Enviar"
+
+#: main/settings/brute-force.php:887
+msgid "Import Blacklist IPs (CSV)"
+msgstr "Importar la lista de IP no permitidas (CSV)"
+
+#: main/settings/brute-force.php:651
+msgid "Blacklist Selected IPs"
+msgstr "No permitir las IP seleccionadas"
+
+#: main/settings/brute-force.php:451
+msgid "No IP(s) selected"
+msgstr "Ninguna IP seleccionada"
+
+#: main/settings/brute-force.php:444
+msgid "The selected IP(s) have been blacklisted"
+msgstr "Las IP seleccionadas han sido añadidas a la lista de no permitidas"
+
+#: main/settings/brute-force.php:341
+msgid "Invalid import type"
+msgstr "Tipo de importación no válido"
+
+#: main/settings/2fa.php:458 main/settings/brute-force.php:1144
+#: main/settings/passwordless.php:148
+msgid "Send email as HTML"
+msgstr "Enviar correo electrónico como HTML"
+
+#: main/settings/2fa.php:689
+msgid "No Whitelist IPs for Two Factor Authentication. You will see whitelisted IP ranges here."
+msgstr "No hay IP en la lista blanca de autenticación de dos factores. Aquí verás los rangos de IP en la lista blanca."
+
+#: main/settings/2fa.php:672
+msgid "Delete All Whitelist IP Range(s) for 2FA"
+msgstr "Borrar todos los rangos de IP de la lista blanca de autenticación de dos factores"
+
+#: main/settings/2fa.php:672
+msgid "Are you sure you want to delete all Whitelist IP Range(s) for 2FA ?"
+msgstr "¿Estás seguro de que quieres borrar todos los rangos de IP de la lista blanca de autenticación de dos factores?"
+
+#: main/settings/2fa.php:654
+msgid "Enter the IP you want to whitelist for two factor authentication"
+msgstr "Añade la IP que deseas añadir a la lista blanca de autenticación de dos factores"
+
+#: main/settings/2fa.php:648
+msgid "Disable Two Factor Authentication for IP"
+msgstr "Desactivar la autenticación de dos factores para una IP dada"
+
+#: main/settings/2fa.php:255
+msgid "Whitelist IP range for Two Factor Authentication added successfully"
+msgstr "El rango de IP de la lista blanca para la autenticación de dos factores se ha añadido con éxito"
+
+#: main/settings/2fa.php:541
+msgid "Save Messages"
+msgstr "Guardar mensajes"
+
+#: main/settings/2fa.php:532
+msgid "Title for Security Answer"
+msgstr "Título para la respuesta de seguridad"
+
+#: main/settings/2fa.php:522
+msgid "Title for Security Question"
+msgstr "Título para la pregunta de seguridad"
+
+#: main/settings/2fa.php:512
+msgid "Title for OTP field"
+msgstr "Título para el campo de OTP"
+
+#: main/settings/2fa.php:492
+msgid "OTP via APP"
+msgstr "OTP por aplicación móvil"
+
+#: main/settings/2fa.php:487
+msgid "If you do not make changes below the default messages will be used !"
+msgstr "¡Si no haces ningún cambio abajo, se utilizarán los mensajes por defecto!"
+
+#: main/settings/2fa.php:486
+msgid "Customize the title for OTP field displayed to the user on the login form."
+msgstr "Personaliza el título del campo de OTP que se muestra al usuario en el formulario de acceso."
+
+#: main/settings/2fa.php:475
+msgid "Custom Messages for OTP"
+msgstr "Mensajes personalizados de OTP"
+
+#: main/settings/2fa.php:423
+msgid "If you do not make changes below the default email template will be used !"
+msgstr "¡Si no haces ningún cambio abajo, se utilizará la plantilla de correo electrónico por defecto!"
+
+#: main/settings/2fa.php:422
+msgid "Customize the email template to be used when sending the OTP to login via Email for 2FA."
+msgstr "Personaliza la plantilla de correo electrónico que se utilizará cuando se envíe la contraseña de un solo uso para acceder mediante correo de autenticación de dos factores."
+
+#: main/settings/2fa.php:411
+msgid "OTP via Email Template"
+msgstr "Plantilla de OTP por correo electrónico"
+
+#: main/settings/2fa.php:150
+msgid "Messages were saved successfully"
+msgstr "Los mensajes se guardaron con éxito"
+
+#: init.php:892
+msgid "Your Answer"
+msgstr "Tu respuesta"
+
+#: init.php:891
+msgid "Please answer your security question"
+msgstr "Por favor, responde a tu pregunta de seguridad"
+
+#: init.php:890
+msgid "One Time Password"
+msgstr "Contraseña de un solo uso"
+
+#: init.php:889
+msgid "Please enter the OTP emailed to you"
+msgstr "Por favor, introduce la contraseña que has recibido por correo"
+
+#: init.php:888
+msgid "Please enter the OTP as seen in your App"
+msgstr "Por favor, introduce la contraseña tal como aparece en la aplicación"
+
+#: main/settings/brute-force.php:1099
+msgid "Hours"
+msgstr "Horas"
+
+#: main/settings/brute-force.php:1092
+msgid "Minutes"
+msgstr "Minutos"
+
+#: init.php:877
+msgid "hour(s)"
+msgstr "hora(s)"
+
+#: init.php:876
+msgid "minute(s)"
+msgstr "minuto(s)"
+
+#: main/settings/checksum.php:378
+msgid "Remove Selected from Ignore List"
+msgstr "Quitar seleccionados de la lista de ignorados"
+
+#: main/settings/checksum.php:371
+msgid "No files have been added to the ignore list"
+msgstr "No se ha añadido ningún archivo a la lista de ignorados"
+
+#: main/settings/checksum.php:329
+msgid "Ignore List"
+msgstr "Lista de ignorados"
+
+#: main/settings/checksum.php:318
+msgid "Add Selected to Ignore List"
+msgstr "Añadir seleccionados a la lista de ignorados"
+
+#: main/settings/checksum.php:311
+msgid "This is great ! No file with any wrong checksum has been found."
+msgstr "¡Genial! No se ha encontrado ningún archivo con una suma de verificación incorrecta."
+
+#: main/settings/checksum.php:289 main/settings/checksum.php:346
+msgid "Should be"
+msgstr "Debería ser"
+
+#: main/settings/checksum.php:288 main/settings/checksum.php:345
+msgid "Found"
+msgstr "Encontrado"
+
+#: main/settings/checksum.php:263
+msgid "Mismatching Files"
+msgstr "Archivos erróneos"
+
+#: main/settings/checksum.php:253
+msgid "Do a Checksum Now"
+msgstr "Hacer una suma de comprobación ahora"
+
+#: main/settings/checksum.php:229
+msgid "If Checksum is enabled, what time of day should Loginizer do the check. Note : The check will be done on or after this time has elapsed as per the accesses being made."
+msgstr "A qué hora Loginizer debe hacer la comprobación si se activa la suma de verificación. Aviso: La comprobación se hará después de esta hora según vaya habiendo accesos."
+
+#: main/settings/checksum.php:228
+msgid "Time of Day"
+msgstr "Hora del día"
+
+#: main/settings/checksum.php:214
+msgid "If Checksum is enabled, at what frequency should the checksums be performed."
+msgstr "Con qué frecuencia debe realizarse la comprobación si se activa la suma de verificación."
+
+#: main/settings/checksum.php:213
+msgid "Checksum Frequency"
+msgstr "Frecuencia de suma de verificación"
+
+#: main/settings/checksum.php:205
+msgid "If checked, Loginizer will not email you the checksum results."
+msgstr "Si se marca, Loginizer no te enviará por correo electrónico los resultados de la suma de verificación."
+
+#: main/settings/checksum.php:204
+msgid "Disable Email of Checksum Results"
+msgstr "Desactivar el correo electrónico de los resultados de la suma de verificación"
+
+#: main/settings/checksum.php:196 main/settings/checksum.php:249
+msgid "If disabled, Loginizer will not check your sites core files against the WordPress checksum list."
+msgstr "Si se desactiva, Loginizer no comprobará los archivos del núcleo de tu sitio con la lista de suma de verificación de WordPress."
+
+#: main/settings/checksum.php:195
+msgid "Disable Checksum of WP Core"
+msgstr "Desactivar la suma de verificación del núcleo de WordPress"
+
+#: main/settings/checksum.php:185
+msgid "Checksum Settings"
+msgstr "Ajustes de suma de verificación (checksum)"
+
+#: main/settings/checksum.php:147
+msgid "The Checksum process was executed successfully"
+msgstr "El proceso de suma de verificación se ha ejecutado correctamente"
+
+#: main/settings/checksum.php:60
+msgid "Once a Month"
+msgstr "Una vez al mes"
+
+#: main/settings/checksum.php:59
+msgid "Once a Week"
+msgstr "Una vez a la semana"
+
+#: main/settings/checksum.php:58
+msgid "Once a Day"
+msgstr "Una vez al día"
+
+#: main/settings/security.php:871
+msgid "Save Domains(s)"
+msgstr "Guardar dominio(s)"
+
+#: main/settings/security.php:867
+msgid "Add New Domain"
+msgstr "Añadir un nuevo dominio"
+
+#: main/settings/security.php:840
+msgid "Domain(s)"
+msgstr "Domino(s)"
+
+#: main/settings/security.php:825
+msgid "New Registration Domain Blacklist"
+msgstr "Lista negra de dominios para registro"
+
+#: main/settings/security.php:806
+msgid "Save Username(s)"
+msgstr "Guardar nombre(s) de usuario"
+
+#: main/settings/security.php:802
+msgid "Add New Username"
+msgstr "Añadir un nuevo nombre de usuario"
+
+#: main/settings/security.php:776 main/settings/security.php:841
+msgid "You can use - <b>*</b> (Star)- as a wild card as well. Blank fields will be ignored"
+msgstr "También puedes usar — <b>*</b> (asterisco)— como comodín. Se ignorarán los campos en blanco"
+
+#: main/settings/security.php:775
+msgid "Username(s)"
+msgstr "Nombre(s) de usuario"
+
+#: main/settings/security.php:770
+msgid "Attackers generally use common usernames like <b>admin, administrator, or variations of your domain name / business name</b>. You can specify such username here and Loginizer will auto-blacklist the IP Address(s) of clients who try to use such username(s)."
+msgstr "Los atacantes suelen usar nombres de usuario comunes como <b>admin, administrator o variaciones de tu dominio o del nombre de tu empresa</b>. Puedes especificar aquí esos nombres de usuario para que Loginizer añada automáticamente a la lista negra la(s) dirección(es) IP de los clientes que intenten usarlos."
+
+#: main/settings/security.php:760
+msgid "Username Auto Blacklist"
+msgstr "Lista negra automática de nombres de usuario"
+
+#: main/settings/security.php:736
+msgid "Set the Username"
+msgstr "Establecer el nombre de usuario"
+
+#: main/settings/security.php:735
+msgid "Note: Username can be changed only for administrator users."
+msgstr "Nota: Solo se puede cambiar el nombre de los usuarios que sean administradores."
+
+#: main/settings/security.php:728
+msgid "The new username you want to set"
+msgstr "El nuevo nombre de usuario que quieres usar"
+
+#: main/settings/security.php:727
+msgid "New Username"
+msgstr "Nuevo nombre de usuario"
+
+#: main/settings/security.php:719
+msgid "The current username you want to change"
+msgstr "El usuario actual que quieres cambiar"
+
+#: main/settings/security.php:718
+msgid "Current Username"
+msgstr "Nombre de usuario actual"
+
+#: main/settings/security.php:713
+msgid "You can change the Admin Username from here to anything of your choice e.g. iamtheboss. This would make it very difficult for automated attack bots to know what is the admin username !"
+msgstr "Desde aquí puedes cambiar el nombre de usuario del administrador por otro de tu preferencia, p. ej., soyelamo. ¡Esto dificultará mucho que los bots automatizados de ataque sepan cuál es el nombre de usuario del administrador!"
+
+#: main/settings/security.php:703
+msgid "Change Admin Username"
+msgstr "Cambiar el nombre de usuario del administrador"
+
+#: main/settings/security.php:582
+msgid "Test New WP-Admin Slug"
+msgstr "Probar el nuevo slug de WP-Admin"
+
+#: main/settings/security.php:577
+msgid "I have setup .htaccess"
+msgstr "He configurado el .htaccess"
+
+#: main/settings/security.php:565
+msgid "Error message to show if someone accesses wp-admin"
+msgstr "Mensaje de error que mostrar a quien acceda a wp-admin"
+
+#: main/settings/security.php:564
+msgid "WP-Admin Error Message"
+msgstr "Mensaje de error de wp-admin"
+
+#: main/settings/security.php:556
+msgid "If set, then only the new admin slug will work and access to the Old Admin Slug i.e. wp-admin will be disabled. If anyone accesses wp-admin, a warning will be shown.<br><label>NOTE: Please use this option cautiously !</label>"
+msgstr "Si está establecido, solo funcionará el nuevo slug del administrador; el acceso al antiguo slug del administrador, es decir, wp-admin, se desactivará. Si alguien accede a wp-admin, se mostrará una advertencia.<br><label>NOTA: ¡Usa esta opción con cautela!</label>"
+
+#: main/settings/security.php:555
+msgid "Disable wp-admin access"
+msgstr "Desactivar el acceso a wp-admin"
+
+#: main/settings/security.php:547
+msgid "Set blank to reset to the original wp-admin URL"
+msgstr "Déjalo en blanco para restablecer la URL original de wp-admin"
+
+#: main/settings/security.php:546
+msgid "New wp-admin Slug"
+msgstr "Nuevo slug de wp-admin"
+
+#: main/settings/security.php:528
+msgid "Rename wp-admin access feature is supported only on Apache and Litespeed"
+msgstr "La característica de renombrar el acceso a wp-admin es compatible solo con Apache y Litespeed"
+
+#: main/settings/security.php:514
+msgid "Rename wp-admin access"
+msgstr "Renombrar el acceso a wp-admin"
+
+#: main/settings/security.php:501
+msgid "There was an error connecting to WordPress with the new Admin Slug. Did you configure everything properly ?"
+msgstr "Hubo un error al conectarse a WordPress con el nuevo slug de administración. ¿Lo configuraste todo correctamente?"
+
+#: main/settings/security.php:496
+msgid "Everything seems to be good. You can proceed to save the settings !"
+msgstr "Todo parece estar bien. ¡Puedes proceder a guardar la configuración!"
+
+#: main/settings/security.php:431
+msgid "Set blank to reset to the original XML-RPC URL"
+msgstr "Déjalo en blanco para restablecer la URL original de XML-RPC"
+
+#: main/settings/security.php:430
+msgid "New XML-RPC Slug"
+msgstr "Nuevo slug de XML-RPC"
+
+#: main/settings/security.php:422
+msgid "Disable Pingbacks"
+msgstr "Desactivar los pingbacks"
+
+#: main/admin.php:358 main/settings/security.php:414
+msgid "Disable XML-RPC"
+msgstr "Desactivar XML-RPC"
+
+#: main/settings/security.php:409
+msgid "WordPress's XML-RPC feature allows external services to access and modify content on the site. Services like the Jetpack plugin, the WordPress mobile app, pingbacks, etc make use of the XML-RPC feature. If this site does not use a service that requires XML-RPC, please <b>disable</b> the XML-RPC feature as it prevents attackers from using the feature to attack the site. If your service can use a custom XML-RPC URL, you can also <b>rename</b> the XML-RPC page to a <b>custom slug</b>."
+msgstr "La característica XML-RPC de WordPress permite que los servicios externos accedan y modifiquen el contenido del sitio. Los servicios como el plugin Jetpack, la aplicación móvil de WordPress, los pingbacks, etc., usan la característica XML-RPC. Si este sitio no utiliza un servicio que requiera XML-RPC, <b>desactiva</b> la característica XML-RPC ya que así se evita que los atacantes la utilicen para atacar el sitio. Si tu servicio puede usar una URL personalizada para XML-RPC, también puedes <b>cambiar el nombre</b> de la página XML-RPC a un <b>slug personalizado</b>."
+
+#: main/settings/security.php:399
+msgid "XML-RPC Settings"
+msgstr "Ajustes de XML-RPC"
+
+#: main/settings/security.php:351
+msgid "Access Secretly Only"
+msgstr "Solo acceso secreto"
+
+#: main/settings/security.php:337
+msgid "Set blank to reset to the original login URL"
+msgstr "Déjalo en blanco para restablecer la URL de acceso original"
+
+#: main/settings/security.php:336
+msgid "New Login Slug"
+msgstr "Nuevo slug de acceso"
+
+#: main/admin.php:357 main/admin.php:377 main/settings/security.php:321
+msgid "Rename Login Page"
+msgstr "Renombrar la página de acceso"
+
+#: main/settings/security.php:182
+msgid "Special characters are not allowed"
+msgstr "No se permiten caracteres especiales"
+
+#: main/settings/security.php:176
+msgid "The new Admin slug length must be greater than <b>4</b> chars and upto <b>50</b> chars long"
+msgstr "El nuevo slug del administrador debe tener entre <b>4</b> y <b>50</b> caracteres de largo"
+
+#: main/settings/security.php:170
+msgid "You have not confirmed that you have read the guide and configured .htaccess. Please read the guide, configure .htaccess and then save these settings and check this checkbox"
+msgstr "No has confirmado que has leído la guía y configurado .htaccess. Lee la guía, configura .htaccess y luego guarda los ajustes y marca la casilla de verificación."
+
+#: main/settings/security.php:110
+msgid "The user is not an administrator. Only administrator user's username can be changed."
+msgstr "El usuario no es un administrador. Solo se puede cambiar el nombre de usuario del usuario administrador."
+
+#: main/settings/security.php:105
+msgid "No user found with the current username provided"
+msgstr "No se ha encontrado ningún usuario con el nombre de usuario actual proporcionado"
+
+#: main/settings/security.php:98
+msgid "The new username is already assigned to another user"
+msgstr "El nuevo nombre de usuario ya está asignado a otro usuario"
+
+#: main/settings/security.php:89
+msgid "The username begins with <b>admin</b>. Please change it !"
+msgstr "El nombre de usuario comienza con <b>admin</b>. ¡Cámbialo!"
+
+#: main/settings/security.php:83
+msgid "New username is required"
+msgstr "Se requiere un nuevo nombre de usuario"
+
+#: main/settings/security.php:78
+msgid "Current username is required"
+msgstr "Se requiere el nombre de usuario actual"
+
+#: main/settings/security.php:53
+msgid "The XML-RPC slug length must be greater than <b>4</b> chars and upto <b>50</b> chars long"
+msgstr "El slug XML-RPC de acceso debe tener entre <b>4</b> y <b>50</b> caracteres de largo"
+
+#: main/settings/security.php:39
+msgid "The Login slug length must be greater than <b>4</b> chars and upto <b>50</b> chars long"
+msgstr "El slug de acceso debe tener entre <b>4</b> y <b>50</b> caracteres de largo"
+
+#: main/settings/2fa.php:439 main/settings/brute-force.php:1168
+#: main/settings/passwordless.php:134
+msgid "Set blank to reset to the default message"
+msgstr "Déjalo en blanco para restablecer el mensaje por defecto"
+
+#: main/settings/2fa.php:438 main/settings/brute-force.php:1167
+#: main/settings/passwordless.php:133
+msgid "Email Body"
+msgstr "Cuerpo del correo electrónico"
+
+#: main/settings/2fa.php:429 main/settings/brute-force.php:1154
+#: main/settings/passwordless.php:124
+msgid "Set blank to reset to the default subject"
+msgstr "Déjalo en blanco para restablecer el asunto por defecto"
+
+#: main/settings/2fa.php:428 main/settings/brute-force.php:1153
+#: main/settings/passwordless.php:123
+msgid "Email Subject"
+msgstr "Asunto del correo electrónico"
+
+#: main/settings/passwordless.php:118
+msgid "If a wrong username/email is given, the brute force checker will prevent any brute force attempt !"
+msgstr "¡Si se proporciona un nombre de usuario o correo electrónico incorrectos, el comprobador de fuerza bruta impedirá cualquier intento de fuerza bruta!"
+
+#: main/settings/passwordless.php:117
+msgid "If enabled, the login screen will just ask for the username <b>OR</b> email address of the user. If such a user exists, an email with a <b>One Time Login </b> link will be sent to the email address of the user. The link will be valid for 10 minutes only."
+msgstr "Si está activado, la pantalla de acceso pedirá únicamente el nombre de usuario <b>O</b> la dirección de correo electrónico del usuario. Si existe el usuario, se le enviará un correo con un enlace de <b>acceso de un solo uso</b> a su dirección de correo electrónico. El enlace será válido solo por 10 minutos."
+
+#: main/settings/passwordless.php:110
+msgid "Enable PasswordLess Login"
+msgstr "Activar el acceso PasswordLess (sin contraseña)"
+
+#: main/settings/passwordless.php:100
+msgid "PasswordLess Settings"
+msgstr "Ajustes de PasswordLess"
+
+#: main/settings/2fa.php:576
+msgid "Reset 2FA for User"
+msgstr "Restablecer la autenticación de dos factores para el usuario"
+
+#: main/settings/2fa.php:568
+msgid "The username or email of the user whose 2FA you would like to disable"
+msgstr "El nombre de usuario o correo electrónico del usuario para quien quieres desactivar la autenticación de dos factores"
+
+#: main/settings/2fa.php:567
+msgid "Username / Email"
+msgstr "Nombre de usuario / Correo electrónico"
+
+#: main/settings/2fa.php:562
+msgid "Here you can disable the Two Factor Authentication settings of a user. In the event a user has forgotten his secret answer or lost his Device App, he will not be able to login. You can reset such a users settings from here."
+msgstr "Aquí puedes desactivar los ajustes de la autenticación de dos factores para un usuario dado. Si llegara a olvidar su respuesta secreta o perder su dispositivo con la aplicación móvil, no podrá acceder. Puedes restablecer los ajustes de estos usuarios aquí."
+
+#: main/settings/2fa.php:551
+msgid "Disable Two Factor Authentication for a User"
+msgstr "Desactivar la autenticación de dos factores para un usuario dado"
+
+#: main/settings/2fa.php:369
+msgid "Select the Roles to which 2FA should be applied."
+msgstr "Selecciona los perfiles para los que debe aplicarse la autenticación de dos factores"
+
+#: main/settings/2fa.php:368
+msgid "Apply 2FA to Roles"
+msgstr "Aplicar autenticación de dos factores según perfiles"
+
+#: main/settings/2fa.php:360
+msgid "If the user does not have any 2FA method selected, this will enforce the OTP via Email for the users."
+msgstr "Si el usuario no tiene ningún método de autenticación de dos factores seleccionado, se forzará el uso de OTP por correo electrónico."
+
+#: main/settings/2fa.php:359
+msgid "Force OTP via Email"
+msgstr "Forzar OTP por correo electrónico"
+
+#: main/settings/2fa.php:348
+msgid "In this method the user will be asked to set a secret personal question and answer. After entering the correct login credentials, the user will be asked to answer the question set by them, thus increasing the security"
+msgstr "Este método consiste en pedirle al usuario que establezca una pregunta personal secreta y su correspondiente respuesta. Luego de ingresar las credenciales de acceso correctas, se le pedirá al usuario que responda a la pregunta que ha definido, lo que incrementa la seguridad."
+
+#: main/settings/2fa.php:347
+msgid "User Defined Question & Answer"
+msgstr "Pregunta y respuesta definidas por el usuario"
+
+#: main/settings/2fa.php:339
+msgid "After entering the correct login credentials, the user will be asked for the OTP. The OTP will be emailed to the user."
+msgstr "Luego de ingresar las credenciales de acceso correctas, se le pedirá al usuario una contraseña de un solo uso, la que se enviará por correo electrónico al usuario."
+
+#: main/settings/2fa.php:338 main/settings/2fa.php:502
+msgid "OTP via Email"
+msgstr "OTP por correo electrónico"
+
+#: main/settings/2fa.php:330
+msgid "After entering the correct login credentials, the user will be asked for the OTP. The OTP will be obtained from the users mobile app e.g. <b>Google Authenticator, Authy, etc.</b>"
+msgstr "Luego de ingresar las credenciales de acceso correctas, se le pedirá al usuario una contraseña de un solo uso, la que se obtendrá de una aplicación móvil del usuario como <b>Google Authenticator, Authy, etc.</b>"
+
+#: main/settings/2fa.php:329
+msgid "OTP via App"
+msgstr "OTP por aplicación móvil"
+
+#: main/settings/2fa.php:324
+msgid "Please choose from the following Two Factor Authentication methods. Each user can choose any one method from the ones enabled by you. You can enable all or anyone that you would like."
+msgstr "Elige entre los siguientes métodos de autenticación de dos factores. Cada usuario puede escoger cualquiera de los métodos que hayas activado. Puedes activarlos todos o aquellos que quieras."
+
+#: main/settings/2fa.php:313
+msgid "Two Factor Authentication Settings"
+msgstr "Ajustes de autenticación de dos factores"
+
+#: main/settings/2fa.php:102
+msgid "The user's 2FA settings have been reset"
+msgstr "Se han restablecido los ajustes de autenticación de dos factores del usuario"
+
+#: main/settings/2fa.php:88
+msgid "There is no such user with the email or username you submitted"
+msgstr "No existe ningún usuario con el correo electrónico o el nombre de usuario que has enviado"
+
+#: main/settings/recaptcha.php:658
+msgid "Hide CAPTCHA for logged in Users"
+msgstr "Ocultar captcha para los usuarios conectados"
+
+#: main/settings/recaptcha.php:617
+msgid "WooCommerce Checkout"
+msgstr "Página de finalizar compra de WooCommerce"
+
+#: main/settings/recaptcha.php:610
+msgid "Comment Form"
+msgstr "Formulario de comentarios"
+
+#: main/settings/recaptcha.php:606 main/settings/social_login.php:469
+#: main/settings/social_login.php:477 main/settings/social_login.php:542
+msgid "Registration Form"
+msgstr "Formulario de registro"
+
+#: main/settings/recaptcha.php:602
+msgid "Reset Password Form"
+msgstr "Formulario de restablecimiento de contraseña"
+
+#: main/settings/recaptcha.php:598
+msgid "Lost Password Form"
+msgstr "Formulario de contraseña perdida"
+
+#: main/settings/recaptcha.php:594 main/settings/social_login.php:362
+#: main/settings/social_login.php:460 main/settings/social_login.php:535
+msgid "Login Form"
+msgstr "Formulario de acceso"
+
+#: main/settings/recaptcha.php:589
+msgid "Show Captcha On"
+msgstr "Mostrar captcha en"
+
+#: main/settings/recaptcha.php:581
+msgid "Division (÷)"
+msgstr "División (÷)"
+
+#: main/settings/recaptcha.php:577
+msgid "Multiplication (x)"
+msgstr "Multiplicación (×)"
+
+#: main/settings/recaptcha.php:573
+msgid "Subtraction (-)"
+msgstr "Resta (-)"
+
+#: main/settings/recaptcha.php:569
+msgid "Addition (+)"
+msgstr "Suma (+)"
+
+#: main/settings/recaptcha.php:563
+msgid "The Mathematical operations to use for Captcha"
+msgstr "Las operaciones matemáticas que se usarán para el captcha"
+
+#: main/settings/recaptcha.php:562
+msgid "Mathematical operations"
+msgstr "Operaciones matemáticas"
+
+#: main/settings/recaptcha.php:554
+msgid "If selected the Captcha will be displayed in words rather than numbers"
+msgstr "Si se selecciona, el captcha se mostrará en palabras en lugar de números"
+
+#: main/settings/recaptcha.php:553
+msgid "Display Captcha in Words"
+msgstr "Mostrar el captcha en palabras"
+
+#: main/settings/recaptcha.php:545
+msgid "Enter the number of seconds, a user has to enter captcha value."
+msgstr "Introduce el número de segundos que tiene un usuario para introducir el valor del captcha."
+
+#: main/settings/recaptcha.php:544
+msgid "Captcha Time"
+msgstr "Duración del captcha"
+
+#: main/settings/recaptcha.php:536
+msgid "The text to be shown for the Captcha Field"
+msgstr "El texto que se mostrará para el campo del captcha"
+
+#: main/settings/recaptcha.php:535
+msgid "Captcha Text"
+msgstr "Texto del captcha"
+
+#: main/settings/recaptcha.php:379 main/settings/recaptcha.php:443
+#: main/settings/recaptcha.php:521
+msgid "Size"
+msgstr "Tamaño"
+
+#: main/settings/recaptcha.php:366 main/settings/recaptcha.php:431
+#: main/settings/recaptcha.php:509
+msgid "Language"
+msgstr "Idioma"
+
+#: main/settings/recaptcha.php:354 main/settings/recaptcha.php:419
+#: main/settings/recaptcha.php:496
+msgid "Theme"
+msgstr "Tema"
+
+#: main/settings/recaptcha.php:348 main/settings/recaptcha.php:413
+#: main/settings/recaptcha.php:490
+msgid "Secret Key"
+msgstr "Clave secreta"
+
+#: main/settings/recaptcha.php:339 main/settings/recaptcha.php:405
+msgid "Make sure you enter the correct keys as per the reCAPTCHA type selected above"
+msgstr "Asegúrate de introducir las claves correctas según el tipo de reCAPTCHA seleccionado arriba"
+
+#: main/settings/recaptcha.php:338 main/settings/recaptcha.php:404
+#: main/settings/recaptcha.php:482
+msgid "Site Key"
+msgstr "Clave del sitio"
+
+#: main/settings/recaptcha.php:400
+msgid "reCAPTCHA v2 - Invisible"
+msgstr "reCAPTCHA v2 - Invisible"
+
+#: main/settings/recaptcha.php:399
+msgid "reCAPTCHA v2 - Checkbox"
+msgstr "reCAPTCHA v2 - Casilla de verificación"
+
+#: main/settings/recaptcha.php:398
+msgid "reCAPTCHA v3"
+msgstr "reCAPTCHA v3"
+
+#: main/settings/recaptcha.php:394
+msgid "Choose the type of reCAPTCHA"
+msgstr "Elige el tipo de reCAPTCHA"
+
+#: main/settings/recaptcha.php:393
+msgid "reCAPTCHA type"
+msgstr "Tipo de reCAPTCHA"
+
+#: main/admin.php:576 main/settings/recaptcha.php:313
+msgid "reCAPTCHA Settings"
+msgstr "Ajustes de reCAPTCHA"
+
+#: main/settings/recaptcha.php:293
+msgid "reCAPTCHA has been disabled !"
+msgstr "¡Se ha desactivado el reCAPTCHA!"
+
+#: main/settings/recaptcha.php:248
+msgid "The reCAPTCHA language is invalid"
+msgstr "El idioma del reCAPTCHA no es válido"
+
+#: main/settings/recaptcha.php:243
+msgid "The reCAPTCHA size is invalid"
+msgstr "El tamaño del reCAPTCHA no es válido"
+
+#: main/settings/recaptcha.php:238
+msgid "The reCAPTCHA theme is invalid"
+msgstr "El tema del reCAPTCHA no es válido"
+
+#: main/settings/recaptcha.php:233
+msgid "The reCAPTCHA secret is invalid"
+msgstr "El secreto del reCAPTCHA no es válido"
+
+#: main/settings/recaptcha.php:228
+msgid "The reCAPTCHA key is invalid"
+msgstr "La clave del reCAPTCHA no es válida"
+
+#: main/settings/recaptcha.php:169
+msgid "The Captcha key was not submitted"
+msgstr "No se ha enviado la clave del captcha"
+
+#: main/settings/2fa.php:17 main/settings/checksum.php:42
+#: main/settings/passwordless.php:17 main/settings/recaptcha.php:21
+#: main/settings/security.php:17
+msgid "This feature is not available in the Free version."
+msgstr "Esta función no está disponible en la versión gratuita."
+
+#: main/settings/brute-force.php:1106
+msgid "Save Error Messages"
+msgstr "Guardar mensajes de error"
+
+#: main/settings/brute-force.php:1085
+msgid "Lockout Error"
+msgstr "Error de bloqueo"
+
+#: main/settings/brute-force.php:1078
+msgid "Attempts Left"
+msgstr "Intentos restantes"
+
+#: main/settings/brute-force.php:1071
+msgid "Blacklisted IP"
+msgstr "IP en lista negra"
+
+#: main/settings/brute-force.php:1064
+msgid "Failed Login Attempt"
+msgstr "Intento de acceso fallido"
+
+#: main/settings/brute-force.php:1054
+msgid "Error Messages"
+msgstr "Mensajes de error"
+
+#: main/settings/brute-force.php:1022
+msgid "No Whitelist IPs. You will see whitelisted IP ranges here."
+msgstr "Sin IP en lista blanca. Aquí verás los rangos de IP en la lista blanca."
+
+#: main/settings/brute-force.php:980
+msgid "Delete All Whitelist IP Range(s)"
+msgstr "Borrar todos los rangos de IP de la lista blanca"
+
+#: main/settings/brute-force.php:980
+msgid "Are you sure you want to delete all Whitelist IP Range(s) ?"
+msgstr "¿Estás seguro de que quieres borrar todos los rangos de IP de la lista blanca?"
+
+#: main/settings/2fa.php:671 main/settings/brute-force.php:979
+msgid "Add Whitelist IP Range"
+msgstr "Añadir un rango de IP a la lista blanca"
+
+#: main/settings/2fa.php:667 main/settings/brute-force.php:975
+msgid "End IP of the range. <br />If you want to whitelist single IP leave this field blank."
+msgstr "IP final del rango<br />Si quieres añadir solo una IP a la lista blanca, deja este campo en blanco."
+
+#: main/settings/brute-force.php:962
+msgid "Enter the IP you want to whitelist for login"
+msgstr "Ingresa la IP que deseas añadir a la lista blanca de acceso"
+
+#: main/settings/brute-force.php:956
+msgid "Whitelist IP"
+msgstr "Añadir IP a la lista blanca"
+
+#: main/settings/brute-force.php:919
+msgid "No Blacklist IPs. You will see blacklisted IP ranges here."
+msgstr "Sin IP en lista negra. Aquí verás los rangos de IP en la lista negra."
+
+#: main/settings/2fa.php:682 main/settings/brute-force.php:912
+#: main/settings/brute-force.php:1015
+msgid "Options"
+msgstr "Opciones"
+
+#: main/settings/2fa.php:681 main/settings/brute-force.php:911
+#: main/settings/brute-force.php:1014
+msgid "Date (DD/MM/YYYY)"
+msgstr "Fecha (DD/MM/AAAA)"
+
+#: main/settings/2fa.php:680 main/settings/brute-force.php:910
+#: main/settings/brute-force.php:1013
+msgid "End IP"
+msgstr "IP final"
+
+#: main/settings/brute-force.php:876
+msgid "Delete All Blacklist IP Range(s)"
+msgstr "Borrar todos los rangos de IP de la lista negra"
+
+#: main/settings/brute-force.php:876
+msgid "Are you sure you want to delete all Blacklist IP Range(s) ?"
+msgstr "¿Estás seguro de que quieres borrar todos los rangos de IP de la lista negra?"
+
+#: main/settings/brute-force.php:875
+msgid "Add Blacklist IP Range"
+msgstr "Añadir un rango de IP a la lista negra"
+
+#: main/settings/brute-force.php:871
+msgid "End IP of the range. <br />If you want to blacklist single IP leave this field blank."
+msgstr "IP final del rango<br />Si quieres añadir solo una IP a la lista negra, deja este campo en blanco."
+
+#: main/settings/2fa.php:665 main/settings/brute-force.php:869
+#: main/settings/brute-force.php:973
+msgid "End IP (Optional)"
+msgstr "IP final (opcional)"
+
+#: main/settings/2fa.php:661 main/settings/brute-force.php:865
+#: main/settings/brute-force.php:969
+msgid "Start IP of the range"
+msgstr "IP inicial del rango"
+
+#: main/settings/2fa.php:659 main/settings/2fa.php:679
+#: main/settings/brute-force.php:863 main/settings/brute-force.php:909
+#: main/settings/brute-force.php:967 main/settings/brute-force.php:1012
+msgid "Start IP"
+msgstr "IP inicial"
+
+#: main/settings/brute-force.php:857
+msgid "Enter the IP you want to blacklist from login"
+msgstr "Ingresa la IP que deseas añadir a la lista negra de acceso"
+
+#: main/settings/brute-force.php:851
+msgid "Blacklist IP"
+msgstr "Añadir IP a la lista negra"
+
+#: main/settings/brute-force.php:739
+msgid "Enable Brute Force Protection"
+msgstr "Activar la protección contra la fuerza bruta"
+
+#: main/settings/brute-force.php:735
+msgid "Disable Brute Force Protection"
+msgstr "Desactivar la protección contra la fuerza bruta"
+
+#: main/settings/2fa.php:383 main/settings/2fa.php:465
+#: main/settings/brute-force.php:730 main/settings/brute-force.php:1208
+#: main/settings/checksum.php:253 main/settings/passwordless.php:215
+#: main/settings/recaptcha.php:664 main/settings/security.php:384
+#: main/settings/security.php:438 main/settings/security.php:586
+#: main/settings/security.php:674 main/settings/security.php:951
+#: main/settings/social_login.php:526 main/settings/social_login.php:589
+#: main/settings/social_login.php:636
+msgid "Save Settings"
+msgstr "Guardar los ajustes"
+
+#: main/settings/brute-force.php:706
+msgid "lockouts <br />0 to disable email notifications"
+msgstr "bloqueos<br />0 para desactivar los avisos por correo electrónico"
+
+#: main/settings/brute-force.php:705
+msgid "after "
+msgstr "tras "
+
+#: main/settings/brute-force.php:703
+msgid "Email Notification"
+msgstr "Aviso por correo electrónico"
+
+#: main/settings/brute-force.php:511 main/settings/brute-force.php:699
+msgid "hours"
+msgstr "horas"
+
+#: main/settings/brute-force.php:697
+msgid "Reset Retries"
+msgstr "Restablecer los intentos"
+
+#: main/settings/brute-force.php:693
+msgid "hours. Extend Lockout time after Max Lockouts"
+msgstr "horas. Extiende la duración del bloqueo después de alcanzar el máximo de bloqueos."
+
+#: main/settings/brute-force.php:691
+msgid "Extend Lockout"
+msgstr "Ampliar el bloqueo"
+
+#: main/settings/brute-force.php:685
+msgid "Max Lockouts"
+msgstr "Máximo de bloqueos"
+
+#: main/settings/brute-force.php:681
+msgid "minutes"
+msgstr "minutos"
+
+#: main/settings/brute-force.php:679
+msgid "Lockout Time"
+msgstr "Duración del bloqueo"
+
+#: main/settings/brute-force.php:675
+msgid "Maximum failed attempts allowed before lockout"
+msgstr "Número máximo de intentos fallidos antes del bloqueo"
+
+#: main/settings/brute-force.php:673
+msgid "Max Retries"
+msgstr "Intentos máximos"
+
+#: main/settings/brute-force.php:649
+msgid "Clear All Logs"
+msgstr "Vaciar todos los registros"
+
+#: main/settings/brute-force.php:647
+msgid "Remove From Logs"
+msgstr "Borrar de los registros"
+
+#: main/settings/brute-force.php:610
+msgid "No Logs. You will see logs about failed login attempts here."
+msgstr "Sin registros. Aquí verás los registros de intentos de acceso fallidos."
+
+#: main/settings/brute-force.php:602
+msgid "URL Attacked"
+msgstr "URL atacada"
+
+#: main/settings/brute-force.php:601
+msgid "Lockouts Count"
+msgstr "Número de bloqueos"
+
+#: main/settings/brute-force.php:600
+msgid "Failed Attempts Count"
+msgstr "Número de intentos fallidos"
+
+#: main/settings/brute-force.php:599
+msgid "Last Failed Attempt  (DD/MM/YYYY)"
+msgstr "Último intento fallido (DD/MM/AAAA)"
+
+#: main/settings/brute-force.php:598
+msgid "Attempted Username"
+msgstr "Nombre de usuario ingresado"
+
+#: main/settings/brute-force.php:597
+msgid "IP"
+msgstr "IP"
+
+#: main/settings/brute-force.php:473
+msgid "Error messages were saved successfully"
+msgstr "Los mensajes de error se guardaron correctamente"
+
+#: main/settings/brute-force.php:323
+msgid "Whitelist IP range added successfully"
+msgstr "El rango de IP en lista blanca se añadió correctamente"
+
+#: main/settings/brute-force.php:285
+msgid "Blacklist IP range added successfully"
+msgstr "El rango de IP en lista negra se añadió correctamente"
+
+#: main/settings/2fa.php:237 main/settings/brute-force.php:1285
+msgid "The End IP is present in an existing range!"
+msgstr "¡La IP final está presente en un rango existente!"
+
+#: main/settings/2fa.php:231 main/settings/brute-force.php:1279
+msgid "The Start IP is present in an existing range !"
+msgstr "¡La IP inicial está presente en un rango existente!"
+
+#: main/settings/2fa.php:225 main/settings/brute-force.php:1273
+msgid "The Start IP or End IP submitted conflicts with an existing IP range !"
+msgstr "¡Hay un conflicto entre la IP inicial o final enviada y un rango de IP existente!"
+
+#: main/settings/2fa.php:210 main/settings/brute-force.php:1251
+msgid "The End IP cannot be smaller than the Start IP"
+msgstr "La IP final no puede ser menor que la IP inicial"
+
+#: main/settings/2fa.php:201 main/settings/brute-force.php:1242
+msgid "Please provide a valid end IP"
+msgstr "Ingresa una IP final válida"
+
+#: main/settings/2fa.php:197 main/settings/brute-force.php:1238
+msgid "Please provide a valid start IP"
+msgstr "Ingresa una IP inicial válida"
+
+#: main/settings/2fa.php:187 main/settings/brute-force.php:1229
+msgid "Please enter the Start IP"
+msgstr "Ingresa la IP inicial"
+
+#: main/settings/brute-force.php:245
+msgid "The selected IP Logs have been reset"
+msgstr "Los registros de IP seleccionados han sido restablecidos"
+
+#: main/settings/brute-force.php:232 main/settings/brute-force.php:416
+msgid "There are no IPs submitted"
+msgstr "No se han enviado IP"
+
+#: main/settings/brute-force.php:216
+msgid "All the IP Logs have been cleared"
+msgstr "Se han vaciado todos los registros de IP"
+
+#: main/settings/2fa.php:176 main/settings/brute-force.php:205
+msgid "The Whitelist IP range(s) have been cleared successfully"
+msgstr "El (los) rango(s) de IP en lista blanca se ha(n) borrado correctamente"
+
+#: main/settings/2fa.php:165 main/settings/brute-force.php:193
+msgid "The Whitelist IP range has been deleted successfully"
+msgstr "El rango de IP en lista blanca se ha borrado correctamente"
+
+#: main/settings/brute-force.php:177
+msgid "The Blacklist IP range(s) have been cleared successfully"
+msgstr "El (los) rango(s) de IP en lista negra se ha(n) borrado correctamente"
+
+#: main/settings/brute-force.php:165
+msgid "The Blacklist IP range has been deleted successfully"
+msgstr "El rango de IP en lista negra se ha borrado correctamente"
+
+#: main/settings/brute-force.php:51
+msgid "The Brute Force Protection feature is now enabled"
+msgstr "La característica de protección por fuerza bruta está ahora activada"
+
+#: main/settings/brute-force.php:37
+msgid "The Brute Force Protection feature is now disabled"
+msgstr "La característica de protección por fuerza bruta está ahora desactivada"
+
+#: main/settings/dashboard.php:413
+msgid "Actual"
+msgstr "Actuales"
+
+#: main/settings/dashboard.php:412
+msgid "Suggested"
+msgstr "Sugeridos"
+
+#: main/settings/checksum.php:287 main/settings/checksum.php:344
+#: main/settings/dashboard.php:411
+msgid "Relative Path"
+msgstr "Ruta relativa"
+
+#: main/settings/dashboard.php:398
+msgid "File Permissions"
+msgstr "Permisos de archivos"
+
+#: main/settings/dashboard.php:288
+msgid ".htaccess is writable"
+msgstr "El archivo .htaccess tiene permisos de escritura"
+
+#: main/settings/dashboard.php:281
+msgid "wp-config.php is writable"
+msgstr "El archivo wp-config.php tiene permisos de escritura"
+
+#: main/settings/dashboard.php:265
+msgid "Your IP Address"
+msgstr "Tu dirección IP"
+
+#: main/settings/dashboard.php:261
+msgid "Server's IP Address"
+msgstr "Dirección IP del servidor"
+
+#: main/settings/dashboard.php:257
+msgid "Path"
+msgstr "Ruta"
+
+#: main/settings/dashboard.php:253
+msgid "URL"
+msgstr "URL"
+
+#: main/settings/dashboard.php:246
+msgid "Loginizer Version"
+msgstr "Versión de Loginizer"
+
+#: main/settings/dashboard.php:235
+msgid "System Information"
+msgstr "Información del sistema"
+
+#: main/settings/dashboard.php:119
+msgid "Getting Started"
+msgstr "Primeros pasos"
+
+#: main/settings/2fa.php:285 main/settings/brute-force.php:148
+#: main/settings/checksum.php:142 main/settings/dashboard.php:105
+#: main/settings/passwordless.php:68 main/settings/recaptcha.php:288
+#: main/settings/security.php:289 main/settings/social_login.php:204
+msgid "The settings were saved successfully"
+msgstr "Los ajustes se han guardado correctamente"
+
+#: main/admin.php:503
+msgid "Review Loginizer"
+msgstr "Valorar Loginizer"
+
+#: main/admin.php:598
+msgid "Go Pro"
+msgstr "Hazte Pro"
+
+#: main/admin.php:598
+msgid "Loginizer Go Pro"
+msgstr "Pasar a Loginizer Pro"
+
+#: main/admin.php:591
+msgid "File Checksums"
+msgstr "Sumas de verificación de archivo"
+
+#: main/admin.php:591
+msgid "Loginizer File Checksums"
+msgstr "Sumas de verificación de archivo de Loginizer"
+
+#: main/admin.php:356 main/admin.php:379 main/admin.php:576
+msgid "reCAPTCHA"
+msgstr "reCAPTCHA"
+
+#: main/admin.php:571
+msgid "Two Factor Auth"
+msgstr "Autenticación de dos factores"
+
+#: main/admin.php:565
+msgid "PasswordLess"
+msgstr "PasswordLess"
+
+#: main/admin.php:554
+msgid "Brute Force"
+msgstr "Fuerza bruta"
+
+#: main/admin.php:554 main/settings/brute-force.php:663
+msgid "Brute Force Settings"
+msgstr "Ajustes de fuerza bruta"
+
+#: main/admin.php:549
+msgid "Rename Login"
+msgstr "Renombrar el acceso"
+
+#: main/admin.php:549 main/admin.php:588
+msgid "Security Settings"
+msgstr "Ajustes de seguridad"
+
+#: main/admin.php:546
+msgid "Security"
+msgstr "Seguridad"
+
+#: main/admin.php:541
+msgid "Dashboard"
+msgstr "Escritorio"
+
+#: main/admin.php:538
+msgid "Loginizer Security"
+msgstr "Seguridad de Loginizer"
+
+#: main/admin.php:538 main/admin.php:541
+msgid "Loginizer Dashboard"
+msgstr "Escritorio de Loginizer"
+
+#: main/admin.php:125
+msgctxt "Plugin action link label."
+msgid "Upgrade"
+msgstr "Actualizar"
+
+#: main/settings/recaptcha.php:329
+msgid "Math Captcha"
+msgstr "Captcha matemático"
+
+#: init.php:875
+msgid "You have exceeded maximum login retries<br /> Please try after"
+msgstr "Has superado al máximo de intentos de acceso<br /> Vuelve a intentarlo después de "
+
+#: init.php:874
+msgid "attempt(s) left"
+msgstr "intento(s) restantes"
+
+#: init.php:873
+msgid "Your IP has been blacklisted"
+msgstr "Tu IP se ha añadido a la lista negra"
+
+#: init.php:872
+msgid "Incorrect Username or Password"
+msgstr "Nombre de usuario o contraseña incorrectos"
+
+#. Author URI of the plugin
+#: loginizer.php
+msgid "https://www.loginizer.com"
+msgstr "https://www.loginizer.com"
+
+#. Author of the plugin
+#: loginizer.php
+msgid "Softaculous"
+msgstr "Softaculous"
+
+#. Description of the plugin
+#: loginizer.php
+msgid "Loginizer is a WordPress plugin which helps you fight against bruteforce attack by blocking login for the IP after it reaches maximum retries allowed. You can blacklist or whitelist IPs for login using Loginizer."
+msgstr "Loginizer es un plugin de WordPress que te ayuda a luchar contra ataques de fuerza bruta bloqueando el acceso de la IP después de alcanzar un máximo de intentos permitidos. Con Loginizer puedes añadir direcciones IP a la lista negra o a la lista blanca de acceso."
+
+#. Plugin URI of the plugin
+#: loginizer.php
+msgid "https://wordpress.org/extend/plugins/loginizer/"
+msgstr "https://es.wordpress.org/plugins/loginizer/"
+
+#. Plugin Name of the plugin
+#: loginizer.php
+msgid "Loginizer"
+msgstr "Loginizer"

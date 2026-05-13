@@ -1,0 +1,6 @@
+*.zip
+*.tar.gz
+*.sql
+/temp_archive/
+/node_modules/
+.env

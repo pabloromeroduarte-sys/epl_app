@@ -1,0 +1,1 @@
+import{R as e,a as s,j as a}from"./main.2.7.11.js";import{d as r}from"./react-router-dom.BLIKw1eE.js";function i(){const t=e(s);return r.useEffect(()=>{const o=new URLSearchParams(window.location.hash).get("code");o&&(t({code:o}),setTimeout(()=>{window.close()},100))},[]),a.jsx("h4",{children:"Auth Response Captured"})}export{i as default};

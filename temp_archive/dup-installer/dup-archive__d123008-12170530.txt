@@ -1,0 +1,1105 @@
+{
+    "dup_type": "lite",
+    "created": "2026-05-12 17:05:30",
+    "version_dup": "1.5.16",
+    "version_wp": "6.9.4",
+    "version_db": "10.6.24",
+    "version_php": "7.4.33",
+    "version_os": "Linux",
+    "blogname": "Liga de Padel",
+    "exportOnlyDB": 0,
+    "secure_on": 0,
+    "secure_pass": "$2a$08$fXAdxicOSFtBvqaNI7c2Oe45DePlg.l6NGZV3md5DMF1m..QhrS8m",
+    "dbhost": null,
+    "dbname": null,
+    "dbuser": null,
+    "cpnl_host": null,
+    "cpnl_user": null,
+    "cpnl_pass": null,
+    "cpnl_enable": null,
+    "wp_tableprefix": "wpqu_",
+    "mu_mode": 0,
+    "mu_generation": 0,
+    "mu_siteadmins": [
+        "admin"
+    ],
+    "subsites": [
+        {
+            "id": 1,
+            "domain": "epleague.cl",
+            "path": "\/",
+            "blogname": "Liga de Padel",
+            "blog_prefix": "wpqu_",
+            "filteredTables": [],
+            "adminUsers": [
+                {
+                    "ID": "1",
+                    "user_login": "admin",
+                    "id": "1"
+                },
+                {
+                    "ID": "15",
+                    "user_login": "marceloalvarezjara",
+                    "id": "15"
+                }
+            ],
+            "fullHomeUrl": "https:\/\/epleague.cl",
+            "fullSiteUrl": "https:\/\/epleague.cl",
+            "uploadPath": "wp-content\/uploads",
+            "fullUploadPath": "\/home\/epleague\/public_html\/wp-content\/uploads",
+            "fullUploadSafePath": "\/home\/epleague\/public_html\/wp-content\/uploads",
+            "fullUploadUrl": "https:\/\/epleague.cl\/wp-content\/uploads",
+            "filteredPaths": []
+        }
+    ],
+    "main_site_id": null,
+    "mu_is_filtered": false,
+    "license_limit": 0,
+    "license_type": 0,
+    "dbInfo": {
+        "buildMode": "MYSQLDUMP",
+        "charSetList": [
+            "utf8mb4",
+            "utf8mb3"
+        ],
+        "collationList": [
+            "utf8mb3_general_ci",
+            "utf8mb4_unicode_520_ci"
+        ],
+        "engineList": [
+            "InnoDB"
+        ],
+        "isTablesUpperCase": 0,
+        "isNameUpperCase": 0,
+        "name": "epleague_wp108",
+        "tablesBaseCount": 59,
+        "tablesFinalCount": 59,
+        "muFilteredTableCount": 0,
+        "tablesRowCount": 33107,
+        "tablesSizeOnDisk": 61128704,
+        "tablesList": {
+            "wpqu_actionscheduler_actions": {
+                "inaccurateRows": 1223,
+                "insertedRows": 1198,
+                "size": 1818624
+            },
+            "wpqu_actionscheduler_claims": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 32768
+            },
+            "wpqu_actionscheduler_groups": {
+                "inaccurateRows": 4,
+                "insertedRows": 5,
+                "size": 32768
+            },
+            "wpqu_actionscheduler_logs": {
+                "inaccurateRows": 3671,
+                "insertedRows": 3587,
+                "size": 1490944
+            },
+            "wpqu_automatorwp_actions": {
+                "inaccurateRows": 3,
+                "insertedRows": 3,
+                "size": 32768
+            },
+            "wpqu_automatorwp_actions_meta": {
+                "inaccurateRows": 4,
+                "insertedRows": 4,
+                "size": 49152
+            },
+            "wpqu_automatorwp_automations": {
+                "inaccurateRows": 0,
+                "insertedRows": 1,
+                "size": 32768
+            },
+            "wpqu_automatorwp_automations_meta": {
+                "inaccurateRows": 0,
+                "insertedRows": 1,
+                "size": 49152
+            },
+            "wpqu_automatorwp_logs": {
+                "inaccurateRows": 213,
+                "insertedRows": 260,
+                "size": 98304
+            },
+            "wpqu_automatorwp_logs_meta": {
+                "inaccurateRows": 86,
+                "insertedRows": 104,
+                "size": 49152
+            },
+            "wpqu_automatorwp_triggers": {
+                "inaccurateRows": 0,
+                "insertedRows": 1,
+                "size": 32768
+            },
+            "wpqu_automatorwp_triggers_meta": {
+                "inaccurateRows": 0,
+                "insertedRows": 1,
+                "size": 49152
+            },
+            "wpqu_commentmeta": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 49152
+            },
+            "wpqu_comments": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 98304
+            },
+            "wpqu_duplicator_packages": {
+                "inaccurateRows": 1,
+                "insertedRows": 1,
+                "size": 32768
+            },
+            "wpqu_e_events": {
+                "inaccurateRows": 9,
+                "insertedRows": 9,
+                "size": 32768
+            },
+            "wpqu_frmt_form_entry": {
+                "inaccurateRows": 67,
+                "insertedRows": 73,
+                "size": 98304
+            },
+            "wpqu_frmt_form_entry_meta": {
+                "inaccurateRows": 542,
+                "insertedRows": 582,
+                "size": 360448
+            },
+            "wpqu_frmt_form_reports": {
+                "inaccurateRows": 0,
+                "insertedRows": 1,
+                "size": 16384
+            },
+            "wpqu_frmt_form_views": {
+                "inaccurateRows": 26,
+                "insertedRows": 42,
+                "size": 81920
+            },
+            "wpqu_gosmtp_email_logs": {
+                "inaccurateRows": 259,
+                "insertedRows": 347,
+                "size": 1589248
+            },
+            "wpqu_links": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 32768
+            },
+            "wpqu_loginizer_logs": {
+                "inaccurateRows": 0,
+                "insertedRows": 1,
+                "size": 16384
+            },
+            "wpqu_options": {
+                "inaccurateRows": 747,
+                "insertedRows": 741,
+                "size": 4341760
+            },
+            "wpqu_pmxe_exports": {
+                "inaccurateRows": 12,
+                "insertedRows": 12,
+                "size": 409600
+            },
+            "wpqu_pmxe_google_cats": {
+                "inaccurateRows": 5512,
+                "insertedRows": 5371,
+                "size": 409600
+            },
+            "wpqu_pmxe_posts": {
+                "inaccurateRows": 1669,
+                "insertedRows": 1729,
+                "size": 131072
+            },
+            "wpqu_pmxe_templates": {
+                "inaccurateRows": 2,
+                "insertedRows": 2,
+                "size": 49152
+            },
+            "wpqu_pmxi_files": {
+                "inaccurateRows": 12,
+                "insertedRows": 13,
+                "size": 16384
+            },
+            "wpqu_pmxi_hash": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 16384
+            },
+            "wpqu_pmxi_history": {
+                "inaccurateRows": 0,
+                "insertedRows": 1,
+                "size": 16384
+            },
+            "wpqu_pmxi_images": {
+                "inaccurateRows": 2,
+                "insertedRows": 3,
+                "size": 16384
+            },
+            "wpqu_pmxi_imports": {
+                "inaccurateRows": 11,
+                "insertedRows": 12,
+                "size": 180224
+            },
+            "wpqu_pmxi_posts": {
+                "inaccurateRows": 1707,
+                "insertedRows": 1760,
+                "size": 147456
+            },
+            "wpqu_pmxi_templates": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 16384
+            },
+            "wpqu_postmeta": {
+                "inaccurateRows": 10921,
+                "insertedRows": 8490,
+                "size": 28114944
+            },
+            "wpqu_posts": {
+                "inaccurateRows": 1119,
+                "insertedRows": 1204,
+                "size": 13271040
+            },
+            "wpqu_snippets": {
+                "inaccurateRows": 30,
+                "insertedRows": 33,
+                "size": 1146880
+            },
+            "wpqu_termmeta": {
+                "inaccurateRows": 33,
+                "insertedRows": 38,
+                "size": 49152
+            },
+            "wpqu_terms": {
+                "inaccurateRows": 58,
+                "insertedRows": 59,
+                "size": 49152
+            },
+            "wpqu_term_relationships": {
+                "inaccurateRows": 728,
+                "insertedRows": 736,
+                "size": 114688
+            },
+            "wpqu_term_taxonomy": {
+                "inaccurateRows": 53,
+                "insertedRows": 59,
+                "size": 49152
+            },
+            "wpqu_uap_action_log": {
+                "inaccurateRows": 128,
+                "insertedRows": 134,
+                "size": 98304
+            },
+            "wpqu_uap_action_log_meta": {
+                "inaccurateRows": 927,
+                "insertedRows": 1310,
+                "size": 2834432
+            },
+            "wpqu_uap_api_log": {
+                "inaccurateRows": 90,
+                "insertedRows": 134,
+                "size": 1605632
+            },
+            "wpqu_uap_api_log_response": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 16384
+            },
+            "wpqu_uap_closure_log": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 81920
+            },
+            "wpqu_uap_closure_log_meta": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 65536
+            },
+            "wpqu_uap_options": {
+                "inaccurateRows": 34,
+                "insertedRows": 35,
+                "size": 49152
+            },
+            "wpqu_uap_recipe_count": {
+                "inaccurateRows": 3,
+                "insertedRows": 3,
+                "size": 32768
+            },
+            "wpqu_uap_recipe_log": {
+                "inaccurateRows": 126,
+                "insertedRows": 134,
+                "size": 65536
+            },
+            "wpqu_uap_recipe_log_meta": {
+                "inaccurateRows": 332,
+                "insertedRows": 402,
+                "size": 98304
+            },
+            "wpqu_uap_recipe_throttle_log": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 49152
+            },
+            "wpqu_uap_tokens_log": {
+                "inaccurateRows": 100,
+                "insertedRows": 134,
+                "size": 147456
+            },
+            "wpqu_uap_trigger_log": {
+                "inaccurateRows": 128,
+                "insertedRows": 134,
+                "size": 98304
+            },
+            "wpqu_uap_trigger_log_meta": {
+                "inaccurateRows": 832,
+                "insertedRows": 1029,
+                "size": 638976
+            },
+            "wpqu_um_metadata": {
+                "inaccurateRows": 0,
+                "insertedRows": 0,
+                "size": 65536
+            },
+            "wpqu_usermeta": {
+                "inaccurateRows": 1633,
+                "insertedRows": 1705,
+                "size": 393216
+            },
+            "wpqu_users": {
+                "inaccurateRows": 50,
+                "insertedRows": 51,
+                "size": 65536
+            }
+        },
+        "lowerCaseTableNames": 0,
+        "dbEngine": "MariaDB",
+        "version": "10.6.24",
+        "versionComment": "MariaDB Server",
+        "viewCount": 4,
+        "procCount": 0,
+        "funcCount": 0,
+        "triggerList": []
+    },
+    "packInfo": {
+        "packageId": 1,
+        "packageName": "20260512_ligadepadel",
+        "packageHash": "d123008-12170530",
+        "secondaryHash": "c728bd1-12170530"
+    },
+    "fileInfo": {
+        "dirCount": 2653,
+        "fileCount": 16732,
+        "size": 231060101
+    },
+    "wpInfo": {
+        "version": "6.9.4",
+        "is_multisite": false,
+        "network_id": 1,
+        "targetRoot": "\/home\/epleague\/public_html",
+        "targetPaths": [
+            "\/home\/epleague\/public_html"
+        ],
+        "adminUsers": [
+            {
+                "ID": "1",
+                "user_login": "admin",
+                "id": "1"
+            },
+            {
+                "ID": "15",
+                "user_login": "marceloalvarezjara",
+                "id": "15"
+            }
+        ],
+        "configs": {
+            "defines": {
+                "ABSPATH": {
+                    "value": "\/home\/epleague\/public_html\/",
+                    "inWpConfig": true
+                },
+                "DB_CHARSET": {
+                    "value": "utf8",
+                    "inWpConfig": true
+                },
+                "DB_COLLATE": {
+                    "value": "",
+                    "inWpConfig": true
+                },
+                "AUTH_KEY": {
+                    "value": "3huquhlunzmkda8jouydersjfzpwsjki66iya0rvymlps476gtastvs5m6p2cad3",
+                    "inWpConfig": true
+                },
+                "SECURE_AUTH_KEY": {
+                    "value": "zcf1tydcjpbva1qebi3odjfqmjljnzllkupipywfwu403xvdlec9nizznbgqx6wl",
+                    "inWpConfig": true
+                },
+                "LOGGED_IN_KEY": {
+                    "value": "hwkp2zzaioz03xatpegydskc2ndposph7atlllwcqgouf8vou7dqov0qniaxj3fg",
+                    "inWpConfig": true
+                },
+                "NONCE_KEY": {
+                    "value": "8lqpxtdl9ndorixnceltw4gla4fcw00fmkvusik1qadwkhcuwurcdguvn6q11e9n",
+                    "inWpConfig": true
+                },
+                "AUTH_SALT": {
+                    "value": "rect2idripgrxawujyqbhvpowxyhgmy4dtkbfwnjdcymkeyvzbd4snz4dn3cieto",
+                    "inWpConfig": true
+                },
+                "SECURE_AUTH_SALT": {
+                    "value": "qrcafehzho6yaqwjkpmtamaa8sru22ybsizrdxrxxee9veizveut5bjqykluo50f",
+                    "inWpConfig": true
+                },
+                "LOGGED_IN_SALT": {
+                    "value": "cg0wstd1cj3ucyl2eq5lhdxucj1zytah6aol8azrjryn4fk9rhyxsemijiylffy8",
+                    "inWpConfig": true
+                },
+                "NONCE_SALT": {
+                    "value": "qgztextizy2kiw4ilyjqm1k9utvlrctocl1mtkmrdhpiamzkrdl2mj8ljpwmkk6k",
+                    "inWpConfig": true
+                },
+                "WP_CONTENT_DIR": {
+                    "value": "\/home\/epleague\/public_html\/wp-content",
+                    "inWpConfig": false
+                },
+                "WP_CONTENT_URL": {
+                    "value": "https:\/\/epleague.cl\/wp-content",
+                    "inWpConfig": false
+                },
+                "WP_PLUGIN_DIR": {
+                    "value": "\/home\/epleague\/public_html\/wp-content\/plugins",
+                    "inWpConfig": false
+                },
+                "WP_PLUGIN_URL": {
+                    "value": "https:\/\/epleague.cl\/wp-content\/plugins",
+                    "inWpConfig": false
+                },
+                "PLUGINDIR": {
+                    "value": "wp-content\/plugins",
+                    "inWpConfig": false
+                },
+                "AUTOSAVE_INTERVAL": {
+                    "value": 60,
+                    "inWpConfig": false
+                },
+                "WP_POST_REVISIONS": {
+                    "value": true,
+                    "inWpConfig": false
+                },
+                "COOKIE_DOMAIN": {
+                    "value": "",
+                    "inWpConfig": false
+                },
+                "MULTISITE": {
+                    "value": false,
+                    "inWpConfig": false
+                },
+                "WP_DEBUG": {
+                    "value": false,
+                    "inWpConfig": true
+                },
+                "SCRIPT_DEBUG": {
+                    "value": false,
+                    "inWpConfig": false
+                },
+                "WP_DEBUG_LOG": {
+                    "value": false,
+                    "inWpConfig": false
+                },
+                "WP_DEBUG_DISPLAY": {
+                    "value": true,
+                    "inWpConfig": false
+                },
+                "WP_MEMORY_LIMIT": {
+                    "value": "40M",
+                    "inWpConfig": false
+                },
+                "WP_MAX_MEMORY_LIMIT": {
+                    "value": "2048M",
+                    "inWpConfig": false
+                },
+                "WP_CACHE": {
+                    "value": true,
+                    "inWpConfig": true
+                },
+                "WP_LANG_DIR": {
+                    "value": "\/home\/epleague\/public_html\/wp-content\/languages",
+                    "inWpConfig": false
+                },
+                "FS_CHMOD_DIR": {
+                    "value": 493,
+                    "inWpConfig": false
+                },
+                "FS_CHMOD_FILE": {
+                    "value": 420,
+                    "inWpConfig": false
+                },
+                "DISABLE_WP_CRON": {
+                    "value": true,
+                    "inWpConfig": true
+                },
+                "WP_CRON_LOCK_TIMEOUT": {
+                    "value": 60,
+                    "inWpConfig": false
+                },
+                "COOKIEPATH": {
+                    "value": "\/",
+                    "inWpConfig": false
+                },
+                "SITECOOKIEPATH": {
+                    "value": "\/",
+                    "inWpConfig": false
+                },
+                "ADMIN_COOKIE_PATH": {
+                    "value": "\/wp-admin",
+                    "inWpConfig": false
+                },
+                "PLUGINS_COOKIE_PATH": {
+                    "value": "\/wp-content\/plugins",
+                    "inWpConfig": false
+                },
+                "TEMPLATEPATH": {
+                    "value": "\/home\/epleague\/public_html\/wp-content\/themes\/hello-elementor",
+                    "inWpConfig": false
+                },
+                "STYLESHEETPATH": {
+                    "value": "\/home\/epleague\/public_html\/wp-content\/themes\/hello-elementor",
+                    "inWpConfig": false
+                },
+                "EMPTY_TRASH_DAYS": {
+                    "value": 30,
+                    "inWpConfig": false
+                },
+                "DISALLOW_FILE_EDIT": {
+                    "value": true,
+                    "inWpConfig": true
+                },
+                "FORCE_SSL_ADMIN": {
+                    "value": true,
+                    "inWpConfig": false
+                },
+                "WPMU_PLUGIN_DIR": {
+                    "value": "\/home\/epleague\/public_html\/wp-content\/mu-plugins",
+                    "inWpConfig": false
+                },
+                "WPMU_PLUGIN_URL": {
+                    "value": "https:\/\/epleague.cl\/wp-content\/mu-plugins",
+                    "inWpConfig": false
+                },
+                "MUPLUGINDIR": {
+                    "value": "wp-content\/mu-plugins",
+                    "inWpConfig": false
+                }
+            },
+            "realValues": {
+                "siteUrl": "https:\/\/epleague.cl",
+                "homeUrl": "https:\/\/epleague.cl",
+                "loginUrl": "https:\/\/epleague.cl\/wp-login.php",
+                "contentUrl": "https:\/\/epleague.cl\/wp-content",
+                "uploadBaseUrl": "https:\/\/epleague.cl\/wp-content\/uploads",
+                "pluginsUrl": "https:\/\/epleague.cl\/wp-content\/plugins",
+                "mupluginsUrl": "https:\/\/epleague.cl\/wp-content\/mu-plugins",
+                "themesUrl": "https:\/\/epleague.cl\/wp-content\/themes",
+                "originalPaths": {
+                    "home": "\/home\/epleague\/public_html",
+                    "abs": "\/home\/epleague\/public_html",
+                    "wpconfig": "\/home\/epleague\/public_html",
+                    "wpcontent": "\/home\/epleague\/public_html\/wp-content",
+                    "uploads": "\/home\/epleague\/public_html\/wp-content\/uploads",
+                    "plugins": "\/home\/epleague\/public_html\/wp-content\/plugins",
+                    "muplugins": "\/home\/epleague\/public_html\/wp-content\/mu-plugins",
+                    "themes": "\/home\/epleague\/public_html\/wp-content\/themes"
+                },
+                "archivePaths": {
+                    "home": "\/home\/epleague\/public_html",
+                    "abs": "\/home\/epleague\/public_html",
+                    "wpconfig": "\/home\/epleague\/public_html",
+                    "wpcontent": "\/home\/epleague\/public_html\/wp-content",
+                    "uploads": "\/home\/epleague\/public_html\/wp-content\/uploads",
+                    "plugins": "\/home\/epleague\/public_html\/wp-content\/plugins",
+                    "muplugins": "\/home\/epleague\/public_html\/wp-content\/mu-plugins",
+                    "themes": "\/home\/epleague\/public_html\/wp-content\/themes"
+                }
+            }
+        },
+        "plugins": {
+            "akismet\/akismet.php": {
+                "slug": "akismet\/akismet.php",
+                "name": "Akismet Anti-spam: Spam Protection",
+                "version": "5.6",
+                "pluginURI": "https:\/\/akismet.com\/",
+                "author": "Automattic - Anti-spam Team",
+                "authorURI": "https:\/\/automattic.com\/wordpress-plugins\/",
+                "description": "Used by millions, Akismet is quite possibly the best way in the world to <strong>protect your blog from spam<\/strong>. Akismet Anti-spam keeps your site protected even while you sleep. To get started: activate the Akismet plugin and then go to your Akismet Settings page to set up your API key.",
+                "title": "Akismet Anti-spam: Spam Protection",
+                "networkActive": false,
+                "active": false,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "backuply\/backuply.php": {
+                "slug": "backuply\/backuply.php",
+                "name": "Backuply",
+                "version": "1.5.1",
+                "pluginURI": "http:\/\/wordpress.org\/plugins\/backuply\/",
+                "author": "Softaculous",
+                "authorURI": "https:\/\/backuply.com",
+                "description": "Backuply is a Wordpress Backup plugin. Backups are the best form of security and safety a website can have.",
+                "title": "Backuply",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "backuply-pro\/backuply-pro.php": {
+                "slug": "backuply-pro\/backuply-pro.php",
+                "name": "Backuply Pro",
+                "version": "1.5.1",
+                "pluginURI": "https:\/\/backuply.com\/",
+                "author": "Softaculous",
+                "authorURI": "https:\/\/backuply.com",
+                "description": "Backuply is a Wordpress Backup plugin. Backups are the best form of security and safety a website can have.",
+                "title": "Backuply Pro",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "bit-integrations\/bitwpfi.php": {
+                "slug": "bit-integrations\/bitwpfi.php",
+                "name": "Bit Integrations",
+                "version": "2.7.11",
+                "pluginURI": "https:\/\/bitapps.pro\/bit-integrations",
+                "author": "Automation & Integration Plugin - Bit Apps",
+                "authorURI": "https:\/\/bitapps.pro",
+                "description": "Bit Integrations is a platform that integrates with over 300+ different platforms to help with various tasks on your WordPress site, like WooCommerce, Form builder, Page builder, LMS, Sales funnels, Bookings, CRM, Webhooks, Email marketing, Social media and Spreadsheets, etc",
+                "title": "Bit Integrations",
+                "networkActive": false,
+                "active": false,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "classic-editor\/classic-editor.php": {
+                "slug": "classic-editor\/classic-editor.php",
+                "name": "Classic Editor",
+                "version": "1.6.7",
+                "pluginURI": "https:\/\/wordpress.org\/plugins\/classic-editor\/",
+                "author": "WordPress Contributors",
+                "authorURI": "https:\/\/github.com\/WordPress\/classic-editor\/",
+                "description": "Enables the WordPress classic editor and the old-style Edit Post screen with TinyMCE, Meta Boxes, etc. Supports the older plugins that extend this screen.",
+                "title": "Classic Editor",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "code-snippets\/code-snippets.php": {
+                "slug": "code-snippets\/code-snippets.php",
+                "name": "Code Snippets",
+                "version": "3.9.5",
+                "pluginURI": "https:\/\/codesnippets.pro",
+                "author": "Code Snippets Pro",
+                "authorURI": "https:\/\/codesnippets.pro",
+                "description": "An easy, clean and simple way to run code snippets on your site. No need to edit to your theme's functions.php file again!",
+                "title": "Code Snippets",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "cookieadmin\/cookieadmin.php": {
+                "slug": "cookieadmin\/cookieadmin.php",
+                "name": "CookieAdmin - Cookie Consent Banner",
+                "version": "1.1.5",
+                "pluginURI": "https:\/\/cookieadmin.net",
+                "author": "Softaculous",
+                "authorURI": "https:\/\/www.softaculous.com",
+                "description": "CookieAdmin provides easy to configure cookie consent banner with GDPR and CCPA law support.",
+                "title": "CookieAdmin - Cookie Consent Banner",
+                "networkActive": false,
+                "active": false,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "cookieadmin-pro\/cookieadmin-pro.php": {
+                "slug": "cookieadmin-pro\/cookieadmin-pro.php",
+                "name": "CookieAdmin Pro",
+                "version": "1.1.5",
+                "pluginURI": "https:\/\/cookieadmin.net",
+                "author": "Softaculous",
+                "authorURI": "https:\/\/www.softaculous.com",
+                "description": "CookieAdmin provides easy to configure cookie consent banner with GDPR and CCPA law support.",
+                "title": "CookieAdmin Pro",
+                "networkActive": false,
+                "active": false,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "custom-post-type-ui\/custom-post-type-ui.php": {
+                "slug": "custom-post-type-ui\/custom-post-type-ui.php",
+                "name": "Custom Post Type UI",
+                "version": "1.18.3",
+                "pluginURI": "https:\/\/github.com\/WebDevStudios\/custom-post-type-ui\/",
+                "author": "WebDevStudios",
+                "authorURI": "https:\/\/webdevstudios.com\/",
+                "description": "Admin UI panel for registering custom post types and taxonomies",
+                "title": "Custom Post Type UI",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "duplicator\/duplicator.php": {
+                "slug": "duplicator\/duplicator.php",
+                "name": "Duplicator",
+                "version": "1.5.16",
+                "pluginURI": "https:\/\/duplicator.com\/",
+                "author": "Duplicator",
+                "authorURI": "https:\/\/duplicator.com\/",
+                "description": "Migrate and backup a copy of your WordPress files and database. Duplicate and move a site from one location to another quickly.",
+                "title": "Duplicator",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "elementor\/elementor.php": {
+                "slug": "elementor\/elementor.php",
+                "name": "Elementor",
+                "version": "3.35.5",
+                "pluginURI": "https:\/\/elementor.com\/?utm_source=wp-plugins&utm_campaign=plugin-uri&utm_medium=wp-dash",
+                "author": "Elementor.com",
+                "authorURI": "https:\/\/elementor.com\/?utm_source=wp-plugins&utm_campaign=author-uri&utm_medium=wp-dash",
+                "description": "The Elementor Website Builder has it all: drag and drop page builder, pixel perfect design, mobile responsive editing, and more. Get started now!",
+                "title": "Elementor",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "forminator\/forminator.php": {
+                "slug": "forminator\/forminator.php",
+                "name": "Forminator",
+                "version": "1.51.1",
+                "pluginURI": "https:\/\/wpmudev.com\/project\/forminator\/",
+                "author": "WPMU DEV",
+                "authorURI": "https:\/\/wpmudev.com",
+                "description": "Build powerful, customizable forms with ease using Forminator\u2019s drag-and-drop builder, conditional logic, payment support, real-time analytics, and seamless integrations\u2014no coding needed.",
+                "title": "Forminator",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "gosmtp\/gosmtp.php": {
+                "slug": "gosmtp\/gosmtp.php",
+                "name": "GoSMTP",
+                "version": "1.1.8",
+                "pluginURI": "https:\/\/gosmtp.net",
+                "author": "Softaculous Team",
+                "authorURI": "https:\/\/softaculous.com",
+                "description": "Send emails from your WordPress site using your preferred SMTP provider like Gmail, Outlook, AWS, Zoho, SMTP.com, Brevo (formerly Sendinblue), Mailgun, Postmark, Sendgrid, Sparkpost, Sendlayer or any custom SMTP provider.",
+                "title": "GoSMTP",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "gosmtp-pro\/gosmtp-pro.php": {
+                "slug": "gosmtp-pro\/gosmtp-pro.php",
+                "name": "GoSMTP Pro",
+                "version": "1.1.8",
+                "pluginURI": "https:\/\/gosmtp.net",
+                "author": "Softaculous Team",
+                "authorURI": "https:\/\/softaculous.com",
+                "description": "Send emails from your WordPress site using your preferred SMTP provider like Gmail, Outlook, AWS, Zoho, SMTP.com, Brevo (formerly Sendinblue), Mailgun, Postmark, Sendgrid, Sparkpost, Sendlayer or any custom SMTP provider.",
+                "title": "GoSMTP Pro",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "hello.php": {
+                "slug": "hello.php",
+                "name": "Hello Dolly",
+                "version": "1.7.2",
+                "pluginURI": "http:\/\/wordpress.org\/plugins\/hello-dolly\/",
+                "author": "Matt Mullenweg",
+                "authorURI": "http:\/\/ma.tt\/",
+                "description": "This is not just a plugin, it symbolizes the hope and enthusiasm of an entire generation summed up in two words sung most famously by Louis Armstrong: Hello, Dolly. When activated you will randomly see a lyric from <cite>Hello, Dolly<\/cite> in the upper right of your admin screen on every page.",
+                "title": "Hello Dolly",
+                "networkActive": false,
+                "active": false,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "loginizer\/loginizer.php": {
+                "slug": "loginizer\/loginizer.php",
+                "name": "Loginizer",
+                "version": "2.0.5",
+                "pluginURI": "https:\/\/wordpress.org\/extend\/plugins\/loginizer\/",
+                "author": "Softaculous",
+                "authorURI": "https:\/\/www.loginizer.com",
+                "description": "Loginizer is a WordPress plugin which helps you fight against bruteforce attack by blocking login for the IP after it reaches maximum retries allowed. You can blacklist or whitelist IPs for login using Loginizer.",
+                "title": "Loginizer",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "loginizer-security\/loginizer-security.php": {
+                "slug": "loginizer-security\/loginizer-security.php",
+                "name": "Loginizer Pro",
+                "version": "2.0.5",
+                "pluginURI": "https:\/\/loginizer.com",
+                "author": "Softaculous",
+                "authorURI": "https:\/\/www.loginizer.com",
+                "description": "Loginizer is a WordPress plugin which helps you fight against bruteforce attack by blocking login for the IP after it reaches maximum retries allowed. You can blacklist or whitelist IPs for login using Loginizer.",
+                "title": "Loginizer Pro",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "pagelayer\/pagelayer.php": {
+                "slug": "pagelayer\/pagelayer.php",
+                "name": "Pagelayer",
+                "version": "2.0.8",
+                "pluginURI": "http:\/\/wordpress.org\/plugins\/pagelayer\/",
+                "author": "Pagelayer Team",
+                "authorURI": "https:\/\/pagelayer.com\/",
+                "description": "Pagelayer is a WordPress page builder plugin. Its very easy to use and very light on the browser.",
+                "title": "Pagelayer",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "pagelayer-pro\/pagelayer-pro.php": {
+                "slug": "pagelayer-pro\/pagelayer-pro.php",
+                "name": "Pagelayer Pro",
+                "version": "2.0.8",
+                "pluginURI": "https:\/\/pagelayer.com\/",
+                "author": "Pagelayer Team",
+                "authorURI": "https:\/\/pagelayer.com\/",
+                "description": "Pagelayer is a WordPress page builder plugin. Its very easy to use and very light on the browser.",
+                "title": "Pagelayer Pro",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "siteseo\/siteseo.php": {
+                "slug": "siteseo\/siteseo.php",
+                "name": "SiteSEO - SEO Simplified",
+                "version": "1.3.5",
+                "pluginURI": "https:\/\/siteseo.io\/",
+                "author": "Softaculous",
+                "authorURI": "https:\/\/siteseo.io\/",
+                "description": "SiteSEO is an easy, fast and powerful SEO plugin for WordPress. Unlock your Website's potential and Maximize your online visibility with our SiteSEO!",
+                "title": "SiteSEO - SEO Simplified",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "siteseo-pro\/siteseo-pro.php": {
+                "slug": "siteseo-pro\/siteseo-pro.php",
+                "name": "SiteSEO Pro",
+                "version": "1.3.5",
+                "pluginURI": "https:\/\/siteseo.io\/",
+                "author": "Softaculous",
+                "authorURI": "https:\/\/siteseo.io\/",
+                "description": "This plugin handles On Page SEO, Content Analysis, Social Previews, Google Preview, Hyperlink Analysis, Image Analysis, Home Page Monitor, Schemas for various type of posts.",
+                "title": "SiteSEO Pro",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "speedycache\/speedycache.php": {
+                "slug": "speedycache\/speedycache.php",
+                "name": "SpeedyCache",
+                "version": "1.3.7",
+                "pluginURI": "https:\/\/speedycache.com",
+                "author": "Softaculous Team",
+                "authorURI": "https:\/\/speedycache.com\/",
+                "description": "SpeedyCache is a plugin that helps you reduce the load time of your website by means of caching, minification, and compression of your website.",
+                "title": "SpeedyCache",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "speedycache-pro\/speedycache-pro.php": {
+                "slug": "speedycache-pro\/speedycache-pro.php",
+                "name": "SpeedyCache Pro",
+                "version": "1.3.7",
+                "pluginURI": "https:\/\/speedycache.com",
+                "author": "Softaculous Team",
+                "authorURI": "https:\/\/speedycache.com\/",
+                "description": "SpeedyCache is a plugin that helps you reduce the load time of your website by means of caching, minification, and compression of your website.",
+                "title": "SpeedyCache Pro",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "sportspress\/sportspress.php": {
+                "slug": "sportspress\/sportspress.php",
+                "name": "SportsPress",
+                "version": "2.7.29",
+                "pluginURI": "http:\/\/themeboy.com\/sportspress\/",
+                "author": "ThemeBoy",
+                "authorURI": "http:\/\/themeboy.com",
+                "description": "Manage your club and its players, staff, events, league tables, and player lists.",
+                "title": "SportsPress",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "header-footer-elementor\/header-footer-elementor.php": {
+                "slug": "header-footer-elementor\/header-footer-elementor.php",
+                "name": "Ultimate Addons for Elementor (UAE)",
+                "version": "2.8.4",
+                "pluginURI": "https:\/\/wordpress.org\/plugins\/header-footer-elementor\/",
+                "author": "Brainstorm Force",
+                "authorURI": "https:\/\/www.brainstormforce.com\/",
+                "description": "Ultimate Addons is a powerful plugin allows you to create custom headers and footers with Elementor and display them in selected locations. You can also create custom Elementor blocks and place them anywhere on your website using a shortcode.",
+                "title": "Ultimate Addons for Elementor (UAE)",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "ultimate-member\/ultimate-member.php": {
+                "slug": "ultimate-member\/ultimate-member.php",
+                "name": "Ultimate Member",
+                "version": "2.11.2",
+                "pluginURI": "http:\/\/ultimatemember.com\/",
+                "author": "Ultimate Member",
+                "authorURI": "http:\/\/ultimatemember.com\/",
+                "description": "The easiest way to create powerful online communities and beautiful user profiles with WordPress",
+                "title": "Ultimate Member",
+                "networkActive": false,
+                "active": false,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "wp-all-export\/wp-all-export.php": {
+                "slug": "wp-all-export\/wp-all-export.php",
+                "name": "WP All Export",
+                "version": "1.4.15",
+                "pluginURI": "http:\/\/www.wpallimport.com\/upgrade-to-wp-all-export-pro\/?utm_source=export-plugin-free&utm_medium=wp-plugins-page&utm_campaign=upgrade-to-pro",
+                "author": "Soflyy",
+                "authorURI": "",
+                "description": "Export any post type to a CSV or XML file. Edit the exported data, and then re-import it later using WP All Import.",
+                "title": "WP All Export",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "product-export-for-woocommerce\/wpae-woocommerce-product-add-on.php": {
+                "slug": "product-export-for-woocommerce\/wpae-woocommerce-product-add-on.php",
+                "name": "WP All Export - WooCommerce Product Export Add-On",
+                "version": "1.0.5",
+                "pluginURI": "https:\/\/www.wpallimport.com\/",
+                "author": "Soflyy",
+                "authorURI": "",
+                "description": "Drag & drop to export WooCommerce products to any CSV or XML. A paid upgrade is available for premium support, exporting advanced WooCommerce product data, and more.",
+                "title": "WP All Export - WooCommerce Product Export Add-On",
+                "networkActive": false,
+                "active": false,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "wp-all-import\/plugin.php": {
+                "slug": "wp-all-import\/plugin.php",
+                "name": "WP All Import",
+                "version": "4.0.1",
+                "pluginURI": "https:\/\/www.wpallimport.com\/wordpress-xml-csv-import\/?utm_source=import-plugin-free&utm_medium=wp-plugins-page&utm_campaign=upgrade-to-pro",
+                "author": "Soflyy",
+                "authorURI": "",
+                "description": "The most powerful solution for importing XML and CSV files to WordPress. Create Posts and Pages with content from any XML or CSV file. A paid upgrade to WP All Import Pro is available for support and additional features.",
+                "title": "WP All Import",
+                "networkActive": false,
+                "active": true,
+                "mustUse": false,
+                "dropIns": false
+            },
+            "advanced-cache.php": {
+                "slug": "advanced-cache.php",
+                "name": "advanced-cache.php",
+                "version": "",
+                "pluginURI": "",
+                "author": "",
+                "authorURI": "",
+                "description": "",
+                "title": "",
+                "networkActive": false,
+                "active": false,
+                "mustUse": false,
+                "dropIns": true
+            }
+        },
+        "themes": {
+            "hello-elementor": {
+                "slug": "hello-elementor",
+                "themeName": "Hello Elementor",
+                "version": "3.4.6",
+                "themeURI": "https:\/\/elementor.com\/hello-theme\/?utm_source=wp-themes&utm_campaign=theme-uri&utm_medium=wp-dash",
+                "parentTheme": false,
+                "template": "hello-elementor",
+                "stylesheet": "hello-elementor",
+                "description": "Hello Elementor is a lightweight and minimalist WordPress theme that was built specifically to work seamlessly with the Elementor site builder plugin. The theme is free, open-source, and designed for users who want a flexible, easy-to-use, and customizable website. The theme, which is optimized for performance, provides a solid foundation for users to build their own unique designs using the Elementor drag-and-drop site builder. Its simplicity and flexibility make it a great choice for both beginners and experienced Web Creators.",
+                "author": "Elementor Team",
+                "authorURI": "https:\/\/elementor.com\/?utm_source=wp-themes&utm_campaign=author-uri&utm_medium=wp-dash",
+                "tags": [
+                    "accessibility-ready",
+                    "flexible-header",
+                    "custom-colors",
+                    "custom-menu",
+                    "custom-logo",
+                    "featured-images",
+                    "rtl-language-support",
+                    "threaded-comments",
+                    "translation-ready"
+                ],
+                "isAllowed": true,
+                "isActive": true,
+                "defaultTheme": false
+            }
+        }
+    },
+    "defaultStorageId": -1,
+    "components": [
+        "package_component_db",
+        "package_component_core",
+        "package_component_plugins",
+        "package_component_themes",
+        "package_component_uploads",
+        "package_component_other"
+    ],
+    "opts_delete": "[\"duplicator_ui_view_state\",\"duplicator_package_active\",\"duplicator_settings\",\"duplicator_is_pro_enable_notice_dismissed\"]",
+    "brand": {
+        "name": "Duplicator",
+        "isDefault": true,
+        "logo": "<i class=\"fa fa-bolt fa-sm\"><\/i> Duplicator",
+        "enabled": false,
+        "style": []
+    },
+    "overwriteInstallerParams": {
+        "blogname": {
+            "value": "Liga de Padel"
+        }
+    },
+    "installer_base_name": "installer.php.bak",
+    "installer_backup_name": "20260512_ligadepadel_d12300857c3c730f2645_20260512170530_installer-backup.php",
+    "package_name": "20260512_ligadepadel_d12300857c3c730f2645_20260512170530_archive.zip",
+    "package_hash": "d123008-12170530",
+    "package_notes": ""
+}

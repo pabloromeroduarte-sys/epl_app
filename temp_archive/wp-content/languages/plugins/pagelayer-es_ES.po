@@ -1,0 +1,972 @@
+# Translation of Plugins - Page Builder: Pagelayer &#8211; Drag and Drop website builder - Stable (latest release) in Spanish (Spain)
+# This file is distributed under the same license as the Plugins - Page Builder: Pagelayer &#8211; Drag and Drop website builder - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2025-12-05 19:13:50+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/4.0.3\n"
+"Language: es\n"
+"Project-Id-Version: Plugins - Page Builder: Pagelayer &#8211; Drag and Drop website builder - Stable (latest release)\n"
+
+#: main/replace-media.php:51 main/replace-media.php:116
+msgid "You do not have permission to edit this attachment."
+msgstr "No tienes permiso para editar este archivo adjunto."
+
+#. translators: %1$s is replaced with a "string" of name of plugins, and %2$s
+#. is replaced with "string" which can be "is" or "are" based on the count of
+#. the plugin
+#: main/functions.php:3945
+msgid "New versions of %1$s %2$s available. Updating ensures better performance, security, and access to the latest features."
+msgstr "Nuevas versiones de %1$s %2$s disponibles. La actualización garantiza un mejor rendimiento, seguridad y acceso a las últimas características."
+
+#: main/ajax.php:2275
+msgid "You do not have required access to do this action"
+msgstr "No tienes el acceso necesario para realizar esta acción"
+
+#: main/settings.php:864
+msgid "Google reCAPTCHA v3"
+msgstr "Google reCAPTCHA v3"
+
+#: main/settings.php:861
+msgid "Google reCAPTCHA v2"
+msgstr "Google reCAPTCHA v2"
+
+#: main/settings.php:857
+msgid "Select reCAPTCHA Version"
+msgstr "Selecciona la versión de reCAPTCHA"
+
+#: main/functions.php:1495
+msgid "Empower Your Designs: Pagelayer 1.8.1 - Unleashing Seamless Integration with Gutenberg for Enhanced Website Creation! <a href=\""
+msgstr "Potencia tus diseños: Pagelayer 1.8.1 - ¡Integración perfecta con Gutenberg para mejorar la creación de sitios! <a href=\""
+
+#: main/shortcode_functions.php:1581
+msgid "The pagelayer doesn’t support this content. You can leave this block intact or remove it completely."
+msgstr "Pagelayer no admite este contenido. Puedes dejar este bloque intacto o eliminarlo por completo."
+
+#: main/shortcodes.php:8260
+msgid "This code will be saved exactly as it is with the post!"
+msgstr "¡Este código se guardará tal cual con la publicación!"
+
+#: main/settings.php:632
+msgid "For security reasons, we strongly advise against granting this permission to user roles other than administrators. Adding JavaScript content can lead to Cross Site Scripting and can introduce severe security vulnerabilities to your website, putting it at risk of attacks. Only administrators should have access to this feature to ensure the safety and integrity of your site."
+msgstr "Por razones de seguridad, desaconsejamos encarecidamente conceder este permiso a perfiles de usuario que no sean administradores. Añadir contenido JavaScript puede provocar Cross Site Scripting e introducir graves vulnerabilidades de seguridad en tu sitio web, poniéndolo en riesgo de sufrir ataques. Sólo los administradores deben tener acceso a esta función para garantizar la seguridad e integridad de tu sitio."
+
+#: main/settings.php:632
+msgid "Security Note:"
+msgstr "Nota de seguridad:"
+
+#: main/settings.php:612
+msgid "JS Content Permissions"
+msgstr "Permisos de contenido JS"
+
+#: main/woocommerce.php:435
+msgid "Show Cart Icon On Primary Menu"
+msgstr "Mostrar el icono del carrito en el menú principal"
+
+#: main/website.php:376
+msgid "This code will be printed from begning of the <code>&lt;body&gt;</code> Section."
+msgstr "Este código se imprimirá desde el principio de la sección <code>&lt;body&gt;</code>."
+
+#: main/website.php:361
+msgid "Header, Body and Footer code"
+msgstr "Código de head, body y pie de página"
+
+#: main/settings.php:606
+msgid "If you check this option Google Fonts download on your server and load from your server."
+msgstr "Si marcas esta opción las fuentes de Google Fonts se descargarán a tu servidor y se cargarán desde él."
+
+#: main/settings.php:605
+msgid "Enable Google Fonts load locally "
+msgstr "Activar la carga local de las fuentes de Google "
+
+#: main/settings.php:602
+msgid "Local Google Fonts"
+msgstr "Fuentes de Google locales"
+
+#: main/post_metas.php:533
+msgid "This code will be printed begning of the <code>&lt;body&gt;</code> Section."
+msgstr "Este código se imprimirá desde el principio de la sección <code>&lt;body&gt;</code>."
+
+#: main/post_metas.php:531 main/website.php:373
+msgid "Body Open Code"
+msgstr "Código al principio del body"
+
+#: main/post_metas.php:519
+msgid "Header, Body and Footer Code"
+msgstr "Código de head, body y pie de página"
+
+#: main/post_metas.php:107
+msgid "Header, Body and Footer"
+msgstr "Head, body y pie de página"
+
+#: main/customizer.php:223
+msgid "<div class=\"pagelayer-customize-heading\"><div>%s</div><span class=\"dashicons dashicons-arrow-right-alt2\"></span></div>"
+msgstr "<div class=\"pagelayer-customize-heading\"><div>%s</div><span class=\"dashicons dashicons-arrow-right-alt2\"></span></div>"
+
+#: main/woocommerce.php:627
+msgid "My Account"
+msgstr "Mi cuenta"
+
+#: main/woocommerce.php:574
+msgid "Checkout"
+msgstr "Finalizar compra"
+
+#: main/woocommerce.php:536
+msgid "Cart"
+msgstr "Carrito"
+
+#: main/woocommerce.php:474
+msgid "Product Catalog"
+msgstr "Catálogo de productos"
+
+#: main/woocommerce.php:465
+msgid "Cart Numbers Color"
+msgstr "Color de números del carrito"
+
+#: main/woocommerce.php:450
+msgid "Icon Color"
+msgstr "Color de icono"
+
+#: main/woocommerce.php:419
+msgid "<div class=\"pagelayer-customize-heading\"><div>Cart Icon on Menu</div></div>"
+msgstr "<div class=\"pagelayer-customize-heading\"><div>Icono de carrito en el menú</div></div>"
+
+#: main/woocommerce.php:389
+msgid "Link Hover Color"
+msgstr "Color de los enlaces al pasar"
+
+#: main/woocommerce.php:374
+msgid "Link Color"
+msgstr "Color de los enlaces"
+
+#: main/woocommerce.php:331
+msgid "to enable the store notice"
+msgstr "para activar el aviso de tienda"
+
+#: main/woocommerce.php:324
+msgid "to change color scheme of store notice"
+msgstr "para cambiar el esquema de colores del aviso de tienda"
+
+#: main/woocommerce.php:324 main/woocommerce.php:331
+msgid "Click here"
+msgstr "Haz clic aquí"
+
+#: main/woocommerce.php:320
+msgid "Pagelayer + WooCommerce"
+msgstr "Pagelayer + WooCommerce"
+
+#: main/customizer-controls.php:248 js/blocks/index.js:3
+msgid "Restore Global"
+msgstr "Restaurar global"
+
+#: main/customizer-controls.php:219 js/blocks/index.js:3
+msgid "Global Fonts"
+msgstr "Fuentes globales"
+
+#: main/customizer.php:287
+msgid "Margin"
+msgstr "Margen"
+
+#: main/customizer.php:272 main/woocommerce.php:484 main/woocommerce.php:507
+#: main/woocommerce.php:545 main/woocommerce.php:584 main/woocommerce.php:637
+msgid "Padding"
+msgstr "Relleno"
+
+#: main/customizer.php:250 js/blocks/index.js:3
+msgid "Color"
+msgstr "Color"
+
+#: main/customizer.php:206
+msgid "%s %s Styles"
+msgstr "Estilos %s %s"
+
+#: main/customizer.php:160
+msgid "Colors"
+msgstr "Colores"
+
+#: init.php:87 main/customizer.php:137 main/customizer.php:200
+msgid "Global"
+msgstr "Global"
+
+#: main/customizer.php:95 js/blocks/index.js:3
+msgid "Word Spacing"
+msgstr "Espacio entre palabras"
+
+#: main/customizer.php:91
+msgid "Text Spacing"
+msgstr "Espaciado de texto"
+
+#: main/customizer.php:87
+msgid "Transform"
+msgstr "Transformación"
+
+#: main/customizer.php:83 js/blocks/index.js:3
+msgid "Line Height"
+msgstr "Alto de línea"
+
+#: main/customizer.php:79 js/blocks/index.js:3
+msgid "Decoration Style"
+msgstr "Estilo de decoración"
+
+#: main/customizer.php:75
+msgid "Decoration"
+msgstr "Decoración"
+
+#: main/customizer.php:71
+msgid "Variant"
+msgstr "Variante"
+
+#: main/customizer.php:66
+msgid "Weight"
+msgstr "Peso"
+
+#: main/customizer.php:62
+msgid "Style"
+msgstr "Estilo"
+
+#: main/customizer.php:58
+msgid "Size"
+msgstr "Tamaño"
+
+#: main/customizer.php:54
+msgid "Family"
+msgstr "Familia"
+
+#: main/customizer-controls.php:452
+msgid "Add New Font"
+msgstr "Añadir nueva fuente"
+
+#: main/customizer-controls.php:390
+msgid "Add New Color"
+msgstr "Añadir nuevo color"
+
+#: main/customizer.php:263 main/woocommerce.php:344
+msgid "Background Color"
+msgstr "Color de fondo"
+
+#: main/woocommerce.php:359
+msgid "Text Color"
+msgstr "Color de texto"
+
+#: main/woocommerce.php:618
+msgid "Disable Coupon Field"
+msgstr "Desactivar el campo del cupón"
+
+#: main/woocommerce.php:603
+msgid "Disable Order Note"
+msgstr "Desactivar la nota de pedido"
+
+#: main/woocommerce.php:565
+msgid "Disable Cross-sells"
+msgstr "Desactivar las ventas cruzadas"
+
+#: main/woocommerce.php:527
+msgid "Disable Breadcrumb"
+msgstr "Desabilitar migas de pan"
+
+#: main/woocommerce.php:497
+msgid "Single Product"
+msgstr "Producto Individual"
+
+#: main/woocommerce.php:330
+msgid "Store Notice"
+msgstr "Aviso de tienda"
+
+#: main/settings.php:591 main/settings.php:594
+msgid "Enable JS/CSS Giver"
+msgstr "Activar el aportador de JS/CSS"
+
+#: main/settings.php:762
+msgid "Insert google maps API key. <a href=\"https://pagelayer.com/docs/pagelayer-widgets/google-maps/\"><strong>CLICK HERE</strong></a> to get help in getting API key."
+msgstr "Inserta la clave de la API de Google Maps. <a href=\"https://pagelayer.com/docs/pagelayer-widgets/google-maps/\"><strong>HAZ CLIC AQUÍ</strong></a> para obtener ayuda para conseguir la clave de la API."
+
+#: main/settings.php:759
+msgid "Project ID"
+msgstr "ID del proyecto"
+
+#: main/settings.php:755
+msgid "Google Maps API Key"
+msgstr "Clave de la API de Google Maps"
+
+#: main/settings.php:586
+msgid "Enable Dark Mode"
+msgstr "Activar el modo oscuro"
+
+#: main/settings.php:583
+msgid "Dark Mode"
+msgstr "Modo oscuro"
+
+#: init.php:297
+msgid "Custom Fonts"
+msgstr "Fuentes personalizadas"
+
+#: init.php:1395
+msgid "Clone"
+msgstr "Clonar"
+
+#: main/settings.php:572 main/settings.php:575
+msgid "Disable Clone"
+msgstr "Desactivar clonado"
+
+#: init.php:324 init.php:1546
+msgid "Replace media"
+msgstr "Reemplazar medios"
+
+#: main/replace-media.php:170
+msgid "The uploaded file could not be moved to %1$s. This is most likely an issue with permissions, or upload failed."
+msgstr "El archivo subido no se ha podido mover a %1$s. Lo más probable es sea un problema de permisos o que la subida ha fallado."
+
+#: main/replace-media.php:132
+msgid "Upload"
+msgstr "Subir"
+
+#: main/replace-media.php:125
+msgid "Choose a file to upload from your computer"
+msgstr "Elige un archivo para subir desde tu ordenador"
+
+#: main/replace-media.php:120
+msgid "Replace Media File"
+msgstr "Reemplazar un archivo de medios"
+
+#: main/replace-media.php:77
+msgid "The File type could not be determined. Please upload a permitted file type."
+msgstr "No se ha podido determinar el tipo de archivo. Por favor, sube un tipo de archivo permitido."
+
+#: main/replace-media.php:69
+msgid "There was some error uploading the file ! Please try again."
+msgstr "¡Ha habido algún un error al subir el archivo! Por favor, inténtalo de nuevo."
+
+#: main/replace-media.php:63
+msgid "No file was uploaded ! Please try again."
+msgstr "¡No se ha subido ningún archivo! Por favor, inténtalo de nuevo."
+
+#: main/replace-media.php:39 main/replace-media.php:46
+msgid "ID not found ."
+msgstr "ID no encontrado."
+
+#: main/replace-media.php:33
+msgid "You do not have permission to upload files."
+msgstr "No tienes permisos para subir archivos."
+
+#: main/settings.php:650
+msgid "font-awesome5"
+msgstr "font-awesome5"
+
+#: main/settings.php:567
+msgid "Disable Media Replace"
+msgstr "Desactivar el reemplazo de medios"
+
+#: main/settings.php:564
+msgid "Media Replace"
+msgstr "Reemplazo de medios"
+
+#: init.php:303
+msgid "Import content from a Theme"
+msgstr "Importar contenido desde un tema"
+
+#: init.php:300
+msgid "Export Theme"
+msgstr "Exportar tema"
+
+#: init.php:300
+msgid "Export Content into a Theme"
+msgstr "Exportar contenido a un tema"
+
+#: main/post_metas.php:541
+msgid "Save Codes"
+msgstr "Guardar los códigos"
+
+#: main/post_metas.php:523
+msgid "You can add custom code like HTML, JavaScript, CSS etc. for the current post."
+msgstr "Puedes añadir código personalizado como HTML, JavaScript, CSS, etc. para la entrada actual."
+
+#: main/post_metas.php:484
+msgid "Get Shortlink"
+msgstr "Obtener un enlace corto"
+
+#: main/post_metas.php:462
+msgid "Add title"
+msgstr "Añadir un título"
+
+#: main/post_metas.php:459
+msgid "Post Title"
+msgstr "Título de la entrada"
+
+#: main/post_metas.php:422
+msgid "Advanced Props"
+msgstr "Propiedades avanzadas"
+
+#: main/post_metas.php:433
+msgid "Save Changes"
+msgstr "Guardar los cambios"
+
+#: main/post_metas.php:102
+msgid "Advanced"
+msgstr "Avanzado"
+
+#: main/post_metas.php:92
+msgctxt "post format"
+msgid "Format"
+msgstr "Formato"
+
+#: main/post_metas.php:44
+msgid "Sorry, you are not allowed to edit this item."
+msgstr "Lo siento, no tienes permisos para editar este elemento."
+
+#: init.php:279
+msgid "Meta Settings"
+msgstr "Ajustes meta"
+
+#: main/settings.php:777
+msgid "You can use comma seperated values for multiple emails"
+msgstr "Puedes usar valores separados por comas para varios correos electrónicos"
+
+#: main/functions.php:1453
+msgid "Thanks for choosing "
+msgstr "Gracias por elegir "
+
+#: init.php:308
+msgid "Getting Started"
+msgstr "Primeros pasos"
+
+#: main/template.php:673 main/template.php:687
+msgid "Edit Template Options"
+msgstr "Opciones de edición de la plantilla"
+
+#: main/template.php:599
+msgid "All"
+msgstr "Todos"
+
+#: main/template.php:513 main/template.php:558
+msgid "None"
+msgstr "Ninguna"
+
+#: main/template.php:484
+msgid "Shortcode"
+msgstr "Shortcode"
+
+#: main/template.php:483
+msgid "Display On"
+msgstr "Mostrar en"
+
+#: main/template.php:482
+msgid "Type"
+msgstr "Tipo"
+
+#: main/template.php:393
+msgid "No Pagelayer templates found"
+msgstr "No se han encontrado plantillas de PageLayer"
+
+#: main/template.php:392
+msgid "Search Templates"
+msgstr "Buscar plantillas"
+
+#: main/template.php:391
+msgid "All Templates"
+msgstr "Todas las plantillas"
+
+#: main/template.php:390
+msgid "View Template"
+msgstr "Ver la plantilla"
+
+#: main/template.php:389
+msgid "Edit Template"
+msgstr "Editar la plantilla"
+
+#: main/template.php:388
+msgid "New Template"
+msgstr "Nueva plantilla"
+
+#: main/template.php:387
+msgid "Add New"
+msgstr "Añadir nuevo"
+
+#: main/template.php:386
+msgctxt "add templates"
+msgid "Add New"
+msgstr "Añadir nueva"
+
+#: main/template.php:385
+msgctxt "admin bar"
+msgid "Pagelayer Templates"
+msgstr "Plantillas de PageLayer"
+
+#: main/template.php:384
+msgctxt "admin menu"
+msgid "Pagelayer Templates"
+msgstr "Plantillas de PageLayer"
+
+#: main/template.php:383
+msgctxt "singular"
+msgid "Pagelayer Template"
+msgstr "Plantilla de PageLayer"
+
+#: main/template.php:382
+msgctxt "plural"
+msgid "Pagelayer Templates"
+msgstr "Plantillas de PageLayer"
+
+#: main/template.php:276
+msgid "%s"
+msgstr "%s"
+
+#: main/template.php:225
+msgid "%s By Author"
+msgstr "%s por autor"
+
+#: main/template.php:205
+msgid "In Child %s"
+msgstr "En %s hijas"
+
+#: main/template.php:193
+msgid "In %s"
+msgstr "En %s"
+
+#: main/template.php:126
+msgid "404"
+msgstr "404"
+
+#: main/template.php:119
+msgid "Front Page"
+msgstr "Página de inicio"
+
+#: main/template.php:112
+msgid "By Author"
+msgstr "Por autor"
+
+#: main/template.php:110
+msgid "All Singular"
+msgstr "Todas las individuales"
+
+#: main/template.php:101
+msgid "Search Results"
+msgstr "Resultados de la búsqueda"
+
+#: main/template.php:94
+msgid "Date Archives"
+msgstr "Archivos por fecha"
+
+#: main/template.php:87
+msgid "Author Archives"
+msgstr "Archivos por autor"
+
+#: main/template.php:85
+msgid "All Archives / Posts Archive"
+msgstr "Todos los archivos/archivos de entradas"
+
+#: main/template.php:77
+msgid "Singular"
+msgstr "Individual"
+
+#: main/template.php:71
+msgid "Archives"
+msgstr "Archivos"
+
+#: main/template.php:69
+msgid "Full Site"
+msgstr "Sitio completo"
+
+#: main/template.php:66
+msgid "Exclude"
+msgstr "Excluir"
+
+#: main/template.php:65
+msgid "Include"
+msgstr "Incluir"
+
+#: main/template.php:59
+msgid "Global Widget"
+msgstr "Widget global"
+
+#: main/template.php:54
+msgid "Global Section"
+msgstr "Sección global"
+
+#: main/template.php:50
+msgid "Section"
+msgstr "Sección"
+
+#: main/template.php:48
+msgid "Popup"
+msgstr "Ventana emergente"
+
+#: main/template.php:45
+msgid "Archive"
+msgstr "Archivo"
+
+#: main/template.php:41
+msgid "Single"
+msgstr "Individual"
+
+#: main/template.php:39 js/blocks/index.js:3
+msgid "Footer"
+msgstr "Pie de página"
+
+#: main/template.php:38 js/blocks/index.js:3
+msgid "Header"
+msgstr "Cabecera"
+
+#: main/template.php:37
+msgid "Select"
+msgstr "Seleccionar"
+
+#: main/customizer.php:180 main/customizer.php:232
+msgid "Typography"
+msgstr "Tipografía"
+
+#: main/functions.php:1457
+msgid "Thanks for choosing Pagelayer. We recommend that you see the short and sweet <a href=\""
+msgstr "Gracias por elegir PageLayer. Te recomendamos que veas el breve y agradable <a href=\""
+
+#: main/website.php:347
+msgid "Width"
+msgstr "Ancho"
+
+#: main/website.php:341
+msgid "For Archives"
+msgstr "Para archivos"
+
+#: main/website.php:335
+msgid "For Posts"
+msgstr "Para entradas"
+
+#: main/website.php:329
+msgid "For Pages"
+msgstr "Para páginas"
+
+#: main/website.php:325
+msgid "Default layout for the Sidebar throughout the site"
+msgstr "Diseño por defecto para la barra lateral en todo el sitio"
+
+#: main/settings.php:622 main/website.php:322
+msgid "Default"
+msgstr "Por defecto"
+
+#: main/website.php:318
+msgid "By default, the themes sidebar will be shown. But you can customize the settings here as per your preference. Note : This will work only if your theme uses the get_sidebar() function. Also the main content element and sidebar element should be siblings. If they are not siblings, then only the <b>No Sidebar</b> option will be usable."
+msgstr "Por defecto, se mostrará la barra lateral de los temas. Pero puedes personalizar los ajustes aquí según tus preferencias. Nota: esto solo funcionará si tu tema usa la función get_sidebar(). Además, el elemento del contenido principal y el elemento de la barra lateral deben ser hermanos. Si no son hermanos, solo se podrá utilizar la opción <b>Sin barra lateral</b>."
+
+#: main/website.php:317
+msgid "Sidebar Preferences"
+msgstr "Preferencias de la barra lateral"
+
+#: main/post_metas.php:526 main/website.php:366
+msgid "Header Code"
+msgstr "Código de la cabecera"
+
+#: main/functions.php:1650 main/functions.php:1683 main/functions.php:1688
+msgid "This feature is a part of <a href=\""
+msgstr "Esta características es una parte de <a href=\""
+
+#: main/settings.php:922
+msgid "You can contact the Pagelayer Group via email. Our email address is <a href=\"mailto:support@pagelayer.com\">support@pagelayer.com</a>. We will get back to you as soon as possible!"
+msgstr "Puedes ponerte en contacto con Pagelayer Group por correo electrónico. Nuestra dirección de correo electrónico es <a href=\"mailto:support@pagelayer.com\">support@pagelayer.com</a>. Nos pondremos en contacto contigo lo antes posible."
+
+#: main/settings.php:920
+msgid "2: Support"
+msgstr "2: Soporte"
+
+#: main/settings.php:917
+msgid "Pagelayer is best live editor and easy to use and we will keep improving it !"
+msgstr "PageLayer es el mejor editor en vivo y el más fácil de usar, ¡y seguiremos mejorándolo!"
+
+#: main/settings.php:915
+msgid "1: Why choose us"
+msgstr "1: Por qué elegirnos"
+
+#: main/settings.php:910
+msgid "You can contact the Pagelayer Team via email. Our email address is <a href=\"mailto:support@pagelayer.com\">support@pagelayer.com</a>. We will get back to you as soon as possible!"
+msgstr "Puedes ponerte en contacto con el equipo de PageLayer por correo electrónico. Nuestra dirección de correo electrónico es <a href=\"mailto:support@pagelayer.com\">support@pagelayer.com</a>. ¡Nos comunicaremos contigo lo antes posible!"
+
+#: main/settings.php:892
+msgid "reCaptcha Language"
+msgstr "Idioma de reCAPTCHA"
+
+#: main/settings.php:882
+msgid "reCaptcha Secret Key"
+msgstr "Clave secreta de reCAPTCHA"
+
+#: main/settings.php:872
+msgid "reCaptcha Site Key"
+msgstr "Clave del sitio de reCAPTCHA"
+
+#: main/settings.php:843
+msgid "reCaptcha Failed Message"
+msgstr "Mensaje de fallo de reCAPTCHA"
+
+#: main/settings.php:833
+msgid "Failed Message"
+msgstr "Mensaje de fallo"
+
+#: main/settings.php:823
+msgid "Success Message"
+msgstr "Mensaje de éxito"
+
+#: main/settings.php:820
+msgid "You can edit messages used for information of your form here."
+msgstr "Aquí puedes editar los mensajes usados para la información de tu formulario."
+
+#: main/settings.php:820
+msgid "Messages"
+msgstr "Mensajes"
+
+#: main/settings.php:809
+msgid "Additional Headers"
+msgstr "Cabeceras adicionales"
+
+#: main/settings.php:799
+msgid "Subject"
+msgstr "Asunto"
+
+#: main/settings.php:788
+msgid "From Email"
+msgstr "Correo electrónico del remitente"
+
+#: main/settings.php:777
+msgid "To Email"
+msgstr "Correo electrónico del destinatario"
+
+#: main/settings.php:772
+msgid "You can use a field name with a prefix $ to print your field value e.g. if the field name is <b>fieldname</b> then use the variable <b>$fieldname</b>"
+msgstr "Puedes usar un nombre de campo con un prefijo $ para mostrar el valor de tu campo, por ejemplo, si el nombre del campo es <b>nombredelcampo</b>, usa la variable <b>$nombredelcampo</b>"
+
+#: main/settings.php:744
+msgid "App ID"
+msgstr "ID de la aplicación"
+
+#: main/settings.php:740
+msgid "Facebook SDK Details"
+msgstr "Detalles de los SDK de Facebook"
+
+#: main/settings.php:728
+msgid "Google+"
+msgstr "Google+"
+
+#: main/settings.php:724
+msgid "YouTube"
+msgstr "YouTube"
+
+#: main/settings.php:720
+msgid "LinkedIn"
+msgstr "LinkedIn"
+
+#: main/settings.php:716
+msgid "Instagram"
+msgstr "Instagram"
+
+#: main/settings.php:712
+msgid "Twitter"
+msgstr "Twitter"
+
+#: main/settings.php:708
+msgid "Facebook"
+msgstr "Facebook"
+
+#: main/settings.php:704
+msgid "Social Profile URLs"
+msgstr "URL de perfil social"
+
+#: main/settings.php:695
+msgid "Copyright Text"
+msgstr "Texto del copyright"
+
+#: main/settings.php:691
+msgid "Copyright"
+msgstr "Copyright"
+
+#: main/settings.php:676
+msgid "You can change your contact email<br> from the Contact Form Settings."
+msgstr "Puedes cambiar tu correo electrónico de contacto<br> desde los «Ajustes del formulario de contacto»."
+
+#: main/settings.php:673
+msgid "Contact Email"
+msgstr "Correo electrónico de contacto"
+
+#: main/settings.php:668
+msgid "Phone Number"
+msgstr "Número de teléfono"
+
+#: main/settings.php:664
+msgid "Address"
+msgstr "Dirección"
+
+#: main/settings.php:660
+msgid "Address and Phone Number"
+msgstr "Dirección y número de teléfono"
+
+#: main/settings.php:552
+msgid "Editor Enables On"
+msgstr "Activar el editor en"
+
+#: main/settings.php:541 main/settings.php:913
+msgid "FAQ"
+msgstr "FAQ"
+
+#: main/settings.php:540 main/settings.php:909
+msgid "Support"
+msgstr "Soporte"
+
+#: main/settings.php:535
+msgid "Google Captcha"
+msgstr "Captcha de Google"
+
+#: main/settings.php:534
+msgid "Contact Form"
+msgstr "Formulario de contacto"
+
+#: main/settings.php:532
+msgid "Integrations"
+msgstr "Integraciones"
+
+#: main/settings.php:531
+msgid "Information"
+msgstr "Información"
+
+#: main/settings.php:530 main/settings.php:641
+msgid "Enable Icons"
+msgstr "Activar los iconos"
+
+#: main/settings.php:529 main/woocommerce.php:398
+msgid "General"
+msgstr "Generales"
+
+#: init.php:282
+msgid "Website Settings"
+msgstr "Ajustes de la web"
+
+#: main/import.php:49
+msgid "You have already imported the content of this theme. You can re-import the same by either choosing to over-write existing pages / pagelayer templates OR creating duplicate content !"
+msgstr "Ya has importado el contenido de este tema. Puedes volver a importar lo mismo, eligiendo sobrescribirlas páginas o plantillas de página existentes o creando contenido duplicado."
+
+#: main/post_metas.php:538 main/website.php:384
+msgid "This code will be printed before closing the <code>&lt;/body&gt;</code> Section."
+msgstr "Este código se imprimirá antes del cierre de la sección <code>&lt;/body&gt;</code>."
+
+#: main/post_metas.php:536 main/website.php:381
+msgid "Footer Code"
+msgstr "Código del pie de página"
+
+#: main/post_metas.php:528 main/website.php:369
+msgid "This code will be printed in <code>&lt;head&gt;</code> Section."
+msgstr "Este código se imprimirá en la sección <code>&lt;head&gt;</code>."
+
+#: main/website.php:362
+msgid "You can add custom code like HTML, JavaScript, CSS etc. which will be inserted throughout your site."
+msgstr "Puedes añadir código personalizado como HTML, JavaScript, CSS, etc., que será insertado en todo tu sitio."
+
+#: main/website.php:295
+msgid "Set the breakpoint for mobile devices. The default breakpoint for mobile layout is 480px."
+msgstr "Establece el punto de ruptura para dispositivos móviles. El punto de ruptura por defecto para el diseño de móviles es de 480px."
+
+#: main/website.php:290
+msgid "Mobile Breakpoint"
+msgstr "Punto de ruptura para móviles"
+
+#: main/website.php:286
+msgid "Set the breakpoint for tablet devices. The default breakpoint for tablet layout is 768px."
+msgstr "Establece el punto de ruptura para dispositivos de tabletas. El punto de ruptura por defecto para el diseño de tabletas es de 768px."
+
+#: main/website.php:281
+msgid "Tablet Breakpoint"
+msgstr "Punto de ruptura para tabletas"
+
+#: main/website.php:304
+msgid "Set the Space Between Widgets. The default Space set is 15px."
+msgstr "Establece el espacio entre los widgets. El espacio por defecto está establecido en 15px."
+
+#: main/website.php:299
+msgid "Space Between Widgets"
+msgstr "Espacio entre widgets"
+
+#: main/website.php:277
+msgid "Set the custom width of the content area. The default width set is 1170px."
+msgstr "Establece un ancho personalizado para el área del contenido. El ancho por defecto está establecido en 1170px."
+
+#: main/website.php:272
+msgid "Content Width"
+msgstr "Ancho del contenido"
+
+#: main/import.php:70
+msgid "The theme content was successfully imported"
+msgstr "El contenido del tema ha sido importado correctamente"
+
+#: init.php:303
+msgid "Import Theme"
+msgstr "Importar un tema"
+
+#: init.php:1427
+msgctxt "Upgrade to Pagelayer Pro for many more features"
+msgid "Go Pro"
+msgstr "Hazte Pro"
+
+#: init.php:319
+msgid "Pagelayer License"
+msgstr "Licencia de PageLayer"
+
+#: main/settings.php:516 main/website.php:188
+msgid "The settings were saved successfully"
+msgstr "Los ajustes se han guardado correctamente"
+
+#: init.php:319
+msgid "License"
+msgstr "Licencia"
+
+#: init.php:285
+msgid "Theme Templates"
+msgstr "Plantillas del tema"
+
+#: init.php:291
+msgid "Add New Template"
+msgstr "Añadir una nueva plantilla"
+
+#. Plugin Name of the plugin
+#: pagelayer.php init.php:273
+msgid "Pagelayer"
+msgstr "PageLayer"
+
+#: init.php:1417
+msgid "Edit using Pagelayer"
+msgstr "Editar usando PageLayer"
+
+#: init.php:1274 init.php:1294
+msgid "Edit with Pagelayer"
+msgstr "Editar con PageLayer"
+
+#: init.php:314
+msgid "Go Pro"
+msgstr "Hazte Pro"
+
+#: init.php:314
+msgid "Pagelayer Go Pro"
+msgstr "Ir a PageLayer Pro"
+
+#: init.php:276
+msgid "Settings"
+msgstr "Ajustes"
+
+#: init.php:273 init.php:276
+msgid "Pagelayer Editor"
+msgstr "Editor PageLayer"
+
+#. Author URI of the plugin
+#: pagelayer.php
+msgid "https://pagelayer.com/"
+msgstr "https://pagelayer.com/"
+
+#. Author of the plugin
+#: pagelayer.php
+msgid "Pagelayer Team"
+msgstr "Equipo de PageLayer"
+
+#. Description of the plugin
+#: pagelayer.php
+msgid "Pagelayer is a WordPress page builder plugin. Its very easy to use and very light on the browser."
+msgstr "Pagelayer es un plugin maquetador de páginas para WordPress. Es muy fácil de usar y muy ligero para el navegador."
+
+#. Plugin URI of the plugin
+#: pagelayer.php
+msgid "http://wordpress.org/plugins/pagelayer/"
+msgstr "https://es.wordpress.org/plugins/pagelayer/"

@@ -1,0 +1,29 @@
+Options -Indexes
+RewriteEngine On
+
+# Redirigir a HTTPS en producción
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Bloquear acceso a archivos sensibles
+<FilesMatch "^\.env|composer\.json|package\.json">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "\.(sql|log|sh|bak|zip)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Bloquear carpeta migration en producción
+# RewriteRule ^migration/ - [F,L]
+
+RewriteBase /elitepadelleague/
+
+# No reescribir archivos o directorios existentes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Rutas limpias (opcional)
+# RewriteRule ^jugadores/([0-9]+)$ jugador_perfil.php?id=$1 [L,QSA]

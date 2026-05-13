@@ -1,0 +1,1 @@
+ERROR 1153 (08S01) at line 447: Got a packet bigger than 'max_allowed_packet' bytes

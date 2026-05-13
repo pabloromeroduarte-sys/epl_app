@@ -1,0 +1,2145 @@
+# Translation of Plugins - WP All Export – Drag &amp; Drop Export to Any Custom CSV, XML &amp; Excel - Stable (latest release) in Spanish (Spain)
+# This file is distributed under the same license as the Plugins - WP All Export – Drag &amp; Drop Export to Any Custom CSV, XML &amp; Excel - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2025-12-31 09:54:07+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/4.0.3\n"
+"Language: es\n"
+"Project-Id-Version: Plugins - WP All Export – Drag &amp; Drop Export to Any Custom CSV, XML &amp; Excel - Stable (latest release)\n"
+
+#: actions/admin_menu.php:19
+msgid "Partner Discounts"
+msgstr "Descuentos para socios"
+
+#: views/admin/settings/index.php:138
+msgid "A license key is required to use Automatic Scheduling. If you have already subscribed, <a href=\"https://www.wpallimport.com/portal/automatic-scheduling/\" target=\"_blank\">click here to access your license key</a>.<br>If you don't have a license, <a class=\"scheduling-subscribe-link\" href=\"#\">click here to subscribe</a>."
+msgstr "Se requiere una clave de licencia para usar la programación automática. Si ya te has suscrito, <a href=\"https://www.wpallimport.com/portal/automatic-scheduling/\" target=\"_blank\">Haz clic aquí para acceder a tu clave de licencia</a>.<br>Si no tiened una licencia, <a class=\"scheduling-subscribe-link\" href=\"#\">Haz clic aquí para suscribirte</a>."
+
+#: src/Scheduling/views/SchedulingUI.php:92
+msgid "What times do you want this export to run?"
+msgstr "¿A qué hora quieres que se ejecute esta exportación?"
+
+#: src/Scheduling/views/SchedulingUI.php:63
+#: src/Scheduling/views/SchedulingUI.php:86
+msgid "Sun"
+msgstr "Dom"
+
+#: src/Scheduling/views/SchedulingUI.php:62
+#: src/Scheduling/views/SchedulingUI.php:85
+msgid "Sat"
+msgstr "Sáb"
+
+#: src/Scheduling/views/SchedulingUI.php:61
+#: src/Scheduling/views/SchedulingUI.php:84
+msgid "Fri"
+msgstr "Vie"
+
+#: src/Scheduling/views/SchedulingUI.php:60
+#: src/Scheduling/views/SchedulingUI.php:83
+msgid "Thu"
+msgstr "Jue"
+
+#: src/Scheduling/views/SchedulingUI.php:59
+#: src/Scheduling/views/SchedulingUI.php:82
+msgid "Wed"
+msgstr "Mié"
+
+#: src/Scheduling/views/SchedulingUI.php:58
+#: src/Scheduling/views/SchedulingUI.php:81
+msgid "Tue"
+msgstr "Mar"
+
+#: src/Scheduling/views/SchedulingUI.php:57
+#: src/Scheduling/views/SchedulingUI.php:80
+msgid "Mon"
+msgstr "Lun"
+
+#. translators: 1: Export ID
+#: src/Scheduling/views/SchedulingUI.php:35
+msgid "Run export ID %d on a schedule."
+msgstr "Ejecutar la ID de exportación %d en un horario."
+
+#: src/Scheduling/views/SchedulingSubscribeUI.php:46
+msgid "You'll receive a license key for Automatic Scheduling that you can use in WP All Import and WP All Export. You can set up as many imports and exports as you like on unlimited sites."
+msgstr "Recibirás una clave de licencia para la programación automática que puedes usar en WP All Import y WP All Export. Puedes configurar tantas importaciones y exportaciones como desees en la cantidad de sitios que seleccionaste al suscribirte."
+
+#: src/Scheduling/views/SchedulingSubscribeUI.php:43
+msgid "What do I get?"
+msgstr "¿Qué obtengo?"
+
+#: actions/wp_ajax_wpae_get_scheduling_connection_icon.php:9
+msgid "Insufficient permissions."
+msgstr "Permisos insuficientes."
+
+#: actions/wp_ajax_wpae_get_scheduling_connection_icon.php:5
+msgid "Security check failed."
+msgstr "La comprobación de seguridad ha fallado."
+
+#: wp-all-export.php:421
+msgid "<strong style=\"font-size:16px\">A Configured Export Requires the ACF Export Add-On Pro</strong><p>Exports that contain ACF fields will not be able to run until you install the ACF Export Add-On Pro.</p>"
+msgstr "<strong style=\"font-size:16px\">Una exportación configurada requiere la extensión ACF Export Add-On Pro</strong><p>Las exportaciones que contengan campos ACF no podrán ejecutarse hasta que instale la extensión ACF Export Add-On Pro.</p>"
+
+#: wp-all-export.php:416
+msgid "<strong style=\"font-size:16px\">A Configured Export Requires the WooCommerce Export Add-On Pro</strong><p>Your Products, Orders, and Coupons exports will not be able to run until you install the WooCommerce Export Add-On Pro.</p>"
+msgstr "<strong style=\"font-size:16px\">Una exportación configurada requiere la extensión WooCommerce Export Add-On Pro</strong><p>Tus exportaciones de productos, pedidos y cupones no podrán ejecutarse hasta que instales la extensión WooCommerce Export Add-On Pro.</p>"
+
+#: libraries/XmlCsvExport.php:55 libraries/XmlCsvExport.php:370
+#: wp-all-export.php:517
+msgid "WP All Export Pro is required to run this export. If you already own it, you can download it here: <a href=\"http://www.wpallimport.com/portal/downloads\" target=\"_blank\">http://www.wpallimport.com/portal/downloads</a>"
+msgstr "Se requiere WP All Export Pro para realizar esta exportación. Si ya lo tienes, puedes descargarlo aquí: <a href=\"http://www.wpallimport.com/portal/downloads\" target=\"_blank\">http://www.wpallimport.com/portal/downloads</a>"
+
+#: views/admin/export/options/settings.php:150
+msgid "The BOM will help some programs like Microsoft Excel read your export file if it contains non-ASCII characters. These can include curly quotation marks or non-English characters such as umlauts."
+msgstr "BOM ayudará a algunos programas como Microsoft Excel a leer el archivo de exportación si contiene caracteres no ASCII. Estos pueden incluir comillas o caracteres no ingleses, como diéresis."
+
+#: views/admin/export/options/settings.php:149
+msgid "Include BOM to enable non-ASCII characters in Excel"
+msgstr "Incluye BOM para permitir caracteres no ASCII en Excel"
+
+#: filters/wpallexport_footer.php:5
+msgid "Discuss, share your work, and learn from the best."
+msgstr "Discute, comparte tu trabajo y aprende de los mejores."
+
+#: views/admin/export/options/settings.php:181
+msgid "Upgrade to the Pro edition of WP All Export to allow non-admins to run this export in Client Mode."
+msgstr "Actualiza a la edición Pro de WP All Export para permitir que usuarios no administradores ejecuten esta exportación en modo cliente."
+
+#: views/admin/export/options/settings.php:127
+msgid "This feature is not available for user exports."
+msgstr "Esta característica no está disponible para las exportaciones de usuarios."
+
+#: views/admin/export/options/settings.php:93
+msgid "This will export "
+msgstr "Esto exportará "
+
+#: views/admin/export/options/settings.php:91
+msgid "This feature it not available for Customer Exports."
+msgstr "Esta característica no está disponible para las exportaciones de clientes."
+
+#: views/admin/export/options/settings.php:86
+msgid "This feature it not available for Google Merchants Exports."
+msgstr "Esta característica no está disponible para las exportaciones de Google Merchants."
+
+#: views/admin/export/options/settings.php:81
+msgid "Export each "
+msgstr "Exportar cada "
+
+#: src/Scheduling/views/SaveSchedulingButton.php:12
+msgid "Save & Run Export"
+msgstr "Guardar y ejecutar la exportación"
+
+#: views/admin/export/index.php:207
+msgid "Download the Product Export Add-On"
+msgstr "Descargar la extensión de exportación de productos"
+
+#: views/admin/export/index.php:205
+msgid "The Product Export Add-On is Required to Export WooCommerce Products."
+msgstr "La extensión de exportación de productos es necesaria para exportar productos de WooCommerce."
+
+#: views/admin/export/index.php:183
+msgid "Download the Order Export Add-On"
+msgstr "Descargar la extensión de exportación de pedidos"
+
+#: views/admin/export/index.php:181
+msgid "The Order Export Add-On is Required to Export Orders."
+msgstr "La extensión de exportación de pedidos es necesaria para exportar pedidos."
+
+#: views/admin/export/options/settings.php:190
+msgid "Save Export Name..."
+msgstr "Guardar el nombre de la exportación..."
+
+#: views/admin/export/options/settings.php:189
+msgid "Export Name:"
+msgstr "Nombre de la exportación:"
+
+#: src/Reviews/ReviewsUI.php:244
+msgid "Submit"
+msgstr "Enviar"
+
+#: src/Reviews/ReviewsUI.php:241
+msgid "If you could improve one thing about WP All Export, what would it be?"
+msgstr "Si pudieras mejorar una cosa de WP All Export, ¿qué sería?"
+
+#: src/Reviews/ReviewsUI.php:240
+msgid "Thank you for your feedback, it really helps us improve our products."
+msgstr "Gracias por tus comentarios, nos ayudan mucho a mejorar nuestros productos."
+
+#: src/Reviews/ReviewsUI.php:234
+msgid "Review the %s"
+msgstr "Valorar el %s"
+
+#: src/Reviews/ReviewsUI.php:230
+msgid "If you have a moment, we would love for you to review our add-on in the WordPress.org plugin repository."
+msgstr "Si tienes un momento, nos encantaría que valoraras nuestra extensión en el repositorio de plugins de WordPress."
+
+#: src/Reviews/ReviewsUI.php:228
+msgid "Would you be willing to do us a small favor? Unhappy customers are quick to publicly complain, but happy customers rarely speak up and share their good experiences."
+msgstr "¿Te importaría hacernos un pequeño favor? Los clientes insatisfechos se apresuran a quejarse públicamente, pero los clientes satisfechos rara vez hablan y comparten sus buenas experiencias."
+
+#: src/Reviews/ReviewsUI.php:226
+msgid "That is great to hear, thank you for the feedback!"
+msgstr "Es estupendo oírlo, ¡gracias por el comentario!"
+
+#: src/Reviews/ReviewsUI.php:222
+msgid "Bad"
+msgstr "Malo"
+
+#: src/Reviews/ReviewsUI.php:221
+msgid "Just Ok"
+msgstr "No está mal"
+
+#: src/Reviews/ReviewsUI.php:220
+msgid "Good"
+msgstr "Bueno"
+
+#: helpers/wp_all_export_get_cpt_name.php:31
+msgid "Entry"
+msgstr "Registro"
+
+#: helpers/wp_all_export_get_cpt_name.php:31
+msgid "Entries"
+msgstr "Registros"
+
+#: actions/wp_ajax_wpae_filtering.php:110
+msgid "The WooCoommerce Export Package is Required to Migrate Products."
+msgstr "El paquete de exportación de WooCommerce es necesario para migrar productos."
+
+#: actions/wp_ajax_wpae_filtering.php:105
+msgid "The WooCoommerce Export Package is Required to Migrate Orders."
+msgstr "El paquete de exportación de WooCommerce es necesario para migrar pedidos."
+
+#: wp-all-export.php:412
+msgid "<strong style=\"font-size:16px\">A Configured Export Requires the User Export Add-On</strong><p>Your User exports will not be able to run until you install the User Export Add-On. That add-on is available from <a href=\"https://wordpress.org/plugins/export-wp-users-xml-csv/\" target=\"_blank\">wordpress.org</a>.</p>"
+msgstr "<strong style=\"font-size:16px\">Una exportación configurada requiere la extensión de exportación de usuario</strong><p>Tus exportaciones de usuario no podrán ejecutarse hasta que instales la extensión de exportación de usuario. Esta extensión está disponible en <a href=\"https://wordpress.org/plugins/export-wp-users-xml-csv/\" target=\"_blank\">wordpress.org</a>.</p>"
+
+#: wp-all-export.php:485 wp-all-export.php:488 wp-all-export.php:491
+msgid "The WooCommerce Export Add-On Pro is required to run this export. If you already own it, you can download the add-on here: <a href=\"http://www.wpallimport.com/portal/downloads\" target=\"_blank\">http://www.wpallimport.com/portal/downloads</a>"
+msgstr "Se requiere la extensión WooCommerce Export Pro para realizar esta exportación. Si ya la tienes, puedes descargarlo aquí: <a href=\"http://www.wpallimport.com/portal/downloads\" target=\"_blank\">http://www.wpallimport.com/portal/downloads</a>"
+
+#: wp-all-export.php:417 wp-all-export.php:422
+msgid "Download Add-On"
+msgstr "Descargar la extensión"
+
+#: views/admin/export/index.php:255
+msgid "If you already own it, remove the WP All Export free edition and install the User Export Package's plugins."
+msgstr "Si ya lo tienes, elimina la edición gratuita de WP All Export e instala los plugins del paquete de exportación de usuario."
+
+#: views/admin/export/index.php:254
+msgid "The User Export Package is required to Export Users"
+msgstr "El paquete de exportación de usuarios es necesario para exportar usuarios"
+
+#: views/admin/export/index.php:224
+msgid "WP All Export Pro is Required to Export Taxonomies."
+msgstr "Se requiere WP All Export Pro para exportar taxonomías."
+
+#: views/admin/export/index.php:217 views/admin/export/index.php:228
+msgid "Purchase WP All Export Pro"
+msgstr "Comprar WP All Export Pro"
+
+#: views/admin/export/index.php:213
+msgid "WP All Export Pro is Required to Export Comments."
+msgstr "Se requiere WP All Export Pro para exportar comentarios."
+
+#: views/admin/export/index.php:265
+msgid "The WooCommerce Export Package is Required to Export WooCommerce Products."
+msgstr "El paquete de exportación de WooCommerce es necesario para exportar productos de WooCommerce."
+
+#: views/admin/export/index.php:195
+msgid "WP All Export Pro and the WooCommerce Export Add-On are Required to Export WooCommerce Reviews."
+msgstr "Se requieren WP All Export Pro y la extensión WooCommerce Export para exportar reseñas de WooCommerce."
+
+#: views/admin/export/index.php:187
+msgid "The WooCommerce Export Package is Required to Export Coupons."
+msgstr "El paquete de exportación de WooCommerce es necesario para exportar cupones."
+
+#: actions/wp_ajax_wpae_filtering.php:106
+#: actions/wp_ajax_wpae_filtering.php:111 views/admin/export/index.php:189
+#: views/admin/export/index.php:199 views/admin/export/index.php:268
+msgid "Purchase the WooCommerce Export Package"
+msgstr "Comprar el paquete de exportación de WooCommerce"
+
+#: views/admin/export/index.php:173
+msgid "The User Export Package is Required to Export Customers."
+msgstr "El paquete de exportación de usuarios es necesario para exportar clientes."
+
+#: views/admin/export/index.php:169 views/admin/export/index.php:176
+msgid "Purchase the User Export Package"
+msgstr "Comprar el paquete de exportación de usuarios"
+
+#: views/admin/export/index.php:167
+msgid "The User Export Package is Required to Export Users."
+msgstr "El paquete de exportación de usuarios es necesario para exportar usuarios."
+
+#: src/App/UnsecuredController/SchedulingController.php:172
+#: wp-all-export.php:521
+msgid "The ACF Export Add-On Pro is required to run this export. You can download the add-on here: <a href=\"http://www.wpallimport.com/portal/\" target=\"_blank\">http://www.wpallimport.com/portal/</a>"
+msgstr "Se requiere la extensión ACF Export Pro para realizar esta exportación. Puedes descargarla aquí: <a href=\"http://www.wpallimport.com/portal/\" target=\"_blank\">http://www.wpallimport.com/portal/</a>"
+
+#: src/App/UnsecuredController/SchedulingController.php:168
+#: wp-all-export.php:513
+msgid "The WooCommerce Export Add-On Pro is required to run this export. You can download the add-on here: <a href=\"http://www.wpallimport.com/portal/\" target=\"_blank\">http://www.wpallimport.com/portal/</a>"
+msgstr "Se requiere la extensión WooCommerce Export Pro para realizar esta exportación. Puedes descargarla aquí: <a href=\"http://www.wpallimport.com/portal/\" target=\"_blank\">http://www.wpallimport.com/portal/</a>"
+
+#: libraries/XmlExportEngine.php:509
+msgid "The WooCommerce Export Add-On Pro is required to Export WooCommerce Coupons"
+msgstr "Se requiere la extensión WooCommerce Export Pro para exportar cupones de WooCommerce"
+
+#: libraries/XmlExportEngine.php:506
+msgid "The WooCommerce Export Add-On Pro is required to Export WooCommerce Orders"
+msgstr "Se requiere la extensión WooCommerce Export Pro para exportar pedidos de WooCommerce"
+
+#: libraries/XmlExportEngine.php:503
+msgid "The WooCommerce Export Add-On Pro is required to Export WooCommerce Products"
+msgstr "Se requiere la extensión WooCommerce Export Pro para exportar productos de WooCommerce"
+
+#: views/admin/export/template.php:247 views/admin/export/template.php:446
+msgid "There are certain characters that cannot be included in an XML file unless they are wrapped in CDATA tags.<br/>Read more about CDATA tags: <a target='_blank' href='%s' style='font-size: 12px;'>%s</a>."
+msgstr "Hay ciertos caracteres que no se pueden incluir en un archivo XML a menos que estén envueltos en etiquetas CDATA.<br/>Lee más sobre las etiquetas CDATA: <a target='_blank' href='%s' style='font-size: 12px;'>%s</a>."
+
+#: views/admin/export/template.php:12
+msgid "Drag & Drop"
+msgstr "Arrastrar y soltar"
+
+#: views/admin/export/process.php:13 views/admin/manage/update.php:24
+msgid "Confirm & Run"
+msgstr "Confirmar y ejecutar"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:102
+msgid "User Export Add-On is not installed"
+msgstr "La extensión de exportación de usuarios no está instalada"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:99
+msgid "Already own the Pro version?"
+msgstr "¿Ya tienes la versión Pro?"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:97
+msgid "Install on as many sites<br>as you like."
+msgstr "Instálalo en tantos sitios<br>como quieras."
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:97
+msgid "Unlimited Sites"
+msgstr "Sitios ilimitados"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:96
+msgid "Get help from a team<br>of experts."
+msgstr "Recibe ayuda de un equipo<br>de expertos."
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:96
+msgid "World Class Support"
+msgstr "Soporte de alto nivel"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:95
+msgid "Pay once and get<br>updates for life."
+msgstr "Paga una vez y obtén<br>actualizaciones de por vida."
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:95
+msgid "Lifetime Updates"
+msgstr "Actualizaciones de por vida"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:94
+msgid "No questions,<br> full refund."
+msgstr "Sin preguntas,<br> reembolso completo."
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:94
+msgid "90 Day Guarantee"
+msgstr "Garantía de 90 días"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:90
+msgid "Trusted by over 200,000 happy users"
+msgstr "Con la confianza de más de 200.000 usuarios satisfechos"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:88
+msgid "Upgrade to Pro"
+msgstr "Mejorar a Pro"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:84
+msgid "WooCommerce, ACF and more"
+msgstr "WooCommerce, ACF y más"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:83
+msgid "Create any CSV or XML"
+msgstr "Crea cualquier CSV o XML"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:82
+msgid "Drag & drop interface"
+msgstr "Interfaz de arrastrar y soltar"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:81
+msgid "Export all user data"
+msgstr "Exportar todos los datos de usuario"
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:77
+msgid "Purchase a Pro package to export users, along with<br>many other powerful features."
+msgstr "Adquiere un paquete Pro para exportar usuarios, junto con<br>muchas otras potentes características."
+
+#: actions/wp_ajax_wpae_upgrade_notice.php:76
+msgid "Exporting Users is a Pro Feature"
+msgstr "Exportar usuarios es una característica Pro"
+
+#: views/admin/manage/index.php:491
+msgid "Delete Permanently"
+msgstr "Borrar permanentemente"
+
+#: views/admin/manage/index.php:490
+msgid "Restore"
+msgstr "Restaurar"
+
+#: views/admin/manage/index.php:452
+msgid "Cancel Cron"
+msgstr "Cancelar cron"
+
+#: views/admin/manage/index.php:448
+msgid "Run Export"
+msgstr "Ejecutar la exportación"
+
+#: views/admin/manage/index.php:432
+msgid "settings edited since last run"
+msgstr "ajustes editados desde la última ejecución"
+
+#: views/admin/manage/index.php:427
+msgid "Format: %s"
+msgstr "Formato: %s"
+
+#: views/admin/manage/index.php:425
+msgid "%d Records Exported"
+msgstr "%d registros exportados"
+
+#: views/admin/manage/index.php:424
+msgid "never"
+msgstr "nunca"
+
+#: views/admin/manage/index.php:424
+msgid "Last run: %s"
+msgstr "Última ejecución: %s"
+
+#: views/admin/manage/index.php:420
+msgid "Export Attempt at %s"
+msgstr "Intento de exportación en %s"
+
+#: views/admin/manage/index.php:406
+msgid "Export currently in progress"
+msgstr "Exportación actualmente en curso"
+
+#: views/admin/manage/index.php:391
+msgid "currently processing with cron"
+msgstr "procesando actualmente con cron"
+
+#: views/admin/manage/index.php:384 views/admin/manage/index.php:399
+#: views/admin/manage/index.php:413
+msgid "last activity %s ago"
+msgstr "última actividad hace %s"
+
+#: views/admin/manage/index.php:377
+msgid "triggered with cron"
+msgstr "activado con cron"
+
+#: views/admin/manage/index.php:367
+msgid "Y/m/d g:i a"
+msgstr "Y/m/d g:i a"
+
+#: views/admin/manage/index.php:339
+msgid "Post Types: "
+msgstr "Tipos de contenido: "
+
+#: views/admin/export/options.php:23
+msgid "Export Settings"
+msgstr "Ajustes de exportación"
+
+#: views/admin/manage/index.php:142
+msgid "No previous exports found."
+msgstr "No se han encontrado exportaciones anteriores."
+
+#: views/admin/manage/index.php:98
+msgid "Displaying %s&#8211;%s of %s"
+msgstr "Mostrando %s&#8211;%s de %s"
+
+#: views/admin/manage/index.php:91 views/admin/manage/index.php:494
+msgid "Apply"
+msgstr "Aplicar"
+
+#: views/admin/manage/index.php:88 views/admin/manage/index.php:486
+msgid "Bulk Actions"
+msgstr "Acciones en lote"
+
+#: views/admin/manage/index.php:71
+msgid "Info & Options"
+msgstr "Información y opciones"
+
+#: views/admin/manage/index.php:69
+msgid "Summary"
+msgstr "Resumen"
+
+#: views/admin/manage/index.php:67
+msgid "Query"
+msgstr "Consulta"
+
+#: views/admin/manage/index.php:65
+msgid "Name"
+msgstr "Nombre"
+
+#: views/admin/manage/index.php:64
+msgid "ID"
+msgstr "ID"
+
+#: views/admin/manage/index.php:54 views/admin/manage/index.php:57
+msgid "Search Exports"
+msgstr "Buscar exportaciones"
+
+#: views/admin/manage/index.php:188 views/admin/manage/update.php:96
+msgid "Edit Template"
+msgstr "Editar plantilla"
+
+#: views/admin/manage/templates.php:9
+msgid "Install these import templates in your separate WP All Import installation from the <i>All Import › Settings</i> page by clicking the \"Import Templates\" button."
+msgstr "Instala estas plantillas de importación en tu instalación separada de WP All Import desde la página <i>All Import › Configuración</i> haciendo clic en el botón «Importar plantillas»."
+
+#: views/admin/manage/templates.php:8
+msgid "Download your import templates and use them to import your exported file to a separate WordPress/WP All Import installation."
+msgstr "Descarga tus plantillas de importación y úsalas para importar tu archivo exportado a una instalación separada de WordPress/WP All Import."
+
+#: views/admin/manage/index.php:316 views/admin/manage/templates.php:7
+msgid "Download Import Templates"
+msgstr "Descargar plantillas de importación"
+
+#: views/admin/manage/scheduling.php:55
+msgid "Your web host may require you to use a command other than wget, although wget is most common. In this case, you must asking your web hosting provider for help."
+msgstr "Es posible que tu proveedor de alojamiento web te pida que uses un comando distinto a «wget», aunque wget es el más común. En ese caso, debes solicitar ayuda a tu proveedor de alojamiento web."
+
+#: views/admin/manage/scheduling.php:46
+msgid "It also operates this way in case of unexpected crashes by your web host. If it crashes before the export is finished, the next run of the cron job two minutes later will continue it where it left off, ensuring reliability."
+msgstr "También funciona así en caso de fallos inesperados de tu proveedor de alojamiento web. Si falla antes de finalizar la exportación, la siguiente ejecución del trabajo cron, dos minutos después, lo reanudará donde lo dejó, garantizando así la fiabilidad."
+
+#: views/admin/manage/scheduling.php:44
+msgid "It processes in iteration (only exporting a few records each time it runs) to optimize server load. It is recommended you run the execution script every 2 minutes."
+msgstr "Se procesa iterativamente (exportando solo unos pocos registros por ejecución) para optimizar la carga del servidor. Se recomienda ejecutar el script cada 2 minutos."
+
+#: views/admin/manage/scheduling.php:42
+msgid "The Execution script actually executes the export, once it has been triggered with the Trigger script."
+msgstr "El script de ejecución realmente ejecuta la exportación, una vez que se ha activado con el script de activación."
+
+#: views/admin/manage/scheduling.php:40
+msgid "Execution Script"
+msgstr "Script de ejecución"
+
+#: views/admin/manage/scheduling.php:36 views/admin/manage/scheduling.php:48
+msgid "Example:"
+msgstr "Ejemplo:"
+
+#: views/admin/manage/scheduling.php:34
+msgid "To schedule the export to run once every 24 hours, run the trigger script every 24 hours. Most hosts require you to use “wget” to access a URL. Ask your host for details."
+msgstr "Para programar la exportación cada 24 horas, ejecuta el script de activación cada 24 horas. La mayoría de los proveedores de alojamiento web requieren el uso de «wget» para acceder a una URL. Consulta con tu proveedor de alojamiento web para obtener más información."
+
+#: views/admin/manage/scheduling.php:32
+msgid "Every time you want to schedule the export, run the trigger script."
+msgstr "Cada vez que quieras programar la exportación, ejecuta el script de activación."
+
+#: views/admin/manage/scheduling.php:30
+msgid "Trigger Script"
+msgstr "Script de activación"
+
+#: views/admin/manage/scheduling.php:25
+msgid "Export Bundle URL"
+msgstr "URL de exportación en lote"
+
+#: views/admin/manage/scheduling.php:22
+msgid "Export File URL"
+msgstr "URL del archivo de exportación"
+
+#: views/admin/manage/scheduling.php:20
+msgid "Run the execution script frequently. Once per two minutes is recommended."
+msgstr "Ejecuta frecuentemente el script de ejecución. Se recomienda una vez cada dos minutos."
+
+#: views/admin/manage/scheduling.php:19
+msgid "Execution Script URL"
+msgstr "URL del script de ejecución"
+
+#: views/admin/manage/scheduling.php:16
+msgid "Run the trigger script when you want to update your export. Once per 24 hours is recommended."
+msgstr "Ejecuta el script de activación cuando quieras actualizar tu exportación. Se recomienda una vez cada 24 horas."
+
+#: views/admin/manage/scheduling.php:15
+msgid "Trigger Script URL"
+msgstr "URL del script de activación"
+
+#: views/admin/manage/scheduling.php:11
+msgid "To schedule an export, you must create two cron jobs in your web hosting control panel. One cron job will be used to run the Trigger script, the other to run the Execution script."
+msgstr "Para programar una exportación, debes crear dos trabajos cron en el panel de control de tu alojamiento web. Un trabajo cron se usará para ejecutar el script de activación y el otro para ejecutar el script de ejecución."
+
+#: views/admin/manage/scheduling.php:7
+msgid "Cron Scheduling"
+msgstr "Programación cron"
+
+#: views/admin/export/options/settings.php:115
+#: views/admin/export/options/settings.php:140
+msgid "Upgrade to the Pro edition of WP All Export to only export "
+msgstr "Actualiza a la edición Pro de WP All Export para solo exportar "
+
+#: views/admin/export/index.php:246
+msgid "Comment Query"
+msgstr "Consulta de comentarios"
+
+#: views/admin/export/index.php:241
+msgid "User Query"
+msgstr "Consulta del usuario"
+
+#: views/admin/export/index.php:240
+msgid "Post Type Query"
+msgstr "Consulta de tipo de contenido"
+
+#: views/admin/export/index.php:260
+msgid "Upgrade to the Pro edition of WP All Export to Export Comments"
+msgstr "Actualiza a la edición Pro de WP All Export para exportar comentarios"
+
+#: views/admin/export/index.php:152
+msgid "Select taxonomy"
+msgstr "Seleccionar taxonomía"
+
+#: views/admin/export/index.php:110
+msgid "Choose a post type..."
+msgstr "Elige un tipo de contenido"
+
+#: views/admin/export/index.php:102
+msgid "WooCommerce Reviews"
+msgstr "Reseñas de WooCommerce"
+
+#: views/admin/export/index.php:42
+msgid "WP_Query Results"
+msgstr "Resultados de WP_Query"
+
+#: views/admin/export/index.php:38
+msgid "Specific Post Type"
+msgstr "Tipo de contenido específico"
+
+#: views/admin/export/index.php:35
+msgid "First, choose what to export."
+msgstr "Primero elige qué exportar."
+
+#: views/admin/export/template.php:639
+msgid "Custom XML Feeds"
+msgstr "Feeds XML personalizados"
+
+#: views/admin/export/template.php:630 views/admin/export/template.php:640
+msgid "Edit Export Field"
+msgstr "Editar campo de exportación"
+
+#: views/admin/export/template.php:629
+msgid "Add Field To Export"
+msgstr "Añadir campo a la exportación"
+
+#: views/admin/export/template.php:568
+msgid "Upgrade to the Pro edition of WP All Export to Export To Google Merchant Center"
+msgstr "Actualiza a la edición Pro de WP All Export para exportar a Google Merchant Center"
+
+#: views/admin/export/template.php:561
+msgid "Upgrade to the Pro edition of WP All Export to Export Custom XML"
+msgstr "Actualiza a la edición Pro de WP All Export para exportar XML personalizado"
+
+#: views/admin/export/template.php:544
+msgid "Load Template..."
+msgstr "Cargar plantilla..."
+
+#: views/admin/export/template.php:537
+msgid "Template name..."
+msgstr "Nombre de la plantilla..."
+
+#: views/admin/export/template.php:533
+msgid "Save settings as a template"
+msgstr "Guardar los ajustes como una plantilla"
+
+#: views/admin/export/template.php:507
+msgid "Upgrade to the Pro edition of WP All Export to use Custom PHP Functions"
+msgstr "Actualiza a la edición Pro de WP All Export para usar funciones PHP personalizadas"
+
+#: views/admin/export/template.php:425
+msgid "Help"
+msgstr "Ayuda"
+
+#: views/admin/export/template.php:413
+msgid "XML Editor"
+msgstr "Editor XML"
+
+#: views/admin/export/template.php:387
+msgid "Google Merchant Center Product Feed"
+msgstr "Feed de productos de Google Merchant Center"
+
+#: views/admin/export/template.php:383
+msgid "Custom XML Feed"
+msgstr "Feed XML personalizado"
+
+#: views/admin/export/template.php:382
+msgid "Simple XML Feed"
+msgstr "Feed XML simple"
+
+#: views/admin/export/template.php:373
+msgid "Upgrade to the Pro edition of WP All Export to Export to Excel"
+msgstr "Actualiza a la edición Pro de WP All Export para exportar a Excel"
+
+#: views/admin/export/template.php:366
+msgid "Excel File (XLSX)"
+msgstr "Archivo de Excel (XLSX)"
+
+#: views/admin/export/template.php:365
+msgid "Excel File (XLS)"
+msgstr "Archivo de Excel (XLS)"
+
+#: views/admin/export/template.php:364
+msgid "CSV File"
+msgstr "Archivo CSV"
+
+#: views/admin/export/template.php:350
+msgid "Feed"
+msgstr "Feed"
+
+#: views/admin/export/template.php:346
+msgid "Spreadsheet"
+msgstr "Hoja de cálculo"
+
+#: views/admin/export/template.php:344
+msgid "Choose your export type"
+msgstr "Elige tu tipo de exportación"
+
+#: views/admin/export/template.php:339
+msgid "Export Type"
+msgstr "Tipo de exportación"
+
+#: views/admin/export/template.php:323
+msgid "If enabled, each order item will appear as its own row with all order info filled in for every column. If disabled, order info will only display on one row with only the order item info displaying in additional rows."
+msgstr "Si está activado, cada artículo del pedido aparecerá en una fila independiente, con toda la información del pedido completada en cada columna. Si está desactivado, la información del pedido solo se mostrará en una fila, y solo la información del artículo del pedido se mostrará en filas adicionales."
+
+#: views/admin/export/template.php:317
+msgid "If an order contains multiple products, each product will have its own row. If disabled, each product will have its own column."
+msgstr "Si un pedido contiene varios productos, cada uno tendrá su propia fila. Si está desactivado, cada producto tendrá su propia columna."
+
+#: views/admin/export/template.php:316
+msgid "Display each product in its own row"
+msgstr "Mostrar cada producto en su propia fila"
+
+#: views/admin/export/template.php:290
+msgid "Language"
+msgstr "Idioma"
+
+#: views/admin/export/template.php:284
+msgid "Separator:"
+msgstr "Separador:"
+
+#: views/admin/export/template.php:260 views/admin/export/template.php:471
+msgid "Warning: This may result in an invalid XML file"
+msgstr "Advertencia: Esto puede dar lugar a un archivo XML no válido"
+
+#: views/admin/export/template.php:258 views/admin/export/template.php:469
+msgid "Never wrap data in CDATA tags"
+msgstr "Nunca envuelvas datos en etiquetas CDATA"
+
+#: views/admin/export/template.php:254 views/admin/export/template.php:461
+msgid "Always wrap data in CDATA tags"
+msgstr "Envuelve siempre los datos en etiquetas CDATA"
+
+#: views/admin/export/template.php:250 views/admin/export/template.php:453
+msgid "Automatically wrap data in CDATA tags when it contains illegal characters"
+msgstr "Envuelve automáticamente los datos en etiquetas CDATA cuando contengan caracteres ilegales"
+
+#: views/admin/export/template.php:243
+msgid "You will not be able to reimport data to the parent products, and you will not be able to import these products to another site."
+msgstr "No podrás volver a importar datos a los productos padre, y no podrás importar estos productos a otro sitio."
+
+#: views/admin/export/template.php:240 views/admin/export/template.php:309
+msgid "You will not be able to reimport data to the product variations, and you will not be able to import these products to another site."
+msgstr "No podrás volver a importar datos a las variaciones de producto, y no podrás importar estos productos a otro sitio."
+
+#: views/admin/export/template.php:223
+msgid "Single %s XML Element"
+msgstr "Elemento XML %s único"
+
+#: views/admin/export/template.php:214
+msgid "Root XML Element"
+msgstr "Elemento XML raíz"
+
+#: views/admin/export/template.php:207 views/admin/export/template.php:277
+#: views/admin/export/template.php:439
+msgid "Advanced Options"
+msgstr "Opciones avanzadas"
+
+#: views/admin/export/template.php:197 views/admin/export/template.php:430
+msgid "Preview"
+msgstr "Previsualizar"
+
+#: views/admin/export/template.php:191
+msgid "Clear All"
+msgstr "Vaciar todo"
+
+#: views/admin/export/template.php:189
+msgid "Add All"
+msgstr "Añadir todo"
+
+#: views/admin/export/template.php:187
+msgid "Add Field"
+msgstr "Añadir campo"
+
+#: views/admin/export/template.php:170
+msgid "Warning: without %s you won't be able to re-import this data back to this site using WP All Import."
+msgstr "Advertencia: sin %s no podrás volver a importar estos datos a este sitio utilizando WP All Import."
+
+#: views/admin/export/template.php:145
+msgid "Drag & drop data from \"Available Data\" on the right to include it in the export or click \"Add Field To Export\" below."
+msgstr "Arrastra y suelta datos desde «Datos disponibles» a la derecha, para incluirlos en la exportación, o haz clic más abajo en «Añadir campo a la exportación»."
+
+#: views/admin/export/variation_options.php:81
+msgid "Only export parent products"
+msgstr "Exportar solo productos padre"
+
+#: views/admin/export/variation_options.php:48
+msgid "Only export product variations"
+msgstr "Exportar solo variaciones de producto"
+
+#: views/admin/export/variation_options.php:39
+#: views/admin/export/variation_options.php:70
+msgid "Product variations use the default variation product title"
+msgstr "Las variaciones de producto utilizan el título de variación de producto por defecto"
+
+#: views/admin/export/variation_options.php:30
+#: views/admin/export/variation_options.php:59
+msgid "Product variations use the parent product title"
+msgstr "Las variaciones de producto utilizan el título del producto padre"
+
+#: views/admin/export/variation_options.php:21
+msgid "Export product variations and their parent products"
+msgstr "Exportar variaciones de producto y sus productos padre"
+
+#: views/admin/export/variation_options.php:13
+msgid "WooCommerce stores each product variation as a separate product in the database, along with a parent product to tie all of the variations together.<br/><br/>If the product title is 'T-Shirt', then the parent product will be titled 'T-Shirt', and in the database each size/color combination will be a separate product with a title like 'Variation #23 of T-Shirt'."
+msgstr "WooCommerce almacena cada variación de producto como un producto separado en la base de datos, junto con un producto principal para unir todas las variaciones.<br/><br/>Si el título del producto es «Camiseta», entonces el producto principal se titulará «Camiseta» y en la base de datos cada combinación de tamaño/color será un producto separado con un título como «Variación n.° 23 de camiseta»."
+
+#: views/admin/export/variation_options.php:10
+msgid "Product Variations"
+msgstr "Variaciones del producto"
+
+#: views/admin/export/template/add_new_field.php:169
+msgid "Save"
+msgstr "Guardar"
+
+#: views/admin/export/template/add_new_field.php:167
+#: views/admin/manage/index.php:89 views/admin/manage/index.php:209
+#: views/admin/manage/index.php:488
+msgid "Delete"
+msgstr "Borrar"
+
+#: views/admin/export/template/add_new_field.php:165
+#: views/admin/manage/index.php:456
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: views/admin/export/template.php:604
+#: views/admin/export/template/add_new_field.php:155
+msgid "Available Data"
+msgstr "Datos disponibles"
+
+#: views/admin/export/template/add_new_field.php:145
+msgid "You can drag and drop fields from Available Data, add static text, and use PHP functions"
+msgstr "Puedes arrastrar y soltar campos desde «Datos disponibles», añadir texto estático y utilizar funciones PHP"
+
+#: views/admin/export/template/add_new_field.php:143
+msgid "Upgrade to Pro to use Custom Export Fields"
+msgstr "Actualiza a Pro para usar campos de exportación personalizados"
+
+#: views/admin/export/template/add_new_field.php:137
+msgid "Custom export field"
+msgstr "Campo de exportación personalizado"
+
+#: views/admin/export/template/add_new_field.php:124
+msgid "Select a field to export"
+msgstr "Selecciona un campo para exportar"
+
+#: views/admin/export/template/add_new_field.php:117
+msgid "Element name"
+msgstr "Nombre del elemento"
+
+#: views/admin/export/template/add_new_field.php:116
+msgid "Column name"
+msgstr "Nombre de la columna"
+
+#: views/admin/export/template/custom_xml_help.php:89
+msgid "If we had two products, each with two images, here's what our XML file would look like:"
+msgstr "Si tenemos dos productos, cada uno con dos imágenes, este es el aspecto que tendría nuestro archivo XML:"
+
+#: views/admin/export/template/custom_xml_help.php:81
+msgid "Then in the Function Editor we'd define my_price_function() like so:"
+msgstr "Después, en el Editor de funciones, definiríamos my_price_function() de la siguiente manera:"
+
+#: views/admin/export/template/custom_xml_help.php:63
+msgid "Here's what our XML template will look like in the editor:"
+msgstr "Este es el aspecto que tendrá nuestra plantilla XML en el editor:"
+
+#: views/admin/export/template/custom_xml_help.php:61
+msgid "Product image URLs wrapped in an <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_tag\">&lt;images&gt;</span></span> element"
+msgstr "URL de imágenes de productos envueltas en un elemento <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_tag\">&lt;imágenes&gt;</span></span>"
+
+#: views/admin/export/template/custom_xml_help.php:60
+msgid "Product Price (processed via a PHP function so that they end in .99)"
+msgstr "Precio del producto (procesado a través de una función PHP para que termine en .99)"
+
+#: views/admin/export/template/custom_xml_help.php:59
+msgid "Product Title"
+msgstr "Título del producto"
+
+#: views/admin/export/template/custom_xml_help.php:57
+msgid "Site name below the header, before the <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_tag\">&lt;products&gt;</span></span> element"
+msgstr "Nombre del sitio debajo del encabezado, antes del elemento <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_tag\">&lt;productos&gt;</span></span>"
+
+#: views/admin/export/template/custom_xml_help.php:55
+msgid "Let's say we want to make an XML feed of our WooCommerce products with these requirements:"
+msgstr "Digamos que queremos hacer un feed XML de nuestros productos WooCommerce con estos requisitos:"
+
+#: views/admin/export/template/custom_xml_help.php:51
+msgid "Example Template"
+msgstr "Plantilla de ejemplo"
+
+#: views/admin/export/template/custom_xml_help.php:45
+msgid "And you'll just get one XML element with all of the values, like this:"
+msgstr "Y obtendrás un solo elemento XML con todos los valores, como esto:"
+
+#: views/admin/export/template/custom_xml_help.php:41
+msgid "WP All Export will do this with all indexed arrays that it comes across. So if you have a function that returns an indexed array, that XML element will be repeated for each value. Likewise, you can take a field like {Image URL} and turn it into a string, like this:"
+msgstr "WP All Export hará esto con todos los arrays indexados que encuentre. Por lo tanto, si tienes una función que devuelve un array indexado, ese elemento XML se repetirá para cada valor. De igual forma, puedes convertir un campo como {URL de la imagen} en una cadena, como se muestra a continuación:"
+
+#: views/admin/export/template/custom_xml_help.php:33
+msgid "And here's how our exported XML file will look:"
+msgstr "Y así es como se verá nuestro archivo XML exportado:"
+
+#: views/admin/export/template/custom_xml_help.php:25
+msgid "For example, let's assume a post as two images attached to it - image1.jpg and image2.jpg - and we want to have one XML element for every image URL. Here's what our XML template will look like:"
+msgstr "Por ejemplo, supongamos que una publicación tiene dos imágenes adjuntas (imagen1.jpg e imagen2.jpg) y queremos tener un elemento XML para cada URL de imagen. Así se verá nuestra plantilla XML:"
+
+#: views/admin/export/template/custom_xml_help.php:24
+msgid "Some fields, like images, have multiple values per post. WP All Export turns these fields into indexed arrays. Whenever WP All Export encounters an indexed array in an XML element it will repeat that element once for every value in the array."
+msgstr "Algunos campos, como las imágenes, tienen varios valores por publicación. WP All Export convierte estos campos en arrays indexadas. Cuando WP All Export encuentra una array indexada en un elemento XML, la repite una vez para cada valor de la array."
+
+#: views/admin/export/template/custom_xml_help.php:21
+msgid "Repeating Fields and Arrays"
+msgstr "Campos y arrays repetitivos"
+
+#: views/admin/export/template/custom_xml_help.php:18
+msgid "Whatever your function returns will appear in your exported XML file. You can pass as many elements as you like to your function so that they can be combined and processed in any way."
+msgstr "Lo que devuelva tu función aparecerá en el archivo XML exportado. Puedes pasarle tantos elementos como quieras para que se puedan combinar y procesar de cualquier forma."
+
+#: views/admin/export/template/custom_xml_help.php:17
+msgid "You can also use native PHP functions: <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_text\">[str_replace(\",\",\"\",{Price})]"
+msgstr "También puedes usar funciones nativas de PHP: <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_text\">[str_replace(\",\",\"\",{Precio})]"
+
+#: views/admin/export/template/custom_xml_help.php:16
+msgid "To add a custom PHP function to your XML template wrap it in brackets: <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_text\">[my_function({Content})]"
+msgstr "Para agregar una función PHP personalizada a tu plantilla XML, envuélvela entre corchetes: <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_text\">[my_function({Contenido})]"
+
+#: views/admin/export/template/custom_xml_help.php:13
+msgid "PHP Functions"
+msgstr "Funciones PHP"
+
+#: views/admin/export/template/custom_xml_help.php:10
+msgid "For example, to add the post title to your export, you can either drag the title element into the editor, or you can manually edit the export template in editor to add it like this: <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_tag\">&lt;my_custom_title&gt;<span class=\"wp_all_export_code_text\">{Title}</span>&lt;/my_custom_title&gt;</span></span>"
+msgstr "Por ejemplo, para agregar el título de la publicación a tu exportación, puedes arrastrar el elemento de título al editor o puedes editar manualmente la plantilla de exportación en el editor para agregarlo de esta manera: <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_tag\">&lt;my_custom_title&gt;<span class=\"wp_all_export_code_text\">{Title}</span>&lt;/my_custom_title&gt;</span></span>"
+
+#: views/admin/export/template/custom_xml_help.php:9
+msgid "You can drag and drop elements from Available Data on the right into the editor on the left. You can also manually enter data into the export template."
+msgstr "Puedes arrastrar y soltar elementos desde la sección «Datos Disponibles» (a la derecha) hasta el editor (a la izquierda). También puedes introducir datos manualmente en la plantilla de exportación."
+
+#: views/admin/export/template/custom_xml_help.php:8
+msgid "The custom XML editor is a template for your custom XML feed. Everything between the <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_comment\">&lt;!-- BEGIN LOOP --&gt;</span> and <span class=\"wp_all_export_code_comment\">&lt;!-- END LOOP --&gt;</span></span> tags will be repeated for each exported post."
+msgstr "El editor XML personalizado es una plantilla para tu feed XML personalizado. Todo lo que esté entre las etiquetas <span class=\"wp_all_export_code\"><span class=\"wp_all_export_code_comment\">&lt;!-- BEGIN LOOP --&gt;</span> y <span class=\"wp_all_export_code_comment\">&lt;!-- END LOOP --&gt;</span></span> se repetirá para cada publicación exportada."
+
+#: views/admin/export/template/custom_xml_help.php:5
+msgid "Custom XML Editor"
+msgstr "Editor XML personalizado"
+
+#: views/admin/export/template/custom_xml_help.php:3
+msgid "The custom XML editor makes it easy to create an XML file with the exact structure you need. The syntax is simple and straightforward, yet powerful enough to allow you to pass your data through custom PHP functions."
+msgstr "El editor XML personalizado facilita la creación de un archivo XML con la estructura exacta que necesitas. La sintaxis es simple y directa, pero lo suficientemente potente como para permitirte pasar tus datos mediante funciones PHP personalizadas."
+
+#: views/admin/export/template/advanced_field_options.php:63
+#: views/admin/export/template/functions_editor.php:26
+msgid "Upgrade to Pro to use Custom PHP Functions"
+msgstr "Actualiza a Pro para usar funciones PHP personalizadas"
+
+#: views/admin/export/template/advanced_field_options.php:60
+msgid "The value of the field chosen for export will be passed to the PHP function."
+msgstr "El valor del campo elegido para exportar se pasará a la función PHP."
+
+#: views/admin/export/template/advanced_field_options.php:59
+msgid "Export the value returned by a PHP function"
+msgstr "Exportar el valor devuelto por una función PHP"
+
+#: views/admin/export/template/advanced_field_options.php:51
+#: views/admin/export/template/custom_xml_help.php:58
+msgid "Product SKU"
+msgstr "SKU del producto"
+
+#: views/admin/export/template/advanced_field_options.php:44
+msgid "date() Format"
+msgstr "formato date()"
+
+#: views/admin/export/template/advanced_field_options.php:41
+msgid "Natural Language PHP date()"
+msgstr "PHP date() en lenguaje natural"
+
+#: views/admin/export/template/advanced_field_options.php:40
+msgid "UNIX timestamp - PHP time()"
+msgstr "Marca de tiempo de UNIX - PHP time()"
+
+#: views/admin/export/template/advanced_field_options.php:31
+msgid "Separator"
+msgstr "Separador"
+
+#: views/admin/export/template/advanced_field_options.php:29
+msgid "Export attached images"
+msgstr "Exportar imágenes adjuntas"
+
+#: views/admin/export/template/advanced_field_options.php:24
+msgid "Export featured image"
+msgstr "Exportar la imagen destacada"
+
+#: views/admin/export/template/advanced_field_options.php:16
+msgid "If enabled, each repeater row will appear as its own csv line with all post info filled in for every column."
+msgstr "Si está activado, cada fila del repetidor aparecerá como su propia línea csv con toda la información de la publicación completa para cada columna."
+
+#: views/admin/export/template.php:321
+#: views/admin/export/template/advanced_field_options.php:15
+msgid "Fill in empty columns"
+msgstr "Rellenar las columnas vacías"
+
+#: views/admin/export/template/advanced_field_options.php:11
+msgid "Display each repeater row in its own csv line"
+msgstr "Mostrar cada fila del repetidor en su propia línea csv"
+
+#: views/admin/export/template/advanced_field_options.php:4
+msgid "%%ID%% will be replaced with the ID of the post being exported, example: SELECT meta_value FROM wp_postmeta WHERE post_id=%%ID%% AND meta_key='your_meta_key';"
+msgstr "%%ID%% se reemplazará con el ID de la publicación que se está exportando, ejemplo: SELECT meta_value FROM wp_postmeta WHERE post_id=%%ID%% AND meta_key='your_meta_key';"
+
+#: views/admin/export/blocks/filters.php:50
+msgid "No filtering options. Add filtering options to only export records matching some specified criteria."
+msgstr "Sin opciones de filtrado. Añade opciones de filtrado para exportar solo los registros que coincidan con algún criterio especificado."
+
+#: views/admin/export/blocks/filters.php:49
+msgid "Date filters use natural language.<br>For example, to return records created in the last week: <i>date ▸ newer than ▸ last week</i>.<br>For all records created in 2016: <i>date ▸ older than ▸ 1/1/2017</i> AND <i>date ▸ newer than ▸ 12/31/2015</i>"
+msgstr "Los filtros de fecha usan lenguaje natural.<br>Por ejemplo, para devolver registros creados la semana pasada: <i>fecha ▸ más reciente que ▸ semana pasada</i>.<br>Para todos los registros creados en 2016: <i>fecha ▸ anterior a ▸ 1/1/2017</i> Y <i>fecha ▸ más reciente que ▸ 31/12/2015</i>"
+
+#: views/admin/export/blocks/filters.php:37
+msgid "Add Rule"
+msgstr "Añadir regla"
+
+#: views/admin/export/blocks/filters.php:21
+msgid "Select Element"
+msgstr "Seleccionar el elemento"
+
+#: views/admin/export/blocks/filters.php:15
+msgid "Value"
+msgstr "Valor"
+
+#: views/admin/export/blocks/filters.php:14
+msgid "Rule"
+msgstr "Regla"
+
+#: views/admin/export/blocks/filters.php:13
+msgid "Element"
+msgstr "Elemento"
+
+#: views/admin/export/blocks/filters.php:7
+msgid "Upgrade to the Pro edition of WP All Export to Add Filters"
+msgstr "Actualiza a la edición Pro de WP All Export para añadir filtros"
+
+#: views/admin/export/process.php:89
+msgid "Ask your host to check your server's error log. They will be able to determine why your server is terminating the export process."
+msgstr "Pide a tu alojamiento que compruebe el registro de errores de tu servidor. Ellos podrán determinar por qué tu servidor está interrumpiendo el proceso de exportación."
+
+#: views/admin/export/process.php:88
+msgid "Your server terminated the export process"
+msgstr "Tu servidor ha interrumpido el proceso de exportación"
+
+#: views/admin/export/process.php:73
+msgid "Export %ss"
+msgstr "Exportar %ss"
+
+#: views/admin/export/process.php:39 views/admin/export/process.php:74
+msgid "Exported"
+msgstr "Exportado"
+
+#: views/admin/export/process.php:37
+msgid "Time Elapsed"
+msgstr "Tiempo transcurrido"
+
+#: views/admin/export/process.php:29
+msgid "Exporting may take some time. Please do not close your browser or refresh the page until the process is complete."
+msgstr "La exportación puede llevar algo de tiempo. Por favor, no cierres tu navegador ni recargues la página hasta que el proceso esté completo."
+
+#: views/admin/export/options.php:144 views/admin/export/template.php:582
+msgid "Back to Manage Exports"
+msgstr "Volver a Gestionar exportaciones"
+
+#: views/admin/export/options.php:141 views/admin/export/template.php:585
+msgid "Back"
+msgstr "Volver"
+
+#: views/admin/export/options.php:135
+msgid "Your Automatic Scheduling settings won't be saved without a subscription."
+msgstr "Tu configuración de programación automática no se guardará sin una suscripción."
+
+#: views/admin/export/options.php:134
+msgid "Looks like you're trying out Automatic Scheduling!"
+msgstr "¡Parece que estás probando la programación automática!"
+
+#: views/admin/export/index.php:18 views/admin/export/options.php:26
+#: views/admin/export/process.php:19 views/admin/export/template.php:19
+#: views/admin/manage/update.php:27
+msgid "Documentation"
+msgstr "Documentación"
+
+#: views/admin/export/index.php:18 views/admin/export/options.php:26
+#: views/admin/export/process.php:17 views/admin/export/template.php:16
+#: views/admin/manage/update.php:27
+msgid "Support"
+msgstr "Soporte"
+
+#: views/admin/export/success_page.php:171
+msgid "You can also start the import by clicking 'Import with WP All Import' on the Manage Exports page."
+msgstr "También puedes iniciar la importación haciendo clic en «Importar con WP All Import» en la página Gestionar exportaciones."
+
+#: views/admin/export/success_page.php:168 views/admin/manage/index.php:308
+msgid "Import with WP All Import"
+msgstr "Importar con WP All Import"
+
+#: views/admin/export/success_page.php:161
+msgid "Then, click below to import the data with WP All Import without having to set anything up."
+msgstr "Después, haz clic a continuación para importar los datos con WP All Import sin tener que configurar nada."
+
+#: views/admin/export/success_page.php:160
+msgid "After you've downloaded your data, edit it however you like."
+msgstr "Después de haber descargado tus datos, edítalos como quieras."
+
+#: views/admin/export/success_page.php:152
+msgid "Click here to read more about WP All Export's Zapier Integration."
+msgstr "Haz clic aquí para leer más sobre la integración con Zapier de WP All Export."
+
+#: views/admin/export/success_page.php:149
+msgid "Upgrade to the Pro edition of WP All Export for Zapier integration"
+msgstr "Actualiza a la edición Pro de WP All Export para la integración con Zapier"
+
+#: views/admin/export/success_page.php:146
+msgid "Automatically send your data to over 500 apps with Zapier."
+msgstr "Envía automáticamente tus datos a más de 500 aplicaciones con Zapier."
+
+#: views/admin/export/success_page.php:103
+msgid "This URL will always provide the export file from this export, even if the file name changes."
+msgstr "Esta URL siempre proporcionará el archivo de exportación de esta exportación, incluso si el nombre del archivo cambia."
+
+#: views/admin/export/success_page.php:99
+msgid "Public URL"
+msgstr "URL pública"
+
+#: views/admin/export/success_page.php:94
+msgid "Upload the Bundle to WP All Import on another site to quickly import this data."
+msgstr "Sube el paquete a WP All Import en otro sitio para importar estos datos rápidamente."
+
+#: views/admin/export/success_page.php:93
+msgid "The bundle contains your exported data and a settings file for WP All Import."
+msgstr "El paquete contiene los datos exportados y un archivo de configuración para WP All Import."
+
+#: views/admin/export/success_page.php:86 views/admin/manage/index.php:194
+#: views/admin/manage/index.php:201
+msgid "Bundle"
+msgstr "Paquete"
+
+#: views/admin/export/success_page.php:82 views/admin/manage/index.php:206
+msgid "Split %ss"
+msgstr "Dividir %ss"
+
+#: views/admin/export/success_page.php:71
+msgid "Click to Download"
+msgstr "Haz clic para descargar"
+
+#: views/admin/export/success_page.php:65
+msgid "Export, Edit, Import"
+msgstr "Exportar, editar, importar"
+
+#: views/admin/export/success_page.php:63
+msgid "External Apps"
+msgstr "Aplicaciones externas"
+
+#: views/admin/export/success_page.php:62
+msgid "Scheduling"
+msgstr "Programación"
+
+#: views/admin/export/success_page.php:61
+#: views/admin/export/success_page.php:165
+msgid "Download"
+msgstr "Descargar"
+
+#: views/admin/export/success_page.php:41
+msgid "WP All Export successfully exported your data!"
+msgstr "¡WP All Export exportó tus datos correctamente!"
+
+#: views/admin/export/options/settings.php:174
+msgid "When enabled, users with access to Client Mode will be able to run this export and download the export file. Go to All Export > Settings to give users access to Client Mode. <br><br><strong>Upgrade to the Pro edition of WP All Export to use this option.</strong>"
+msgstr "Al activar esta opción, los usuarios con acceso al Modo Cliente podrán ejecutar esta exportación y descargar el archivo. Ve a Todas las Exportaciones > Configuración para que los usuarios tengan acceso al Modo Cliente. <br><br><strong>Actualiza a la edición Pro de WP All Export para usar esta opción.</strong>"
+
+#: views/admin/export/options/settings.php:172
+msgid "Allow non-admins to run this export in Client Mode"
+msgstr "Permitir que usuarios no administradores ejecuten esta exportación en modo cliente"
+
+#: views/admin/export/options/settings.php:164
+msgid "records per file"
+msgstr "registros por archivo"
+
+#: views/admin/export/options/settings.php:164
+msgid "Limit export to"
+msgstr "Limitar la exportación a"
+
+#: views/admin/export/options/settings.php:161
+msgid "Split large exports into multiple files"
+msgstr "Dividir exportaciones grandes en varios archivos"
+
+#: views/admin/export/options/settings.php:156
+msgid "If disabled, the export file will be overwritten every time this export run."
+msgstr "Si está desactivado, el archivo de exportación se sobrescribirá cada vez que se ejecute esta exportación."
+
+#: views/admin/export/options/settings.php:155
+msgid "Create a new file each time export is run"
+msgstr "Crea un nuevo archivo cada vez que se ejecuta la exportación"
+
+#: views/admin/export/options/settings.php:132
+msgid "If re-run, this export will only include records that have been modified since last export run.<br><br><strong>Upgrade to the Pro edition of WP All Export to use this option.</strong>"
+msgstr "Si se vuelve a ejecutar, esta exportación solo incluirá los registros que se hayan modificado desde la última exportación.<br><br><strong>Actualiza a la edición Pro de WP All Export para usar esta opción.</strong>"
+
+#: views/admin/export/options/settings.php:122
+msgid "Only export %s that have been modified since last export"
+msgstr "Solo exportar %s que hayan sido modificados desde la última exportación"
+
+#: views/admin/export/options/settings.php:109
+msgid "If re-run, this export will only include records that have not been previously exported.<br><br><strong>Upgrade to the Pro edition of WP All Export to use this option.</strong>"
+msgstr "Si se vuelve a ejecutar, esta exportación solo incluirá registros que no se hayan exportado previamente.<br><br><strong>Actualiza a la edición Pro de WP All Export para usar esta opción.</strong>"
+
+#: views/admin/export/options/settings.php:108
+msgid "Only export %s once"
+msgstr "Exportar %s solo una vez"
+
+#: views/admin/export/options/settings.php:19
+msgid "WP All Export must be able to process this many records in less than your server's timeout settings. If your export fails before completion, to troubleshoot you should lower this number."
+msgstr "WP All Export debe poder procesar esta cantidad de registros en un tiempo menor al establecido en el servidor. Si la exportación falla antes de completarse, para solucionar el problema, deberías reducir este tiempo."
+
+#: views/admin/export/options/settings.php:18
+#: views/admin/export/options/settings.php:108
+#: views/admin/export/options/settings.php:114
+#: views/admin/export/options/settings.php:122
+#: views/admin/export/options/settings.php:139
+#: views/admin/export/options/settings.php:180
+msgid "records"
+msgstr "registros"
+
+#: views/admin/export/options/settings.php:18
+msgid "In each iteration, process"
+msgstr "En cada iteración, proceso"
+
+#: views/admin/export/options/settings.php:9
+msgid "Configure Advanced Settings"
+msgstr "Configurar ajustes avanzados"
+
+#: views/admin/help/index.php:22
+msgid "Upgrade to the Pro edition of WP All Export for Premium Support"
+msgstr "Actualiza a la edición Pro de WP All Export para obtener soporte premium"
+
+#: views/admin/help/index.php:20
+msgid "While we do our best to provide technical support to users of the free version, we must prioritize requests from Pro users. If you need help with WP All Export please submit a ticket through the support form."
+msgstr "Si bien hacemos todo lo posible por brindar soporte técnico a los usuarios de la versión gratuita, priorizamos las solicitudes de los usuarios de la versión Pro. Si necesitas ayuda con WP All Export, envía un ticket a través del formulario de soporte."
+
+#: views/admin/help/index.php:18
+msgid "Thank you for using WP All Export."
+msgstr "Gracias por utilizar WP All Export."
+
+#: views/admin/help/index.php:8
+msgid "WP All Export Support"
+msgstr "Soporte de WP All Export"
+
+#: filters/wpallexport_footer.php:6 views/admin/export/template.php:594
+msgid "Created by"
+msgstr "Creado por"
+
+#: views/admin/export/template.php:514
+#: views/admin/export/template/functions_editor.php:20
+#: views/admin/settings/index.php:215
+msgid "Add functions here for use during your export. You can access this file at %s"
+msgstr "Añade aquí funciones para usar durante la exportación. Puedes acceder a este archivo en %s."
+
+#: views/admin/export/template.php:513 views/admin/settings/index.php:214
+msgid "Save Functions"
+msgstr "Guardar las funciones"
+
+#: views/admin/settings/index.php:207
+msgid "Upgrade to the Pro edition of WP All Export to enable the Function Editor"
+msgstr "Actualiza a la edición Pro de WP All Export para activar el editor de funciones"
+
+#: views/admin/export/template.php:500
+#: views/admin/export/template/functions_editor.php:20
+#: views/admin/settings/index.php:203
+msgid "Function Editor"
+msgstr "Editor de funciones"
+
+#: views/admin/settings/index.php:183
+msgid "Upgrade to the Pro edition of WP All Export to enable Client Mode"
+msgstr "Actualiza a la edición Pro de WP All Export para activar el modo cliente"
+
+#: views/admin/settings/index.php:177
+msgid "Save Client Mode Settings"
+msgstr "Guardar los ajustes del modo cliente"
+
+#: views/admin/settings/index.php:127
+msgid "Activate License"
+msgstr "Activar licencia"
+
+#: views/admin/settings/index.php:124
+msgid "Active"
+msgstr "Activa"
+
+#: views/admin/settings/index.php:117
+msgid "Automatic Scheduling License Key"
+msgstr "Clave de licencia de programación automática"
+
+#: views/admin/settings/index.php:104
+msgid "Upgrade to the Pro edition of WP All Export for Zapier Integration"
+msgstr "Actualiza a la edición Pro de WP All Export para la integración con Zapier"
+
+#: views/admin/settings/index.php:97
+msgid "Changing the key will require you to update your existing Zaps on Zapier."
+msgstr "Para cambiar la clave será necesario que actualices tus Zaps existentes en Zapier."
+
+#: views/admin/settings/index.php:96
+msgid "Generate API Key"
+msgstr "Generar clave de la API"
+
+#: views/admin/settings/index.php:93
+msgid "API Key"
+msgstr "Clave de API"
+
+#: views/admin/settings/index.php:89
+msgid "Zapier acts as a middle man between WP All Export and hundreds of other popular apps. To get started go to Zapier.com, create an account, and make a new Zap. Read more: <a target=\"_blank\" href=\"https://zapier.com/zapbook/wp-all-export-pro/\">https://zapier.com/zapbook/wp-all-export-pro/</a>"
+msgstr "Zapier actúa como intermediario entre WP All Export y cientos de otras aplicaciones populares. Para empezar, visita Zapier.com, crea una cuenta y crea un nuevo Zap. Más información: <a target=\"_blank\" href=\"https://zapier.com/zapbook/wp-all-export-pro/\">https://zapier.com/zapbook/wp-all-export-pro/</a>"
+
+#: views/admin/settings/index.php:87
+msgid "Getting Started"
+msgstr "Empezando"
+
+#: views/admin/settings/index.php:82
+msgid "Zapier Integration"
+msgstr "Integración con Zapier"
+
+#: views/admin/settings/index.php:64
+msgid "Randomize folder names"
+msgstr "Hacer aleatorios los nombres de las carpetas"
+
+#: views/admin/settings/index.php:59 views/admin/settings/index.php:62
+msgid "Secure Mode"
+msgstr "Modo seguro"
+
+#: views/admin/settings/index.php:54
+msgid "Files"
+msgstr "Archivos"
+
+#: views/admin/settings/index.php:45
+msgid "Import Templates"
+msgstr "Importar plantillas"
+
+#: views/admin/settings/index.php:40
+msgid "There are no templates saved"
+msgstr "No hay plantillas guardadas"
+
+#: views/admin/settings/index.php:37
+msgid "Export Selected"
+msgstr "Exportar lo seleccionado"
+
+#: views/admin/settings/index.php:36
+msgid "Delete Selected"
+msgstr "Borrar lo seleccionado"
+
+#: views/admin/settings/index.php:22
+msgid "Import/Export Templates"
+msgstr "Importar/Exportar plantillas"
+
+#: views/admin/export/options.php:110 views/admin/manage/index.php:259
+msgid "Scheduling Options"
+msgstr "Opciones de programación"
+
+#: src/Scheduling/views/SchedulingSubscribeUI.php:52
+msgid "When you set an export to run on a schedule, WP All Export will open an encrypted connection to our servers and send your license key, your site URL, the ID of the export you want to run, the export security key, and the times that you want the export to run."
+msgstr "Cuando configuras una exportación para que se ejecute según un programa, WP All Export abrirá una conexión cifrada a nuestros servidores y enviará tu clave de licencia, la URL de su sitio, el ID de la exportación que quieres ejecutar, la clave de seguridad de la exportación y las horas en que quieres que se ejecute la exportación."
+
+#: src/Scheduling/views/SchedulingSubscribeUI.php:49
+msgid "What information is shared with Soflyy?"
+msgstr "¿Qué información se comparte con Soflyy?"
+
+#: src/Scheduling/views/SchedulingSubscribeUI.php:40
+msgid "Your data is very important to us. We have a very resilient, scalable cluster of servers powering Automatic Scheduling. Our highly qualified team is on call 24hrs a day, 7 days a week to make sure your exports run when you need them to run."
+msgstr "Tus datos son muy importantes para nosotros. Contamos con un clúster de servidores altamente resistente y escalable que impulsa la programación automática. Nuestro equipo altamente cualificado está disponible las 24 horas, los 7 días de la semana, para garantizar que tus exportaciones se ejecuten cuando las necesites."
+
+#: src/Scheduling/views/SchedulingSubscribeUI.php:37
+msgid "Why does it cost money?"
+msgstr "¿Por qué cuesta dinero?"
+
+#: src/Scheduling/views/SchedulingSubscribeUI.php:34
+msgid "When you set an export to run on a schedule, our servers will contact your site to make sure that your export starts when you want it to. Our servers will check back every minute to make sure that the export is still running, and will continue doing so until it finishes."
+msgstr "Al configurar una exportación para que se ejecute según un programa, nuestros servidores se pondrán en contacto con tu sitio para garantizar que la exportación comience a la hora deseada. Nuestros servidores comprobarán cada minuto que la exportación sigue ejecutándose y continuarán haciéndolo hasta que finalice."
+
+#: src/Scheduling/views/SchedulingSubscribeUI.php:31
+msgid "How does it work?"
+msgstr "¿Cómo funciona?"
+
+#: views/admin/export/success_page.php:138
+msgid "Save Scheduling Options"
+msgstr "Guardar opciones de programación"
+
+#: src/Scheduling/views/SaveSchedulingButton.php:14
+#: views/admin/export/options.php:7 views/admin/manage/update.php:7
+#: views/admin/manage/update.php:98
+msgid "Save Export Configuration"
+msgstr "Guardar configuración de exportación"
+
+#: views/admin/export/options.php:6 views/admin/export/options.php:71
+#: views/admin/manage/update.php:6 views/admin/manage/update.php:59
+#: views/admin/manage/update.php:100
+msgid "Confirm & Run Export"
+msgstr "Confirmar e iniciar la exportación"
+
+#: src/Scheduling/views/ManualScheduling.php:42
+msgid "Read more about manual scheduling"
+msgstr "Lee más sobre la programación manual"
+
+#: src/Scheduling/views/ManualScheduling.php:37
+msgid "Bundle URL"
+msgstr "URL del paquete"
+
+#: src/Scheduling/views/ManualScheduling.php:31
+msgid "File URL"
+msgstr "URL del archivo"
+
+#: src/Scheduling/views/ManualScheduling.php:25
+msgid "Processing URL"
+msgstr "Procesando URL"
+
+#: src/Scheduling/views/ManualScheduling.php:19
+msgid "Trigger URL"
+msgstr "URL de activación"
+
+#: src/Scheduling/views/ManualScheduling.php:12
+msgid "Upgrade to the Pro edition of WP All Export for Manual Scheduling"
+msgstr "Actualiza a la edición Pro de WP All Export para la programación manual"
+
+#: src/Scheduling/views/ManualScheduling.php:8
+msgid "Run this export using cron jobs."
+msgstr "Ejecuta esta exportación utilizando trabajos cron."
+
+#: src/Scheduling/views/ManualScheduling.php:6
+msgid "Manual Scheduling"
+msgstr "Programación manual"
+
+#: src/App/Service/ScheduledExport.php:124
+msgid "Export #%s already processing. Request skipped."
+msgstr "Exportación #%s ya procesada. Solicitud omitida."
+
+#: src/App/Service/ScheduledExport.php:117
+msgid "Records Processed %s."
+msgstr "Registros procesados ​​%s."
+
+#: src/App/Service/ScheduledExport.php:112
+msgid "Export #%s complete"
+msgstr "Exportación #%s completada"
+
+#: src/App/Service/ScheduledExport.php:65
+msgid "Export #%s is not triggered. Request skipped."
+msgstr "La exportación #%s no se activa. Solicitud omitida."
+
+#: src/App/Service/ScheduledExport.php:43
+msgid "#%s Cron job triggered."
+msgstr "#%s trabajo cron activado."
+
+#: src/App/Service/ScheduledExport.php:25
+msgid "Export #%s currently in process. Request skipped."
+msgstr "Exportación #%s actualmente en proceso. Solicitud omitida."
+
+#: src/App/Service/ScheduledExport.php:19
+#: src/App/Service/ScheduledExport.php:71
+msgid "Export #%s is currently in manually process. Request skipped."
+msgstr "La exportación #%s se está procesando manualmente. Solicitud omitida."
+
+#: libraries/XmlExportEngine.php:1250
+msgid "Missing custom XML template footer."
+msgstr "Falta el pie de página de la plantilla XML personalizada."
+
+#: libraries/XmlExportEngine.php:1245
+msgid "Missing custom XML template post loop."
+msgstr "Falta el bucle de publicación de la plantilla XML personalizada."
+
+#: libraries/XmlExportEngine.php:1240
+msgid "Missing custom XML template header."
+msgstr "Falta encabezado de plantilla XML personalizado."
+
+#: libraries/XmlExportEngine.php:991
+msgid "User Role"
+msgstr "Perfil de usuario"
+
+#: libraries/XmlExportEngine.php:500
+msgid "WP Query field is required"
+msgstr "El campo de consulta de WP es obligatorio"
+
+#: libraries/XmlExportEngine.php:363
+msgid "Author"
+msgstr "Autor"
+
+#: libraries/XmlExportEngine.php:298
+msgid "Attachments"
+msgstr "Adjuntos"
+
+#: libraries/XmlExportEngine.php:242
+msgid "Images"
+msgstr "Imágenes"
+
+#: libraries/XmlExportEngine.php:238
+msgid "Media"
+msgstr "Medios"
+
+#: libraries/XmlExportEngine.php:234
+msgid "Standard"
+msgstr "Estándar"
+
+#: libraries/XmlExportTaxonomy.php:128
+msgid "Term Meta"
+msgstr "Metadatos de los términos"
+
+#: libraries/XmlExportEngine.php:346 views/admin/export/index.php:73
+msgid "Taxonomies"
+msgstr "Taxonomías"
+
+#: views/admin/export/template/advanced_field_options.php:53
+msgid "Product Name"
+msgstr "Nombre del producto"
+
+#: views/admin/export/template/advanced_field_options.php:52
+msgid "Product ID"
+msgstr "ID del producto"
+
+#: libraries/XmlExportEngine.php:350
+msgid "Custom Fields"
+msgstr "Campos personalizados"
+
+#: views/admin/manage/scheduling.php:52
+msgid "Notes"
+msgstr "Notas"
+
+#: libraries/XmlExportEngine.php:1204
+msgid "SQL Query"
+msgstr "Consulta SQL"
+
+#: libraries/XmlExportEngine.php:785 libraries/XmlExportEngine.php:840
+msgid "All"
+msgstr "Todos"
+
+#: views/admin/export/options/settings.php:98
+msgid "Upgrade to the Pro edition of WP All Export to export each "
+msgstr "Actualiza a la edición Pro de WP All Export para exportar cada "
+
+#: libraries/XmlExportFiltering.php:73
+#: src/Pro/Filtering/FilteringFactory.php:32
+msgid "Filtering Options"
+msgstr "Opciones de filtrado"
+
+#: libraries/WpaePhpInterpreterErrorHandler.php:29
+msgid "You probably forgot to close a quote"
+msgstr "Probablemente olvidaste cerrar una cita"
+
+#: libraries/WpaePhpInterpreterErrorHandler.php:25
+#: libraries/WpaePhpInterpreterErrorHandler.php:29
+msgid "PHP Error"
+msgstr "Error de PHP"
+
+#: libraries/WpaePhpInterpreterErrorHandler.php:23
+msgid "An unknown error occured"
+msgstr "Se ha producido un error desconocido"
+
+#: libraries/XmlExportEngine.php:354
+msgid "Other"
+msgstr "Otros"
+
+#: controllers/admin/manage.php:482 controllers/admin/manage.php:488
+msgid "The exported file is missing and can't be downloaded. Please re-run your export to re-generate it."
+msgstr "Falta el archivo exportado y no se puede descargar. Vuelve a ejecutar la exportación para regenerarlo."
+
+#: controllers/admin/manage.php:475
+msgid "File format not supported"
+msgstr "Formato de archivo no compatible."
+
+#: controllers/admin/manage.php:369
+msgid "This export doesn't exist."
+msgstr "Esta exportación no existe."
+
+#: controllers/admin/manage.php:363
+msgid "The exported bundle is missing and can't be downloaded. Please re-run your export to re-generate it."
+msgstr "Falta el paquete exportado y no se puede descargar. Vuelve a ejecutar la exportación para regenerarlo."
+
+#: controllers/admin/manage.php:295 views/admin/manage/bulk.php:15
+msgid "export"
+msgid_plural "exports"
+msgstr[0] "exportación"
+msgstr[1] "exportaciones"
+
+#: controllers/admin/manage.php:295
+msgid "%d %s deleted"
+msgstr "%d %s borrados"
+
+#: controllers/admin/manage.php:264
+msgid "Export deleted"
+msgstr "Exportación borrada"
+
+#: controllers/admin/manage.php:165 views/admin/manage/index.php:421
+msgid "Export canceled"
+msgstr "Exportación cancelada"
+
+#: controllers/admin/manage.php:57
+msgid "&raquo;"
+msgstr "&raquo;"
+
+#: controllers/admin/manage.php:56
+msgid "&laquo;"
+msgstr "&laquo;"
+
+#: controllers/admin/export.php:317 controllers/admin/export.php:452
+#: controllers/admin/manage.php:234
+msgid "Options updated"
+msgstr "Opciones actualizadas"
+
+#: controllers/admin/export.php:260
+msgid "Main XML Tag equals to Single Record XML Tag."
+msgstr "La etiqueta XML principal equivale a la etiqueta XML de registro único."
+
+#: controllers/admin/export.php:256
+msgid "Single Record XML Tag is required."
+msgstr "Se requiere la etiqueta XML de registro único."
+
+#: controllers/admin/export.php:251
+msgid "Main XML Tag is required."
+msgstr "Se requiere la etiqueta XML principal."
+
+#: controllers/admin/export.php:245
+msgid "CSV delimiter must be specified."
+msgstr "Se debe especificar el delimitador CSV."
+
+#: controllers/admin/export.php:241
+msgid "You haven't selected any columns for export."
+msgstr "No has seleccionado ninguna columna para exportar."
+
+#: controllers/admin/export.php:213
+msgid "You've reached your max_input_vars limit of %d. Please contact your web host to increase it."
+msgstr "Has alcanzado tu límite de max_input_vars de %d. Contacta con tu proveedor de alojamiento web para aumentarlo."
+
+#: controllers/admin/export.php:128
+msgid "Required PHP components are missing.<br/><br/>WP All Export requires XMLReader, and XMLWriter PHP modules to be installed.<br/>These are standard features of PHP, and are necessary for WP All Export to write the files you are trying to export.<br/>Please contact your web hosting provider and ask them to install and activate the DOMDocument, XMLReader, and XMLWriter PHP modules."
+msgstr "Faltan los componentes PHP necesarios.<br/><br/>WP All Export requiere que los módulos PHP XMLReader y XMLWriter estén instalados.<br/>Estas son características estándar de PHP y son necesarias para que WP All Export escriba los archivos que está intentando exportar.<br/>Comunícate con tu proveedor de alojamiento web y pídele que instale y active los módulos PHP DOMDocument, XMLReader y XMLWriter."
+
+#: controllers/admin/settings.php:140
+msgid "%d template deleted"
+msgid_plural "%d templates deleted"
+msgstr[0] "%d plantilla borrada"
+msgstr[1] "%d plantillas borradas"
+
+#: controllers/admin/settings.php:131
+msgid "Templates must be selected"
+msgstr "Hay que seleccionar las plantillas"
+
+#: controllers/admin/settings.php:125
+msgid "Please select file."
+msgstr "Por favor, selecciona un archivo."
+
+#: controllers/admin/settings.php:123
+msgid "Undefined entry!"
+msgstr "¡Entrada indefinida!"
+
+#: controllers/admin/settings.php:120
+msgid "File is empty or doesn't exests"
+msgstr "El archivo está vacío o no existe"
+
+#: controllers/admin/settings.php:118
+msgid "Wrong imported data format"
+msgstr "Formato de datos importados incorrecto"
+
+#: controllers/admin/settings.php:113
+msgid "%d template imported"
+msgid_plural "%d templates imported"
+msgstr[0] "%d plantilla importada"
+msgstr[1] "%d plantillas importadas"
+
+#: controllers/admin/settings.php:105
+msgid "The template you've uploaded is intended to be used with WP All Import plugin."
+msgstr "La plantilla que has cargado está destinada a usarse con el plugin WP All Import."
+
+#: controllers/admin/settings.php:101
+msgid "The template is invalid. Options are missing."
+msgstr "La plantilla no es válida. Faltan opciones."
+
+#: controllers/admin/settings.php:91
+msgid "Unknown File extension. Only txt files are permitted"
+msgstr "Extensión de archivo desconocida. Solo se permiten archivos .txt."
+
+#: controllers/admin/settings.php:49
+msgid "License activated."
+msgstr "Licencia activada."
+
+#: controllers/admin/settings.php:33
+msgid "Settings saved"
+msgstr "Ajustes guardados"
+
+#: src/App/UnsecuredController/SchedulingController.php:156
+#: wp-all-export.php:499
+msgid "The User Export Add-On Pro is required to run this export. You can download the add-on here: <a href=\"http://www.wpallimport.com/portal/\" target=\"_blank\">http://www.wpallimport.com/portal/</a>"
+msgstr "Se requiere la extensión User Export Pro para realizar esta exportación. Puedes descargarla aquí: <a href=\"http://www.wpallimport.com/portal/\" target=\"_blank\">http://www.wpallimport.com/portal/</a>"
+
+#: wp-all-export.php:404 wp-all-export.php:408
+msgid "Uploads folder %s must be writable"
+msgstr "La carpeta de carga %s debe tener permisos de escritura"
+
+#: wp-all-export.php:42
+msgid "Please de-activate and remove the free version of the WP All Export before activating the paid version."
+msgstr "Desactiva y elimina la versión gratuita de WP All Export antes de activar la versión de pago."
+
+#: actions/wp_ajax_wpae_preview.php:453
+msgid "This format is not supported."
+msgstr "Este formato no es compatible."
+
+#: actions/wp_ajax_wpae_preview.php:444
+msgid "Data not found."
+msgstr "Datos no encontrados."
+
+#: actions/wp_ajax_wpae_preview.php:392
+msgid "Can't preview the document. Root element is not detected."
+msgstr "No se puede previsualizar el documento. No se detecta el elemento raíz."
+
+#: actions/wp_ajax_wpae_preview.php:354 actions/wp_ajax_wpae_preview.php:394
+msgid "You can continue export or try to use &lt;data&gt; tag as root element."
+msgstr "Puedes continuar exportando o intentar utilizar la etiqueta &lt;data&gt; como elemento raíz."
+
+#: actions/wp_ajax_wpae_preview.php:352
+msgid "Can't preview the document."
+msgstr "No se puede obtener una vista previa del documento."
+
+#: actions/wp_ajax_wpae_preview.php:281
+msgid "There was a problem parsing the custom XML template"
+msgstr "Hubo un problema al analizar la plantilla XML personalizada"
+
+#: actions/wp_ajax_wpae_preview.php:231 actions/wp_ajax_wpae_preview.php:378
+msgid "Code"
+msgstr "Código"
+
+#: actions/wp_ajax_wpae_preview.php:230 actions/wp_ajax_wpae_preview.php:377
+msgid "Column"
+msgstr "Columna"
+
+#: actions/wp_ajax_wpae_preview.php:229 actions/wp_ajax_wpae_preview.php:376
+msgid "Line"
+msgstr "Línea"
+
+#: actions/wp_ajax_wpae_preview.php:226 actions/wp_ajax_wpae_preview.php:373
+msgid "Invalid XML"
+msgstr "XML no válido"
+
+#: actions/wp_ajax_wpae_preview.php:78 controllers/admin/export.php:267
+msgid "XML template is empty."
+msgstr "La plantilla XML está vacía."
+
+#: actions/wp_ajax_wpae_filtering.php:143
+#: actions/wp_ajax_wpae_filtering.php:150
+msgid "Customize Export File"
+msgstr "Personalizar archivo de exportación"
+
+#: actions/wp_ajax_wpae_filtering.php:138
+msgid "Migrate %s"
+msgstr "Migrar %s"
+
+#: actions/wp_ajax_wpae_filtering.php:132
+msgid "Upgrade to the Pro edition of WP All Export to Migrate Users"
+msgstr "Actualiza a la edición Pro de WP All Export para migrar usuarios"
+
+#: actions/wp_ajax_wpae_filtering.php:133
+#: src/Scheduling/views/ManualScheduling.php:14
+#: views/admin/export/blocks/filters.php:8 views/admin/export/index.php:261
+#: views/admin/export/options/settings.php:99
+#: views/admin/export/options/settings.php:116
+#: views/admin/export/options/settings.php:141
+#: views/admin/export/options/settings.php:182
+#: views/admin/export/success_page.php:74 views/admin/export/template.php:374
+#: views/admin/export/template.php:508 views/admin/export/template.php:562
+#: views/admin/export/template.php:569
+#: views/admin/export/template/functions_editor.php:27
+#: views/admin/settings/index.php:105 views/admin/settings/index.php:184
+#: views/admin/settings/index.php:208
+msgid "If you already own it, remove the free edition and install the Pro edition."
+msgstr "Si ya lo tienes, elimina la edición gratuita e instala la edición Pro."
+
+#: views/admin/export/success_page.php:73
+msgid "Upgrade to the Pro edition of WP All Export to Migrate Orders"
+msgstr "Actualiza a la edición Pro de WP All Export para migrar pedidos"
+
+#: actions/wp_ajax_wpae_filtering.php:51
+msgid "Add Filtering Options"
+msgstr "Añadir opciones de filtrado"
+
+#: actions/wp_loaded.php:106
+msgid "Export hash is not valid."
+msgstr "El hash de exportación no es válido."
+
+#: actions/wp_loaded.php:97
+msgid "File doesn't exist"
+msgstr "El archivo no existe"
+
+#: actions/admin_menu.php:18 views/admin/manage/index.php:189
+#: views/admin/settings/index.php:12
+msgid "Settings"
+msgstr "Ajustes"
+
+#: actions/admin_menu.php:17 views/admin/manage/index.php:14
+msgid "Manage Exports"
+msgstr "Gestionar exportaciones"
+
+#: actions/admin_menu.php:16 views/admin/export/index.php:15
+msgid "New Export"
+msgstr "Nueva exportación"
+
+#: actions/admin_menu.php:16
+msgid "Export to XML"
+msgstr "Exportar a XML"
+
+#: actions/admin_menu.php:12
+msgid "All Export"
+msgstr "Todas las exportaciones"
+
+#: actions/wp_ajax_wpallexport.php:29
+msgid "Export is not defined."
+msgstr "La exportación no está definida."
+
+#: actions/wp_ajax_wpae_available_rules.php:91
+#: actions/wp_ajax_wpae_available_rules.php:104
+#: views/admin/export/blocks/filters.php:61
+msgid "equal to or less than"
+msgstr "igual o menor que"
+
+#: actions/wp_ajax_wpae_available_rules.php:90
+#: actions/wp_ajax_wpae_available_rules.php:103
+#: views/admin/export/blocks/filters.php:60
+msgid "less than"
+msgstr "menor que"
+
+#: actions/wp_ajax_wpae_available_rules.php:89
+#: actions/wp_ajax_wpae_available_rules.php:102
+#: views/admin/export/blocks/filters.php:59
+msgid "equal to or greater than"
+msgstr "igual o mayor que"
+
+#: actions/wp_ajax_wpae_available_rules.php:88
+#: actions/wp_ajax_wpae_available_rules.php:101
+#: views/admin/export/blocks/filters.php:58
+msgid "greater than"
+msgstr "mayor que"
+
+#: actions/wp_ajax_wpae_available_rules.php:60
+#: actions/wp_ajax_wpae_available_rules.php:80
+#: actions/wp_ajax_wpae_available_rules.php:93
+#: actions/wp_ajax_wpae_available_rules.php:109
+#: views/admin/export/blocks/filters.php:65
+#: views/admin/export/blocks/filters.php:79
+msgid "is not empty"
+msgstr "no está vacío"
+
+#: actions/wp_ajax_wpae_available_rules.php:59
+#: actions/wp_ajax_wpae_available_rules.php:79
+#: actions/wp_ajax_wpae_available_rules.php:92
+#: actions/wp_ajax_wpae_available_rules.php:108
+#: views/admin/export/blocks/filters.php:64
+#: views/admin/export/blocks/filters.php:78
+msgid "is empty"
+msgstr "está vacío"
+
+#: actions/wp_ajax_wpae_available_rules.php:58
+#: actions/wp_ajax_wpae_available_rules.php:67
+#: actions/wp_ajax_wpae_available_rules.php:78
+#: actions/wp_ajax_wpae_available_rules.php:107
+#: views/admin/export/blocks/filters.php:63
+#: views/admin/export/blocks/filters.php:77
+msgid "doesn't contain"
+msgstr "no contiene"
+
+#: actions/wp_ajax_wpae_available_rules.php:57
+#: actions/wp_ajax_wpae_available_rules.php:66
+#: actions/wp_ajax_wpae_available_rules.php:77
+#: actions/wp_ajax_wpae_available_rules.php:106
+#: views/admin/export/blocks/filters.php:62
+#: views/admin/export/blocks/filters.php:76
+msgid "contains"
+msgstr "contiene"
+
+#: actions/wp_ajax_wpae_available_rules.php:55
+#: views/admin/export/blocks/filters.php:75
+msgid "equal to or older than"
+msgstr "igual o más antiguo que"
+
+#: actions/wp_ajax_wpae_available_rules.php:54
+#: views/admin/export/blocks/filters.php:74
+msgid "older than"
+msgstr "más antiguo que"
+
+#: actions/wp_ajax_wpae_available_rules.php:53
+#: views/admin/export/blocks/filters.php:73
+msgid "equal to or newer than"
+msgstr "igual o más nuevo que"
+
+#: actions/wp_ajax_wpae_available_rules.php:52
+#: views/admin/export/blocks/filters.php:72
+msgid "newer than"
+msgstr "más nuevo que"
+
+#: actions/wp_ajax_wpae_available_rules.php:51
+#: actions/wp_ajax_wpae_available_rules.php:76
+#: actions/wp_ajax_wpae_available_rules.php:87
+#: actions/wp_ajax_wpae_available_rules.php:100
+#: views/admin/export/blocks/filters.php:57
+#: views/admin/export/blocks/filters.php:71
+msgid "doesn't equal"
+msgstr "no es igual"
+
+#: actions/wp_ajax_wpae_available_rules.php:50
+#: actions/wp_ajax_wpae_available_rules.php:75
+#: actions/wp_ajax_wpae_available_rules.php:86
+#: actions/wp_ajax_wpae_available_rules.php:99
+#: views/admin/export/blocks/filters.php:56
+#: views/admin/export/blocks/filters.php:70
+msgid "equals"
+msgstr "iguales"
+
+#: actions/wp_ajax_wpae_available_rules.php:40
+#: views/admin/export/blocks/filters.php:67
+#: views/admin/export/blocks/filters.php:81
+msgid "Not In"
+msgstr "No en"
+
+#: actions/wp_ajax_wpae_available_rules.php:39
+#: views/admin/export/blocks/filters.php:66
+#: views/admin/export/blocks/filters.php:80
+msgid "In"
+msgstr "en"
+
+#: actions/wp_ajax_wpae_available_rules.php:33
+#: views/admin/export/blocks/filters.php:30
+msgid "Select Rule"
+msgstr "Seleccionar regla"
+
+#: actions/wp_ajax_wpae_filtering_count.php:400
+msgid "Continue to configure and run your export."
+msgstr "Continúa configurando y ejecutando la exportación."
+
+#: actions/wp_ajax_wpae_filtering_count.php:378
+#: views/admin/export/template.php:31
+msgid "Drag & drop data to include in the export file."
+msgstr "Arrastra y suelta datos para incluirlos en el archivo de exportación."
+
+#: actions/wp_ajax_wpae_filtering_count.php:366
+#: actions/wp_ajax_wpae_filtering_count.php:388
+#: actions/wp_ajax_wpae_filtering_count.php:404
+msgid "There aren't any %s to export."
+msgstr "No hay ningún %s para exportar."
+
+#: actions/wp_ajax_wpae_filtering_count.php:363
+#: actions/wp_ajax_wpae_filtering_count.php:385
+#: actions/wp_ajax_wpae_filtering_count.php:402
+msgid "No matching %s found for selected filter rules."
+msgstr "No se encontraron %s coincidentes para las reglas de filtro seleccionadas."
+
+#: actions/wp_ajax_wpae_filtering_count.php:360
+#: actions/wp_ajax_wpae_filtering_count.php:382
+msgid "All %s have already been exported."
+msgstr "Todos los %s ya han sido exportados."
+
+#: actions/wp_ajax_wpae_filtering_count.php:359
+#: actions/wp_ajax_wpae_filtering_count.php:362
+#: actions/wp_ajax_wpae_filtering_count.php:365
+#: actions/wp_ajax_wpae_filtering_count.php:381
+#: actions/wp_ajax_wpae_filtering_count.php:384
+#: actions/wp_ajax_wpae_filtering_count.php:387
+msgid "Nothing to export."
+msgstr "Nada para exportar"
+
+#: actions/wp_ajax_wpae_filtering_count.php:356
+msgid "WP All Export will export %d %s."
+msgstr "WP All Export exportará %d %s."
+
+#: actions/wp_ajax_wpae_filtering_count.php:355
+msgid "Your export is ready to run."
+msgstr "Tu exportación está lista para ejecutarse."
+
+#: actions/wp_ajax_wpae_filtering_count.php:226
+msgid "Exporting taxonomies requires WordPress 4.6 or greater"
+msgstr "Para exportar taxonomías se requiere WordPress 4.6 o superior"
+
+#: actions/wp_ajax_wpae_filtering_count.php:225
+msgid "Unable to Export"
+msgstr "No se puede exportar"
+
+#: src/Scheduling/views/SchedulingSubscribeUI.php:69
+msgid "Find your license"
+msgstr "Encuentra tu licencia"
+
+#: src/Scheduling/views/SchedulingSubscribeUI.php:66
+msgid "Enter your license"
+msgstr "Introduce tu licencia"
+
+#: src/Scheduling/views/SchedulingUI.php:70
+msgid "Every month on the first..."
+msgstr "A primeros de cada mes..."
+
+#: src/Scheduling/views/SchedulingUI.php:47
+msgid "Every week on..."
+msgstr "Cada semana el..."
+
+#: src/Scheduling/views/SchedulingUI.php:23
+msgid "Automatic Scheduling"
+msgstr "Programación automática"
+
+#: src/Scheduling/views/SchedulingUI.php:16
+msgid "Do Not Schedule"
+msgstr "No programar"
+
+#: actions/wp_ajax_dismiss_export_warnings.php:6
+#: actions/wp_ajax_dismiss_export_warnings.php:10
+#: actions/wp_ajax_dismiss_review_modal.php:6
+#: actions/wp_ajax_dismiss_review_modal.php:10
+#: actions/wp_ajax_dismiss_warnings.php:6
+#: actions/wp_ajax_dismiss_warnings.php:10
+#: actions/wp_ajax_generate_zapier_api_key.php:6
+#: actions/wp_ajax_generate_zapier_api_key.php:10
+#: actions/wp_ajax_redirect_after_addon_installed.php:6
+#: actions/wp_ajax_redirect_after_addon_installed.php:10
+#: actions/wp_ajax_save_scheduling.php:13
+#: actions/wp_ajax_save_scheduling.php:17
+#: actions/wp_ajax_scheduling_dialog_content.php:7
+#: actions/wp_ajax_scheduling_dialog_content.php:11
+#: actions/wp_ajax_scheduling_subscribe_dialog_content.php:7
+#: actions/wp_ajax_scheduling_subscribe_dialog_content.php:11
+#: actions/wp_ajax_send_feedback.php:6 actions/wp_ajax_send_feedback.php:10
+#: actions/wp_ajax_wpae_available_rules.php:6
+#: actions/wp_ajax_wpae_available_rules.php:10
+#: actions/wp_ajax_wpae_filtering.php:6 actions/wp_ajax_wpae_filtering.php:10
+#: actions/wp_ajax_wpae_filtering_count.php:7
+#: actions/wp_ajax_wpae_filtering_count.php:11
+#: actions/wp_ajax_wpae_preview.php:9 actions/wp_ajax_wpae_preview.php:13
+#: actions/wp_ajax_wpae_upgrade_notice.php:6
+#: actions/wp_ajax_wpae_upgrade_notice.php:10 actions/wp_ajax_wpallexport.php:9
+#: actions/wp_ajax_wpallexport.php:13 controllers/admin/manage.php:304
+#: controllers/admin/manage.php:339 controllers/admin/manage.php:377
+#: controllers/admin/manage.php:430 controllers/controller.php:119
+#: wpae_api.php:7 wpae_api.php:11
+msgid "Security check"
+msgstr "Comprobación de seguridad"
+
+#: models/export/record.php:480
+msgid ""
+"The other two files in this zip are the export file containing all of your data and the import template for WP All Import. \n"
+"\n"
+"To import this data, create a new import with WP All Import and upload this zip file."
+msgstr ""
+"Los otros dos archivos en este zip son el archivo de exportación que contiene todos tus datos y la plantilla de importación para WP All Import.\n"
+"\n"
+"Para importar estos datos, crea una nueva importación con WP All Import y carga este archivo zip."
+
+#: helpers/pmxe_render_xml_text.php:16
+msgid "more"
+msgstr "más"
+
+#: helpers/pmxe_render_xml_element.php:42 helpers/pmxe_render_xml_text.php:10
+msgid "element"
+msgid_plural "elements"
+msgstr[0] "elemento"
+msgstr[1] "elementos"
+
+#: helpers/pmxe_render_xml_element.php:42 helpers/pmxe_render_xml_text.php:10
+msgid "<strong>%s</strong> %s more"
+msgstr "<strong>%s</strong> %s más"
+
+#: helpers/wp_all_export_get_cpt_name.php:50
+msgid "Record"
+msgstr "Registro"
+
+#: helpers/wp_all_export_get_cpt_name.php:50
+msgid "Records"
+msgstr "Registros"
+
+#: helpers/wp_all_export_get_cpt_name.php:27
+msgid "Taxonomy Term"
+msgstr "Término de taxonomía"
+
+#: helpers/wp_all_export_get_cpt_name.php:27
+msgid "Taxonomy Terms"
+msgstr "Términos de taxonomía"
+
+#: helpers/wp_all_export_get_cpt_name.php:18
+msgid "Comment"
+msgstr "Comentario"
+
+#: helpers/wp_all_export_get_cpt_name.php:18 views/admin/export/index.php:77
+msgid "Comments"
+msgstr "Comentarios"
+
+#: helpers/wp_all_export_get_cpt_name.php:14
+msgid "Customer"
+msgstr "Cliente"
+
+#: helpers/wp_all_export_get_cpt_name.php:14
+msgid "Customers"
+msgstr "Clientes"
+
+#: helpers/wp_all_export_get_cpt_name.php:10
+msgid "User"
+msgstr "Usuario"
+
+#: helpers/wp_all_export_get_cpt_name.php:10 views/admin/export/index.php:81
+msgid "Users"
+msgstr "Usuarios"
+
+#: filters/wpallexport_custom_types.php:26
+msgid "WooCommerce Customers"
+msgstr "Clientes Woocommerce"
+
+#: filters/wpallexport_custom_types.php:9
+msgid "WooCommerce Coupons"
+msgstr "Cupones de WooCommerce"
+
+#: filters/wpallexport_custom_types.php:8
+msgid "WooCommerce Orders"
+msgstr "Pedidos de WooCommerce"
+
+#: filters/wpallexport_custom_types.php:7
+msgid "WooCommerce Products"
+msgstr "Productos de WooCommerce"
+
+#. Author of the plugin
+#: wp-all-export.php
+msgid "Soflyy"
+msgstr "Soflyy"
+
+#. Description of the plugin
+#: wp-all-export.php
+msgid "Export any post type to a CSV or XML file. Edit the exported data, and then re-import it later using WP All Import."
+msgstr "Exporta cualquier tipo de publicación a un archivo CSV o XML. Edita los datos exportados y luego vuelve a importarlos con WP All Import."
+
+#. Plugin URI of the plugin
+#: wp-all-export.php
+msgid "http://www.wpallimport.com/upgrade-to-wp-all-export-pro/?utm_source=export-plugin-free&utm_medium=wp-plugins-page&utm_campaign=upgrade-to-pro"
+msgstr "http://www.wpallimport.com/upgrade-to-wp-all-export-pro/?utm_source=export-plugin-free&utm_medium=wp-plugins-page&utm_campaign=upgrade-to-pro"
+
+#. Plugin Name of the plugin
+#: wp-all-export.php actions/admin_menu.php:12 actions/admin_menu.php:16
+#: actions/admin_menu.php:17 actions/admin_menu.php:18
+#: actions/admin_menu.php:19 models/export/record.php:406
+msgid "WP All Export"
+msgstr "WP All Export"
