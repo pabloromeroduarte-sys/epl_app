@@ -16,10 +16,18 @@ $error = '';
 $partidos_pendientes = [];
 if ($equipo) {
     $stP = $db->prepare("
-        SELECT p.*, el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+        SELECT p.*, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+               jl1.nombre AS l1n, jl1.apellido AS l1a, jl1.telefono AS l1t,
+               jl2.nombre AS l2n, jl2.apellido AS l2a, jl2.telefono AS l2t,
+               jv1.nombre AS v1n, jv1.apellido AS jv1a, jv1.telefono AS v1t,
+               jv2.nombre AS v2n, jv2.apellido AS v2a, jv2.telefono AS v2t
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        LEFT JOIN jugadores jl1 ON jl1.id = el.jugador1_id
+        LEFT JOIN jugadores jl2 ON jl2.id = el.jugador2_id
+        LEFT JOIN jugadores jv1 ON jv1.id = ev.jugador1_id
+        LEFT JOIN jugadores jv2 ON jv2.id = ev.jugador2_id
         WHERE p.liga_id=? AND (p.equipo_local_id=? OR p.equipo_visitante_id=?)
           AND p.estado IN ('pendiente','reprogramado')
           AND (p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR) OR p.fecha_programada IS NULL)
@@ -167,20 +175,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
         <form method="post" id="formReprog">
           <div class="form-group">
             <label class="form-label">Partido *</label>
-            <select name="partido_id" class="form-control" required>
+            <select name="partido_id" class="form-control" required onchange="actualizarRivales(this)">
               <option value="">— Selecciona un partido —</option>
               <?php 
                 $pre_id = (int)($_GET['partido_id'] ?? 0);
                 foreach ($partidos_pendientes as $p): 
                   $sel = ($p['id'] == $pre_id) ? 'selected' : '';
+                  // Codificar rivales
+                  $esLocal = ($p['equipo_local_id'] == $equipo['id']);
+                  $rivales = [];
+                  if ($esLocal) {
+                    $rivales[] = ['n'=>$p['v1n'], 'a'=>$p['jv1a'], 't'=>$p['v1t']];
+                    $rivales[] = ['n'=>$p['v2n'], 'a'=>$p['jv2a'], 't'=>$p['v2t']];
+                  } else {
+                    $rivales[] = ['n'=>$p['l1n'], 'a'=>$p['l1a'], 't'=>$p['l1t']];
+                    $rivales[] = ['n'=>$p['l2n'], 'a'=>$p['l2a'], 't'=>$p['l2t']];
+                  }
+                  $dataRivales = base64_encode(json_encode($rivales));
               ?>
-                <option value="<?= $p['id'] ?>" <?= $sel ?>>
+                <option value="<?= $p['id'] ?>" <?= $sel ?> data-rivales="<?= $dataRivales ?>">
                   <?= epl_h($p['local_nombre'].' vs '.$p['visitante_nombre']) ?>
                   <?= $p['fecha_programada'] ? ' — '.date('d/m/Y', strtotime($p['fecha_programada'])) : ' — Sin fecha' ?>
                   <?= $p['estado']==='reprogramado' ? ' (reprogramado)' : '' ?>
                 </option>
               <?php endforeach; ?>
             </select>
+          </div>
+
+          <!-- Contactar Rivales -->
+          <div id="seccionRivales" style="display:none; background:#F0F9FF; border-radius:12px; padding:1.25rem; margin-bottom:1.5rem; border:1px solid #BAE6FD">
+            <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:1rem">
+              <svg style="width:18px; height:18px; color:#0369A1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              <span style="font-family:var(--font-head); font-size:.82rem; text-transform:uppercase; color:#0369A1; letter-spacing:.05em">Contactar Rivales (Coordinación)</span>
+            </div>
+            <div id="listaRivales" style="display:flex; flex-direction:column; gap:.75rem"></div>
           </div>
 
           <div class="form-group">
@@ -282,6 +310,56 @@ function toggleRivalNoResp(chk) {
     chkMutuo.setAttribute('required', '');
   }
 }
+
+function actualizarRivales(sel) {
+  const wrapper = document.getElementById('seccionRivales');
+  const lista = document.getElementById('listaRivales');
+  const opt = sel.options[sel.selectedIndex];
+  
+  if (!opt.value || !opt.dataset.rivales) {
+    wrapper.style.display = 'none';
+    return;
+  }
+  
+  const rivales = JSON.parse(atob(opt.dataset.rivales));
+  lista.innerHTML = '';
+  
+  rivales.forEach(r => {
+    if (!r.n) return;
+    const item = document.createElement('div');
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.justifyContent = 'space-between';
+    item.style.background = '#fff';
+    item.style.padding = '.75rem 1rem';
+    item.style.borderRadius = '10px';
+    item.style.border = '1px solid #E0F2FE';
+    
+    const name = r.n + ' ' + (r.a || '');
+    const tel = r.t ? r.t.replace(/\D/g, '') : '';
+    const cleanTel = tel.startsWith('56') ? tel : '56' + tel;
+    const msg = encodeURIComponent('Hola ' + r.n + ', te contacto por el partido de la Elite Padel League. ¿Podemos coordinar la reprogramación?');
+    const wsp = tel ? `https://wa.me/${cleanTel}?text=${msg}` : null;
+    
+    let html = `<span style="font-weight:600; color:var(--navy); font-size:.9rem">${name}</span>`;
+    if (wsp) {
+      html += `<a href="${wsp}" target="_blank" class="btn btn-sm" style="background:#22C55E; color:#fff; border:none; padding:.4rem .8rem; font-size:.7rem; font-weight:700">ESCRIBIR <svg style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-left:4px" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.404c0 6.556-5.332 11.888-11.888 11.888-2.003 0-3.963-.505-5.698-1.465l-6.305 1.693zm6.443-4.045c1.474.873 3.103 1.332 4.775 1.332 5.054 0 9.163-4.109 9.163-9.163s-4.109-9.163-9.163-9.163-9.163 4.109-9.163 9.163c0 1.95.623 3.856 1.799 5.437l-1.002 3.659 3.743-.999zm10.742-5.466c-.303-.151-1.788-.882-2.067-.981-.278-.099-.481-.151-.683.151-.202.303-.783.981-.96 1.183-.177.202-.354.227-.657.076-.303-.151-1.28-.471-2.438-1.504-.901-.803-1.508-1.796-1.685-2.098-.177-.302-.019-.465.132-.615.136-.135.303-.354.455-.53.151-.177.202-.303.303-.505.101-.202.051-.379-.025-.53-.076-.151-.683-1.643-.935-2.249-.245-.59-.495-.51-.683-.52l-.582-.01c-.202 0-.531.076-.809.379-.278.303-1.062 1.037-1.062 2.529 0 1.492 1.087 2.932 1.239 3.134.151.202 2.14 3.268 5.184 4.582.724.312 1.29.499 1.731.639.727.231 1.388.199 1.911.121.582-.087 1.788-.731 2.041-1.439.253-.708.253-1.313.177-1.439-.076-.126-.278-.202-.581-.353z"/></svg></a>`;
+    } else {
+      html += `<span style="font-size:.7rem; color:var(--gray-400); font-style:italic">Sin teléfono</span>`;
+    }
+    
+    item.innerHTML = html;
+    lista.appendChild(item);
+  });
+  
+  wrapper.style.display = 'block';
+}
+
+// Ejecutar si ya hay un partido seleccionado (por GET)
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.querySelector('select[name="partido_id"]');
+  if (sel && sel.value) actualizarRivales(sel);
+});
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
