@@ -22,6 +22,7 @@ if ($equipo) {
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
         WHERE p.liga_id=? AND (p.equipo_local_id=? OR p.equipo_visitante_id=?)
           AND p.estado IN ('pendiente','reprogramado')
+          AND (p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR) OR p.fecha_programada IS NULL)
         ORDER BY p.fecha_programada ASC
     ");
     $stP->execute([$liga['id'], $equipo['id'], $equipo['id']]);
@@ -51,12 +52,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
     $mutuo_acuerdo   = isset($_POST['mutuo_acuerdo'])   ? 1 : 0;
     $rival_no_resp   = isset($_POST['rival_no_responde']) ? 1 : 0;
 
-    $stVal = $db->prepare("SELECT * FROM partidos WHERE id=? AND (equipo_local_id=? OR equipo_visitante_id=?) AND estado IN ('pendiente','reprogramado')");
+    $stVal = $db->prepare("
+        SELECT p.*, el.jugador1_id AS l1, el.jugador2_id AS l2, ev.jugador1_id AS v1, ev.jugador2_id AS v2,
+               el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+        FROM partidos p
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        WHERE p.id=? AND (p.equipo_local_id=? OR p.equipo_visitante_id=?) 
+          AND p.estado IN ('pendiente','reprogramado')
+          AND (p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR) OR p.fecha_programada IS NULL)
+    ");
     $stVal->execute([$partido_id, $equipo['id'], $equipo['id']]);
     $partido = $stVal->fetch();
 
     if (!$partido) {
-        $error = 'Partido no válido.';
+        $error = 'Partido no válido o fuera de plazo (mínimo 48h).';
     } elseif (!$motivo) {
         $error = 'Debes ingresar el motivo.';
     } elseif (!$rival_no_resp && !$fecha_propuesta) {
@@ -74,6 +84,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
         ")->execute([$partido_id, $jugador['id'], $motivo, $fecha_final, $rival_no_resp, $mutuo_acuerdo]);
 
         $db->prepare("UPDATE partidos SET estado='reprogramado' WHERE id=?")->execute([$partido_id]);
+
+        // --- ENVÍO DE CORREOS ---
+        $destinatarios = [];
+        
+        // 1. Otros 3 jugadores del partido
+        $jugadores_ids = array_unique([$partido['l1'], $partido['l2'], $partido['v1'], $partido['v2']]);
+        foreach($jugadores_ids as $jid) {
+            if ($jid != $jugador['id']) {
+                $stJ = $db->prepare("SELECT email FROM jugadores WHERE id=?");
+                $stJ->execute([$jid]);
+                if ($row = $stJ->fetch()) $destinatarios[] = $row['email'];
+            }
+        }
+
+        // 2. Administradores
+        $stA = $db->query("SELECT email FROM jugadores WHERE rol='admin' AND estado='activo'");
+        while ($row = $stA->fetch()) $destinatarios[] = $row['email'];
+
+        $destinatarios = array_unique($destinatarios);
+        
+        if ($destinatarios) {
+            $to = implode(', ', $destinatarios);
+            $subject = "Solicitud de Reprogramación: " . $partido['local_nombre'] . " vs " . $partido['visitante_nombre'];
+            $cuerpo = "Hola,\n\nSe ha solicitado una reprogramación para el partido:\n";
+            $cuerpo .= "Partido: " . $partido['local_nombre'] . " vs " . $partido['visitante_nombre'] . "\n";
+            $cuerpo .= "Solicitante: " . $jugador['nombre'] . " " . $jugador['apellido'] . "\n";
+            $cuerpo .= "Motivo: " . $motivo . "\n";
+            if ($rival_no_resp) {
+                $cuerpo .= "Estado: El rival no responde ni coordina.\n";
+            } else {
+                $cuerpo .= "Nueva fecha propuesta: " . date('d/m/Y H:i', strtotime($fecha_propuesta)) . "\n";
+                $cuerpo .= "Acuerdo: Confirmado por mutuo acuerdo.\n";
+            }
+            $cuerpo .= "\nLa organización revisará la solicitud a la brevedad.\n\nAtentamente,\nElite Padel League";
+            
+            $headers = "From: Elite Padel League <no-reply@elitepadelleague.com>\r\n";
+            $headers .= "Reply-To: no-reply@elitepadelleague.com\r\n";
+            $headers .= "X-Mailer: PHP/" . phpversion();
+
+            @mail($to, $subject, $cuerpo, $headers);
+        }
+
         $ok = true;
 
         // Recargar listas
@@ -117,8 +169,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             <label class="form-label">Partido *</label>
             <select name="partido_id" class="form-control" required>
               <option value="">— Selecciona un partido —</option>
-              <?php foreach ($partidos_pendientes as $p): ?>
-                <option value="<?= $p['id'] ?>">
+              <?php 
+                $pre_id = (int)($_GET['partido_id'] ?? 0);
+                foreach ($partidos_pendientes as $p): 
+                  $sel = ($p['id'] == $pre_id) ? 'selected' : '';
+              ?>
+                <option value="<?= $p['id'] ?>" <?= $sel ?>>
                   <?= epl_h($p['local_nombre'].' vs '.$p['visitante_nombre']) ?>
                   <?= $p['fecha_programada'] ? ' — '.date('d/m/Y', strtotime($p['fecha_programada'])) : ' — Sin fecha' ?>
                   <?= $p['estado']==='reprogramado' ? ' (reprogramado)' : '' ?>

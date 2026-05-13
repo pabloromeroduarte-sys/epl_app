@@ -35,7 +35,7 @@ $active  = $active_nav ?? '';
   </script>
 
   <!-- Estilos antiguos (se mantienen para las vistas que no son el index o que usan clases epl.css) -->
-  <link rel="stylesheet" href="<?= epl_url('assets/css/epl.css') ?>">
+  <link rel="stylesheet" href="<?= epl_url('assets/css/epl.css?v=' . time()) ?>">
 
   <style>
       /* RESET Y CONTENEDOR (Header) */

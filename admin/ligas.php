@@ -14,8 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'crear') {
         $nombre    = trim($_POST['nombre']    ?? '');
         $tipo      = in_array($_POST['tipo']??'liga',['liga','torneo']) ? $_POST['tipo'] : 'liga';
-        $formato   = in_array($_POST['formato']??'',['liga_regular','mata_mata','grupos_mata_mata']) ? $_POST['formato'] : 'liga_regular';
-        $temporada = trim($_POST['temporada'] ?? '');
+        $formato   = in_array($_POST['formato']??'',['liga_regular','mata_mata','grupos_mata_mata','liga_playoff']) ? $_POST['formato'] : 'liga_regular';
         $cat       = (int)($_POST['categoria'] ?? 0);
         $estado    = in_array($_POST['estado']??'inscripcion',['proximamente','inscripcion','activa','finalizada']) ? $_POST['estado'] : 'inscripcion';
         $precio    = (float)($_POST['precio'] ?? 0) ?: null;
@@ -30,15 +29,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $p3        = max(0,(int)($_POST['puntos_3']      ?? 50));
         $p4        = max(0,(int)($_POST['puntos_4']      ?? 30));
         $pg        = max(0,(int)($_POST['puntos_grupos'] ?? 10));
+        $sexo      = in_array($_POST['sexo']??'', ['masculino','femenino','mixto']) ? $_POST['sexo'] : 'masculino';
 
         if (!$nombre) { $err = 'El nombre es obligatorio.'; }
         else {
             $db->prepare("INSERT INTO ligas
-                (nombre,tipo,formato,temporada,categoria,estado,precio,sede,url_maps,
+                (nombre,tipo,sexo,formato,categoria,estado,precio,sede,url_maps,
                  fecha_inicio,fecha_fin,inscripcion_inicio,inscripcion_fin,
                  puntos_1,puntos_2,puntos_3,puntos_4,puntos_grupos,recinto_id)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-               ->execute([$nombre,$tipo,$formato,$temporada,$cat?:null,$estado,$precio,
+               ->execute([$nombre,$tipo,$sexo,$formato,$cat?:null,$estado,$precio,
                           $recinto?:null,$url_maps?:null,$f_inicio,$f_fin,$i_inicio,$i_fin,
                           $p1,$p2,$p3,$p4,$pg,$recinto_id]);
             $ok = 'Competición <strong>'.htmlspecialchars($nombre).'</strong> creada.';
@@ -69,8 +69,13 @@ $ligas = $db->query("
     ORDER BY l.id DESC
 ")->fetchAll();
 
-$tipo_label  = ['liga'=>'Liga','torneo'=>'Torneo'];
-$fmt_label   = ['liga_regular'=>'Liga regular','mata_mata'=>'Mata-mata','grupos_mata_mata'=>'Grupos + Mata-mata'];
+$tipo_label  = ['liga'=>'Liga','torneo'=>'Americano'];
+$fmt_label   = [
+    'liga_regular'=>'Liga regular',
+    'liga_playoff'=>'Liga + Playoff',
+    'mata_mata'=>'Llaves',
+    'grupos_mata_mata'=>'Fase de grupos + Llaves'
+];
 $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente','activa'=>'badge-jugado','finalizada'=>'badge-walkover'];
 ?>
 <?php require_once '../includes/header.php'; ?>
@@ -106,9 +111,6 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
             <tr style="border-bottom:1px solid var(--gray-100)">
               <td style="padding:.7rem 1rem">
                 <div style="font-weight:700;color:var(--navy)"><?= epl_h($l['nombre']) ?></div>
-                <?php if ($l['temporada']): ?>
-                  <div style="font-size:.72rem;color:var(--gray-400)"><?= epl_h($l['temporada']) ?></div>
-                <?php endif; ?>
                 <div style="font-size:.7rem;color:var(--gray-400);margin-top:.15rem"><?= $fmt_label[$l['formato']] ?? '' ?> · <?= $l['categoria'] ? $l['categoria'].'ª cat.' : '' ?></div>
               </td>
               <td style="padding:.7rem 1rem;text-align:center">
@@ -188,18 +190,29 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
             <label class="form-label">Tipo</label>
             <select name="tipo" id="crearTipo" class="form-control" onchange="toggleFormato()">
               <option value="liga">Liga</option>
-              <option value="torneo">Torneo</option>
+              <option value="torneo">Americano</option>
             </select>
           </div>
-          <div class="form-group" id="wrapFormato">
-            <label class="form-label">Formato</label>
-            <select name="formato" id="crearFormato" class="form-control">
-              <option value="liga_regular">Liga regular (todos vs todos)</option>
-              <option value="mata_mata">Mata-mata (eliminación directa)</option>
-              <option value="grupos_mata_mata">Grupos + Mata-mata</option>
+          <div class="form-group">
+            <label class="form-label">Sexo</label>
+            <select name="sexo" class="form-control">
+              <option value="masculino">Masculino</option>
+              <option value="femenino">Femenino</option>
+              <option value="mixto">Mixto</option>
             </select>
           </div>
         </div>
+        
+        <div class="grid-2">
+          <div class="form-group" id="wrapFormato">
+            <label class="form-label">Formato</label>
+            <select name="formato" id="crearFormato" class="form-control">
+              <option value="liga_regular">Liga regular</option>
+              <option value="liga_playoff">Liga + Playoff</option>
+              <option value="mata_mata" style="display:none">Llaves</option>
+              <option value="grupos_mata_mata" style="display:none">Fase de grupos + Llaves</option>
+            </select>
+          </div>
 
           <div class="form-group">
             <label class="form-label">Categoría</label>
@@ -311,10 +324,20 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
 function toggleFormato() {
   const tipo = document.getElementById('crearTipo').value;
   const fmt  = document.getElementById('crearFormato');
-  // Liga solo puede ser liga_regular; torneo puede ser cualquiera
+  const opts = fmt.options;
+  
   if (tipo === 'liga') {
-    fmt.value = 'liga_regular';
-    fmt.querySelector('option[value="liga_regular"]').disabled = false;
+    opts[0].style.display = ''; // liga_regular
+    opts[1].style.display = ''; // liga_playoff
+    opts[2].style.display = 'none'; // mata_mata
+    opts[3].style.display = 'none'; // grupos_mata_mata
+    if (fmt.value === 'mata_mata' || fmt.value === 'grupos_mata_mata') fmt.value = 'liga_regular';
+  } else {
+    opts[0].style.display = 'none';
+    opts[1].style.display = 'none';
+    opts[2].style.display = ''; // mata_mata
+    opts[3].style.display = ''; // grupos_mata_mata
+    if (fmt.value === 'liga_regular' || fmt.value === 'liga_playoff') fmt.value = 'mata_mata';
   }
 }
 </script>

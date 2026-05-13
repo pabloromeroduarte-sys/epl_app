@@ -31,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'editar_liga') {
         $nombre    = trim($_POST['nombre']    ?? '');
         $tipo      = in_array($_POST['tipo']??'',['liga','torneo']) ? $_POST['tipo'] : $liga['tipo'];
-        $formato   = in_array($_POST['formato']??'',['liga_regular','mata_mata','grupos_mata_mata']) ? $_POST['formato'] : $liga['formato'];
-        $temporada = trim($_POST['temporada'] ?? '');
+        $sexo      = in_array($_POST['sexo']??'',['masculino','femenino','mixto']) ? $_POST['sexo'] : $liga['sexo'];
+        $formato   = in_array($_POST['formato']??'',['liga_regular','mata_mata','grupos_mata_mata','liga_playoff']) ? $_POST['formato'] : $liga['formato'];
         $cat       = (int)($_POST['categoria'] ?? 0);
         $estado    = in_array($_POST['estado']??'',['proximamente','inscripcion','activa','finalizada']) ? $_POST['estado'] : $liga['estado'];
         $precio    = (float)($_POST['precio'] ?? 0) ?: null;
@@ -50,13 +50,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$nombre) { $err = 'El nombre es obligatorio.'; }
         else {
             $db->prepare("UPDATE ligas SET
-                nombre=?,tipo=?,formato=?,temporada=?,categoria=?,estado=?,precio=?,
+                nombre=?,tipo=?,sexo=?,formato=?,categoria=?,estado=?,precio=?,
                 sede=?,url_maps=?,fecha_inicio=?,fecha_fin=?,
                 inscripcion_inicio=?,inscripcion_fin=?,
                 puntos_1=?,puntos_2=?,puntos_3=?,puntos_4=?,puntos_grupos=?,
                 recinto_id=?
                 WHERE id=?")
-               ->execute([$nombre,$tipo,$formato,$temporada,$cat?:null,$estado,$precio,
+               ->execute([$nombre,$tipo,$sexo,$formato,$cat?:null,$estado,$precio,
                           $recinto?:null,$url_maps?:null,$f_inicio,$f_fin,$i_inicio,$i_fin,
                           $p1,$p2,$p3,$p4,$pg,$recinto_id,$id]);
             $ok = 'Liga actualizada.';
@@ -271,7 +271,7 @@ if ($f_search) {
 
 $partidos = $db->prepare("
     SELECT p.*, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
-           r.nombre AS recinto_nombre
+           r.nombre AS recinto_nombre, s.nombre AS recinto_superior_nombre, ss.nombre AS recinto_abuelo_nombre
     FROM partidos p
     JOIN equipos el ON el.id = p.equipo_local_id
     JOIN equipos ev ON ev.id = p.equipo_visitante_id
@@ -280,8 +280,10 @@ $partidos = $db->prepare("
     LEFT JOIN jugadores jv1 ON jv1.id = ev.jugador1_id
     LEFT JOIN jugadores jv2 ON jv2.id = ev.jugador2_id
     LEFT JOIN recintos r ON r.id = p.recinto_id
+    LEFT JOIN recintos s ON s.id = r.superior_id
+    LEFT JOIN recintos ss ON ss.id = s.superior_id
     $where_p
-    ORDER BY p.jornada ASC, p.nombre_fecha ASC, p.fecha_programada ASC
+    ORDER BY p.jornada ASC, p.fecha_programada ASC, r.nombre ASC
 ");
 $partidos->execute($params_p);
 $partidos = $partidos->fetchAll();
@@ -317,8 +319,13 @@ function _flattenRecintos(array $nodes, array $children, int $depth, array &$out
 }
 _flattenRecintos($_rec_roots, $_rec_children, 0, $todos_recintos, $map_recintos_full);
 
-$tipo_label = ['liga'=>'Liga','torneo'=>'Torneo'];
-$fmt_label  = ['liga_regular'=>'Liga regular','mata_mata'=>'Mata-mata','grupos_mata_mata'=>'Grupos + Mata-mata'];
+$tipo_label = ['liga'=>'Liga','torneo'=>'Americano'];
+$fmt_label  = [
+    'liga_regular'=>'Liga regular',
+    'liga_playoff'=>'Liga + Playoff',
+    'mata_mata'=>'Llaves',
+    'grupos_mata_mata'=>'Fase de grupos + Llaves'
+];
 
 $total_partidos = count($partidos);
 $total_equipos  = count($equipos_liga);
@@ -352,7 +359,6 @@ $total_equipos  = count($equipos_liga);
             </span>
           </div>
           <div style="font-size:.83rem;color:var(--gray-600);display:flex;flex-wrap:wrap;gap:1.25rem">
-            <?php if ($liga['temporada']): ?><span>📅 <?= epl_h($liga['temporada']) ?></span><?php endif; ?>
             <?php if ($liga['sede']): ?><span>📍 <?= epl_h($liga['sede']) ?><?php if ($liga['url_maps']): ?> <a href="<?= epl_h($liga['url_maps']) ?>" target="_blank" style="color:var(--gold)">↗</a><?php endif; ?></span><?php endif; ?>
             <?php if ($liga['fecha_inicio']): ?><span>🗓 <?= date('d/m/Y',strtotime($liga['fecha_inicio'])) ?><?= $liga['fecha_fin'] ? ' → '.date('d/m/Y',strtotime($liga['fecha_fin'])) : '' ?></span><?php endif; ?>
             <span>🏆 <?= $fmt_label[$liga['formato']] ?></span>
@@ -634,10 +640,10 @@ $total_equipos  = count($equipos_liga);
               <td style="padding:.6rem 1rem;font-weight:600;color:var(--navy);text-align:right"><?= epl_h($p['visitante_nombre']) ?></td>
               <td style="padding:.6rem .75rem;text-align:center">
                 <div class="info-val">
-                  <?php if ($liga['recinto_nombre']): ?>
-                    <?= epl_h($liga['recinto_nombre']) ?>
-                    <?php if ($liga['recinto_superior_nombre']): ?>
-                      <span style="display:block;font-size:.7rem;color:var(--gray-400);font-weight:400"><?= epl_h($liga['recinto_superior_nombre']) ?></span>
+                  <?php if ($p['recinto_nombre']): ?>
+                    <?= epl_h($p['recinto_nombre']) ?>
+                    <?php if ($p['recinto_superior_nombre']): ?>
+                      <span style="display:block;font-size:.7rem;color:var(--gray-400);font-weight:400"><?= epl_h($p['recinto_superior_nombre']) ?></span>
                     <?php endif; ?>
                   <?php else: ?>
                     <?= epl_h($liga['sede'] ?: 'No definido') ?>
@@ -676,9 +682,26 @@ $total_equipos  = count($equipos_liga);
         <input type="hidden" name="action" value="editar_liga">
         <div class="form-group"><label class="form-label">Nombre *</label><input type="text" name="nombre" class="form-control" required value="<?= epl_h($liga['nombre']) ?>"></div>
         <div class="grid-2">
-          <div class="form-group"><label class="form-label">Tipo</label><select name="tipo" class="form-control"><option value="liga" <?= $liga['tipo']==='liga'?'selected':'' ?>>Liga</option><option value="torneo" <?= $liga['tipo']==='torneo'?'selected':'' ?>>Torneo</option></select></div>
-          <div class="form-group"><label class="form-label">Formato</label><select name="formato" class="form-control"><option value="liga_regular" <?= $liga['formato']==='liga_regular'?'selected':'' ?>>Liga regular</option><option value="mata_mata" <?= $liga['formato']==='mata_mata'?'selected':'' ?>>Mata-mata</option><option value="grupos_mata_mata" <?= $liga['formato']==='grupos_mata_mata'?'selected':'' ?>>Grupos + Mata-mata</option></select></div>
+          <div class="form-group"><label class="form-label">Tipo</label><select name="tipo" id="editTipo" class="form-control" onchange="actualizarFormatosEdit()"><option value="liga" <?= $liga['tipo']==='liga'?'selected':'' ?>>Liga</option><option value="torneo" <?= $liga['tipo']==='torneo'?'selected':'' ?>>Americano</option></select></div>
+          <div class="form-group">
+            <label class="form-label">Sexo</label>
+            <select name="sexo" class="form-control">
+              <option value="masculino" <?= $liga['sexo']==='masculino'?'selected':'' ?>>Masculino</option>
+              <option value="femenino" <?= $liga['sexo']==='femenino'?'selected':'' ?>>Femenino</option>
+              <option value="mixto" <?= $liga['sexo']==='mixto'?'selected':'' ?>>Mixto</option>
+            </select>
+          </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Formato</label>
+          <select name="formato" id="editFormato" class="form-control">
+            <option value="liga_regular" data-tipo="liga" <?= $liga['formato']==='liga_regular'?'selected':'' ?>>Liga regular</option>
+            <option value="liga_playoff" data-tipo="liga" <?= $liga['formato']==='liga_playoff'?'selected':'' ?>>Liga + Playoff</option>
+            <option value="mata_mata" data-tipo="torneo" <?= $liga['formato']==='mata_mata'?'selected':'' ?>>Llaves</option>
+            <option value="grupos_mata_mata" data-tipo="torneo" <?= $liga['formato']==='grupos_mata_mata'?'selected':'' ?>>Fase de grupos + Llaves</option>
+          </select>
+        </div>
+        
               <div class="info-item">
                 <div class="info-label">Estado</div>
                 <div class="info-val">
@@ -693,10 +716,6 @@ $total_equipos  = count($equipos_liga);
                 </div>
               </div>
         <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Temporada</label>
-            <input type="text" name="temporada" class="form-control" value="<?= epl_h($liga['temporada']??'') ?>">
-          </div>
           <div class="form-group">
             <label class="form-label">Categoría</label>
             <select name="categoria" class="form-control">
@@ -1019,4 +1038,34 @@ document.querySelectorAll('.check-group').forEach(groupCheck => {
 });
 </script>
 
+<script>
+function actualizarFormatosEdit() {
+    const tipo = document.getElementById('editTipo').value;
+    const fmt = document.getElementById('editFormato');
+    const opts = fmt.options;
+    let selectedSet = false;
+
+    for (let i = 0; i < opts.length; i++) {
+        const optTipo = opts[i].getAttribute('data-tipo');
+        if (optTipo === tipo) {
+            opts[i].style.display = '';
+            if (!selectedSet) {
+                fmt.value = opts[i].value;
+                selectedSet = true;
+            }
+        } else {
+            opts[i].style.display = 'none';
+        }
+    }
+}
+// Ejecutar al cargar por si acaso
+document.addEventListener('DOMContentLoaded', () => {
+    const tipo = document.getElementById('editTipo').value;
+    const fmt = document.getElementById('editFormato');
+    const opts = fmt.options;
+    for (let i = 0; i < opts.length; i++) {
+        if (opts[i].getAttribute('data-tipo') !== tipo) opts[i].style.display = 'none';
+    }
+});
+</script>
 <?php require_once '../includes/footer.php'; ?>

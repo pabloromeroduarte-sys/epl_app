@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+date_default_timezone_set('America/Santiago');
 
 function epl_env(string $key, string $default = ''): string {
     static $cache = [];
@@ -35,5 +36,6 @@ function epl_db(): PDO {
             PDO::ATTR_EMULATE_PREPARES   => false,
         ]
     );
+    $pdo->exec("SET time_zone = '-04:00'");
     return $pdo;
 }

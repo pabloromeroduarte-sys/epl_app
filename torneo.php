@@ -37,9 +37,8 @@ $est = $badge_estado[$liga['estado']] ?? $badge_estado['activa'];
 
 <!-- Hero Torneo -->
 <?php
-$nombre_lower = strtolower($liga['nombre']);
-$is_women = (strpos($nombre_lower, 'women') !== false || strpos($nombre_lower, 'femenin') !== false);
-$is_americano = (strpos($nombre_lower, 'americano') !== false);
+$is_women = ($liga['sexo'] === 'femenino');
+$is_americano = ($liga['tipo'] === 'torneo');
 
 if ($liga['foto_portada']) {
     $portada_hero_url = epl_url('uploads/ligas/'.$liga['foto_portada']);
@@ -66,8 +65,24 @@ if ($liga['foto_portada']) {
         <h1 style="font-family:var(--font-head);font-size:clamp(1.8rem,4vw,3rem);text-transform:uppercase;color:#fff;line-height:1.1;margin-bottom:.5rem">
           <?= epl_h($liga['nombre']) ?>
         </h1>
-        <?php if ($liga['temporada']): ?>
-          <p style="color:var(--gold);font-size:.9rem;font-weight:600"><?= epl_h($liga['temporada']) ?><?= $liga['categoria']?' · '.$liga['categoria'].'ª categoría':'' ?></p>
+        <?php
+        $fmt_label  = [
+            'liga_regular'=>'Liga regular',
+            'liga_playoff'=>'Liga + Playoff',
+            'mata_mata'=>'Llaves',
+            'grupos_mata_mata'=>'Fase de grupos + Llaves'
+        ];
+        ?>
+        <?php if ($liga['categoria'] || $liga['sexo']): ?>
+          <p style="color:var(--gold);font-size:.9rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">
+            <?= $liga['categoria'] ? $liga['categoria'] . 'ª Categoría' : '' ?>
+            <span style="margin: 0 8px; opacity: 0.5;">|</span>
+            <span style="color:#fff"><?= ucfirst($liga['sexo']) ?></span>
+            <span style="margin: 0 8px; opacity: 0.5;">|</span>
+            <span style="color:#fff"><?= $liga['tipo'] === 'liga' ? 'Liga' : 'Americano' ?></span>
+            <span style="margin: 0 8px; opacity: 0.5;">|</span>
+            <span style="color:rgba(255,255,255,0.7); font-size: 0.8rem;"><?= $fmt_label[$liga['formato']] ?? '' ?></span>
+          </p>
         <?php endif; ?>
         <?php if ($liga['sede']): ?>
           <p style="color:rgba(255,255,255,.6);font-size:.85rem;margin-top:.5rem">
@@ -93,49 +108,98 @@ if ($liga['foto_portada']) {
       <?php endif; ?>
     </div>
 
-    <?php if ($liga['estado'] === 'inscripcion'): ?>
-      <?php $jugador = epl_jugador_actual(); ?>
-      <div style="margin-top:1.5rem">
-        <?php if ($jugador): ?>
-          <a href="inscribirse.php?liga_id=<?= $liga['id'] ?>" class="btn btn-primary btn-lg">Inscribirme ahora →</a>
-        <?php else: ?>
-          <a href="login.php?back=inscribirse.php%3Fliga_id%3D<?= $liga['id'] ?>" class="btn btn-primary btn-lg">Ingresar para inscribirme →</a>
-        <?php endif; ?>
-      </div>
-    <?php endif; ?>
   </div>
 </section>
 
-<!-- Tabs: Ranking / Fixture / Resultados -->
-<div style="background:var(--white);border-bottom:2px solid var(--gray-200);position:sticky;top:var(--nav-height);z-index:100">
-  <div class="container" style="display:flex;gap:0">
-    <a href="#ranking"   class="torneo-tab active">Clasificación</a>
-    <a href="#fixture"   class="torneo-tab">Próximos</a>
-    <a href="#resultados" class="torneo-tab">Resultados</a>
+<!-- Botones de Acción Superiores -->
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+  <div style="display: grid; grid-template-cols: 1fr; gap: 1rem; md:grid-template-cols: 3fr 1fr 1fr;" class="actions-grid">
+    <a href="torneos.php" class="action-btn">
+      <svg style="width:1.4rem;height:1.4rem" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      Volver a Torneos
+    </a>
+    <a href="reprogramar.php" class="action-btn">
+      <svg style="width:1.4rem;height:1.4rem; color:#ef4444" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      Reprogramar Partido
+    </a>
+    <a href="#" class="action-btn">
+      <svg style="width:1.4rem;height:1.4rem; color:var(--gold)" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+      Reglamento Oficial
+    </a>
   </div>
 </div>
 
 <style>
-.torneo-tab {
-  padding: .85rem 1.5rem;
-  font-size: .82rem;
-  font-weight: 700;
+.actions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+.action-btn {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: .8rem;
   text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--gray-600);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  transition: all .2s;
+  letter-spacing: .05em;
+  color: var(--navy);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  transition: transform .2s, border-color .2s;
   text-decoration: none;
+  border: 1px solid var(--gray-200);
 }
-.torneo-tab:hover, .torneo-tab.active { color: var(--navy); border-bottom-color: var(--gold); }
+.action-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(201,167,98,0.2); border-color: var(--gold); }
+
+/* Tabs Estilo Premium */
+.tabs-container {
+  background: #fff;
+  border-radius: 16px;
+  padding: .5rem;
+  display: flex;
+  gap: .25rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
+}
+.tab-link {
+  flex: 1;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: .85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--navy);
+  transition: all .3s;
+  text-decoration: none;
+  cursor: pointer;
+}
+.tab-link.active {
+  background: var(--navy);
+  color: var(--gold);
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+
 </style>
 
-<!-- Clasificación -->
-<section id="ranking" class="section" style="background:var(--white)">
+<!-- Navegación de Pestañas -->
+<div class="container">
+  <div class="tabs-container">
+    <a onclick="showTab('ranking')" id="btn-ranking" class="tab-link active">Ranking</a>
+    <a onclick="showTab('partidos')" id="btn-partidos" class="tab-link">Partidos</a>
+    <a onclick="showTab('informacion')" id="btn-informacion" class="tab-link">Información</a>
+  </div>
+</div>
+
+<div id="tab-ranking" class="tab-content active">
   <div class="container">
     <p class="section-eyebrow">Tabla de posiciones</p>
-    <h2 class="section-title">Clasificación</h2>
+    <h2 class="section-title premium-title">Clasificación</h2>
     <?php if ($clasificacion): ?>
     <div class="tabla-clasificacion">
       <table>
@@ -186,92 +250,207 @@ if ($liga['foto_portada']) {
   </div>
 </section>
 
-<!-- Próximos partidos por jornada -->
-<section id="fixture" class="section">
-  <div class="container">
-    <p class="section-eyebrow">Agenda</p>
-    <h2 class="section-title">Próximos Partidos</h2>
-    <?php if (empty($partidos_pendientes)): ?>
-      <p style="color:var(--gray-400)">No hay partidos pendientes programados.</p>
-    <?php else: ?>
-      <?php foreach ($por_jornada as $jornada => $ps): ?>
-        <div style="margin-bottom:2rem">
-          <?php if ($jornada): ?>
-            <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy);margin-bottom:.85rem;display:flex;align-items:center;gap:.75rem">
-              Jornada <?= $jornada ?>
-              <span style="background:var(--gold);color:var(--navy);padding:.15rem .6rem;border-radius:50px;font-size:.72rem"><?= count($ps) ?> partido<?= count($ps)>1?'s':'' ?></span>
-            </h3>
-          <?php endif; ?>
-          <div class="partidos-list">
-            <?php foreach ($ps as $p): ?>
-            <div class="partido-card">
-              <div class="partido-equipo">
-                <span class="partido-nombre"><?= epl_h($p['local_nombre']) ?></span>
-              </div>
-              <div class="partido-resultado">
-                <?php if ($p['fecha_programada']): ?>
-                  <span style="font-size:.85rem;font-weight:700;color:var(--navy)"><?= date('d/m', strtotime($p['fecha_programada'])) ?></span>
-                  <span style="font-size:.78rem;color:var(--gold);font-weight:600"><?= date('H:i', strtotime($p['fecha_programada'])) ?></span>
-                <?php else: ?>
-                  <span style="font-size:.8rem;color:var(--gray-400)">Por definir</span>
-                <?php endif; ?>
-                <?php if ($p['cancha']): ?>
-                  <span style="font-size:.68rem;color:var(--gray-400)"><?= epl_h($p['cancha']) ?></span>
-                <?php endif; ?>
-                <span class="badge badge-pendiente">Pendiente</span>
-              </div>
-              <div class="partido-equipo right">
-                <span class="partido-nombre"><?= epl_h($p['visitante_nombre']) ?></span>
-              </div>
-            </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      <?php endforeach; ?>
-    <?php endif; ?>
-  </div>
-</section>
+</div> <!-- /tab-ranking -->
 
-<!-- Resultados recientes -->
-<section id="resultados" class="section" style="background:var(--white)">
-  <div class="container">
-    <p class="section-eyebrow">Historial</p>
-    <h2 class="section-title">Resultados</h2>
-    <?php if (empty($partidos_jugados)): ?>
-      <p style="color:var(--gray-400)">Aún no hay partidos jugados.</p>
-    <?php else: ?>
-      <div class="partidos-list">
-        <?php foreach (array_reverse($partidos_jugados) as $p): ?>
-        <div class="partido-card">
-          <div class="partido-equipo">
-            <span class="partido-nombre"><?= epl_h($p['local_nombre']) ?></span>
-            <?php if ($p['ganador_id'] == $p['equipo_local_id']): ?>
-              <span class="badge badge-jugado" style="font-size:.63rem">Ganador</span>
-            <?php endif; ?>
-          </div>
-          <div class="partido-resultado">
-            <span class="resultado-score"><?= $p['sets_local'] ?> – <?= $p['sets_visitante'] ?></span>
-            <?php
-              $sets=[];
-              for($s=1;$s<=3;$s++){$gl=$p["games_s{$s}_local"];$gv=$p["games_s{$s}_visitante"];if($gl!==null)$sets[]="$gl-$gv";}
-              if($sets): ?><span class="resultado-sets"><?= implode('  ',$sets) ?></span><?php endif;
+<div id="tab-partidos" class="tab-content">
+  <section class="section">
+    <div class="container">
+      <div style="background:#fff; border-radius:24px; padding:2rem; box-shadow:0 10px 40px rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.05)">
+        <h2 style="font-family:var(--font-head); font-size:clamp(1.8rem, 3vw, 2.5rem); text-transform:uppercase; color:var(--navy); margin-bottom:1.5rem; letter-spacing:.02em; font-weight:400; display:flex; align-items:center; gap:.5rem">
+          <span style="display:inline-block; width:4px; height:1em; background:var(--gold); border-radius:4px"></span>
+          CALENDARIO DE PARTIDOS
+        </h2>
+        
+        <!-- Buscador -->
+        <div style="position:relative; margin-bottom:1.5rem">
+          <input type="text" id="searchPartidos" placeholder="Buscar por apellido de jugador o equipo..." 
+                 style="width:100%; padding:.8rem 1rem .8rem 2.5rem; border:1px solid #e5e7eb; border-radius:8px; font-family:var(--font-body); font-size:.9rem; color:var(--navy); outline:none; transition:border-color .2s"
+                 onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e5e7eb'"
+                 onkeyup="filterPartidos()">
+          <svg style="position:absolute; left:.8rem; top:50%; transform:translateY(-50%); width:1.1rem; height:1.1rem; color:#9ca3af" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+
+        <!-- Selector de Jornadas -->
+        <?php 
+        $todas_jornadas = [];
+        $partidos_all = array_merge($partidos_pendientes, $partidos_jugados);
+        foreach($partidos_all as $p) { if(isset($p['jornada']) && $p['jornada']) $todas_jornadas[] = $p['jornada']; }
+        $todas_jornadas = array_unique($todas_jornadas);
+        sort($todas_jornadas);
+        ?>
+        <div class="fechas-scroll">
+          <button class="fecha-btn active" onclick="filterByJornada('all', this)">Todas</button>
+          <?php foreach($todas_jornadas as $j): ?>
+            <button class="fecha-btn" onclick="filterByJornada(<?= $j ?>, this)">Fecha <?= $j ?></button>
+          <?php endforeach; ?>
+        </div>
+
+        <!-- Lista de Partidos Agrupados -->
+        <div id="lista-partidos-dinamica">
+          <?php 
+          // Agrupar todos los partidos por jornada para la vista dinámica
+          $agrupados = [];
+          foreach($partidos_all as $p) { $agrupados[$p['jornada'] ?? 0][] = $p; }
+          ksort($agrupados);
+          
+          if(empty($partidos_all)):
+          ?>
+            <p style="text-align:center; padding:3rem; color:var(--gray-400)">No hay partidos programados para este torneo.</p>
+          <?php
+          else:
+            foreach($agrupados as $jor => $ps): 
             ?>
-            <span class="badge badge-jugado">Jugado</span>
-            <?php if ($p['fecha_jugado']): ?>
-              <span style="font-size:.65rem;color:var(--gray-400)"><?= date('d/m/Y', strtotime($p['fecha_jugado'])) ?></span>
-            <?php endif; ?>
+              <div class="jornada-group" data-jornada="<?= $jor ?>">
+                <h3 style="font-family:var(--font-head); font-size:1rem; text-transform:uppercase; color:var(--navy); margin:2rem 0 1rem; border-left:4px solid var(--gold); padding-left:.75rem">Fecha <?= $jor ?: 'Especial' ?></h3>
+                <div class="partidos-list">
+                  <?php foreach($ps as $p): 
+                    $is_jugado = ($p['estado'] === 'jugado');
+                    $search_str = strtolower($p['local_nombre'] . ' ' . $p['visitante_nombre']);
+                  ?>
+                  <div class="partido-card-v2" data-search="<?= $search_str ?>">
+                    <!-- Columna 1: Info Fecha -->
+                    <div class="partido-col-info">
+                      <span class="fecha-label">Fecha <?= $jor ?></span>
+                      <div class="partido-date">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <?= $p['fecha_programada'] ? date('d M, Y', strtotime($p['fecha_programada'])) : 'TBD' ?>
+                      </div>
+                      <span class="partido-time">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <?= $p['fecha_programada'] ? date('H:i', strtotime($p['fecha_programada'])) : '00:00' ?>
+                      </span>
+                    </div>
+
+                    <!-- Columna 2: Equipos y Marcador -->
+                    <div style="display:flex; align-items:center; justify-content:center; gap:2rem; flex:1">
+                      <div style="text-align:right; flex:1">
+                        <span class="equipo-nombre-card"><?= epl_h($p['local_nombre']) ?></span>
+                      </div>
+                      
+                      <div style="display:flex; flex-direction:column; align-items:center">
+                        <div class="marcador-box">
+                          <?php if($is_jugado): ?>
+                            <?= $p['sets_local'] ?> - <?= $p['sets_visitante'] ?>
+                          <?php else: ?>
+                            VS
+                          <?php endif; ?>
+                        </div>
+                        <?php if($is_jugado): 
+                          $sets=[];
+                          for($s=1;$s<=3;$s++){$gl=$p["games_s{$s}_local"];$gv=$p["games_s{$s}_visitante"];if($gl!==null)$sets[]="$gl-$gv";}
+                        ?>
+                          <div class="set-details"><?= implode(' <span style="opacity:0.4; margin:0 2px">/</span> ', $sets) ?></div>
+                        <?php endif; ?>
+                      </div>
+
+                      <div style="text-align:left; flex:1">
+                        <span class="equipo-nombre-card"><?= epl_h($p['visitante_nombre']) ?></span>
+                      </div>
+                    </div>
+
+                    <!-- Columna 3: Meta (Cancha/Sede) -->
+                    <div class="partido-col-meta">
+                      <?php 
+                        $r_nombre = $p['recinto_nombre'];
+                        $r_sup    = $p['recinto_superior_nombre'];
+                        $r_abu    = $p['recinto_abuelo_nombre'];
+                        $cancha   = $p['cancha'];
+                        $liga_sede= $liga['sede'] ?? '';
+
+                        // Lógica de jerarquía:
+                        // Si hay abuelo (Club -> Sede -> Cancha)
+                        if ($r_abu) {
+                          $badge_txt = $r_sup; // Sede/Sucursal
+                          $label_txt = $r_abu . ($r_nombre ? ' - ' . $r_nombre : ''); // Club - Cancha
+                        } 
+                        // Si hay superior (Club -> Sede/Cancha)
+                        elseif ($r_sup) {
+                          $badge_txt = $r_nombre; // Sede/Cancha
+                          $label_txt = $r_sup;    // Club
+                        }
+                        // Si no hay jerarquía en recintos, usamos la sede de la liga
+                        else {
+                          $badge_txt = $r_nombre ?: ($liga_sede ?: 'Sede TBD');
+                          $label_txt = ($r_nombre && $liga_sede && strtolower($r_nombre) !== strtolower($liga_sede)) ? $liga_sede : '';
+                        }
+
+                        if ($cancha && !str_contains(strtolower($label_txt), 'cancha')) {
+                          $label_txt .= ($label_txt ? ' - ' : '') . 'Cancha ' . $cancha;
+                        }
+                      ?>
+                      <span class="cancha-badge" style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
+                        <?= epl_h($badge_txt) ?>
+                      </span>
+                      <div class="sede-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <?= epl_h($label_txt ?: 'Ver ubicación') ?>
+                      </div>
+                    </div>
+                  </div>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+  </section>
+</div> <!-- /tab-partidos -->
+
+<div id="tab-informacion" class="tab-content">
+  <section class="section">
+    <div class="container">
+      <div style="background:#fff; border-radius:24px; padding:3rem; box-shadow:0 10px 40px rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.05)">
+        <h2 class="section-title">Información del Torneo</h2>
+        
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:2rem; margin-top:2rem">
+          <div>
+            <h4 style="font-family:var(--font-head); text-transform:uppercase; color:var(--navy); font-size:.9rem; margin-bottom:1rem">Detalles Técnicos</h4>
+            <ul style="list-style:none; padding:0; font-size:.9rem; color:var(--gray-600); line-height:2.5">
+              <li><span style="opacity:.6">Sede:</span> <strong><?= $liga['sede'] ?: 'Por confirmar' ?></strong></li>
+              <li><span style="opacity:.6">Categoría:</span> <strong><?= $liga['categoria'] ?>ª Categoría</strong></li>
+              <li><span style="opacity:.6">Sexo:</span> <strong><?= ucfirst($liga['sexo']) ?></strong></li>
+              <li><span style="opacity:.6">Precio:</span> <strong>$<?= number_format($liga['precio']??0,0,',','.') ?></strong></li>
+            </ul>
           </div>
-          <div class="partido-equipo right">
-            <span class="partido-nombre"><?= epl_h($p['visitante_nombre']) ?></span>
-            <?php if ($p['ganador_id'] == $p['equipo_visitante_id']): ?>
-              <span class="badge badge-jugado" style="font-size:.63rem">Ganador</span>
-            <?php endif; ?>
+          <div>
+            <h4 style="font-family:var(--font-head); text-transform:uppercase; color:var(--navy); font-size:.9rem; margin-bottom:1rem">Fechas Clave</h4>
+            <ul style="list-style:none; padding:0; font-size:.9rem; color:var(--gray-600); line-height:2.5">
+              <li><span style="opacity:.6">Inicio:</span> <strong><?= $liga['fecha_inicio'] ? date('d/m/Y', strtotime($liga['fecha_inicio'])) : 'Pendiente' ?></strong></li>
+              <li><span style="opacity:.6">Cierre Inscrip:</span> <strong><?= $liga['inscripcion_fin'] ? date('d/m/Y', strtotime($liga['inscripcion_fin'])) : 'Pendiente' ?></strong></li>
+            </ul>
           </div>
         </div>
-        <?php endforeach; ?>
       </div>
-    <?php endif; ?>
-  </div>
-</section>
+    </div>
+  </section>
+</div> <!-- /tab-informacion -->
+
+<script>
+function showTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('tab-' + tabName).classList.add('active');
+  document.getElementById('btn-' + tabName).classList.add('active');
+}
+
+function filterByJornada(jor, btn) {
+    document.querySelectorAll('.fecha-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.jornada-group').forEach(group => {
+        if (jor === 'all' || group.getAttribute('data-jornada') == jor) group.style.display = '';
+        else group.style.display = 'none';
+    });
+}
+
+function filterPartidos() {
+    const q = document.getElementById('searchPartidos').value.toLowerCase();
+    document.querySelectorAll('.partido-card').forEach(card => {
+        const text = card.getAttribute('data-search');
+        card.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+</script>
 
 <?php require_once 'includes/footer.php'; ?>

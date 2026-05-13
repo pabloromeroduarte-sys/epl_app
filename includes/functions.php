@@ -59,13 +59,19 @@ function epl_partidos_liga(int $liga_id, string $estado = ''): array {
         SELECT p.*,
                el.nombre AS local_nombre,
                ev.nombre AS visitante_nombre,
-               g.nombre  AS ganador_nombre
+               g.nombre  AS ganador_nombre,
+               r.nombre  AS recinto_nombre,
+               s.nombre  AS recinto_superior_nombre,
+               ss.nombre AS recinto_abuelo_nombre
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
         LEFT JOIN equipos g ON g.id = p.ganador_id
+        LEFT JOIN recintos r ON r.id = p.recinto_id
+        LEFT JOIN recintos s ON s.id = r.superior_id
+        LEFT JOIN recintos ss ON ss.id = s.superior_id
         WHERE p.liga_id = ? $where
-        ORDER BY p.fecha_programada ASC
+        ORDER BY p.jornada ASC, p.fecha_programada ASC, r.nombre ASC
     ");
     $st->execute($params);
     return $st->fetchAll();
@@ -77,13 +83,15 @@ function epl_partidos_equipo(int $equipo_id): array {
         SELECT p.*,
                l.nombre AS liga_nombre,
                el.nombre AS local_nombre,
-               ev.nombre AS visitante_nombre
+               ev.nombre AS visitante_nombre,
+               r.nombre AS recinto_nombre
         FROM partidos p
         JOIN ligas l    ON l.id = p.liga_id
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        LEFT JOIN recintos r ON r.id = p.recinto_id
         WHERE p.equipo_local_id = ? OR p.equipo_visitante_id = ?
-        ORDER BY p.fecha_programada DESC
+        ORDER BY p.fecha_programada DESC, r.nombre ASC
     ");
     $st->execute([$equipo_id, $equipo_id]);
     return $st->fetchAll();

@@ -4,7 +4,13 @@ $active_nav = 'torneos';
 require_once 'includes/functions.php';
 
 $db = epl_db();
-$ligas = $db->query("SELECT * FROM ligas ORDER BY FIELD(estado,'activa','inscripcion','proximamente','finalizada'), id DESC")->fetchAll();
+$ligas = $db->query("
+    SELECT l.*, r.nombre AS recinto_nombre, rs.nombre AS recinto_superior_nombre
+    FROM ligas l
+    LEFT JOIN recintos r ON r.id = l.recinto_id
+    LEFT JOIN recintos rs ON rs.id = r.superior_id
+    ORDER BY FIELD(l.estado,'activa','inscripcion','proximamente','finalizada'), l.id DESC
+")->fetchAll();
 ?>
 <?php require_once 'includes/header.php'; ?>
 
@@ -81,9 +87,8 @@ $ligas = $db->query("SELECT * FROM ligas ORDER BY FIELD(estado,'activa','inscrip
               $b = $badge[$l['estado']] ?? $badge['activa'];
               
               // Lógica de imágenes dinámicas
-              $nombre_lower = strtolower($l['nombre']);
-              $is_women = (strpos($nombre_lower, 'women') !== false || strpos($nombre_lower, 'femenin') !== false);
-              $is_americano = (strpos($nombre_lower, 'americano') !== false);
+              $is_women = ($l['sexo'] === 'femenino');
+              $is_americano = ($l['tipo'] === 'torneo');
               
               if ($l['foto_portada']) {
                   $img_src = epl_url('uploads/ligas/'.$l['foto_portada']);
@@ -100,12 +105,7 @@ $ligas = $db->query("SELECT * FROM ligas ORDER BY FIELD(estado,'activa','inscrip
               }
 
               // Nombre corto para la miniatura
-              $nombre_corto = $l['categoria'] ? $l['categoria'] . ' Apertura' : 'Liga Padel';
-              if (strpos($nombre_lower, 'women') !== false) {
-                  $nombre_corto = $l['categoria'] ? 'Women ' . $l['categoria'] : 'Liga Women';
-              } elseif (strpos($nombre_lower, 'americano') !== false) {
-                  $nombre_corto = 'Americano';
-              }
+              $nombre_corto = $l['categoria'] ? $l['categoria'] . ' Categoría' : ($l['tipo'] === 'liga' ? 'Liga Padel' : 'Americano');
             ?>
             <div class="bg-white rounded-[24px] overflow-hidden shadow-[0_5px_15px_rgba(0,0,0,0.05)] border border-gray-100 flex flex-col transition-all hover:shadow-[0_10px_25px_rgba(201,167,98,0.15)] hover:border-epl-gold group">
               
@@ -134,9 +134,24 @@ $ligas = $db->query("SELECT * FROM ligas ORDER BY FIELD(estado,'activa','inscrip
                 </p>
                 
                 <!-- Título Principal -->
-                <h3 class="font-primary text-[22px] text-epl-blue uppercase leading-tight mb-5">
-                  <?= epl_h($l['nombre']) ?>
-                </h3>
+                <div class="mb-5">
+                    <h3 class="font-primary text-[22px] text-epl-blue uppercase leading-tight mb-1">
+                      <?= epl_h($l['nombre']) ?>
+                    </h3>
+                    <?php 
+                    $fmt_label = [
+                        'liga_regular'=>'Liga regular',
+                        'liga_playoff'=>'Liga + Playoff',
+                        'mata_mata'=>'Llaves',
+                        'grupos_mata_mata'=>'Fase de grupos + Llaves'
+                    ];
+                    $f_text = $fmt_label[$l['formato']] ?? '';
+                    $s_text = ucfirst($l['sexo'] ?? '');
+                    ?>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        <?= $s_text ?> · <?= $f_text ?>
+                    </p>
+                </div>
                 
                 <!-- Detalles de Fecha y Sede -->
                 <div class="space-y-3.5 mb-6">
@@ -147,7 +162,9 @@ $ligas = $db->query("SELECT * FROM ligas ORDER BY FIELD(estado,'activa','inscrip
                   <div class="flex items-start gap-3.5 text-gray-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mt-0.5 text-epl-gold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                     <div class="flex flex-col">
-                      <span class="text-sm font-semibold text-epl-blue"><?= $l['sede'] ? epl_h($l['sede']) : 'Sede por confirmar' ?></span>
+                      <span class="text-sm font-semibold text-epl-blue">
+                        <?= $l['recinto_nombre'] ? epl_h($l['recinto_nombre']) : ($l['sede'] ? epl_h($l['sede']) : 'Sede por confirmar') ?>
+                      </span>
                     </div>
                   </div>
                 </div>

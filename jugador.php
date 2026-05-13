@@ -159,31 +159,27 @@ if ($equipo) {
           <div class="partidos-list">
             <?php foreach ($partidos as $p):
               $gano = $equipo && ($p['ganador_id'] == $equipo['id']);
-              $esLocal = $equipo && ($p['equipo_local_id'] == $equipo['id']);
               $sets = [];
               for ($s=1; $s<=3; $s++) {
                 $gl = $p["games_s{$s}_local"]; $gv = $p["games_s{$s}_visitante"];
                 if ($gl !== null) $sets[] = "$gl-$gv";
               }
             ?>
-            <div class="partido-card" style="border-left:3px solid <?= $gano?'#22c55e':'#ef4444' ?>">
-              <div class="partido-equipo">
-                <span class="partido-nombre"><?= epl_h($p['local_nombre']) ?></span>
-                <?php if ($esLocal): ?><span style="font-size:.65rem;color:var(--gold);font-weight:700">TÚ</span><?php endif; ?>
+            <div class="partido-card-v2" style="border-left:4px solid <?= $gano?'var(--green)':'var(--red)' ?>">
+              <div class="partido-col-info">
+                <span class="fecha-label">Fecha <?= $p['jornada'] ?? '' ?></span>
+                <div class="partido-date">🗓 <?= $p['fecha_jugado'] ? date('d/m/y', strtotime($p['fecha_jugado'])) : 'TBD' ?></div>
               </div>
-              <div class="partido-resultado">
-                <span class="resultado-score"><?= $p['sets_local'] ?> – <?= $p['sets_visitante'] ?></span>
-                <?php if ($sets): ?><span class="resultado-sets"><?= implode(' ', $sets) ?></span><?php endif; ?>
-                <span class="badge <?= $gano?'badge-jugado':'badge-walkover' ?>" style="font-size:.63rem">
-                  <?= $gano ? 'Victoria' : 'Derrota' ?>
-                </span>
-                <?php if ($p['fecha_jugado']): ?>
-                  <span style="font-size:.65rem;color:var(--gray-400)"><?= date('d/m/Y', strtotime($p['fecha_jugado'])) ?></span>
-                <?php endif; ?>
+              <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex:1">
+                <div style="text-align:right;flex:1"><span class="equipo-nombre-card"><?= epl_h($p['local_nombre']) ?></span></div>
+                <div style="display:flex;flex-direction:column;align-items:center">
+                  <div class="marcador-box"><?= $p['sets_local'] ?>-<?= $p['sets_visitante'] ?></div>
+                  <?php if($sets): ?><div class="set-details"><?= implode(' <span style="opacity:0.4; margin:0 2px">/</span> ', $sets) ?></div><?php endif; ?>
+                </div>
+                <div style="text-align:left;flex:1"><span class="equipo-nombre-card"><?= epl_h($p['visitante_nombre']) ?></span></div>
               </div>
-              <div class="partido-equipo right">
-                <span class="partido-nombre"><?= epl_h($p['visitante_nombre']) ?></span>
-                <?php if (!$esLocal): ?><span style="font-size:.65rem;color:var(--gold);font-weight:700">TÚ</span><?php endif; ?>
+              <div class="partido-col-meta">
+                <span class="badge <?= $gano?'badge-jugado':'badge-walkover' ?>"><?= $gano?'Victoria':'Derrota' ?></span>
               </div>
             </div>
             <?php endforeach; ?>

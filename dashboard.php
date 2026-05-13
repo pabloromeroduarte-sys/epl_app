@@ -39,12 +39,13 @@ if ($equipo) {
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        LEFT JOIN recintos r ON r.id = p.recinto_id
         WHERE (p.equipo_local_id=? OR p.equipo_visitante_id=?)
           AND (
             (p.estado='pendiente' AND p.fecha_programada IS NOT NULL AND p.fecha_programada < ?)
             OR p.estado='reprogramado'
           )
-        ORDER BY p.fecha_programada ASC
+        ORDER BY p.fecha_programada ASC, r.nombre ASC
     ");
     $stA->execute([$equipo['id'], $equipo['id'], $hoy]);
     $atrasados = $stA->fetchAll();
@@ -78,10 +79,21 @@ if ($equipo) {
     <?php if ($atrasados): ?>
     <div class="alert alert-error" style="display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1.5rem">
       <svg style="width:20px;height:20px;flex-shrink:0;margin-top:.1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-      <div>
-        <strong>Tienes <?= count($atrasados) ?> partido<?= count($atrasados)>1?'s':'' ?> atrasado<?= count($atrasados)>1?'s':'' ?>.</strong>
-        Tienes partidos con fecha vencida o pendientes de reprogramación.
-        <a href="reprogramar.php" style="color:inherit;font-weight:700;text-decoration:underline;margin-left:.5rem">Regularizar →</a>
+      <div style="flex:1">
+        <div style="font-weight:700;margin-bottom:.25rem">Tienes <?= count($atrasados) ?> partido<?= count($atrasados)>1?'s':'' ?> con fecha vencida o pendiente<?= count($atrasados)>1?'s':'' ?>:</div>
+        <ul style="margin:0 0 .75rem 0;padding:0;list-style:none;font-size:.85rem;opacity:.9">
+          <?php foreach($atrasados as $at): ?>
+            <li style="margin-bottom:.2rem">
+              • <?= epl_h($at['local_nombre'] . ' vs ' . $at['visitante_nombre']) ?> 
+              <span style="opacity:.7">(<?= $at['fecha_programada'] ? date('d/m/Y', strtotime($at['fecha_programada'])) : 'Sin fecha' ?>)</span>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+        <?php 
+          $link = "reprogramar.php";
+          if (count($atrasados) === 1) $link .= "?partido_id=" . $atrasados[0]['id'];
+        ?>
+        <a href="<?= $link ?>" class="btn btn-sm" style="background:#fff;color:#b91c1c;font-weight:700;border:none">Regularizar ahora →</a>
       </div>
     </div>
     <?php endif; ?>
@@ -126,20 +138,33 @@ if ($equipo) {
       <div class="card-body">
         <div class="partidos-list">
           <?php foreach ($proximos as $p): ?>
-          <div class="partido-card" style="padding:.85rem 1rem">
-            <div class="partido-equipo">
-              <span class="partido-nombre" style="font-size:.85rem"><?= epl_h($p['local_nombre']) ?></span>
-              <?php if ($p['equipo_local_id'] == $equipo['id']): ?><span style="font-size:.68rem;color:var(--gold);font-weight:700">TÚ</span><?php endif; ?>
+          <div class="partido-card-v2" style="padding:1rem">
+            <div class="partido-col-info" style="border:none">
+              <span class="fecha-label" style="font-size:.6rem">Fecha <?= $p['jornada'] ?? '' ?></span>
+              <div class="partido-date" style="font-size:.7rem">🗓 <?= $p['fecha_programada'] ? date('d/m', strtotime($p['fecha_programada'])) : 'TBD' ?></div>
             </div>
-            <div class="partido-resultado">
-              <span style="font-size:.78rem;font-weight:700;color:var(--gold)">
-                <?= $p['fecha_programada'] ? date('d/m H:i', strtotime($p['fecha_programada'])) : 'Por definir' ?>
-              </span>
-              <span class="badge badge-pendiente" style="font-size:.65rem">Pendiente</span>
+            <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex:1">
+              <div style="text-align:right;flex:1"><span class="equipo-nombre-card" style="font-size:.75rem"><?= epl_h($p['local_nombre']) ?></span></div>
+              <div class="marcador-box" style="font-size:1rem;padding:.4rem .8rem;min-width:60px">VS</div>
+              <div style="text-align:left;flex:1"><span class="equipo-nombre-card" style="font-size:.75rem"><?= epl_h($p['visitante_nombre']) ?></span></div>
             </div>
-            <div class="partido-equipo right">
-              <span class="partido-nombre" style="font-size:.85rem"><?= epl_h($p['visitante_nombre']) ?></span>
-              <?php if ($p['equipo_visitante_id'] == $equipo['id']): ?><span style="font-size:.68rem;color:var(--gold);font-weight:700">TÚ</span><?php endif; ?>
+            <div class="partido-col-meta" style="border:none;padding-left:0">
+              <?php 
+                $rec_full = $p['recinto_nombre'] ?? 'TBD';
+                $words = explode(' ', $rec_full);
+                $badge_txt = $rec_full;
+                $bottom_txt = '';
+                if (count($words) > 1) {
+                  $last = array_pop($words);
+                  $badge_txt = implode(' ', $words);
+                  $bottom_txt = $last;
+                }
+                if ($p['cancha']) {
+                  $bottom_txt .= ($bottom_txt ? ' - ' : '') . 'C. ' . $p['cancha'];
+                }
+              ?>
+              <span class="cancha-badge" style="margin-bottom:0; font-size:.6rem"><?= epl_h($badge_txt) ?></span>
+              <div class="sede-label" style="font-size:.55rem; margin-top:.2rem"><?= epl_h($bottom_txt ?: '?') ?></div>
             </div>
           </div>
           <?php endforeach; ?>
@@ -160,20 +185,24 @@ if ($equipo) {
           <?php foreach ($recientes as $p):
             $gane = $p['ganador_id'] == ($equipo['id'] ?? -1);
           ?>
-          <div class="partido-card" style="padding:.85rem 1rem;border-left:3px solid <?= $gane?'var(--green)':'var(--red)' ?>">
-            <div class="partido-equipo">
-              <span class="partido-nombre" style="font-size:.85rem"><?= epl_h($p['local_nombre']) ?></span>
+          <div class="partido-card-v2" style="padding:1rem;border-left:4px solid <?= $gane?'var(--green)':'var(--red)' ?>">
+            <div class="partido-col-info" style="border:none">
+              <span class="fecha-label" style="font-size:.6rem">Fecha <?= $p['jornada'] ?? '' ?></span>
+              <div class="partido-date" style="font-size:.7rem">🗓 <?= date('d/m', strtotime($p['fecha_jugado'])) ?></div>
             </div>
-            <div class="partido-resultado">
-              <span class="resultado-score" style="font-size:1.25rem"><?= $p['sets_local'] ?> – <?= $p['sets_visitante'] ?></span>
-              <?php
-                $sets=[];
-                for($s=1;$s<=3;$s++){$gl=$p["games_s{$s}_local"];$gv=$p["games_s{$s}_visitante"];if($gl!==null)$sets[]="$gl-$gv";}
-                if($sets): ?><span class="resultado-sets"><?= implode(' ', $sets) ?></span><?php endif; ?>
-              <span class="badge <?= $gane?'badge-jugado':'badge-walkover' ?>" style="font-size:.65rem"><?= $gane?'Victoria':'Derrota' ?></span>
+            <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex:1">
+              <div style="text-align:right;flex:1"><span class="equipo-nombre-card" style="font-size:.75rem"><?= epl_h($p['local_nombre']) ?></span></div>
+              <div style="display:flex;flex-direction:column;align-items:center">
+                <div class="marcador-box" style="font-size:1.1rem;padding:.4rem .8rem;min-width:60px"><?= $p['sets_local'] ?>-<?= $p['sets_visitante'] ?></div>
+                <?php
+                  $sets=[];
+                  for($s=1;$s<=3;$s++){$gl=$p["games_s{$s}_local"];$gv=$p["games_s{$s}_visitante"];if($gl!==null)$sets[]="$gl-$gv";}
+                  if($sets): ?><div class="set-details" style="font-size:.6rem"><?= implode(' <span style="opacity:0.4; margin:0 2px">/</span> ', $sets) ?></div><?php endif; ?>
+              </div>
+              <div style="text-align:left;flex:1"><span class="equipo-nombre-card" style="font-size:.75rem"><?= epl_h($p['visitante_nombre']) ?></span></div>
             </div>
-            <div class="partido-equipo right">
-              <span class="partido-nombre" style="font-size:.85rem"><?= epl_h($p['visitante_nombre']) ?></span>
+            <div class="partido-col-meta" style="border:none;padding-left:0">
+              <span class="badge <?= $gane?'badge-jugado':'badge-walkover' ?>" style="font-size:.6rem"><?= $gane?'Victoria':'Derrota' ?></span>
             </div>
           </div>
           <?php endforeach; ?>
