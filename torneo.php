@@ -36,10 +36,27 @@ $est = $badge_estado[$liga['estado']] ?? $badge_estado['activa'];
 <?php require_once 'includes/header.php'; ?>
 
 <!-- Hero Torneo -->
+<?php
+$nombre_lower = strtolower($liga['nombre']);
+$is_women = (strpos($nombre_lower, 'women') !== false || strpos($nombre_lower, 'femenin') !== false);
+$is_americano = (strpos($nombre_lower, 'americano') !== false);
+
+if ($liga['foto_portada']) {
+    $portada_hero_url = epl_url('uploads/ligas/'.$liga['foto_portada']);
+} else {
+    if ($is_americano && $is_women) {
+        $portada_hero_url = epl_url('assets/img/portada-americano-women.jpg');
+    } elseif ($is_americano && !$is_women) {
+        $portada_hero_url = epl_url('assets/img/portada-americano-men.jpg');
+    } elseif (!$is_americano && $is_women) {
+        $portada_hero_url = epl_url('assets/img/portada-liga-women.jpg');
+    } else {
+        $portada_hero_url = epl_url('assets/img/portada-liga-men.jpg');
+    }
+}
+?>
 <section style="background:var(--navy);position:relative;overflow:hidden">
-  <?php if ($liga['foto_portada']): ?>
-    <div style="position:absolute;inset:0;background-image:url('<?= epl_url('uploads/ligas/'.$liga['foto_portada']) ?>');background-size:cover;background-position:center;opacity:.2"></div>
-  <?php endif; ?>
+    <div style="position:absolute;inset:0;background-image:url('<?= $portada_hero_url ?>');background-size:cover;background-position:center;opacity:.2"></div>
   <div class="container" style="position:relative;z-index:1;padding-top:3rem;padding-bottom:3rem">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1.5rem">
       <div>
