@@ -229,9 +229,11 @@ require_once 'includes/header.php';
 .t-tab-name { font-family: var(--font-head); font-size: 1.1rem; color: var(--navy); text-transform: uppercase; }
 .t-tab.active .t-tab-name { color: var(--white); }
 
-.subtabs { display: flex; background: var(--gray-100); padding: .4rem; gap: .4rem; }
+.subtabs { display: flex; background: var(--gray-100); padding: .4rem; gap: .4rem; overflow-x: auto; scrollbar-width: none; }
+.subtabs::-webkit-scrollbar { display: none; }
 .subtab-btn {
   flex: 1;
+  white-space: nowrap;
   background: none;
   border: none;
   padding: .75rem;

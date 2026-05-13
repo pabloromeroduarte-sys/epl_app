@@ -161,7 +161,10 @@ if ($liga['foto_portada']) {
   gap: .25rem;
   box-shadow: 0 4px 20px rgba(0,0,0,0.05);
   margin-bottom: 2rem;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
 }
+.tabs-container::-webkit-scrollbar { display: none; /* Safari and Chrome */ }
 .tab-link {
   flex: 1;
   text-align: center;
