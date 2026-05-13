@@ -14,18 +14,46 @@ $proximos = $liga ? array_slice(epl_partidos_liga($liga['id'], 'pendiente'), 0, 
      HERO
      ====================================================== -->
 <section class="hero">
-  <div class="hero-bg" style="background-image:url('<?= epl_url('assets/img/hero-padel.jpg') ?>')"></div>
-  <div class="hero-content container">
-    <p class="hero-eyebrow">Temporada <?= $liga ? epl_h($liga['temporada']) : '2026' ?> • Categoría <?= $liga ? $liga['categoria'].'ra' : '5ta' ?></p>
-    <h1 class="hero-title">
-      Elite<br>
-      <span>Padel</span><br>
-      League
+  <div class="hero-bg" style="background-image:url('<?= epl_url('assets/img/hero-padel.jpg') ?>'); opacity: .2;"></div>
+  <div class="hero-content container text-center">
+    <p class="hero-eyebrow" style="letter-spacing: .3em;">La Liga Más Competitiva de Chile</p>
+    <h1 class="hero-title" style="font-size: clamp(3rem, 8vw, 6rem);">
+      Bienvenidos a la<br>
+      <span>Elite</span> del Padel
     </h1>
-    <p class="hero-subtitle">Competencia organizada, resultados en tiempo real y tu historial de partidos en un solo lugar.</p>
-    <div class="hero-ctas">
-      <a href="clasificacion.php" class="btn btn-primary btn-lg">Ver Clasificación</a>
-      <a href="resultados.php"    class="btn btn-outline btn-lg">Últimos Resultados</a>
+    <p class="hero-subtitle" style="margin-inline: auto; max-width: 650px;">Mucho más que un torneo. Somos el circuito donde el deporte de alto nivel, la competencia justa y el tercer tiempo se encuentran.</p>
+    <div class="hero-ctas" style="justify-content: center;">
+      <a href="torneos.php" class="btn btn-primary btn-lg">Ver Torneos</a>
+      <a href="#por-que-elegirnos" class="btn btn-outline btn-lg">Saber Más</a>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================
+     POR QUÉ ELEGIRNOS
+     ====================================================== -->
+<section id="por-que-elegirnos" class="section">
+  <div class="container text-center">
+    <p class="section-eyebrow">La Experiencia EPL</p>
+    <h2 class="section-title">Por qué elegirnos</h2>
+    <p class="section-desc" style="margin-inline: auto;">Diseñamos una liga pensada por y para jugadores. Esto es lo que nos hace diferentes.</p>
+    
+    <div class="grid-3 mt-4 text-left">
+      <div class="card feature-card text-center">
+        <div class="feature-icon">🏆</div>
+        <h3 class="feature-title">Competencia Real</h3>
+        <p class="feature-desc">Enfréntate a los mejores de tu nivel. Nuestro sistema de ascensos y descensos garantiza partidos parejos y competitivos.</p>
+      </div>
+      <div class="card feature-card text-center">
+        <div class="feature-icon">🍻</div>
+        <h3 class="feature-title">Tercer Tiempo</h3>
+        <p class="feature-desc">La mejor experiencia después del partido. Compartimos, celebramos y creamos comunidad fuera de la cancha.</p>
+      </div>
+      <div class="card feature-card text-center">
+        <div class="feature-icon">📊</div>
+        <h3 class="feature-title">Plataforma Pro</h3>
+        <p class="feature-desc">Sigue tus estadísticas, próximos partidos, resultados en tiempo real y posición en la tabla directamente desde tu perfil.</p>
+      </div>
     </div>
   </div>
 </section>

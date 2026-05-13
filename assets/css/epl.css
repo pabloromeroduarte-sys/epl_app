@@ -295,6 +295,28 @@ button { cursor: pointer; font-family: inherit; border: none; }
 .card-body  { padding: 1.5rem; }
 .card-head  { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
 
+.feature-card {
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.feature-icon {
+  font-size: 3rem;
+  margin-bottom: .5rem;
+}
+.feature-title {
+  font-family: var(--font-head);
+  font-size: 1.5rem;
+  color: var(--navy);
+  text-transform: uppercase;
+}
+.feature-desc {
+  font-size: .9rem;
+  color: var(--gray-600);
+}
+
 /* ── Tabla de clasificación ──────────────────────────────── */
 .tabla-clasificacion {
   background: var(--white);
@@ -668,26 +690,42 @@ button { cursor: pointer; font-family: inherit; border: none; }
 
 /* ── Footer ─────────────────────────────────────────────── */
 .footer {
-  background: var(--navy);
-  padding: 3rem 0 2rem;
+  background: var(--navy-dark);
+  padding: 4rem 0 0;
   margin-top: auto;
+  border-top: 3px solid var(--gold);
 }
 .footer-inner {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 3rem;
+  padding: 0 1.5rem 3rem;
+}
+.footer-logo { height: 60px; margin-bottom: 1.5rem; opacity: .9; }
+.footer-desc { font-size: .85rem; color: rgba(255,255,255,.55); margin-bottom: 1.5rem; max-width: 400px; }
+.footer-title { font-family: var(--font-head); font-size: 1.25rem; color: var(--gold); text-transform: uppercase; margin-bottom: 1.5rem; letter-spacing: .05em; }
+.footer-nav { display: flex; flex-direction: column; gap: .75rem; }
+.footer-nav a { font-size: .85rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.6); transition: color var(--transition); }
+.footer-nav a:hover { color: var(--gold); transform: translateX(3px); }
+.footer-socials { display: flex; gap: 1rem; }
+.social-link { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.1); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; transition: all var(--transition); }
+.social-link:hover { background: var(--gold); color: var(--navy); transform: translateY(-2px); }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,.1);
+  padding: 1.5rem;
   text-align: center;
 }
-.footer-logo     { height: 45px; margin: 0 auto; opacity: .9; }
-.footer-tagline  { font-size: .8rem; color: rgba(255,255,255,.45); font-style: italic; }
-.footer-nav      { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
-.footer-nav a    { font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.55); transition: color var(--transition); }
-.footer-nav a:hover { color: var(--gold); }
-.footer-copy     { font-size: .75rem; color: rgba(255,255,255,.3); }
+.footer-copy { font-size: .75rem; color: rgba(255,255,255,.3); }
+
+@media (max-width: 768px) {
+  .footer-grid { grid-template-columns: 1fr; gap: 2rem; text-align: center; }
+  .footer-desc { margin: 0 auto 1.5rem; }
+  .footer-socials { justify-content: center; }
+}
 
 /* ── Responsive helpers ────────────────────────────────── */
 @media (max-width: 640px) {
