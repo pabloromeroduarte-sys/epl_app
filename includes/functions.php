@@ -97,6 +97,20 @@ function epl_partidos_equipo(int $equipo_id): array {
     return $st->fetchAll();
 }
 
+function epl_torneos_del_jugador(int $jugador_id): array {
+    $db = epl_db();
+    $st = $db->prepare("
+        SELECT l.* 
+        FROM ligas l
+        JOIN liga_equipos le ON le.liga_id = l.id
+        JOIN equipos e ON e.id = le.equipo_id
+        WHERE e.jugador1_id = ? OR e.jugador2_id = ?
+        ORDER BY l.id DESC
+    ");
+    $st->execute([$jugador_id, $jugador_id]);
+    return $st->fetchAll();
+}
+
 function epl_equipo_del_jugador(int $jugador_id, int $liga_id): ?array {
     $db = epl_db();
     $st = $db->prepare("
