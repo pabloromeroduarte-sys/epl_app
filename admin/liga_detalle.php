@@ -271,7 +271,11 @@ if ($f_search) {
 
 $partidos = $db->prepare("
     SELECT p.*, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
-           r.nombre AS recinto_nombre, s.nombre AS recinto_superior_nombre, ss.nombre AS recinto_abuelo_nombre
+           r.nombre AS recinto_nombre, s.nombre AS recinto_superior_nombre, ss.nombre AS recinto_abuelo_nombre,
+           jl1.nombre AS jl1_n, jl1.apellido AS jl1_a, jl1.telefono AS jl1_t,
+           jl2.nombre AS jl2_n, jl2.apellido AS jl2_a, jl2.telefono AS jl2_t,
+           jv1.nombre AS jv1_n, jv1.apellido AS jv1_a, jv1.telefono AS jv1_t,
+           jv2.nombre AS jv2_n, jv2.apellido AS jv2_a, jv2.telefono AS jv2_t
     FROM partidos p
     JOIN equipos el ON el.id = p.equipo_local_id
     JOIN equipos ev ON ev.id = p.equipo_visitante_id
@@ -942,7 +946,14 @@ $total_equipos  = count($equipos_liga);
           <label class="form-label">Alerta / Nota Admin (Etiqueta roja)</label>
           <input type="text" name="alerta_admin" id="editAlertaAdmin" class="form-control" placeholder="Ej: Falta confirmar cancha, Pendiente WO...">
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.75rem">Guardar cambios</button>
+        
+        <!-- Sección de Contacto WhatsApp -->
+        <div id="editContactosWrapper" style="margin-top: 1.5rem; border-top: 1px solid var(--gray-100); padding-top: 1rem;">
+          <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;color:var(--navy);margin-bottom:.75rem">Contacto Jugadores (WhatsApp)</p>
+          <div id="editContactosList" style="display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:1.25rem">Guardar cambios</button>
       </form>
     </div>
   </div>
@@ -983,6 +994,46 @@ window.editarPartido = function (btn) {
     setVal('input[name="s' + s + '_v"]', p['games_s' + s + '_visitante'] != null ? p['games_s' + s + '_visitante'] : '');
   });
   setVal('input[name="alerta_admin"]', p.alerta_admin || '');
+
+  // Generar lista de contactos
+  var contactList = q('#editContactosList');
+  if (contactList) {
+    contactList.innerHTML = '';
+    var players = [
+      { n: p.jl1_n, a: p.jl1_a, t: p.jl1_t, role: 'Local' },
+      { n: p.jl2_n, a: p.jl2_a, t: p.jl2_t, role: 'Local' },
+      { n: p.jv1_n, a: p.jv1_a, t: p.jv1_t, role: 'Visitante' },
+      { n: p.jv2_n, a: p.jv2_a, t: p.jv2_t, role: 'Visitante' }
+    ];
+    players.forEach(function(player) {
+      if (!player.n) return;
+      var div = document.createElement('div');
+      div.style.background = 'var(--gray-50)';
+      div.style.padding = '.5rem';
+      div.style.borderRadius = '8px';
+      div.style.border = '1px solid var(--gray-100)';
+      
+      var name = player.n + ' ' + (player.a || '');
+      var tel = player.t ? player.t.replace(/\D/g, '') : '';
+      var wspLink = null;
+      if (tel) {
+        var cleanTel = tel.startsWith('56') ? tel : '56' + tel;
+        var msg = encodeURIComponent('Hola ' + player.n + ', te contacto de Elite Padel League por tu partido: ' + p.local_nombre + ' vs ' + p.visitante_nombre);
+        wspLink = 'https://wa.me/' + cleanTel + '?text=' + msg;
+      }
+      
+      var html = '<div style="font-size:.7rem;font-weight:700;color:var(--gray-400);text-transform:uppercase">' + player.role + '</div>';
+      html += '<div style="font-size:.8rem;font-weight:600;color:var(--navy);margin-bottom:.3rem">' + name + '</div>';
+      if (wspLink) {
+        html += '<a href="' + wspLink + '" target="_blank" class="btn btn-sm" style="background:#25D366;color:#fff;border:none;width:100%;font-size:.65rem;justify-content:center">WhatsApp</a>';
+      } else {
+        html += '<span style="font-size:.65rem;color:var(--gray-400);font-style:italic">Sin teléfono</span>';
+      }
+      div.innerHTML = html;
+      contactList.appendChild(div);
+    });
+  }
+
   modal.style.display = 'flex';
 };
 
