@@ -89,13 +89,13 @@ $ligas = $db->query("SELECT * FROM ligas ORDER BY FIELD(estado,'activa','inscrip
                   $img_src = epl_url('uploads/ligas/'.$l['foto_portada']);
               } else {
                   if ($is_americano && $is_women) {
-                      $img_src = epl_url('assets/img/portada-americano-women.jpg');
+                      $img_src = epl_url('assets/img/portada-americano-women.png');
                   } elseif ($is_americano && !$is_women) {
-                      $img_src = epl_url('assets/img/portada-americano-men.jpg');
+                      $img_src = epl_url('assets/img/portada-americano-men.png');
                   } elseif (!$is_americano && $is_women) {
-                      $img_src = epl_url('assets/img/portada-liga-women.jpg');
+                      $img_src = epl_url('assets/img/portada-liga-women.png');
                   } else {
-                      $img_src = epl_url('assets/img/portada-liga-men.jpg');
+                      $img_src = epl_url('assets/img/portada-liga-men.png');
                   }
               }
 
@@ -141,11 +141,11 @@ $ligas = $db->query("SELECT * FROM ligas ORDER BY FIELD(estado,'activa','inscrip
                 <!-- Detalles de Fecha y Sede -->
                 <div class="space-y-3.5 mb-6">
                   <div class="flex items-start gap-3.5 text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 mt-0.5 text-epl-gold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mt-0.5 text-epl-gold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                     <span class="text-sm font-semibold"><?= $l['fecha_inicio'] ? date('d-m-Y', strtotime($l['fecha_inicio'])) : 'Fecha por confirmar' ?></span>
                   </div>
                   <div class="flex items-start gap-3.5 text-gray-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 mt-0.5 text-epl-gold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mt-0.5 text-epl-gold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                     <div class="flex flex-col">
                       <span class="text-sm font-semibold text-epl-blue"><?= $l['sede'] ? epl_h($l['sede']) : 'Sede por confirmar' ?></span>
                     </div>

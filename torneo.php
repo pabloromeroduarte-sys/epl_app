@@ -45,13 +45,13 @@ if ($liga['foto_portada']) {
     $portada_hero_url = epl_url('uploads/ligas/'.$liga['foto_portada']);
 } else {
     if ($is_americano && $is_women) {
-        $portada_hero_url = epl_url('assets/img/portada-americano-women.jpg');
+        $portada_hero_url = epl_url('assets/img/portada-americano-women.png');
     } elseif ($is_americano && !$is_women) {
-        $portada_hero_url = epl_url('assets/img/portada-americano-men.jpg');
+        $portada_hero_url = epl_url('assets/img/portada-americano-men.png');
     } elseif (!$is_americano && $is_women) {
-        $portada_hero_url = epl_url('assets/img/portada-liga-women.jpg');
+        $portada_hero_url = epl_url('assets/img/portada-liga-women.png');
     } else {
-        $portada_hero_url = epl_url('assets/img/portada-liga-men.jpg');
+        $portada_hero_url = epl_url('assets/img/portada-liga-men.png');
     }
 }
 ?>
