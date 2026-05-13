@@ -70,74 +70,106 @@ $ligas = $db->query("SELECT * FROM ligas ORDER BY FIELD(estado,'activa','inscrip
         <?php else: ?>
           <?php
           $badge = [
-              'proximamente' => ['label'=>'Próximamente',  'text'=>'text-purple-800','bg'=>'bg-purple-100'],
-              'inscripcion'  => ['label'=>'Inscripciones', 'text'=>'text-amber-800', 'bg'=>'bg-amber-100'],
-              'activa'       => ['label'=>'En juego',      'text'=>'text-emerald-800','bg'=>'bg-emerald-100'],
-              'finalizada'   => ['label'=>'Finalizado',    'text'=>'text-gray-800',  'bg'=>'bg-gray-100'],
+              'proximamente' => ['label'=>'PRÓXIMAMENTE',  'text'=>'text-gray-800','bg'=>'bg-gray-200', 'eyebrow'=>'PRÓXIMO TORNEO'],
+              'inscripcion'  => ['label'=>'ABIERTAS',      'text'=>'text-white',   'bg'=>'bg-green-500', 'eyebrow'=>'INSCRIPCIONES DISPONIBLES'],
+              'activa'       => ['label'=>'EN JUEGO',      'text'=>'text-epl-gold','bg'=>'bg-epl-blue',  'eyebrow'=>'TORNEO ACTIVO'],
+              'finalizada'   => ['label'=>'FINALIZADO',    'text'=>'text-gray-500','bg'=>'bg-gray-100',  'eyebrow'=>'TORNEO FINALIZADO'],
           ];
           ?>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <?php foreach ($ligas as $l):
               $b = $badge[$l['estado']] ?? $badge['activa'];
-              $n_equipos = $db->query("SELECT COUNT(*) FROM liga_equipos WHERE liga_id={$l['id']}")->fetchColumn();
-              $n_jugados = $db->query("SELECT COUNT(*) FROM partidos WHERE liga_id={$l['id']} AND estado='jugado'")->fetchColumn();
+              
+              // Lógica de imágenes dinámicas
+              $nombre_lower = strtolower($l['nombre']);
+              $is_women = (strpos($nombre_lower, 'women') !== false || strpos($nombre_lower, 'femenin') !== false);
+              $is_americano = (strpos($nombre_lower, 'americano') !== false);
+              
+              if ($l['foto_portada']) {
+                  $img_src = epl_url('uploads/ligas/'.$l['foto_portada']);
+              } else {
+                  if ($is_americano && $is_women) {
+                      $img_src = epl_url('assets/img/portada-americano-women.jpg');
+                  } elseif ($is_americano && !$is_women) {
+                      $img_src = epl_url('assets/img/portada-americano-men.jpg');
+                  } elseif (!$is_americano && $is_women) {
+                      $img_src = epl_url('assets/img/portada-liga-women.jpg');
+                  } else {
+                      $img_src = epl_url('assets/img/portada-liga-men.jpg');
+                  }
+              }
+
+              // Nombre corto para la miniatura
+              $nombre_corto = $l['categoria'] ? $l['categoria'] . ' Apertura' : 'Liga Padel';
+              if (strpos($nombre_lower, 'women') !== false) {
+                  $nombre_corto = $l['categoria'] ? 'Women ' . $l['categoria'] : 'Liga Women';
+              } elseif (strpos($nombre_lower, 'americano') !== false) {
+                  $nombre_corto = 'Americano';
+              }
             ?>
-            <a href="torneo.php?id=<?= $l['id'] ?>" class="bg-white rounded-2xl overflow-hidden shadow-[0_5px_20px_rgba(0,0,0,0.03)] border border-gray-100 hover:border-epl-gold hover:shadow-xl transition-all group text-decoration-none block flex flex-col h-full">
-              <!-- Portada -->
-              <div class="h-40 bg-epl-blue relative overflow-hidden shrink-0">
-                <?php if ($l['foto_portada']): ?>
-                  <img src="<?= epl_url('uploads/ligas/'.$l['foto_portada']) ?>" alt="" class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500">
-                <?php else: ?>
-                  <div class="absolute inset-0 flex items-center justify-center font-primary text-5xl text-white/10 group-hover:scale-110 transition-transform duration-500">EPL</div>
-                <?php endif; ?>
-                <span class="absolute top-4 left-4 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest <?= $b['bg'] ?> <?= $b['text'] ?> shadow-sm">
+            <div class="bg-white rounded-[24px] overflow-hidden shadow-[0_5px_15px_rgba(0,0,0,0.05)] border border-gray-100 flex flex-col transition-all hover:shadow-[0_10px_25px_rgba(201,167,98,0.15)] hover:border-epl-gold group">
+              
+              <!-- Portada de la Tarjeta -->
+              <div class="relative h-[200px] bg-epl-blue shrink-0 overflow-hidden">
+                <img src="<?= $img_src ?>" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+                
+                <!-- Badge de Estado (Top Right) -->
+                <span class="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest <?= $b['bg'] ?> <?= $b['text'] ?> shadow-sm flex items-center gap-1.5 z-10">
+                  <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                   <?= $b['label'] ?>
                 </span>
-              </div>
-              <!-- Info -->
-              <div class="p-6 flex flex-col flex-1">
-                <h3 class="font-primary text-2xl text-epl-blue uppercase leading-tight mb-2 group-hover:text-epl-gold transition-colors"><?= epl_h($l['nombre']) ?></h3>
                 
-                <?php if ($l['temporada'] || $l['categoria']): ?>
-                  <p class="text-xs text-epl-gold font-black uppercase tracking-widest mb-3">
-                    <?= $l['temporada'] ? epl_h($l['temporada']) . ' ' : '' ?><?= $l['categoria'] ? '· ' . $l['categoria'] . 'ª cat.' : '' ?>
-                  </p>
-                <?php endif; ?>
-
-                <?php if ($l['sede']): ?>
-                  <p class="text-sm text-gray-500 font-medium mb-2 flex items-center gap-2">📍 <?= epl_h($l['sede']) ?></p>
-                <?php endif; ?>
-
-                <?php if ($l['fecha_inicio']): ?>
-                  <p class="text-xs text-gray-400 font-bold mb-5 flex items-center gap-2">
-                    📅 <?= date('d/m/Y', strtotime($l['fecha_inicio'])) ?>
-                    <?= $l['fecha_fin'] ? ' → ' . date('d/m/Y', strtotime($l['fecha_fin'])) : '' ?>
-                  </p>
-                <?php endif; ?>
-
-                <div class="mt-auto flex items-center justify-between border-t border-gray-100 pt-4">
-                  <div class="flex gap-6">
-                    <div class="text-center">
-                      <div class="font-primary text-2xl text-epl-blue leading-none"><?= $n_equipos ?></div>
-                      <div class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">Equipos</div>
-                    </div>
-                    <div class="text-center">
-                      <div class="font-primary text-2xl text-epl-blue leading-none"><?= $n_jugados ?></div>
-                      <div class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">Jugados</div>
-                    </div>
-                    <?php if ($l['precio']): ?>
-                    <div class="text-center">
-                      <div class="font-primary text-2xl text-epl-gold leading-none"><?= '$'.number_format($l['precio'],0,',','.') ?></div>
-                      <div class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1">Ins. c/u</div>
-                    </div>
-                    <?php endif; ?>
-                  </div>
-                  <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-epl-blue group-hover:bg-epl-gold group-hover:text-white transition-colors shrink-0">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                  </div>
+                <!-- Nombre Corto en la Imagen (Bottom Left) -->
+                <div class="absolute bottom-4 left-4 bg-[#0A1421]/80 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-white/10 z-10">
+                  <span class="text-epl-gold font-primary text-sm uppercase tracking-wider"><?= epl_h($nombre_corto) ?></span>
                 </div>
               </div>
-            </a>
+
+              <!-- Contenido de la Tarjeta -->
+              <div class="p-7 flex flex-col flex-1 bg-white">
+                <!-- Eyebrow -->
+                <p class="text-[10px] text-epl-gold font-black uppercase tracking-widest mb-3">
+                  <?= $b['eyebrow'] ?>
+                </p>
+                
+                <!-- Título Principal -->
+                <h3 class="font-primary text-[22px] text-epl-blue uppercase leading-tight mb-5">
+                  <?= epl_h($l['nombre']) ?>
+                </h3>
+                
+                <!-- Detalles de Fecha y Sede -->
+                <div class="space-y-3.5 mb-6">
+                  <div class="flex items-start gap-3.5 text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 mt-0.5 text-epl-gold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span class="text-sm font-semibold"><?= $l['fecha_inicio'] ? date('d-m-Y', strtotime($l['fecha_inicio'])) : 'Fecha por confirmar' ?></span>
+                  </div>
+                  <div class="flex items-start gap-3.5 text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 mt-0.5 text-epl-gold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    <div class="flex flex-col">
+                      <span class="text-sm font-semibold text-epl-blue"><?= $l['sede'] ? epl_h($l['sede']) : 'Sede por confirmar' ?></span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Botón Inferior -->
+                <div class="mt-auto pt-2">
+                  <a href="torneo.php?id=<?= $l['id'] ?>" class="w-full block text-center bg-[#1E293B] text-white py-3.5 rounded-[12px] text-[11px] font-black uppercase tracking-[0.15em] hover:bg-epl-blue transition-colors shadow-md relative overflow-hidden group-hover:bg-epl-blue">
+                    <div class="relative z-10 flex items-center justify-center gap-2">
+                      <?php if ($l['estado'] === 'activa'): ?>
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                        RESULTADOS EN VIVO
+                      <?php elseif ($l['estado'] === 'inscripcion'): ?>
+                        INSCRIBIR PAREJA AHORA
+                      <?php else: ?>
+                        VER DETALLES
+                      <?php endif; ?>
+                    </div>
+                  </a>
+                </div>
+              </div>
+
+            </div>
             <?php endforeach; ?>
           </div>
         <?php endif; ?>
