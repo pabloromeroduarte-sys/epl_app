@@ -375,7 +375,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
 .rp-card-sub   { font-size: .78rem; color: var(--gray-500); margin-top: .2rem; }
 
 /* Partido radio cards */
-.rp-partidos-list { display: flex; flex-direction: column; gap: .5rem; }
+.rp-partidos-list {
+  display: flex; flex-direction: column; gap: .5rem;
+  max-height: 280px; overflow-y: auto;
+  padding-right: .25rem;
+  scrollbar-width: thin; scrollbar-color: var(--gray-200) transparent;
+}
+.rp-partidos-list::-webkit-scrollbar { width: 5px; }
+.rp-partidos-list::-webkit-scrollbar-track { background: transparent; }
+.rp-partidos-list::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 4px; }
 .rp-partido-option {
   display: flex; align-items: center; gap: .85rem;
   border: 1.5px solid var(--gray-100); border-radius: 14px;
