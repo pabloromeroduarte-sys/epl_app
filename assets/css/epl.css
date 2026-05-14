@@ -587,46 +587,7 @@ button { cursor: pointer; font-family: inherit; border: none; }
 }
 .stat-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--gray-400); margin-top: .25rem; }
 
-/* Mobile bottom nav for dashboard */
-.dash-bottom-nav {
-  display: none;
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: var(--navy);
-  border-top: 2px solid var(--gold);
-  z-index: 1000;
-  padding: .5rem 0 env(safe-area-inset-bottom, .5rem);
-}
-.dash-bottom-nav-inner {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-}
-.dash-bottom-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .2rem;
-  padding: .4rem .75rem;
-  color: rgba(255,255,255,.5);
-  font-size: .6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  border-radius: 6px;
-  transition: color var(--transition);
-  text-decoration: none;
-  min-width: 52px;
-}
-.dash-bottom-link svg { width: 20px; height: 20px; flex-shrink: 0; }
-.dash-bottom-link.active, .dash-bottom-link:hover { color: var(--gold); }
-
-@media (max-width: 768px) {
-  .dash-layout { grid-template-columns: 1fr; }
-  .dash-sidebar { display: none; }
-  .dash-main { padding: 1.25rem 1rem 5rem; }
-  .dash-bottom-nav { display: block; }
-}
+/* Bloque removido porque hay una versión mejorada al final del archivo */
 
 /* ── Login page ─────────────────────────────────────────── */
 .login-page {
@@ -1299,6 +1260,9 @@ button { cursor: pointer; font-family: inherit; border: none; }
   display: none;
 }
 @media (max-width: 992px) {
+  .dash-layout { grid-template-columns: 1fr; }
+  .dash-sidebar { display: none; }
+  .dash-main { padding: 1.25rem 1rem 5rem; }
   .dash-bottom-nav { display: block; }
 }
 .dash-bottom-nav-inner {
@@ -1306,13 +1270,15 @@ button { cursor: pointer; font-family: inherit; border: none; }
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  scroll-snap-type: x mandatory;
+  padding: 0 0.25rem;
 }
 .dash-bottom-nav-inner::-webkit-scrollbar {
   display: none;
 }
 .dash-bottom-link {
-  flex: 0 0 auto;
-  min-width: 75px;
+  flex: 0 0 calc(100vw / 4.8);
+  max-width: 90px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1323,6 +1289,7 @@ button { cursor: pointer; font-family: inherit; border: none; }
   font-size: .65rem;
   font-weight: 600;
   transition: all .2s;
+  scroll-snap-align: start;
 }
 .dash-bottom-link svg {
   width: 20px;

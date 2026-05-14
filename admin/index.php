@@ -135,6 +135,26 @@ $solicitudes = $db->query("
         <div style="font-family:var(--font-head);font-size:1.5rem;color:var(--navy);text-transform:uppercase">Ligas</div>
         <div style="font-size:.8rem;color:var(--gray-400);margin-top:.25rem">Gestionar ligas</div>
       </a>
+      <a href="dashboard_repro.php" class="card card-body text-center" style="text-decoration:none">
+        <div style="font-family:var(--font-head);font-size:1.5rem;color:var(--navy);text-transform:uppercase">Reprog.</div>
+        <div style="font-size:.8rem;color:var(--gray-400);margin-top:.25rem">Reprogramaciones</div>
+      </a>
+      <a href="suplentes.php" class="card card-body text-center" style="text-decoration:none">
+        <div style="font-family:var(--font-head);font-size:1.5rem;color:var(--navy);text-transform:uppercase">Suplentes</div>
+        <div style="font-size:.8rem;color:var(--gray-400);margin-top:.25rem">Gestionar suplentes</div>
+      </a>
+      <a href="recintos.php" class="card card-body text-center" style="text-decoration:none">
+        <div style="font-family:var(--font-head);font-size:1.5rem;color:var(--navy);text-transform:uppercase">Sedes</div>
+        <div style="font-size:.8rem;color:var(--gray-400);margin-top:.25rem">Gestionar recintos</div>
+      </a>
+      <a href="../clasificacion.php" class="card card-body text-center" style="text-decoration:none">
+        <div style="font-family:var(--font-head);font-size:1.5rem;color:var(--navy);text-transform:uppercase">Tablas</div>
+        <div style="font-size:.8rem;color:var(--gray-400);margin-top:.25rem">Ver clasificación</div>
+      </a>
+      <a href="../resultados.php" class="card card-body text-center" style="text-decoration:none">
+        <div style="font-family:var(--font-head);font-size:1.5rem;color:var(--navy);text-transform:uppercase">Resultados</div>
+        <div style="font-size:.8rem;color:var(--gray-400);margin-top:.25rem">Ver resultados</div>
+      </a>
     </div>
 
   </main>
