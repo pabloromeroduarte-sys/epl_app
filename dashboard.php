@@ -25,8 +25,10 @@ if ($stats && $stats['pj'] > 0) {
     $rendimiento = round(($stats['pg'] / $stats['pj']) * 100);
 }
 
-$proximos  = array_filter($partidos, fn($p) => $p['estado'] === 'pendiente');
+$proximos  = array_filter($partidos, fn($p) => $p['estado'] === 'pendiente' || $p['estado'] === 'reprogramado');
 $jugados   = array_filter($partidos, fn($p) => $p['estado'] === 'jugado');
+// Ordenar próximos de más cercano a más lejano
+usort($proximos, fn($a, $b) => strtotime($a['fecha_programada'] ?? '9999-12-31') <=> strtotime($b['fecha_programada'] ?? '9999-12-31'));
 $proximos  = array_slice(array_values($proximos), 0, 3);
 $recientes = array_slice(array_values($jugados), 0, 5);
 
@@ -149,22 +151,18 @@ if ($equipo) {
               <div style="text-align:left;flex:1"><span class="equipo-nombre-card" style="font-size:.75rem"><?= epl_h($p['visitante_nombre']) ?></span></div>
             </div>
             <div class="partido-col-meta" style="border:none;padding-left:0">
-              <?php 
-                $rec_full = $p['recinto_nombre'] ?? 'TBD';
-                $words = explode(' ', $rec_full);
-                $badge_txt = $rec_full;
-                $bottom_txt = '';
-                if (count($words) > 1) {
-                  $last = array_pop($words);
-                  $badge_txt = implode(' ', $words);
-                  $bottom_txt = $last;
-                }
-                if ($p['cancha']) {
-                  $bottom_txt .= ($bottom_txt ? ' - ' : '') . 'C. ' . $p['cancha'];
-                }
+              <?php
+                $recinto = $p['recinto_nombre'] ?? '';
+                $cancha  = $p['cancha'] ?? '';
               ?>
-              <span class="cancha-badge" style="margin-bottom:0; font-size:.6rem"><?= epl_h($badge_txt) ?></span>
-              <div class="sede-label" style="font-size:.55rem; margin-top:.2rem"><?= epl_h($bottom_txt ?: '?') ?></div>
+              <?php if ($recinto || $cancha): ?>
+                <span class="cancha-badge" style="margin-bottom:0;font-size:.6rem"><?= epl_h($recinto ?: 'Sede') ?></span>
+                <?php if ($cancha): ?>
+                  <div class="sede-label" style="font-size:.55rem;margin-top:.2rem">Cancha <?= epl_h($cancha) ?></div>
+                <?php endif; ?>
+              <?php else: ?>
+                <span class="cancha-badge" style="margin-bottom:0;font-size:.6rem;opacity:.4">TBD</span>
+              <?php endif; ?>
             </div>
           </div>
           <?php endforeach; ?>
