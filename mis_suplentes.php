@@ -1,5 +1,5 @@
 <?php
-$page_title = 'Mis Suplentes (Galletas)';
+$page_title = 'Mis Suplentes';
 $player_tab = 'suplentes';
 require_once 'includes/auth.php';
 require_once 'includes/functions.php';
@@ -13,7 +13,6 @@ $equipo  = $liga ? epl_equipo_del_jugador($jugador['id'], $liga['id']) : null;
 $ok    = '';
 $error = '';
 
-// Suplentes actuales del equipo
 $suplentes = [];
 if ($equipo && $liga) {
     $stS = $db->prepare("
@@ -27,10 +26,9 @@ if ($equipo && $liga) {
     $suplentes = $stS->fetchAll();
 }
 
-$cupos_usados   = count($suplentes);
+$cupos_usados    = count($suplentes);
 $cupos_restantes = max(0, 2 - $cupos_usados);
 
-// Registro de partidos por suplente
 $partidos_suplente = [];
 if ($equipo && $liga) {
     $stPS = $db->prepare("
@@ -41,9 +39,7 @@ if ($equipo && $liga) {
         GROUP BY sp.suplente_id
     ");
     $stPS->execute([$equipo['id'], $liga['id']]);
-    foreach ($stPS->fetchAll() as $r) {
-        $partidos_suplente[$r['suplente_id']] = $r['total'];
-    }
+    foreach ($stPS->fetchAll() as $r) $partidos_suplente[$r['suplente_id']] = $r['total'];
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
@@ -51,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
 
     if ($action === 'agregar') {
         $jugador_id = (int)($_POST['jugador_id'] ?? 0);
-
         if (!$jugador_id) {
             $error = 'Selecciona un jugador.';
         } elseif ($cupos_usados >= 2) {
@@ -59,36 +54,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
         } elseif ($jugador_id == $jugador['id']) {
             $error = 'No puedes agregarte a ti mismo como suplente.';
         } else {
-            // Verificar que no sea titular en este torneo
-            $stTit = $db->prepare("
-                SELECT COUNT(*) FROM liga_equipos le
-                JOIN equipos e ON e.id = le.equipo_id
-                WHERE le.liga_id=?
-                  AND (e.jugador1_id=? OR e.jugador2_id=?)
-            ");
+            $stTit = $db->prepare("SELECT COUNT(*) FROM liga_equipos le JOIN equipos e ON e.id=le.equipo_id WHERE le.liga_id=? AND (e.jugador1_id=? OR e.jugador2_id=?)");
             $stTit->execute([$liga['id'], $jugador_id, $jugador_id]);
             if ($stTit->fetchColumn() > 0) {
-                $error = 'Ese jugador ya es titular en este torneo y no puede ser suplente.';
+                $error = 'Ese jugador ya es titular en este torneo.';
             } else {
-                // Verificar que no sea suplente en otro equipo del mismo torneo
-                $stOtro = $db->prepare("
-                    SELECT COUNT(*) FROM suplentes
-                    WHERE liga_id=? AND jugador_id=? AND equipo_id!=? AND estado='activo'
-                ");
+                $stOtro = $db->prepare("SELECT COUNT(*) FROM suplentes WHERE liga_id=? AND jugador_id=? AND equipo_id!=? AND estado='activo'");
                 $stOtro->execute([$liga['id'], $jugador_id, $equipo['id']]);
                 if ($stOtro->fetchColumn() > 0) {
                     $error = 'Ese jugador ya es suplente de otro equipo en este torneo.';
                 } else {
                     try {
-                        $db->prepare("
-                            INSERT INTO suplentes (liga_id, equipo_id, jugador_id, registrado_por)
-                            VALUES (?,?,?,?)
-                        ")->execute([$liga['id'], $equipo['id'], $jugador_id, $jugador['id']]);
+                        $db->prepare("INSERT INTO suplentes (liga_id, equipo_id, jugador_id, registrado_por) VALUES (?,?,?,?)")
+                           ->execute([$liga['id'], $equipo['id'], $jugador_id, $jugador['id']]);
                         $ok = 'Suplente registrado correctamente.';
-                        $cupos_usados++;
-                        $cupos_restantes = max(0, 2 - $cupos_usados);
                         $stS->execute([$equipo['id'], $liga['id']]);
                         $suplentes = $stS->fetchAll();
+                        $cupos_usados = count($suplentes);
+                        $cupos_restantes = max(0, 2 - $cupos_usados);
                     } catch (PDOException $e) {
                         $error = 'Ese jugador ya está registrado como suplente de tu equipo.';
                     }
@@ -99,12 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
     } elseif ($action === 'registrar_partido') {
         $suplente_id = (int)($_POST['suplente_id'] ?? 0);
         $partido_id  = (int)($_POST['partido_id']  ?? 0);
-
-        // Verificar que el suplente pertenece al equipo
         $stV = $db->prepare("SELECT * FROM suplentes WHERE id=? AND equipo_id=? AND liga_id=?");
         $stV->execute([$suplente_id, $equipo['id'], $liga['id']]);
         $sup = $stV->fetch();
-
         if (!$sup) {
             $error = 'Suplente no válido.';
         } elseif (($partidos_suplente[$suplente_id] ?? 0) >= 9) {
@@ -113,8 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
             try {
                 $db->prepare("INSERT INTO suplente_partidos (suplente_id, partido_id, registrado_por) VALUES (?,?,?)")
                    ->execute([$suplente_id, $partido_id, $jugador['id']]);
-                $db->prepare("UPDATE suplentes SET partidos_jugados = partidos_jugados + 1 WHERE id=?")
-                   ->execute([$suplente_id]);
+                $db->prepare("UPDATE suplentes SET partidos_jugados = partidos_jugados + 1 WHERE id=?")->execute([$suplente_id]);
                 $ok = 'Partido de suplente registrado.';
                 $stPS->execute([$equipo['id'], $liga['id']]);
                 foreach ($stPS->fetchAll() as $r) $partidos_suplente[$r['suplente_id']] = $r['total'];
@@ -125,8 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
 
     } elseif ($action === 'desactivar') {
         $suplente_id = (int)($_POST['suplente_id'] ?? 0);
-        $db->prepare("UPDATE suplentes SET estado='inactivo' WHERE id=? AND equipo_id=?")
-           ->execute([$suplente_id, $equipo['id']]);
+        $db->prepare("UPDATE suplentes SET estado='inactivo' WHERE id=? AND equipo_id=?")->execute([$suplente_id, $equipo['id']]);
         $ok = 'Suplente removido.';
         $stS->execute([$equipo['id'], $liga['id']]);
         $suplentes = $stS->fetchAll();
@@ -135,7 +113,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
     }
 }
 
-// Jugadores disponibles como suplentes (activos, no titulares en el torneo)
 $disponibles = [];
 if ($equipo && $liga) {
     $titulares_ids = $db->query("
@@ -143,17 +120,14 @@ if ($equipo && $liga) {
         UNION
         SELECT DISTINCT e.jugador2_id FROM liga_equipos le JOIN equipos e ON e.id=le.equipo_id WHERE le.liga_id={$liga['id']}
     ")->fetchAll(PDO::FETCH_COLUMN);
-
     $suplentes_ids = array_column($suplentes, 'jugador_id');
     $excluir = array_unique(array_merge($titulares_ids, $suplentes_ids, [$jugador['id']]));
     $placeholders = implode(',', array_fill(0, count($excluir), '?'));
-
     $stDisp = $db->prepare("SELECT id, nombre, apellido, alias, nivel, lado FROM jugadores WHERE estado='activo' AND id NOT IN ($placeholders) ORDER BY apellido, nombre");
     $stDisp->execute($excluir);
     $disponibles = $stDisp->fetchAll();
 }
 
-// Partidos pendientes del equipo para registrar suplente
 $partidos_para_suplente = [];
 if ($equipo && $liga) {
     $stPP = $db->prepare("
@@ -163,8 +137,7 @@ if ($equipo && $liga) {
         JOIN equipos ev ON ev.id=p.equipo_visitante_id
         WHERE p.liga_id=? AND (p.equipo_local_id=? OR p.equipo_visitante_id=?)
           AND p.estado IN ('pendiente','jugado')
-        ORDER BY p.fecha_programada DESC
-        LIMIT 20
+        ORDER BY p.fecha_programada DESC LIMIT 20
     ");
     $stPP->execute([$liga['id'], $equipo['id'], $equipo['id']]);
     $partidos_para_suplente = $stPP->fetchAll();
@@ -172,155 +145,179 @@ if ($equipo && $liga) {
 ?>
 <?php require_once 'includes/header.php'; ?>
 
-
 <div class="dash-layout">
 <?php include __DIR__ . '/includes/player_sidebar.php'; ?>
 <main class="dash-main">
-    <div class="dash-header">
-      <h1 class="dash-title">Mis Suplentes (Galletas)</h1>
-      <?php if ($equipo): ?>
-        <p style="color:var(--gray-600);margin-top:.25rem;font-size:.88rem">
-          <?= epl_h($equipo['nombre']) ?> —
-          <strong style="color:<?= $cupos_restantes>0?'var(--navy)':'var(--red)' ?>"><?= $cupos_usados ?>/2 cupos usados</strong>
-        </p>
+
+  <div class="dash-header">
+    <h1 class="dash-title">Mis Suplentes <span style="font-size:.6em;color:var(--gold)">(Galletas)</span></h1>
+    <?php if ($equipo): ?>
+    <p style="color:var(--gray-400);font-size:.88rem"><?= epl_h($equipo['nombre']) ?></p>
+    <?php endif; ?>
+  </div>
+
+  <?php if ($ok): ?><div class="alert alert-success"><?= epl_h($ok) ?></div><?php endif; ?>
+  <?php if ($error): ?><div class="alert alert-error"><?= epl_h($error) ?></div><?php endif; ?>
+
+  <?php if (!$equipo): ?>
+    <div class="alert alert-info">No estás inscrito en ningún equipo de la liga activa.</div>
+  <?php else: ?>
+
+  <!-- Indicador de cupos -->
+  <div class="sup-cupos-bar">
+    <div class="sup-cupos-info">
+      <div style="font-family:var(--font-head);font-size:2rem;color:var(--navy);line-height:1">
+        <?= $cupos_usados ?><span style="font-size:1rem;color:var(--gray-400);font-family:var(--font-body);font-weight:600"> / 2</span>
+      </div>
+      <div style="font-size:.65rem;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;font-weight:800;margin-top:.15rem">Suplentes activos</div>
+    </div>
+    <div class="sup-cupos-slots">
+      <div class="sup-slot <?= $cupos_usados >= 1 ? 'sup-slot-on' : '' ?>">
+        <?php if ($cupos_usados >= 1): ?>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        <?php endif; ?>
+      </div>
+      <div class="sup-slot <?= $cupos_usados >= 2 ? 'sup-slot-on' : '' ?>">
+        <?php if ($cupos_usados >= 2): ?>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        <?php endif; ?>
+      </div>
+    </div>
+    <div>
+      <?php if ($cupos_restantes > 0): ?>
+        <span class="sup-cupos-badge sup-cupos-libre"><?= $cupos_restantes ?> cupo<?= $cupos_restantes!=1?'s':'' ?> libre<?= $cupos_restantes!=1?'s':'' ?></span>
+      <?php else: ?>
+        <span class="sup-cupos-badge sup-cupos-full">Cupos completos</span>
+      <?php endif; ?>
+    </div>
+  </div>
+
+  <!-- Info reglas -->
+  <div class="sup-rules">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span>Máx. <strong>2 galletas</strong> por equipo · Máx. <strong>9 partidos</strong> por suplente · No puede ser titular ni suplente de otro equipo en el mismo torneo.</span>
+  </div>
+
+  <div class="sup-grid">
+
+    <!-- Suplentes registrados -->
+    <div>
+      <h3 class="sup-section-title">Suplentes activos</h3>
+      <?php if (empty($suplentes)): ?>
+        <div class="sup-empty-card">
+          <div style="font-size:2rem;margin-bottom:.5rem">👤</div>
+          <p>Sin suplentes registrados aún.</p>
+        </div>
+      <?php else: ?>
+        <div style="display:flex;flex-direction:column;gap:.85rem">
+          <?php foreach ($suplentes as $sup):
+            $pj  = $partidos_suplente[$sup['id']] ?? 0;
+            $pct = $pj > 0 ? min(100, round($pj/9*100)) : 0;
+            $bar_color = $pj>=9 ? '#ef4444' : ($pj>=7 ? '#f59e0b' : '#22c55e');
+          ?>
+          <div class="sup-card">
+            <div class="sup-card-top">
+              <img src="<?= epl_h(epl_foto_jugador($sup['foto'], $sup['nombre'].' '.$sup['apellido'])) ?>"
+                   class="sup-avatar" alt="">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:800;color:var(--navy);font-size:.95rem"><?= epl_h($sup['nombre'].' '.$sup['apellido']) ?></div>
+                <?php if ($sup['alias']): ?>
+                  <div style="font-size:.75rem;color:var(--gold);font-weight:600">"<?= epl_h($sup['alias']) ?>"</div>
+                <?php endif; ?>
+                <div style="font-size:.72rem;color:var(--gray-400);margin-top:.1rem">
+                  <?= $sup['nivel'] ?>ª cat.<?= $sup['lado'] ? ' · '.ucfirst($sup['lado']) : '' ?>
+                </div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-family:var(--font-head);font-size:1.6rem;color:<?= $pj>=9?'#ef4444':'var(--navy)' ?>;line-height:1"><?= $pj ?></div>
+                <div style="font-size:.6rem;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em">/ 9 partidos</div>
+              </div>
+            </div>
+            <!-- Barra de progreso -->
+            <div class="sup-progress-track">
+              <div class="sup-progress-fill" style="width:<?= $pct ?>%;background:<?= $bar_color ?>"></div>
+            </div>
+            <!-- Acciones -->
+            <div class="sup-card-actions">
+              <?php if ($pj < 9 && !empty($partidos_para_suplente)): ?>
+              <button type="button" onclick="showModalSuplente(<?= $sup['id'] ?>, '<?= epl_h($sup['nombre']) ?>')"
+                      class="btn btn-sm btn-primary" style="font-size:.72rem">
+                + Registrar partido
+              </button>
+              <?php endif; ?>
+              <form method="post" style="display:inline">
+                <input type="hidden" name="action" value="desactivar">
+                <input type="hidden" name="suplente_id" value="<?= $sup['id'] ?>">
+                <button type="submit" class="btn btn-sm" style="border:1px solid #ef4444;color:#ef4444;font-size:.72rem"
+                        onclick="return confirm('¿Remover este suplente?')">Remover</button>
+              </form>
+            </div>
+          </div>
+          <?php endforeach; ?>
+        </div>
       <?php endif; ?>
     </div>
 
-    <?php if ($ok): ?><div class="alert alert-success"><?= epl_h($ok) ?></div><?php endif; ?>
-    <?php if ($error): ?><div class="alert alert-error"><?= epl_h($error) ?></div><?php endif; ?>
-
-    <?php if (!$equipo): ?>
-      <div class="alert alert-info">No estás inscrito en ningún equipo de la liga activa.</div>
-    <?php else: ?>
-
-    <!-- Reglas -->
-    <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.82rem;color:#92400E">
-      <strong>Reglas de suplentes:</strong> Cada equipo puede registrar hasta <strong>2 galletas</strong> por temporada.
-      Cada suplente puede jugar un máximo de <strong>9 partidos</strong>. Un jugador no puede ser suplente si ya es titular
-      o suplente de otro equipo en este mismo torneo.
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start" class="suplentes-grid">
-
-      <!-- Suplentes actuales -->
-      <div class="card">
-        <div class="card-head">
-          <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)">
-            Suplentes registrados
-          </h3>
-          <span style="font-size:.75rem;color:<?= $cupos_restantes>0?'var(--gray-400)':'var(--red)' ?>">
-            <?= $cupos_restantes ?> cupo<?= $cupos_restantes!=1?'s':'' ?> disponible<?= $cupos_restantes!=1?'s':'' ?>
-          </span>
+    <!-- Agregar suplente -->
+    <div>
+      <h3 class="sup-section-title">Agregar suplente</h3>
+      <?php if ($cupos_restantes <= 0): ?>
+        <div class="sup-empty-card" style="background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.2)">
+          <div style="font-size:2rem;margin-bottom:.5rem">🏓</div>
+          <p style="font-weight:700;color:var(--navy)">Cupos completos</p>
+          <p style="font-size:.82rem;color:var(--gray-400)">Has usado los 2 cupos de esta temporada.</p>
         </div>
-        <?php if (empty($suplentes)): ?>
-          <div class="card-body" style="text-align:center;color:var(--gray-400);padding:2rem">
-            No hay suplentes registrados aún.
-          </div>
-        <?php else: ?>
-          <div class="card-body" style="padding:0">
-            <?php foreach ($suplentes as $sup):
-              $pj = $partidos_suplente[$sup['id']] ?? 0;
-              $pct = $pj > 0 ? min(100, round($pj/9*100)) : 0;
-            ?>
-            <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--gray-100)">
-              <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
-                <img src="<?= epl_h(epl_foto_jugador($sup['foto'], $sup['nombre'].' '.$sup['apellido'])) ?>"
-                     style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)" alt="">
-                <div style="flex:1">
-                  <div style="font-weight:700;color:var(--navy);font-size:.9rem"><?= epl_h($sup['nombre'].' '.$sup['apellido']) ?></div>
-                  <?php if ($sup['alias']): ?><div style="font-size:.72rem;color:var(--gold)">"<?= epl_h($sup['alias']) ?>"</div><?php endif; ?>
-                  <div style="font-size:.72rem;color:var(--gray-400)"><?= $sup['nivel'] ?>ª cat. <?= $sup['lado']?'· '.ucfirst($sup['lado']):'' ?></div>
-                </div>
-                <div style="text-align:right">
-                  <span style="font-family:var(--font-head);font-size:1.5rem;color:<?= $pj>=9?'var(--red)':'var(--navy)' ?>"><?= $pj ?></span>
-                  <div style="font-size:.65rem;color:var(--gray-400);text-transform:uppercase">/ 9 partidos</div>
-                </div>
-              </div>
-
-              <!-- Barra de progreso -->
-              <div style="background:var(--gray-200);border-radius:4px;height:6px;margin-bottom:.75rem">
-                <div style="width:<?= $pct ?>%;background:<?= $pj>=9?'var(--red)':($pj>=7?'var(--gold)':'var(--green)') ?>;height:6px;border-radius:4px;transition:width .3s"></div>
-              </div>
-
-              <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-                <!-- Registrar partido -->
-                <?php if ($pj < 9 && !empty($partidos_para_suplente)): ?>
-                <button onclick="showRegistrarPartido(<?= $sup['id'] ?>, '<?= epl_h($sup['nombre']) ?>')"
-                        class="btn btn-sm btn-primary" style="font-size:.72rem">+ Partido jugado</button>
-                <?php endif; ?>
-                <!-- Desactivar -->
-                <form method="post" style="display:inline">
-                  <input type="hidden" name="action" value="desactivar">
-                  <input type="hidden" name="suplente_id" value="<?= $sup['id'] ?>">
-                  <button type="submit" class="btn btn-sm" style="border:1px solid var(--red);color:var(--red);font-size:.72rem"
-                          onclick="return confirm('¿Remover este suplente?')">Remover</button>
-                </form>
-              </div>
-            </div>
-            <?php endforeach; ?>
-          </div>
-        <?php endif; ?>
-      </div>
-
-      <!-- Agregar nuevo suplente -->
-      <?php if ($cupos_restantes > 0): ?>
-      <div class="card">
-        <div class="card-head">
-          <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)">Agregar suplente</h3>
+      <?php elseif (empty($disponibles)): ?>
+        <div class="sup-empty-card">
+          <div style="font-size:2rem;margin-bottom:.5rem">🔍</div>
+          <p style="color:var(--gray-400)">No hay jugadores disponibles. Deben estar activos y no ser titulares ni suplentes de otro equipo.</p>
         </div>
-        <div class="card-body">
-          <?php if (empty($disponibles)): ?>
-            <p style="color:var(--gray-400);font-size:.88rem">No hay jugadores disponibles. Los jugadores deben estar activos y no ser titulares ni suplentes de otro equipo en este torneo.</p>
-          <?php else: ?>
+      <?php else: ?>
+        <div class="sup-add-card">
           <form method="post">
             <input type="hidden" name="action" value="agregar">
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom:1.25rem">
               <label class="form-label">Jugador</label>
               <select name="jugador_id" class="form-control" required>
                 <option value="">— Selecciona un jugador —</option>
                 <?php foreach ($disponibles as $d): ?>
                   <option value="<?= $d['id'] ?>">
                     <?= epl_h($d['nombre'].' '.$d['apellido']) ?>
-                    <?= $d['alias']?'("'.$d['alias'].'") ':'' ?>
-                    — <?= $d['nivel'] ?>ª cat.
-                    <?= $d['lado']?'· '.ucfirst($d['lado']):'' ?>
+                    <?= $d['alias'] ? ' ("'.$d['alias'].'")' : '' ?>
+                    — <?= $d['nivel'] ?>ª cat.<?= $d['lado'] ? ' · '.ucfirst($d['lado']) : '' ?>
                   </option>
                 <?php endforeach; ?>
               </select>
-              <span class="form-hint">Solo aparecen jugadores que no son titulares ni suplentes en otro equipo de este torneo.</span>
+              <span class="form-hint">Solo aparecen jugadores disponibles para este torneo.</span>
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Registrar suplente</button>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+              Registrar como suplente
+            </button>
           </form>
-          <?php endif; ?>
         </div>
-      </div>
-      <?php else: ?>
-      <div class="card">
-        <div class="card-body" style="text-align:center;padding:2.5rem 1.5rem">
-          <div style="font-size:2.5rem;margin-bottom:.5rem">🏓</div>
-          <p style="color:var(--gray-600);font-weight:600">Cupos de suplentes completos</p>
-          <p style="font-size:.82rem;color:var(--gray-400);margin-top:.5rem">Has usado los 2 cupos disponibles para esta temporada.</p>
-        </div>
-      </div>
       <?php endif; ?>
     </div>
-    <?php endif; ?>
 
+  </div><!-- /sup-grid -->
+  <?php endif; ?>
+
+</main>
 </div>
 
-<!-- Modal registrar partido suplente -->
-<div id="modalPartidoSup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;padding:1rem">
-  <div class="card" style="width:100%;max-width:420px">
-    <div class="card-head">
-      <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)" id="modalSupTitle">Registrar Partido</h3>
-      <button onclick="document.getElementById('modalPartidoSup').style.display='none'" style="background:none;font-size:1.5rem;color:var(--gray-400)">×</button>
+<!-- Modal registrar partido -->
+<div id="modalPartidoSup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--white);border-radius:20px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.25)">
+    <div style="background:var(--navy);padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center">
+      <h3 id="modalSupTitle" style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--white);margin:0">Registrar Partido</h3>
+      <button onclick="document.getElementById('modalPartidoSup').style.display='none'"
+              style="background:rgba(255,255,255,.15);border:none;color:var(--white);width:32px;height:32px;border-radius:50%;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
     </div>
-    <div class="card-body">
+    <div style="padding:1.5rem">
       <form method="post">
         <input type="hidden" name="action" value="registrar_partido">
         <input type="hidden" name="suplente_id" id="modalSupId">
-        <div class="form-group">
-          <label class="form-label">Partido</label>
+        <div class="form-group" style="margin-bottom:1.25rem">
+          <label class="form-label">Partido en que jugó</label>
           <select name="partido_id" class="form-control" required>
             <option value="">— Selecciona el partido —</option>
             <?php foreach ($partidos_para_suplente as $p): ?>
@@ -337,19 +334,124 @@ if ($equipo && $liga) {
   </div>
 </div>
 
-</main>
-</div>
-
 <style>
-@media(max-width:768px){ .suplentes-grid { grid-template-columns:1fr !important; } }
+@keyframes sup-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes sup-modal-in {
+  from { opacity: 0; transform: scale(.93) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Cupos bar */
+.sup-cupos-bar {
+  display: flex; align-items: center; gap: 1.5rem;
+  background: linear-gradient(135deg, var(--white), #fafafa);
+  border: 1px solid var(--gray-100); border-radius: 20px;
+  padding: 1.5rem; margin-bottom: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,.05); flex-wrap: wrap;
+  animation: sup-fade-up .35s ease both;
+}
+.sup-cupos-info { flex: 1; min-width: 110px; }
+.sup-cupos-slots { display: flex; gap: .75rem; }
+.sup-slot {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid var(--gray-200); background: var(--gray-100);
+  display: flex; align-items: center; justify-content: center;
+  color: transparent; transition: all .3s cubic-bezier(.4,0,.2,1);
+}
+.sup-slot-on {
+  background: linear-gradient(135deg, var(--gold), #b8975a);
+  border-color: var(--gold); color: var(--white);
+  box-shadow: 0 4px 14px rgba(201,167,98,.4);
+}
+.sup-cupos-badge {
+  display: inline-flex; align-items: center;
+  padding: .4rem 1rem; border-radius: 20px;
+  font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+}
+.sup-cupos-libre { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534; border: 1px solid #86efac; }
+.sup-cupos-full  { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; border: 1px solid #fca5a5; }
+
+/* Reglas */
+.sup-rules {
+  display: flex; align-items: flex-start; gap: .65rem;
+  background: linear-gradient(135deg, #fefce8, #fef9c3);
+  border: 1px solid #fde68a; border-radius: 14px;
+  padding: .9rem 1.1rem; margin-bottom: 1.5rem;
+  font-size: .8rem; color: #92400e;
+  animation: sup-fade-up .35s .05s ease both;
+}
+.sup-rules svg { flex-shrink: 0; margin-top: .1rem; }
+
+.sup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+@media(max-width:768px){ .sup-grid { grid-template-columns: 1fr; } }
+
+.sup-section-title {
+  font-family: var(--font-head); font-size: .78rem; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--navy); margin: 0 0 1rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.sup-section-title::after { content: ''; flex: 1; height: 1px; background: var(--gray-100); }
+
+/* Suplente card */
+.sup-card {
+  background: var(--white); border: 1px solid var(--gray-100);
+  border-radius: 20px; padding: 1.25rem;
+  box-shadow: 0 4px 18px rgba(0,0,0,.05);
+  transition: box-shadow .2s, transform .2s;
+  position: relative; overflow: hidden;
+  animation: sup-fade-up .4s ease both;
+}
+.sup-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,.1); transform: translateY(-1px); }
+.sup-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold), #b8975a);
+}
+.sup-card-top { display: flex; align-items: center; gap: .9rem; margin-bottom: 1rem; }
+.sup-avatar {
+  width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--gold); flex-shrink: 0;
+  box-shadow: 0 3px 12px rgba(201,167,98,.3);
+}
+.sup-progress-track {
+  background: var(--gray-100); border-radius: 6px; height: 8px;
+  margin-bottom: .85rem; overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.08);
+}
+.sup-progress-fill { height: 8px; border-radius: 6px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+.sup-card-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+.sup-empty-card {
+  background: linear-gradient(135deg, #fafafa, var(--white));
+  border: 1.5px dashed var(--gray-200); border-radius: 20px;
+  padding: 2.5rem 2rem; text-align: center; color: var(--gray-400);
+  animation: sup-fade-up .4s ease both;
+}
+
+.sup-add-card {
+  background: var(--white); border: 1px solid var(--gray-100);
+  border-radius: 20px; padding: 1.5rem;
+  box-shadow: 0 4px 18px rgba(0,0,0,.05);
+  animation: sup-fade-up .4s .05s ease both;
+}
+
+/* Modal */
+#modalPartidoSup > div {
+  animation: sup-modal-in .3s cubic-bezier(.4,0,.2,1) both;
+}
 </style>
 
 <script>
-function showRegistrarPartido(supId, nombre) {
+function showModalSuplente(supId, nombre) {
   document.getElementById('modalSupId').value = supId;
   document.getElementById('modalSupTitle').textContent = 'Partido de ' + nombre;
   document.getElementById('modalPartidoSup').style.display = 'flex';
 }
+document.getElementById('modalPartidoSup').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
 </script>
 
 <?php require_once 'includes/footer.php'; ?>

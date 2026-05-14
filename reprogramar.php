@@ -37,7 +37,6 @@ if ($equipo) {
     $partidos_pendientes = $stP->fetchAll();
 }
 
-// Mis solicitudes previas (últimas 10)
 $mis_solicitudes = [];
 if ($equipo) {
     $stS = $db->prepare("
@@ -54,10 +53,10 @@ if ($equipo) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
-    $partido_id      = (int)($_POST['partido_id']      ?? 0);
-    $fecha_propuesta = trim($_POST['fecha_propuesta']  ?? '');
-    $motivo          = trim($_POST['motivo']            ?? '');
-    $mutuo_acuerdo   = isset($_POST['mutuo_acuerdo'])   ? 1 : 0;
+    $partido_id      = (int)($_POST['partido_id']       ?? 0);
+    $fecha_propuesta = trim($_POST['fecha_propuesta']   ?? '');
+    $motivo          = trim($_POST['motivo']             ?? '');
+    $mutuo_acuerdo   = isset($_POST['mutuo_acuerdo'])    ? 1 : 0;
     $rival_no_resp   = isset($_POST['rival_no_responde']) ? 1 : 0;
 
     $stVal = $db->prepare("
@@ -66,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
-        WHERE p.id=? AND (p.equipo_local_id=? OR p.equipo_visitante_id=?) 
+        WHERE p.id=? AND (p.equipo_local_id=? OR p.equipo_visitante_id=?)
           AND p.estado IN ('pendiente','reprogramado')
           AND (p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR) OR p.fecha_programada IS NULL)
     ");
@@ -82,7 +81,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
     } elseif (!$rival_no_resp && !$mutuo_acuerdo) {
         $error = 'Debes confirmar que coordinaste con el equipo rival.';
     } else {
-        // Regla "rival no responde": dejamos fecha vacía (NULL)
         $fecha_final = $rival_no_resp ? null : $fecha_propuesta;
 
         $db->prepare("
@@ -93,29 +91,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
 
         $db->prepare("UPDATE partidos SET estado='reprogramado' WHERE id=?")->execute([$partido_id]);
 
-        // --- ENVÍO DE CORREOS ---
         $destinatarios = [];
-        
-        // 1. Otros 3 jugadores del partido
         $jugadores_ids = array_unique([$partido['l1'], $partido['l2'], $partido['v1'], $partido['v2']]);
-        foreach($jugadores_ids as $jid) {
+        foreach ($jugadores_ids as $jid) {
             if ($jid != $jugador['id']) {
                 $stJ = $db->prepare("SELECT email FROM jugadores WHERE id=?");
                 $stJ->execute([$jid]);
                 if ($row = $stJ->fetch()) $destinatarios[] = $row['email'];
             }
         }
-
-        // 2. Administradores
         $stA = $db->query("SELECT email FROM jugadores WHERE rol='admin' AND estado='activo'");
         while ($row = $stA->fetch()) $destinatarios[] = $row['email'];
-
         $destinatarios = array_unique($destinatarios);
-        
+
         if ($destinatarios) {
-            $to = implode(', ', $destinatarios);
+            $to      = implode(', ', $destinatarios);
             $subject = "Solicitud de Reprogramación: " . $partido['local_nombre'] . " vs " . $partido['visitante_nombre'];
-            $cuerpo = "Hola,\n\nSe ha solicitado una reprogramación para el partido:\n";
+            $cuerpo  = "Hola,\n\nSe ha solicitado una reprogramación para el partido:\n";
             $cuerpo .= "Partido: " . $partido['local_nombre'] . " vs " . $partido['visitante_nombre'] . "\n";
             $cuerpo .= "Solicitante: " . $jugador['nombre'] . " " . $jugador['apellido'] . "\n";
             $cuerpo .= "Motivo: " . $motivo . "\n";
@@ -126,17 +118,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
                 $cuerpo .= "Acuerdo: Confirmado por mutuo acuerdo.\n";
             }
             $cuerpo .= "\nLa organización revisará la solicitud a la brevedad.\n\nAtentamente,\nElite Padel League";
-            
-            $headers = "From: Elite Padel League <no-reply@elitepadelleague.com>\r\n";
+            $headers  = "From: Elite Padel League <no-reply@elitepadelleague.com>\r\n";
             $headers .= "Reply-To: no-reply@elitepadelleague.com\r\n";
-            $headers .= "X-Mailer: PHP/" . phpversion();
-
             @mail($to, $subject, $cuerpo, $headers);
         }
 
         $ok = true;
-
-        // Recargar listas
         $stP->execute([$liga['id'], $equipo['id'], $equipo['id']]);
         $partidos_pendientes = $stP->fetchAll();
         $stS->execute([$jugador['id']]);
@@ -146,159 +133,357 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
 ?>
 <?php require_once 'includes/header.php'; ?>
 
-
 <div class="dash-layout">
 <?php include __DIR__ . '/includes/player_sidebar.php'; ?>
 <main class="dash-main">
-    <div class="dash-header">
-      <h1 class="dash-title">Reprogramar Partido</h1>
-      <p style="color:var(--gray-600);margin-top:.25rem;font-size:.88rem">Coordina con tu rival antes de solicitar. Mínimo 48h de anticipación.</p>
-    </div>
 
-    <?php if ($ok): ?>
-      <div class="alert alert-success">Solicitud enviada. El administrador la revisará y confirmará la fecha.</div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-      <div class="alert alert-error"><?= epl_h($error) ?></div>
-    <?php endif; ?>
+  <div class="dash-header">
+    <h1 class="dash-title">Reprogramar Partido</h1>
+    <p style="color:var(--gray-400);font-size:.88rem">Mínimo 48h de anticipación · Coordina con tu rival primero.</p>
+  </div>
 
-    <?php if (!$equipo): ?>
-      <div class="alert alert-info">No estás inscrito en ningún equipo activo en esta liga.</div>
-    <?php elseif (empty($partidos_pendientes)): ?>
-      <div class="alert alert-info">No tienes partidos pendientes de reprogramación.</div>
-    <?php else: ?>
-    <div class="card mb-4">
-      <div class="card-head">
-        <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)">Solicitar reprogramación</h3>
-      </div>
-      <div class="card-body">
-        <form method="post" id="formReprog">
-          <div class="form-group">
-            <label class="form-label">Partido *</label>
-            <select name="partido_id" class="form-control" required onchange="actualizarRivales(this)">
-              <option value="">— Selecciona un partido —</option>
-              <?php 
-                $pre_id = (int)($_GET['partido_id'] ?? 0);
-                foreach ($partidos_pendientes as $p): 
-                  $sel = ($p['id'] == $pre_id) ? 'selected' : '';
-                  // Codificar rivales
-                  $esLocal = ($p['equipo_local_id'] == $equipo['id']);
-                  $rivales = [];
-                  if ($esLocal) {
-                    $rivales[] = ['n'=>$p['v1n'], 'a'=>$p['jv1a'], 't'=>$p['v1t']];
-                    $rivales[] = ['n'=>$p['v2n'], 'a'=>$p['jv2a'], 't'=>$p['v2t']];
-                  } else {
-                    $rivales[] = ['n'=>$p['l1n'], 'a'=>$p['l1a'], 't'=>$p['l1t']];
-                    $rivales[] = ['n'=>$p['l2n'], 'a'=>$p['l2a'], 't'=>$p['l2t']];
-                  }
-                  $dataRivales = base64_encode(json_encode($rivales));
-              ?>
-                <option value="<?= $p['id'] ?>" <?= $sel ?> data-rivales="<?= $dataRivales ?>">
-                  <?= epl_h($p['local_nombre'].' vs '.$p['visitante_nombre']) ?>
-                  <?= $p['fecha_programada'] ? ' — '.date('d/m/Y', strtotime($p['fecha_programada'])) : ' — Sin fecha' ?>
-                  <?= $p['estado']==='reprogramado' ? ' (reprogramado)' : '' ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
+  <?php if ($ok): ?>
+  <div class="rp-success">
+    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <div><strong>Solicitud enviada.</strong> El administrador la revisará y confirmará la nueva fecha.</div>
+  </div>
+  <?php endif; ?>
+  <?php if ($error): ?>
+  <div class="alert alert-error"><?= epl_h($error) ?></div>
+  <?php endif; ?>
 
-          <!-- Contactar Rivales -->
-          <div id="seccionRivales" style="display:none; background:#F0F9FF; border-radius:12px; padding:1.25rem; margin-bottom:1.5rem; border:1px solid #BAE6FD">
-            <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:1rem">
-              <svg style="width:18px; height:18px; color:#0369A1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-              <span style="font-family:var(--font-head); font-size:.82rem; text-transform:uppercase; color:#0369A1; letter-spacing:.05em">Contactar Rivales (Coordinación)</span>
-            </div>
-            <div id="listaRivales" style="display:flex; flex-direction:column; gap:.75rem"></div>
-          </div>
+  <?php if (!$equipo): ?>
+    <div class="alert alert-info">No estás inscrito en ningún equipo activo en esta liga.</div>
+  <?php elseif (empty($partidos_pendientes)): ?>
+  <div class="rp-empty">
+    <div style="font-size:2.5rem;margin-bottom:.75rem">📅</div>
+    <h3>Sin partidos para reprogramar</h3>
+    <p>No tienes partidos pendientes o todos tienen fecha con más de 48h de anticipación.</p>
+  </div>
+  <?php else: ?>
 
-          <div class="form-group">
-            <label class="form-label">Motivo *</label>
-            <textarea name="motivo" class="form-control" rows="3" required placeholder="Explica brevemente el motivo del cambio..."></textarea>
-          </div>
+  <form method="post" id="formReprog">
 
-          <!-- Checkbox rival no responde -->
-          <div style="background:var(--gray-100);border-radius:8px;padding:1rem;margin-bottom:1rem">
-            <label style="display:flex;align-items:flex-start;gap:.75rem;cursor:pointer">
-              <input type="checkbox" name="rival_no_responde" id="chkRivalNoResp" onchange="toggleRivalNoResp(this)" style="margin-top:.15rem;width:16px;height:16px;flex-shrink:0">
-              <div>
-                <span style="font-weight:700;font-size:.88rem;color:var(--navy)">El rival no responde ni coordina</span>
-                <p style="font-size:.78rem;color:var(--gray-600);margin-top:.2rem">Si marcas esto, el partido quedará sin fecha definida y la organización tomará acción para asignar una fecha obligatoria o declarar WO.</p>
-              </div>
-            </label>
-          </div>
-
-          <!-- Sección fecha (se oculta si rival no responde) -->
-          <div id="seccionFecha">
-            <div class="form-group">
-              <label class="form-label">Fecha y hora propuesta *</label>
-              <input type="datetime-local" name="fecha_propuesta" class="form-control"
-                     min="<?= date('Y-m-d\TH:i', strtotime('+48 hours')) ?>">
-              <span class="form-hint">Mínimo 48 horas desde ahora.</span>
-            </div>
-
-            <div style="background:#DBEAFE;border-radius:8px;padding:1rem;margin-bottom:1rem">
-              <label style="display:flex;align-items:flex-start;gap:.75rem;cursor:pointer">
-                <input type="checkbox" name="mutuo_acuerdo" id="chkMutuo" style="margin-top:.15rem;width:16px;height:16px;flex-shrink:0" required>
-                <div>
-                  <span style="font-weight:700;font-size:.88rem;color:#1E40AF">Confirmo mutuo acuerdo</span>
-                  <p style="font-size:.78rem;color:#3B82F6;margin-top:.2rem">He coordinado esta nueva fecha con el equipo rival y ambos estamos de acuerdo.</p>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Enviar solicitud</button>
-        </form>
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Historial de solicitudes -->
-    <?php if ($mis_solicitudes): ?>
-    <div class="card">
-      <div class="card-head">
-        <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)">Mis solicitudes</h3>
-      </div>
-      <div class="card-body" style="padding:0">
-        <?php foreach ($mis_solicitudes as $s):
-          $badgeCls = match($s['estado']) {
-            'aprobada'  => 'badge-jugado',
-            'rechazada' => 'badge-walkover',
-            default     => 'badge-pendiente'
-          };
-        ?>
-        <div style="padding:.9rem 1.5rem;border-bottom:1px solid var(--gray-100)">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:700;font-size:.88rem;color:var(--navy)"><?= epl_h($s['local_nombre'].' vs '.$s['visitante_nombre']) ?></div>
-              <div style="font-size:.75rem;color:var(--gray-400);margin-top:.15rem">
-                Fecha propuesta: <?= $s['fecha_propuesta'] ? date('d/m/Y H:i', strtotime($s['fecha_propuesta'])) : '—' ?>
-                <?php if ($s['rival_no_responde']): ?>
-                  <span class="badge badge-walkover" style="font-size:.62rem;margin-left:.4rem">Rival no respondió</span>
-                <?php elseif ($s['mutuo_acuerdo']): ?>
-                  <span class="badge badge-jugado" style="font-size:.62rem;margin-left:.4rem">Mutuo acuerdo</span>
-                <?php endif; ?>
-              </div>
-              <?php if ($s['fecha_aprobada'] && $s['estado']==='aprobada'): ?>
-                <div style="font-size:.75rem;color:#22c55e;margin-top:.15rem;font-weight:600">
-                  ✓ Confirmada: <?= date('d/m/Y H:i', strtotime($s['fecha_aprobada'])) ?>
-                  <?= $s['cancha_aprobada'] ? '· '.$s['cancha_aprobada'] : '' ?>
-                </div>
-              <?php endif; ?>
-              <div style="font-size:.73rem;color:var(--gray-600);margin-top:.15rem;font-style:italic"><?= epl_h(mb_strimwidth($s['motivo'], 0, 80, '...')) ?></div>
-            </div>
-            <span class="badge <?= $badgeCls ?>" style="white-space:nowrap;flex-shrink:0"><?= ucfirst($s['estado']) ?></span>
-          </div>
+    <!-- Paso 1: Seleccionar partido -->
+    <div class="rp-card">
+      <div class="rp-card-header">
+        <span class="rp-step-dot">1</span>
+        <div>
+          <div class="rp-card-title">Selecciona el partido</div>
+          <div class="rp-card-sub">Mínimo 48h de anticipación.</div>
         </div>
+      </div>
+      <input type="hidden" name="partido_id" id="hiddenPartidoIdRp">
+      <div class="rp-partidos-list" style="margin-top:1rem" id="rpListaPartidos">
+        <?php
+          $pre_id = (int)($_GET['partido_id'] ?? 0);
+          foreach ($partidos_pendientes as $p):
+            $esLocal = ($p['equipo_local_id'] == $equipo['id']);
+            $rivales = [];
+            if ($esLocal) {
+              $rivales[] = ['n'=>$p['v1n'],  'a'=>$p['jv1a'], 't'=>$p['v1t']];
+              $rivales[] = ['n'=>$p['v2n'],  'a'=>$p['v2a'],  't'=>$p['v2t']];
+            } else {
+              $rivales[] = ['n'=>$p['l1n'],  'a'=>$p['l1a'],  't'=>$p['l1t']];
+              $rivales[] = ['n'=>$p['l2n'],  'a'=>$p['l2a'],  't'=>$p['l2t']];
+            }
+            $dataRivales = htmlspecialchars(base64_encode(json_encode($rivales)), ENT_QUOTES);
+            $checked = ($p['id'] == $pre_id) ? 'checked' : '';
+        ?>
+        <label class="rp-partido-option" for="rpp<?= $p['id'] ?>">
+          <input type="radio" name="_rp_partido_pick" id="rpp<?= $p['id'] ?>" value="<?= $p['id'] ?>"
+                 data-rivales="<?= $dataRivales ?>" <?= $checked ?>
+                 onchange="rpSelPartido(this)">
+          <div class="rp-partido-content">
+            <div class="rp-partido-fecha">
+              <?php if ($p['fecha_programada']): ?>
+                <span class="rp-dia"><?= date('d', strtotime($p['fecha_programada'])) ?></span>
+                <span class="rp-mes"><?= strtoupper(date('M', strtotime($p['fecha_programada']))) ?></span>
+              <?php else: ?>
+                <span class="rp-dia">?</span><span class="rp-mes">TBD</span>
+              <?php endif; ?>
+            </div>
+            <div class="rp-partido-teams">
+              <span><?= epl_h($p['local_nombre']) ?></span>
+              <span class="rp-vs">VS</span>
+              <span><?= epl_h($p['visitante_nombre']) ?></span>
+            </div>
+            <div class="rp-partido-meta">
+              <span class="rp-jornada">F.<?= $p['jornada'] ?? '?' ?></span>
+              <?php if ($p['estado']==='reprogramado'): ?>
+                <span class="badge badge-walkover" style="font-size:.55rem">Reprog.</span>
+              <?php endif; ?>
+            </div>
+          </div>
+          <div class="rp-partido-check">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          </div>
+        </label>
         <?php endforeach; ?>
       </div>
     </div>
-    <?php endif; ?>
+
+    <!-- Paso 2: Contactar rivales -->
+    <div id="seccionRivales" class="rp-card rp-card-rivales" style="display:none">
+      <div class="rp-card-header">
+        <span class="rp-step-dot" style="background:#0369A1">2</span>
+        <div>
+          <div class="rp-card-title" style="color:#0369A1">Contacta a tus rivales</div>
+          <div class="rp-card-sub">Coordina la nueva fecha antes de enviar la solicitud.</div>
+        </div>
+      </div>
+      <div id="listaRivales" style="display:flex;flex-direction:column;gap:.6rem;margin-top:1rem"></div>
+    </div>
+
+    <!-- Paso 3: Motivo -->
+    <div class="rp-card">
+      <div class="rp-card-header">
+        <span class="rp-step-dot">3</span>
+        <div>
+          <div class="rp-card-title">Motivo de la reprogramación</div>
+        </div>
+      </div>
+      <textarea name="motivo" class="form-control" rows="3" required
+                placeholder="Explica brevemente el motivo del cambio..."
+                style="margin-top:1rem;resize:vertical"></textarea>
+    </div>
+
+    <!-- Paso 4: Rival no responde -->
+    <div class="rp-card">
+      <div class="rp-card-header">
+        <span class="rp-step-dot">4</span>
+        <div>
+          <div class="rp-card-title">¿El rival no responde?</div>
+        </div>
+      </div>
+      <label class="rp-toggle-row" style="margin-top:1rem">
+        <div class="rp-toggle-info">
+          <div style="font-weight:700;font-size:.9rem;color:var(--navy)">El rival no responde ni coordina</div>
+          <div style="font-size:.78rem;color:var(--gray-500);margin-top:.2rem">El partido quedará sin fecha y la organización tomará acción.</div>
+        </div>
+        <label class="rp-switch">
+          <input type="checkbox" name="rival_no_responde" id="chkRivalNoResp" onchange="toggleRivalNoResp(this)">
+          <span class="rp-slider"></span>
+        </label>
+      </label>
+    </div>
+
+    <!-- Paso 5: Nueva fecha + mutuo acuerdo -->
+    <div id="seccionFecha" class="rp-card rp-card-fecha">
+      <div class="rp-card-header">
+        <span class="rp-step-dot" style="background:#1d4ed8">5</span>
+        <div>
+          <div class="rp-card-title" style="color:#1d4ed8">Nueva fecha propuesta</div>
+          <div class="rp-card-sub">Mínimo 48 horas desde ahora.</div>
+        </div>
+      </div>
+      <input type="datetime-local" name="fecha_propuesta" class="form-control"
+             min="<?= date('Y-m-d\TH:i', strtotime('+48 hours')) ?>"
+             style="margin-top:1rem;max-width:280px">
+
+      <label class="rp-acuerdo-row">
+        <input type="checkbox" name="mutuo_acuerdo" id="chkMutuo" required>
+        <div>
+          <div style="font-weight:700;font-size:.88rem;color:#1e40af">Confirmo mutuo acuerdo</div>
+          <div style="font-size:.78rem;color:#3b82f6;margin-top:.1rem">He coordinado esta fecha con el equipo rival y ambos estamos de acuerdo.</div>
+        </div>
+      </label>
+    </div>
+
+    <button type="submit" class="rp-submit-btn">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+      Enviar solicitud
+    </button>
+
+  </form>
+  <?php endif; ?>
+
+  <!-- Historial de solicitudes -->
+  <?php if ($mis_solicitudes): ?>
+  <div style="margin-top:2.5rem">
+    <h3 style="font-family:var(--font-head);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy);margin-bottom:1rem">Mis solicitudes anteriores</h3>
+    <div style="display:flex;flex-direction:column;gap:.6rem">
+      <?php foreach ($mis_solicitudes as $s):
+        $badgeCls = match($s['estado']) { 'aprobada'=>'badge-jugado', 'rechazada'=>'badge-walkover', default=>'badge-pendiente' };
+      ?>
+      <div class="rp-historial-row">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:.88rem;color:var(--navy)"><?= epl_h($s['local_nombre'].' vs '.$s['visitante_nombre']) ?></div>
+          <div style="font-size:.75rem;color:var(--gray-400);margin-top:.2rem">
+            <?= $s['fecha_propuesta'] ? date('d/m/Y H:i', strtotime($s['fecha_propuesta'])) : 'Sin fecha' ?>
+            <?php if ($s['rival_no_responde']): ?><span class="badge badge-walkover" style="font-size:.6rem;margin-left:.4rem">Rival no respondió</span><?php endif; ?>
+            <?php if ($s['mutuo_acuerdo']): ?><span class="badge badge-jugado" style="font-size:.6rem;margin-left:.4rem">Mutuo acuerdo</span><?php endif; ?>
+          </div>
+          <?php if ($s['fecha_aprobada'] && $s['estado']==='aprobada'): ?>
+            <div style="font-size:.75rem;color:#22c55e;margin-top:.2rem;font-weight:600">✓ <?= date('d/m/Y H:i', strtotime($s['fecha_aprobada'])) ?> <?= $s['cancha_aprobada']?'· '.$s['cancha_aprobada']:'' ?></div>
+          <?php endif; ?>
+          <div style="font-size:.72rem;color:var(--gray-500);margin-top:.2rem;font-style:italic"><?= epl_h(mb_strimwidth($s['motivo'], 0, 80, '...')) ?></div>
+        </div>
+        <span class="badge <?= $badgeCls ?>" style="flex-shrink:0;align-self:flex-start"><?= ucfirst($s['estado']) ?></span>
+      </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+  <?php endif; ?>
 
 </main>
 </div>
 
+<style>
+@keyframes rp-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes rp-pop {
+  0%   { transform: scale(.9); opacity: 0; }
+  60%  { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.rp-success {
+  display: flex; align-items: flex-start; gap: 1rem;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid #86efac; border-radius: 14px;
+  padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; color: #166534;
+  box-shadow: 0 4px 16px rgba(34,197,94,.12);
+  animation: rp-fade-up .35s ease both;
+}
+.rp-empty { text-align: center; padding: 3rem 1rem; color: var(--gray-400); animation: rp-fade-up .4s ease both; }
+.rp-empty h3 { font-family: var(--font-head); text-transform: uppercase; color: var(--navy); margin: 0 0 .5rem; }
+
+/* Stepper layout */
+.rp-stepper { position: relative; }
+.rp-card {
+  background: var(--white); border-radius: 20px;
+  border: 1px solid var(--gray-100); padding: 1.5rem; margin-bottom: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,.04);
+  transition: box-shadow .2s;
+  animation: rp-fade-up .35s ease both;
+}
+.rp-card:hover { box-shadow: 0 6px 28px rgba(0,0,0,.08); }
+.rp-card-rivales { background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-color: #bae6fd; }
+.rp-card-fecha   { background: linear-gradient(135deg, #eff6ff, #dbeafe); border-color: #bfdbfe; }
+.rp-card-header  { display: flex; align-items: flex-start; gap: 1rem; }
+.rp-step-dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--navy), #1a3a64);
+  color: var(--white); font-weight: 800; font-size: .85rem;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(28,47,72,.25);
+}
+.rp-card-title { font-weight: 800; font-size: .95rem; color: var(--navy); }
+.rp-card-sub   { font-size: .78rem; color: var(--gray-500); margin-top: .2rem; }
+
+/* Partido radio cards */
+.rp-partidos-list { display: flex; flex-direction: column; gap: .5rem; }
+.rp-partido-option {
+  display: flex; align-items: center; gap: .85rem;
+  border: 1.5px solid var(--gray-100); border-radius: 14px;
+  padding: .85rem 1rem; cursor: pointer;
+  transition: all .22s cubic-bezier(.4,0,.2,1); background: var(--white);
+}
+.rp-partido-option:hover {
+  border-color: var(--gold); background: rgba(201,167,98,.04);
+  transform: translateX(2px); box-shadow: 0 2px 10px rgba(201,167,98,.12);
+}
+.rp-partido-option input[type=radio] { display: none; }
+.rp-partido-option:has(input:checked) {
+  border-color: var(--navy); background: linear-gradient(135deg, rgba(28,47,72,.04), rgba(28,47,72,.07));
+  box-shadow: 0 4px 14px rgba(28,47,72,.1);
+}
+.rp-partido-content { display: flex; align-items: center; gap: .85rem; flex: 1; min-width: 0; }
+.rp-partido-fecha {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  border-radius: 10px; padding: .4rem .6rem; text-align: center; min-width: 42px; flex-shrink: 0;
+  transition: all .22s;
+}
+.rp-dia { display: block; font-family: var(--font-head); font-size: 1.1rem; color: var(--navy); line-height: 1; }
+.rp-mes { display: block; font-size: .5rem; font-weight: 800; color: var(--gray-400); letter-spacing: .08em; text-transform: uppercase; }
+.rp-partido-option:has(input:checked) .rp-partido-fecha { background: linear-gradient(135deg, var(--navy), #1e3a5f); }
+.rp-partido-option:has(input:checked) .rp-dia,
+.rp-partido-option:has(input:checked) .rp-mes { color: var(--gold); }
+.rp-partido-teams { flex: 1; display: flex; align-items: center; gap: .55rem; font-size: .82rem; font-weight: 700; color: var(--navy); min-width: 0; flex-wrap: wrap; }
+.rp-vs { background: linear-gradient(135deg, var(--navy), #2d5a8e); color: var(--gold); border-radius: 6px; padding: .12rem .4rem; font-size: .6rem; font-weight: 800; flex-shrink: 0; }
+.rp-partido-option:has(input:checked) .rp-vs { background: linear-gradient(135deg, var(--gold), #b8975a); color: var(--navy); }
+.rp-partido-meta { display: flex; flex-direction: column; align-items: flex-end; gap: .25rem; flex-shrink: 0; }
+.rp-jornada { font-size: .62rem; font-weight: 700; color: var(--gray-400); }
+.rp-partido-check {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--gray-200);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  color: transparent; transition: all .22s;
+}
+.rp-partido-option:has(input:checked) .rp-partido-check {
+  background: linear-gradient(135deg, var(--navy), #1e3a5f);
+  border-color: var(--navy); color: var(--white);
+  box-shadow: 0 3px 10px rgba(28,47,72,.3);
+  animation: rp-pop .3s ease both;
+}
+
+/* Toggle switch */
+.rp-toggle-row { display: flex; align-items: center; gap: 1rem; cursor: pointer; padding: .5rem 0; }
+.rp-toggle-info { flex: 1; }
+.rp-switch { position: relative; display: inline-block; width: 52px; height: 28px; flex-shrink: 0; }
+.rp-switch input { opacity: 0; width: 0; height: 0; }
+.rp-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: var(--gray-200); border-radius: 28px; transition: .3s;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.1);
+}
+.rp-slider:before {
+  position: absolute; content: ""; height: 22px; width: 22px;
+  left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s;
+  box-shadow: 0 2px 6px rgba(0,0,0,.18);
+}
+.rp-switch input:checked + .rp-slider { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.rp-switch input:checked + .rp-slider:before { transform: translateX(24px); }
+
+/* Mutuo acuerdo */
+.rp-acuerdo-row {
+  display: flex; align-items: flex-start; gap: .85rem; margin-top: 1rem; cursor: pointer;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  border-radius: 14px; padding: 1rem; border: 1px solid #bfdbfe;
+}
+.rp-acuerdo-row input[type=checkbox] { width: 18px; height: 18px; margin-top: .15rem; flex-shrink: 0; accent-color: #1d4ed8; }
+
+.rp-submit-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: .7rem;
+  background: linear-gradient(135deg, var(--navy), #1a3a64);
+  color: var(--white); border: none; border-radius: 16px; padding: 1.2rem;
+  font-family: var(--font-head); font-size: 1rem; text-transform: uppercase; letter-spacing: .08em;
+  cursor: pointer; transition: all .25s cubic-bezier(.4,0,.2,1); margin-bottom: 1rem;
+  box-shadow: 0 6px 20px rgba(28,47,72,.25);
+}
+.rp-submit-btn:hover { background: linear-gradient(135deg, var(--gold), #b8975a); color: var(--navy); transform: translateY(-2px); box-shadow: 0 10px 28px rgba(201,167,98,.4); }
+.rp-submit-btn:active { transform: translateY(0); }
+
+.rp-historial-row {
+  background: var(--white); border: 1px solid var(--gray-100);
+  border-radius: 14px; padding: 1rem 1.25rem;
+  display: flex; align-items: flex-start; gap: 1rem;
+  transition: box-shadow .2s;
+}
+.rp-historial-row:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+
+/* Rival cards creadas en JS */
+.rp-rival-card {
+  display: flex; align-items: center; justify-content: space-between;
+  background: white; border: 1px solid #bae6fd; border-radius: 12px;
+  padding: .9rem 1rem; gap: .75rem;
+  transition: box-shadow .18s;
+}
+.rp-rival-card:hover { box-shadow: 0 3px 12px rgba(3,105,161,.1); }
+.rp-rival-name { font-weight: 700; color: var(--navy); font-size: .9rem; }
+.rp-rival-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--navy), #1a3a64);
+  color: var(--white); font-weight: 800; font-size: .8rem;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+</style>
+
 <script>
+const WA_SVG = `<svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.404c0 6.556-5.332 11.888-11.888 11.888-2.003 0-3.963-.505-5.698-1.465l-6.305 1.693zm6.443-4.045c1.474.873 3.103 1.332 4.775 1.332 5.054 0 9.163-4.109 9.163-9.163s-4.109-9.163-9.163-9.163-9.163 4.109-9.163 9.163c0 1.95.623 3.856 1.799 5.437l-1.002 3.659 3.743-.999zm10.742-5.466c-.303-.151-1.788-.882-2.067-.981-.278-.099-.481-.151-.683.151-.202.303-.783.981-.96 1.183-.177.202-.354.227-.657.076-.303-.151-1.28-.471-2.438-1.504-.901-.803-1.508-1.796-1.685-2.098-.177-.302-.019-.465.132-.615.136-.135.303-.354.455-.53.151-.177.202-.303.303-.505.101-.202.051-.379-.025-.53-.076-.151-.683-1.643-.935-2.249-.245-.59-.495-.51-.683-.52l-.582-.01c-.202 0-.531.076-.809.379-.278.303-1.062 1.037-1.062 2.529 0 1.492 1.087 2.932 1.239 3.134.151.202 2.14 3.268 5.184 4.582.724.312 1.29.499 1.731.639.727.231 1.388.199 1.911.121.582-.087 1.788-.731 2.041-1.439.253-.708.253-1.313.177-1.439-.076-.126-.278-.202-.581-.353z"/></svg>`;
+
 function toggleRivalNoResp(chk) {
   const sec = document.getElementById('seccionFecha');
   const chkMutuo = document.getElementById('chkMutuo');
@@ -311,54 +496,49 @@ function toggleRivalNoResp(chk) {
   }
 }
 
-function actualizarRivales(sel) {
-  const wrapper = document.getElementById('seccionRivales');
-  const lista = document.getElementById('listaRivales');
-  const opt = sel.options[sel.selectedIndex];
-  
-  if (!opt.value || !opt.dataset.rivales) {
-    wrapper.style.display = 'none';
-    return;
-  }
-  
-  const rivales = JSON.parse(atob(opt.dataset.rivales));
-  lista.innerHTML = '';
-  
-  rivales.forEach(r => {
-    if (!r.n) return;
-    const item = document.createElement('div');
-    item.style.display = 'flex';
-    item.style.alignItems = 'center';
-    item.style.justifyContent = 'space-between';
-    item.style.background = '#fff';
-    item.style.padding = '.75rem 1rem';
-    item.style.borderRadius = '10px';
-    item.style.border = '1px solid #E0F2FE';
-    
-    const name = r.n + ' ' + (r.a || '');
-    const tel = r.t ? r.t.replace(/\D/g, '') : '';
-    const cleanTel = tel.startsWith('56') ? tel : '56' + tel;
-    const msg = encodeURIComponent('Hola ' + r.n + ', te contacto por el partido de la Elite Padel League. ¿Podemos coordinar la reprogramación?');
-    const wsp = tel ? `https://wa.me/${cleanTel}?text=${msg}` : null;
-    
-    let html = `<span style="font-weight:600; color:var(--navy); font-size:.9rem">${name}</span>`;
-    if (wsp) {
-      html += `<a href="${wsp}" target="_blank" class="btn btn-sm" style="background:#22C55E; color:#fff; border:none; padding:.4rem .8rem; font-size:.7rem; font-weight:700">ESCRIBIR <svg style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-left:4px" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.404c0 6.556-5.332 11.888-11.888 11.888-2.003 0-3.963-.505-5.698-1.465l-6.305 1.693zm6.443-4.045c1.474.873 3.103 1.332 4.775 1.332 5.054 0 9.163-4.109 9.163-9.163s-4.109-9.163-9.163-9.163-9.163 4.109-9.163 9.163c0 1.95.623 3.856 1.799 5.437l-1.002 3.659 3.743-.999zm10.742-5.466c-.303-.151-1.788-.882-2.067-.981-.278-.099-.481-.151-.683.151-.202.303-.783.981-.96 1.183-.177.202-.354.227-.657.076-.303-.151-1.28-.471-2.438-1.504-.901-.803-1.508-1.796-1.685-2.098-.177-.302-.019-.465.132-.615.136-.135.303-.354.455-.53.151-.177.202-.303.303-.505.101-.202.051-.379-.025-.53-.076-.151-.683-1.643-.935-2.249-.245-.59-.495-.51-.683-.52l-.582-.01c-.202 0-.531.076-.809.379-.278.303-1.062 1.037-1.062 2.529 0 1.492 1.087 2.932 1.239 3.134.151.202 2.14 3.268 5.184 4.582.724.312 1.29.499 1.731.639.727.231 1.388.199 1.911.121.582-.087 1.788-.731 2.041-1.439.253-.708.253-1.313.177-1.439-.076-.126-.278-.202-.581-.353z"/></svg></a>`;
-    } else {
-      html += `<span style="font-size:.7rem; color:var(--gray-400); font-style:italic">Sin teléfono</span>`;
-    }
-    
-    item.innerHTML = html;
-    lista.appendChild(item);
-  });
-  
-  wrapper.style.display = 'block';
+function rpSelPartido(radio) {
+  document.getElementById('hiddenPartidoIdRp').value = radio.value;
+  cargarRivales(radio.dataset.rivales);
 }
 
-// Ejecutar si ya hay un partido seleccionado (por GET)
+function cargarRivales(b64) {
+  const wrapper = document.getElementById('seccionRivales');
+  const lista   = document.getElementById('listaRivales');
+  if (!b64) { wrapper.style.display = 'none'; return; }
+
+  const rivales = JSON.parse(atob(b64));
+  lista.innerHTML = '';
+  let alguno = false;
+
+  rivales.forEach(r => {
+    if (!r.n) return;
+    alguno = true;
+    const initials = ((r.n||'').charAt(0) + (r.a||'').charAt(0)).toUpperCase();
+    const tel   = (r.t || '').replace(/\D/g,'');
+    const clean = tel.startsWith('56') ? tel : '56' + tel;
+    const msg   = encodeURIComponent('Hola ' + r.n + ', te contacto por el partido de la Elite Padel League. ¿Podemos coordinar la reprogramación?');
+    const wsp   = tel ? `https://wa.me/${clean}?text=${msg}` : null;
+
+    const div = document.createElement('div');
+    div.className = 'rp-rival-card';
+    div.innerHTML =
+      `<div class="rp-rival-avatar">${initials}</div>
+       <div style="flex:1"><span class="rp-rival-name">${r.n} ${r.a||''}</span></div>` +
+      (wsp
+        ? `<a href="${wsp}" target="_blank" class="btn btn-sm" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;gap:.4rem;font-size:.72rem;box-shadow:0 3px 10px rgba(22,163,74,.3)">${WA_SVG} WhatsApp</a>`
+        : `<span style="font-size:.75rem;color:var(--gray-400);font-style:italic">Sin teléfono</span>`);
+    lista.appendChild(div);
+  });
+
+  wrapper.style.display = alguno ? 'block' : 'none';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  const sel = document.querySelector('select[name="partido_id"]');
-  if (sel && sel.value) actualizarRivales(sel);
+  const checked = document.querySelector('input[name="_rp_partido_pick"]:checked');
+  if (checked) {
+    document.getElementById('hiddenPartidoIdRp').value = checked.value;
+    cargarRivales(checked.dataset.rivales);
+  }
 });
 </script>
 
