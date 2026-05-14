@@ -36,7 +36,8 @@ $ligas = $db->query("
     .giant-title { line-height: 0.9; letter-spacing: -0.02em; }
 
     /* CONTENEDORES BÁSICOS */
-    .sidebar-card { background: white; border-radius: 20px; padding: 2.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.02); border-left: 6px solid #C9A762; margin-bottom: 2rem; }
+    .sidebar-card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.02); border-left: 6px solid #C9A762; margin-bottom: 1.5rem; }
+    @media (min-width: 640px) { .sidebar-card { padding: 2.5rem; margin-bottom: 2rem; } }
     
     /* ANIMACIÓN DEL BOTÓN EN VIVO */
     @keyframes pulse-live {
@@ -50,23 +51,23 @@ $ligas = $db->query("
 <div class="epl-body-content antialiased">
 
     <!-- HERO SECTION TORNEOS -->
-    <header class="hero-section pt-[180px] pb-24 md:pt-[240px] md:pb-44 text-center px-6">
+    <header class="hero-section pt-28 pb-14 md:pt-[240px] md:pb-44 text-center px-4 md:px-6">
         <div class="max-w-5xl mx-auto">
-            <span class="font-secondary font-black text-epl-gold tracking-[0.6em] uppercase text-[10px] md:text-xs mb-8 block opacity-90 drop-shadow-lg">
+            <span class="font-secondary font-black text-epl-gold tracking-[0.4em] md:tracking-[0.6em] uppercase text-[10px] md:text-xs mb-5 md:mb-8 block opacity-90 drop-shadow-lg">
                 Plataforma de Encuentros Oficiales
             </span>
-            <h1 class="giant-title text-6xl md:text-8xl lg:text-[9rem] text-white font-primary mb-10 drop-shadow-2xl uppercase">
+            <h1 class="giant-title text-5xl md:text-8xl lg:text-[9rem] text-white font-primary mb-6 md:mb-10 drop-shadow-2xl uppercase">
                 Ligas y <span class="text-epl-gold">Resultados</span>
             </h1>
-            <p class="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-gray-200 font-secondary font-medium mb-12 leading-relaxed opacity-90">
+            <p class="mt-3 md:mt-4 max-w-2xl mx-auto text-base md:text-xl text-gray-200 font-secondary font-medium mb-8 md:mb-12 leading-relaxed opacity-90">
                 Inscríbete en las próximas fechas, sigue el calendario oficial al instante y vive la experiencia de nuestra comunidad.
             </p>
         </div>
     </header>
 
     <!-- ZONA 1: DIRECTORIO DE TORNEOS -->
-    <section class="max-w-7xl mx-auto px-8 py-20">
-        <div class="mb-12 border-b-4 border-epl-gold/20 pb-4">
+    <section class="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-20">
+        <div class="mb-8 md:mb-12 border-b-4 border-epl-gold/20 pb-4">
             <h2 class="text-4xl text-epl-blue font-primary uppercase tracking-tight">Directorio de <span class="text-epl-gold">Ligas</span></h2>
         </div>
         
@@ -193,7 +194,7 @@ $ligas = $db->query("
     </section>
 
     <!-- ZONA 2: BENEFICIOS (REEMPLAZA AL ANTIGUO CENTRO DE ESTADÍSTICAS) -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-8 py-24 border-t border-gray-200">
+    <main class="max-w-7xl mx-auto px-4 sm:px-8 py-10 md:py-24 border-t border-gray-200">
         <div class="mb-10 border-b-4 border-epl-gold/20 pb-4">
             <h2 class="text-4xl text-epl-blue font-primary uppercase tracking-tight">El Circuito <span class="text-epl-gold">EPL</span></h2>
         </div>

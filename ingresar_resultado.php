@@ -154,22 +154,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
           <div id="seccionSets" style="display:none">
             <hr class="divider">
 
-            <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;align-items:center;margin-bottom:1.5rem">
-              <div style="font-weight:700;color:var(--navy)" id="nombreLocal">Local</div>
-              <div style="text-align:center;font-size:.8rem;color:var(--gray-400)">vs</div>
-              <div style="font-weight:700;color:var(--navy);text-align:right" id="nombreVisitante">Visitante</div>
+            <div class="score-teams-row">
+              <div style="font-weight:700;color:var(--navy);font-size:.9rem" id="nombreLocal">Local</div>
+              <div class="vs-label" style="text-align:center;font-size:.8rem;color:var(--gray-400);white-space:nowrap">vs</div>
+              <div style="font-weight:700;color:var(--navy);text-align:right;font-size:.9rem" id="nombreVisitante">Visitante</div>
             </div>
 
             <!-- Sets -->
             <?php for ($s = 1; $s <= 3; $s++): ?>
-            <div class="score-input-row">
-              <span class="score-label">Set <?= $s ?><?= $s===3?' (si aplica)':'' ?></span>
-              <div class="score-fields">
+            <div class="score-input-row" style="justify-content:flex-start">
+              <span class="score-label" style="flex-shrink:0">Set <?= $s ?><?= $s===3?' *':'' ?></span>
+              <div class="score-fields" style="flex:1;justify-content:center">
                 <input type="number" name="s<?= $s ?>_local" class="score-num form-control"
-                       min="0" max="7" placeholder="0" <?= $s===3?'':'required' ?>>
+                       min="0" max="7" placeholder="0" inputmode="numeric" <?= $s===3?'':'required' ?>>
                 <span class="score-sep">–</span>
                 <input type="number" name="s<?= $s ?>_visitante" class="score-num form-control"
-                       min="0" max="7" placeholder="0" <?= $s===3?'':'required' ?>>
+                       min="0" max="7" placeholder="0" inputmode="numeric" <?= $s===3?'':'required' ?>>
               </div>
             </div>
             <?php endfor; ?>

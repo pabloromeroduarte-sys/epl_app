@@ -950,7 +950,7 @@ $total_equipos  = count($equipos_liga);
         <!-- Sección de Contacto WhatsApp -->
         <div id="editContactosWrapper" style="margin-top: 1.5rem; border-top: 1px solid var(--gray-100); padding-top: 1rem;">
           <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;color:var(--navy);margin-bottom:.75rem">Contacto Jugadores (WhatsApp)</p>
-          <div id="editContactosList" style="display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;"></div>
+          <div id="editContactosList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .75rem;"></div>
         </div>
 
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:1.25rem">Guardar cambios</button>
