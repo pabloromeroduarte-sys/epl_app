@@ -148,9 +148,18 @@ require_once 'includes/header.php';
                   <div style="font-weight:700;font-size:.88rem;color:var(--navy)">vs <?= epl_h($rival) ?></div>
                   <div style="font-size:.72rem;color:var(--gray-400);margin-top:.1rem">
                     Fecha <?= $p['jornada'] ?? '—' ?>
-                    <?php if ($p['recinto_nombre'] ?? ''): ?>
-                      · <?= epl_h($p['recinto_nombre']) ?>
-                    <?php endif; ?>
+                    <?php
+                      $r_n = $p['recinto_nombre'] ?? '';
+                      $r_s = $p['recinto_superior_nombre'] ?? '';
+                      $r_a = $p['recinto_abuelo_nombre'] ?? '';
+                      $c   = $p['cancha'] ?? '';
+                      $sede_txt = '';
+                      if ($r_a)      $sede_txt = $r_a . ($r_s ? ' · ' . $r_s : '') . ($r_n ? ' · ' . $r_n : '');
+                      elseif ($r_s)  $sede_txt = $r_s . ($r_n ? ' · ' . $r_n : '');
+                      elseif ($r_n)  $sede_txt = $r_n;
+                      if ($c && !str_contains(strtolower($sede_txt), 'cancha')) $sede_txt .= ($sede_txt ? ' · C.' : 'C.') . $c;
+                    ?>
+                    <?php if ($sede_txt): ?>· <?= epl_h($sede_txt) ?><?php endif; ?>
                   </div>
                 </div>
                 <span style="font-size:.65rem;font-weight:700;color:<?= $estado_color ?>;text-transform:uppercase;white-space:nowrap"><?= $estado_txt ?></span>

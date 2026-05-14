@@ -81,15 +81,19 @@ function epl_partidos_equipo(int $equipo_id): array {
     $db = epl_db();
     $st = $db->prepare("
         SELECT p.*,
-               l.nombre AS liga_nombre,
+               l.nombre  AS liga_nombre,
                el.nombre AS local_nombre,
                ev.nombre AS visitante_nombre,
-               r.nombre AS recinto_nombre
+               r.nombre  AS recinto_nombre,
+               s.nombre  AS recinto_superior_nombre,
+               ss.nombre AS recinto_abuelo_nombre
         FROM partidos p
         JOIN ligas l    ON l.id = p.liga_id
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
-        LEFT JOIN recintos r ON r.id = p.recinto_id
+        LEFT JOIN recintos r  ON r.id  = p.recinto_id
+        LEFT JOIN recintos s  ON s.id  = r.superior_id
+        LEFT JOIN recintos ss ON ss.id = s.superior_id
         WHERE p.equipo_local_id = ? OR p.equipo_visitante_id = ?
         ORDER BY p.fecha_programada DESC, r.nombre ASC
     ");

@@ -152,16 +152,27 @@ if ($equipo) {
             </div>
             <div class="partido-col-meta" style="border:none;padding-left:0">
               <?php
-                $recinto = $p['recinto_nombre'] ?? '';
-                $cancha  = $p['cancha'] ?? '';
+                $r_nombre = $p['recinto_nombre'] ?? '';
+                $r_sup    = $p['recinto_superior_nombre'] ?? '';
+                $r_abu    = $p['recinto_abuelo_nombre'] ?? '';
+                $cancha   = $p['cancha'] ?? '';
+                if ($r_abu) {
+                    $badge_txt = $r_sup;
+                    $label_txt = $r_abu . ($r_nombre ? ' - ' . $r_nombre : '');
+                } elseif ($r_sup) {
+                    $badge_txt = $r_nombre;
+                    $label_txt = $r_sup;
+                } else {
+                    $badge_txt = $r_nombre ?: 'TBD';
+                    $label_txt = '';
+                }
+                if ($cancha && !str_contains(strtolower((string)$label_txt), 'cancha')) {
+                    $label_txt .= ($label_txt ? ' - ' : '') . 'Cancha ' . $cancha;
+                }
               ?>
-              <?php if ($recinto || $cancha): ?>
-                <span class="cancha-badge" style="margin-bottom:0;font-size:.6rem"><?= epl_h($recinto ?: 'Sede') ?></span>
-                <?php if ($cancha): ?>
-                  <div class="sede-label" style="font-size:.55rem;margin-top:.2rem">Cancha <?= epl_h($cancha) ?></div>
-                <?php endif; ?>
-              <?php else: ?>
-                <span class="cancha-badge" style="margin-bottom:0;font-size:.6rem;opacity:.4">TBD</span>
+              <span class="cancha-badge" style="margin-bottom:0;font-size:.6rem"><?= epl_h($badge_txt) ?></span>
+              <?php if ($label_txt): ?>
+                <div class="sede-label" style="font-size:.55rem;margin-top:.2rem"><?= epl_h($label_txt) ?></div>
               <?php endif; ?>
             </div>
           </div>
