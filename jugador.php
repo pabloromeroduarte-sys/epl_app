@@ -82,6 +82,7 @@ if ($equipo) {
 <section class="section">
   <div class="container">
     <div style="display:grid;grid-template-columns:1fr 2fr;gap:2rem;align-items:start" class="jugador-detail-grid">
+    <style>@media(max-width:768px){.jugador-detail-grid{grid-template-columns:1fr !important;}}</style>
 
       <!-- Columna izquierda: info y compañero -->
       <div>

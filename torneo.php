@@ -187,7 +187,10 @@ if ($liga['foto_portada']) {
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-
+@media (max-width: 640px) {
+  .torneo-info-card { padding: 1.5rem 1rem !important; }
+  .tab-link { padding: .75rem .5rem; font-size: .72rem; }
+}
 </style>
 
 <!-- Navegación de Pestañas -->
@@ -266,8 +269,8 @@ if ($liga['foto_portada']) {
         
         <!-- Buscador -->
         <div style="position:relative; margin-bottom:1.5rem">
-          <input type="text" id="searchPartidos" placeholder="Buscar por apellido de jugador o equipo..." 
-                 style="width:100%; padding:.8rem 1rem .8rem 2.5rem; border:1px solid #e5e7eb; border-radius:8px; font-family:var(--font-body); font-size:.9rem; color:var(--navy); outline:none; transition:border-color .2s"
+          <input type="text" id="searchPartidos" placeholder="Buscar por apellido de jugador o equipo..."
+                 style="width:100%; padding:.8rem 1rem .8rem 2.5rem; border:1px solid #e5e7eb; border-radius:8px; font-family:var(--font-body); font-size:1rem; color:var(--navy); outline:none; transition:border-color .2s"
                  onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e5e7eb'"
                  onkeyup="filterPartidos()">
           <svg style="position:absolute; left:.8rem; top:50%; transform:translateY(-50%); width:1.1rem; height:1.1rem; color:#9ca3af" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -322,7 +325,7 @@ if ($liga['foto_portada']) {
 <div id="tab-informacion" class="tab-content">
   <section class="section">
     <div class="container">
-      <div style="background:#fff; border-radius:24px; padding:3rem; box-shadow:0 10px 40px rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.05)">
+      <div class="torneo-info-card" style="background:#fff; border-radius:24px; padding:3rem; box-shadow:0 10px 40px rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.05)">
         <h2 class="section-title">Información del Torneo</h2>
         
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:2rem; margin-top:2rem">

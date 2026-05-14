@@ -335,6 +335,8 @@ if ($equipo && $liga) {
       </form>
     </div>
   </div>
+</div>
+
 </main>
 </div>
 

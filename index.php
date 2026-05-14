@@ -118,9 +118,9 @@ $proximos = $liga ? array_slice(epl_partidos_liga($liga['id'], 'pendiente'), 0, 
     <!-- ==========================================
          2. SECCIÓN DE INTRODUCCIÓN (¿QUÉ ES EPL?)
          ========================================== -->
-    <section class="py-24 bg-white px-6 relative z-20 rounded-t-[40px] -mt-10 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+    <section class="py-12 md:py-24 bg-white px-4 md:px-6 relative z-20 rounded-t-[40px] -mt-10 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
         <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-16">
+            <div class="text-center mb-8 md:mb-16">
                 <span class="text-epl-gold font-black text-[10px] uppercase tracking-[0.2em] mb-2 block">Por qué elegirnos</span>
                 <h2 class="text-4xl md:text-5xl text-epl-blue font-primary uppercase tracking-tight">Eleva tu <span class="text-epl-gold">Nivel</span></h2>
             </div>
@@ -157,9 +157,9 @@ $proximos = $liga ? array_slice(epl_partidos_liga($liga['id'], 'pendiente'), 0, 
     <!-- ==========================================
          3. EL CIRCUITO (TARJETAS COMPACTAS MINIS)
          ========================================== -->
-    <section id="el-circuito" class="py-24 bg-[#F5F7F8] px-6 border-y border-gray-200">
+    <section id="el-circuito" class="py-10 md:py-24 bg-[#F5F7F8] px-4 md:px-6 border-y border-gray-200">
         <div class="max-w-7xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 md:mb-12 gap-4 md:gap-6">
                 <div>
                     <h2 class="text-4xl md:text-5xl text-epl-blue font-primary uppercase tracking-tight">Próximos <span class="text-epl-gold">Encuentros</span></h2>
                 </div>
@@ -283,10 +283,10 @@ $proximos = $liga ? array_slice(epl_partidos_liga($liga['id'], 'pendiente'), 0, 
     <!-- ==========================================
          4. FILOSOFÍA / HISTORIA
          ========================================== -->
-    <section id="nosotros" class="py-24 bg-white px-6 scroll-mt-20">
-        <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+    <section id="nosotros" class="py-12 md:py-24 bg-white px-4 md:px-6 scroll-mt-20">
+        <div class="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
             
-            <div class="lg:w-1/2 relative">
+            <div class="lg:w-1/2 relative pb-12 lg:pb-0">
                 <!-- Decoraciones -->
                 <div class="absolute -top-6 -left-6 w-32 h-32 bg-epl-gold/20 rounded-full blur-2xl"></div>
                 <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-epl-blue/10 rounded-full blur-2xl"></div>
@@ -325,13 +325,13 @@ $proximos = $liga ? array_slice(epl_partidos_liga($liga['id'], 'pendiente'), 0, 
     <!-- ==========================================
          5. LA EXPERIENCIA EPL (LÍNEA DE TIEMPO + INSTAGRAM)
          ========================================== -->
-    <section class="py-24 bg-epl-blue text-white px-6 border-t-[6px] border-epl-gold relative overflow-hidden">
+    <section class="py-12 md:py-24 bg-epl-blue text-white px-4 md:px-6 border-t-[6px] border-epl-gold relative overflow-hidden">
         <!-- Luces de fondo decorativas -->
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-4xl bg-epl-gold/5 blur-[100px] pointer-events-none"></div>
 
         <div class="max-w-6xl mx-auto relative z-10">
             
-            <div class="text-center mb-16">
+            <div class="text-center mb-8 md:mb-16">
                 <span class="text-epl-gold font-black text-[10px] uppercase tracking-[0.2em] mb-2 block">¿Cómo funciona?</span>
                 <h2 class="text-4xl md:text-5xl font-primary uppercase tracking-tight">La Experiencia <span class="text-epl-gold">EPL</span></h2>
             </div>
@@ -385,7 +385,7 @@ $proximos = $liga ? array_slice(epl_partidos_liga($liga['id'], 'pendiente'), 0, 
             </div>
 
             <!-- CTA INSTAGRAM -->
-            <div class="mt-20 border-t border-white/10 pt-16 flex flex-col items-center text-center">
+            <div class="mt-10 md:mt-20 border-t border-white/10 pt-8 md:pt-16 flex flex-col items-center text-center">
                 <h3 class="text-3xl md:text-4xl font-primary uppercase tracking-tight text-white mb-4">Descubre más en <span class="text-epl-gold">Instagram</span></h3>
                 <p class="text-gray-400 font-medium mb-10 max-w-xl mx-auto">Para conocer a fondo cómo se vive cada una de nuestras fechas, ver galerías de fotos y contenido exclusivo de la liga, únete a nuestra comunidad online.</p>
                 
@@ -401,8 +401,8 @@ $proximos = $liga ? array_slice(epl_partidos_liga($liga['id'], 'pendiente'), 0, 
     <!-- ==========================================
          6. CTA FINAL
          ========================================== -->
-    <section class="py-24 bg-white px-6 text-center">
-        <div class="max-w-4xl mx-auto bg-gray-50 rounded-[40px] p-10 md:p-16 border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.03)] relative overflow-hidden">
+    <section class="py-10 md:py-24 bg-white px-4 md:px-6 text-center">
+        <div class="max-w-4xl mx-auto bg-gray-50 rounded-[32px] md:rounded-[40px] p-6 md:p-16 border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.03)] relative overflow-hidden">
             <!-- Circulo decorativo -->
             <div class="absolute -top-20 -right-20 w-64 h-64 bg-epl-gold/10 rounded-full blur-3xl pointer-events-none"></div>
 

@@ -94,6 +94,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= epl_url('assets/css/epl.css') ?>">
+  <style>
+    @media (max-width: 640px) {
+      .login-right { padding: 1.5rem; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+      .login-box { padding-top: 1rem !important; padding-bottom: 2rem !important; }
+    }
+  </style>
 </head>
 <body>
 <div class="login-page">
