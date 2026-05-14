@@ -166,18 +166,30 @@ if ($equipo && $liga) {
   <!-- Indicador de cupos -->
   <div class="sup-cupos-bar">
     <div class="sup-cupos-info">
-      <div style="font-family:var(--font-head);font-size:1.4rem;color:var(--navy)"><?= $cupos_usados ?><span style="font-size:.75rem;color:var(--gray-400);font-family:var(--font-body);font-weight:600"> / 2 cupos</span></div>
-      <div style="font-size:.72rem;color:var(--gray-400);text-transform:uppercase;letter-spacing:.08em;font-weight:700">Suplentes registrados</div>
+      <div style="font-family:var(--font-head);font-size:2rem;color:var(--navy);line-height:1">
+        <?= $cupos_usados ?><span style="font-size:1rem;color:var(--gray-400);font-family:var(--font-body);font-weight:600"> / 2</span>
+      </div>
+      <div style="font-size:.65rem;color:var(--gray-400);text-transform:uppercase;letter-spacing:.1em;font-weight:800;margin-top:.15rem">Suplentes activos</div>
     </div>
-    <div class="sup-cupos-pips">
-      <div class="sup-pip <?= $cupos_usados >= 1 ? 'sup-pip-on' : '' ?>"></div>
-      <div class="sup-pip <?= $cupos_usados >= 2 ? 'sup-pip-on' : '' ?>"></div>
+    <div class="sup-cupos-slots">
+      <div class="sup-slot <?= $cupos_usados >= 1 ? 'sup-slot-on' : '' ?>">
+        <?php if ($cupos_usados >= 1): ?>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        <?php endif; ?>
+      </div>
+      <div class="sup-slot <?= $cupos_usados >= 2 ? 'sup-slot-on' : '' ?>">
+        <?php if ($cupos_usados >= 2): ?>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        <?php endif; ?>
+      </div>
     </div>
-    <?php if ($cupos_restantes > 0): ?>
-      <span class="badge badge-jugado"><?= $cupos_restantes ?> cupo<?= $cupos_restantes!=1?'s':'' ?> libre<?= $cupos_restantes!=1?'s':'' ?></span>
-    <?php else: ?>
-      <span class="badge badge-walkover">Cupos completos</span>
-    <?php endif; ?>
+    <div>
+      <?php if ($cupos_restantes > 0): ?>
+        <span class="sup-cupos-badge sup-cupos-libre"><?= $cupos_restantes ?> cupo<?= $cupos_restantes!=1?'s':'' ?> libre<?= $cupos_restantes!=1?'s':'' ?></span>
+      <?php else: ?>
+        <span class="sup-cupos-badge sup-cupos-full">Cupos completos</span>
+      <?php endif; ?>
+    </div>
   </div>
 
   <!-- Info reglas -->
@@ -323,30 +335,112 @@ if ($equipo && $liga) {
 </div>
 
 <style>
-.sup-cupos-bar { display:flex; align-items:center; gap:1.5rem; background:var(--white); border:1px solid var(--gray-100); border-radius:16px; padding:1.25rem 1.5rem; margin-bottom:1rem; box-shadow:0 2px 10px rgba(0,0,0,.03); flex-wrap:wrap; }
-.sup-cupos-info { flex:1; min-width:120px; }
-.sup-cupos-pips { display:flex; gap:.6rem; }
-.sup-pip { width:32px; height:10px; border-radius:5px; background:var(--gray-200); transition:background .3s; }
-.sup-pip-on { background:var(--gold); }
+@keyframes sup-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes sup-modal-in {
+  from { opacity: 0; transform: scale(.93) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
 
-.sup-rules { display:flex; align-items:flex-start; gap:.6rem; background:#fefce8; border:1px solid #fde68a; border-radius:10px; padding:.85rem 1rem; margin-bottom:1.5rem; font-size:.8rem; color:#92400e; }
-.sup-rules svg { flex-shrink:0; margin-top:.1rem; }
+/* Cupos bar */
+.sup-cupos-bar {
+  display: flex; align-items: center; gap: 1.5rem;
+  background: linear-gradient(135deg, var(--white), #fafafa);
+  border: 1px solid var(--gray-100); border-radius: 20px;
+  padding: 1.5rem; margin-bottom: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,.05); flex-wrap: wrap;
+  animation: sup-fade-up .35s ease both;
+}
+.sup-cupos-info { flex: 1; min-width: 110px; }
+.sup-cupos-slots { display: flex; gap: .75rem; }
+.sup-slot {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid var(--gray-200); background: var(--gray-100);
+  display: flex; align-items: center; justify-content: center;
+  color: transparent; transition: all .3s cubic-bezier(.4,0,.2,1);
+}
+.sup-slot-on {
+  background: linear-gradient(135deg, var(--gold), #b8975a);
+  border-color: var(--gold); color: var(--white);
+  box-shadow: 0 4px 14px rgba(201,167,98,.4);
+}
+.sup-cupos-badge {
+  display: inline-flex; align-items: center;
+  padding: .4rem 1rem; border-radius: 20px;
+  font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+}
+.sup-cupos-libre { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534; border: 1px solid #86efac; }
+.sup-cupos-full  { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; border: 1px solid #fca5a5; }
 
-.sup-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
-@media(max-width:768px){ .sup-grid { grid-template-columns:1fr; } }
+/* Reglas */
+.sup-rules {
+  display: flex; align-items: flex-start; gap: .65rem;
+  background: linear-gradient(135deg, #fefce8, #fef9c3);
+  border: 1px solid #fde68a; border-radius: 14px;
+  padding: .9rem 1.1rem; margin-bottom: 1.5rem;
+  font-size: .8rem; color: #92400e;
+  animation: sup-fade-up .35s .05s ease both;
+}
+.sup-rules svg { flex-shrink: 0; margin-top: .1rem; }
 
-.sup-section-title { font-family:var(--font-head); font-size:.82rem; text-transform:uppercase; letter-spacing:.08em; color:var(--navy); margin:0 0 1rem; }
+.sup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+@media(max-width:768px){ .sup-grid { grid-template-columns: 1fr; } }
 
-.sup-card { background:var(--white); border:1px solid var(--gray-100); border-radius:16px; padding:1.25rem; box-shadow:0 2px 10px rgba(0,0,0,.04); }
-.sup-card-top { display:flex; align-items:center; gap:.85rem; margin-bottom:.85rem; }
-.sup-avatar { width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid var(--gold); flex-shrink:0; }
-.sup-progress-track { background:var(--gray-100); border-radius:4px; height:6px; margin-bottom:.85rem; overflow:hidden; }
-.sup-progress-fill { height:6px; border-radius:4px; transition:width .4s ease; }
-.sup-card-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+.sup-section-title {
+  font-family: var(--font-head); font-size: .78rem; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--navy); margin: 0 0 1rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.sup-section-title::after { content: ''; flex: 1; height: 1px; background: var(--gray-100); }
 
-.sup-empty-card { background:var(--white); border:1px dashed var(--gray-200); border-radius:16px; padding:2rem; text-align:center; color:var(--gray-400); }
+/* Suplente card */
+.sup-card {
+  background: var(--white); border: 1px solid var(--gray-100);
+  border-radius: 20px; padding: 1.25rem;
+  box-shadow: 0 4px 18px rgba(0,0,0,.05);
+  transition: box-shadow .2s, transform .2s;
+  position: relative; overflow: hidden;
+  animation: sup-fade-up .4s ease both;
+}
+.sup-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,.1); transform: translateY(-1px); }
+.sup-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold), #b8975a);
+}
+.sup-card-top { display: flex; align-items: center; gap: .9rem; margin-bottom: 1rem; }
+.sup-avatar {
+  width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--gold); flex-shrink: 0;
+  box-shadow: 0 3px 12px rgba(201,167,98,.3);
+}
+.sup-progress-track {
+  background: var(--gray-100); border-radius: 6px; height: 8px;
+  margin-bottom: .85rem; overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.08);
+}
+.sup-progress-fill { height: 8px; border-radius: 6px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+.sup-card-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 
-.sup-add-card { background:var(--white); border:1px solid var(--gray-100); border-radius:16px; padding:1.5rem; box-shadow:0 2px 10px rgba(0,0,0,.04); }
+.sup-empty-card {
+  background: linear-gradient(135deg, #fafafa, var(--white));
+  border: 1.5px dashed var(--gray-200); border-radius: 20px;
+  padding: 2.5rem 2rem; text-align: center; color: var(--gray-400);
+  animation: sup-fade-up .4s ease both;
+}
+
+.sup-add-card {
+  background: var(--white); border: 1px solid var(--gray-100);
+  border-radius: 20px; padding: 1.5rem;
+  box-shadow: 0 4px 18px rgba(0,0,0,.05);
+  animation: sup-fade-up .4s .05s ease both;
+}
+
+/* Modal */
+#modalPartidoSup > div {
+  animation: sup-modal-in .3s cubic-bezier(.4,0,.2,1) both;
+}
 </style>
 
 <script>
