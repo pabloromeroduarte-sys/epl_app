@@ -28,6 +28,7 @@ $repro_con_fecha = $db->query("
     JOIN equipos el ON el.id = p.equipo_local_id
     JOIN equipos ev ON ev.id = p.equipo_visitante_id
     LEFT JOIN recintos r ON r.id = p.recinto_id
+    LEFT JOIN solicitudes_reprogramacion sr ON sr.partido_id = p.id
     WHERE p.estado = 'reprogramado' AND p.fecha_programada IS NOT NULL AND (sr.rival_no_responde = 0 OR sr.rival_no_responde IS NULL)
     ORDER BY p.fecha_programada ASC
 ")->fetchAll();

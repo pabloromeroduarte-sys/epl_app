@@ -108,11 +108,11 @@ $inscripciones = $db->query("
             <tr><td colspan="7" style="padding:2rem;text-align:center;color:var(--gray-400)">No hay inscripciones.</td></tr>
             <?php endif; ?>
             <?php foreach ($inscripciones as $insc):
-              $estBadge = match($insc['estado']) {
-                'aprobada'  => 'badge-jugado',
-                'rechazada' => 'badge-walkover',
-                default     => 'badge-pendiente'
-              };
+              $estBadge = 'badge-pendiente';
+              switch($insc['estado']) {
+                case 'aprobada':  $estBadge = 'badge-jugado'; break;
+                case 'rechazada': $estBadge = 'badge-walkover'; break;
+              }
               $pagoColor = $insc['pago_estado'] === 'pagado' ? '#22c55e' : ($insc['pago_estado'] === 'exento' ? 'var(--gold)' : '#ef4444');
             ?>
             <tr style="border-bottom:1px solid var(--gray-100)">

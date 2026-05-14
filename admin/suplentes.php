@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 $page_title = 'Admin — Suplentes';
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
