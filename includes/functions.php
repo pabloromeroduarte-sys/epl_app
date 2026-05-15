@@ -213,3 +213,52 @@ function epl_get_liga_status(array $liga): string {
     // Fallback al estado manual si no hay fechas o no encaja
     return $liga['estado'] ?? 'inscripcion';
 }
+
+// -------------------------------------------------------
+// Notificaciones
+// -------------------------------------------------------
+
+function epl_notif_crear(int $jugador_id, string $tipo, string $titulo, string $mensaje, string $url = ''): void {
+    $db = epl_db();
+    $st = $db->prepare("INSERT INTO notificaciones (jugador_id, tipo, titulo, mensaje, url) VALUES (?,?,?,?,?)");
+    $st->execute([$jugador_id, $tipo, $titulo, $mensaje, $url ?: null]);
+}
+
+function epl_notif_no_leidas(int $jugador_id): int {
+    $db = epl_db();
+    $st = $db->prepare("SELECT COUNT(*) FROM notificaciones WHERE jugador_id = ? AND leida = 0");
+    $st->execute([$jugador_id]);
+    return (int) $st->fetchColumn();
+}
+
+function epl_notif_listar(int $jugador_id, int $limit = 30): array {
+    $db = epl_db();
+    $st = $db->prepare("SELECT * FROM notificaciones WHERE jugador_id = ? ORDER BY created_at DESC LIMIT ?");
+    $st->execute([$jugador_id, $limit]);
+    return $st->fetchAll();
+}
+
+function epl_notif_marcar_leida(int $id, int $jugador_id): void {
+    $db = epl_db();
+    $st = $db->prepare("UPDATE notificaciones SET leida = 1 WHERE id = ? AND jugador_id = ?");
+    $st->execute([$id, $jugador_id]);
+}
+
+function epl_notif_marcar_todas_leidas(int $jugador_id): void {
+    $db = epl_db();
+    $st = $db->prepare("UPDATE notificaciones SET leida = 1 WHERE jugador_id = ?");
+    $st->execute([$jugador_id]);
+}
+
+function epl_notif_icono(string $tipo): string {
+    return match($tipo) {
+        'resultado'     => '⚽',
+        'reprogramacion'=> '📅',
+        'suplente'      => '👥',
+        'inscripcion'   => '✅',
+        'liga'          => '🏆',
+        'admin'         => '📢',
+        default         => '🔔',
+    };
+}
+

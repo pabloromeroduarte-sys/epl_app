@@ -123,6 +123,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             @mail($to, $subject, $cuerpo, $headers);
         }
 
+        // Notificar a los jugadores del partido
+        $solicitante_nombre = $jugador['nombre'] . ' ' . $jugador['apellido'];
+        $partido_str = $partido['local_nombre'] . ' vs ' . $partido['visitante_nombre'];
+        $fecha_str = $fecha_final ? date('d/m/Y H:i', strtotime($fecha_final)) : 'a coordinar';
+        foreach (array_unique([$partido['l1'], $partido['l2'], $partido['v1'], $partido['v2']]) as $jid_notif) {
+            if ($jid_notif && $jid_notif != $jugador['id']) {
+                epl_notif_crear(
+                    (int)$jid_notif,
+                    'reprogramacion',
+                    "Reprogramación solicitada: {$partido_str}",
+                    "{$solicitante_nombre} solicitó reprogramar el partido para el {$fecha_str}.",
+                    epl_url('mis_torneos.php')
+                );
+            }
+        }
+
         $ok = true;
         $stP->execute([$liga['id'], $equipo['id'], $equipo['id']]);
         $partidos_pendientes = $stP->fetchAll();

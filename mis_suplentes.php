@@ -67,6 +67,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
                     try {
                         $db->prepare("INSERT INTO suplentes (liga_id, equipo_id, jugador_id, registrado_por) VALUES (?,?,?,?)")
                            ->execute([$liga['id'], $equipo['id'], $jugador_id, $jugador['id']]);
+                        // Notificar al suplente
+                        epl_notif_crear(
+                            (int)$jugador_id,
+                            'suplente',
+                            "Fuiste registrado como suplente",
+                            "El equipo {$equipo['nombre']} te registró como suplente en {$liga['nombre']}.",
+                            epl_url('mis_torneos.php')
+                        );
                         $ok = 'Suplente registrado correctamente.';
                         $stS->execute([$equipo['id'], $liga['id']]);
                         $suplentes = $stS->fetchAll();

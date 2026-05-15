@@ -130,7 +130,21 @@ $active  = $active_nav ?? '';
                 <!-- ZONA DE USUARIO DINÁMICA (PHP) -->
                 <div class="flex items-center gap-4">
                   <?php if ($jugador): ?>
-                    <?php $dest = $jugador['rol'] === 'admin' ? epl_url('admin/') : epl_url('dashboard.php'); ?>
+                    <?php
+                      $dest = $jugador['rol'] === 'admin' ? epl_url('admin/') : epl_url('dashboard.php');
+                      $notif_count = epl_notif_no_leidas((int)$jugador['id']);
+                    ?>
+                    <!-- Campana notificaciones -->
+                    <a href="<?= epl_url('notificaciones.php') ?>" class="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors" title="Notificaciones">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-epl-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                      </svg>
+                      <?php if ($notif_count > 0): ?>
+                        <span id="notif-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"><?= $notif_count > 99 ? '99+' : $notif_count ?></span>
+                      <?php else: ?>
+                        <span id="notif-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full min-w-[18px] h-[18px] items-center justify-center px-1 hidden"></span>
+                      <?php endif; ?>
+                    </a>
                     <a href="<?= $dest ?>" class="flex items-center gap-2 group text-decoration-none">
                       <div class="w-10 h-10 rounded-full border-2 border-epl-gold overflow-hidden group-hover:scale-105 transition-transform flex items-center justify-center bg-epl-blue text-white">
                         <img src="<?= epl_h(epl_foto_jugador($jugador['foto'], $jugador['nombre'] . ' ' . $jugador['apellido'])) ?>"
@@ -191,6 +205,26 @@ $active  = $active_nav ?? '';
 <div style="height: 90px;"></div>
 
 <script>
+    // Polling notificaciones cada 60s
+    (function pollNotif() {
+        const badge = document.getElementById('notif-badge');
+        if (!badge) return;
+        setInterval(() => {
+            fetch('<?= epl_url('api/notif_count.php') ?>')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        badge.textContent = data.count > 99 ? '99+' : data.count;
+                        badge.classList.remove('hidden');
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.classList.add('hidden');
+                        badge.style.display = 'none';
+                    }
+                }).catch(() => {});
+        }, 60000);
+    })();
+
     document.addEventListener('DOMContentLoaded', function() {
         const btnOpen = document.getElementById('mobileBtn');
         const btnClose = document.getElementById('closeBtn');

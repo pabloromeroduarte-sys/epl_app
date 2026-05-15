@@ -1380,6 +1380,56 @@ button { cursor: pointer; font-family: inherit; border: none; }
   .tabla-clasificacion th, .tabla-clasificacion td { padding: .6rem .4rem; font-size: .75rem; }
 }
 
+/* ── Admin responsive ───────────────────────────────────── */
+
+/* Filtros admin: full width en mobile */
+@media (max-width: 640px) {
+  .dash-main form[method="get"] { flex-direction: column !important; }
+  .dash-main form[method="get"] > div { width: 100% !important; }
+  .dash-main form[method="get"] input,
+  .dash-main form[method="get"] select { width: 100% !important; box-sizing: border-box; }
+  .dash-header { flex-direction: column; align-items: flex-start !important; }
+  .dash-header > div { width: 100%; }
+  .dash-header .btn { flex: 1; text-align: center; }
+}
+
+/* Tablas admin: scroll horizontal en mobile */
+@media (max-width: 768px) {
+  /* Ocultar columnas secundarias */
+  .admin-table th.hide-mobile,
+  .admin-table td.hide-mobile { display: none !important; }
+
+  /* Cards en lugar de filas */
+  .admin-table-cards thead { display: none; }
+  .admin-table-cards tbody tr {
+    display: block;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: .75rem;
+    padding: .75rem 1rem;
+  }
+  .admin-table-cards tbody td {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .3rem 0;
+    border: none;
+    font-size: .83rem;
+  }
+  .admin-table-cards tbody td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    font-size: .72rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+  .admin-table-cards tbody td:first-child::before { display: none; }
+  .admin-table-cards tbody td:first-child { font-weight: 700; font-size: .9rem; margin-bottom: .25rem; }
+}
+
 /* Ingresar resultado: campo fecha más ancho */
 input[type="datetime-local"].form-control {
   min-width: 0;

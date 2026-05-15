@@ -79,6 +79,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             ]);
 
             epl_recalcular_clasificacion($liga['id']);
+
+            // Notificar al equipo rival
+            $rival_id = $partido['equipo_local_id'] == $equipo['id']
+                ? $partido['equipo_visitante_id']
+                : $partido['equipo_local_id'];
+            $rival_nombre = $partido['equipo_local_id'] == $equipo['id']
+                ? $partido['visitante_nombre']
+                : $partido['local_nombre'];
+            $mi_nombre = $equipo['nombre'];
+            $resultado = "{$sets_local}-{$sets_vis}";
+            $gano = $ganador_id == $equipo['id'];
+
+            // Notificar a jugadores del equipo rival
+            $rivales = $db->prepare("SELECT jugador_id FROM liga_equipos WHERE equipo_id = ? AND liga_id = ?");
+            $rivales->execute([$rival_id, $liga['id']]);
+            foreach ($rivales->fetchAll() as $r) {
+                epl_notif_crear(
+                    (int)$r['jugador_id'],
+                    'resultado',
+                    "Resultado cargado: {$mi_nombre} vs {$rival_nombre}",
+                    ($gano ? "{$mi_nombre} ganó" : "{$rival_nombre} ganó") . " {$resultado}. Verificá el resultado en tus partidos.",
+                    epl_url('mis_torneos.php')
+                );
+            }
+
             $ok = true;
             $st->execute([$liga['id'], $equipo['id'], $equipo['id']]);
             $partidos_pendientes = $st->fetchAll();
