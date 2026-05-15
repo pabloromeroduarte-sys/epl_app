@@ -94,7 +94,7 @@ require_once 'includes/header.php';
       <div class="mt-hero">
         <div>
           <h2 class="mt-hero-title"><?= epl_h($liga['nombre']) ?></h2>
-          <p class="mt-hero-sub"><?= epl_h($liga['temporada']) ?> — <?= $liga['categoria'] ?>ª Cat. <?= ucfirst($liga['sexo']) ?></p>
+          <p class="mt-hero-sub"><?= epl_h($liga['temporada']) ?> — <?= $liga['categoria'] ?>ª Cat. <?= ucfirst($liga['sexo'] ?? '') ?></p>
         </div>
         <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
           <?php if ($mi_pos): ?>
