@@ -8,8 +8,20 @@ $db  = epl_db();
 epl_ensure_ligas_columnas_mp_precio();
 $id  = (int)($_GET['id'] ?? 0);
 $tab = in_array($_GET['tab'] ?? '', ['equipos','partidos']) ? $_GET['tab'] : 'equipos';
-$ok  = '';
-$err = '';
+
+// Flash messages (PRG pattern)
+epl_session_start();
+$ok  = $_SESSION['_ld_ok']  ?? '';  unset($_SESSION['_ld_ok']);
+$err = $_SESSION['_ld_err'] ?? '';  unset($_SESSION['_ld_err']);
+
+// Helper: redirigir con flash y volver a la pestaña correcta
+function ld_redirect(int $id, string $tab, string $ok = '', string $err = ''): void {
+    epl_session_start();
+    if ($ok)  $_SESSION['_ld_ok']  = $ok;
+    if ($err) $_SESSION['_ld_err'] = $err;
+    header("Location: liga_detalle.php?id=$id&tab=$tab");
+    exit;
+}
 
 if (!$id) { header('Location: ligas.php'); exit; }
 
@@ -48,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $p4        = max(0,(int)($_POST['puntos_4']      ?? $liga['puntos_4']));
         $pg        = max(0,(int)($_POST['puntos_grupos'] ?? $liga['puntos_grupos']));
         $sede_txt  = trim($_POST['recinto'] ?? '');
-        if (!$nombre) { $err = 'El nombre es obligatorio.'; }
-        elseif (($parsed = epl_liga_precio_desde_post($_POST, $pErr)) === null) { $err = $pErr; }
+        if (!$nombre) { ld_redirect($id, $tab, '', 'El nombre es obligatorio.'); }
+        elseif (($parsed = epl_liga_precio_desde_post($_POST, $pErr)) === null) { ld_redirect($id, $tab, '', $pErr ?: 'Revisa los datos del precio.'); }
         else {
             [$precio, $precio_neto_deseado, $mp_comision_pct_db] = $parsed;
             $db->prepare("UPDATE ligas SET
@@ -62,8 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                ->execute([$nombre,$tipo,$sexo,$formato,$cat?:null,$estado,$precio,$precio_neto_deseado,$mp_comision_pct_db,
                           $sede_txt?:null,$url_maps?:null,$f_inicio,$f_fin,$i_inicio,$i_fin,
                           $p1,$p2,$p3,$p4,$pg,$recinto_id,$id]);
-            $ok = 'Liga actualizada.';
-            $stL->execute([$id]); $liga = $stL->fetch();
+            ld_redirect($id, $tab, 'Liga actualizada.');
         }
 
     // ── Agregar equipo ──────────────────────────────────────
@@ -71,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $j1     = (int)($_POST['jugador1_id'] ?? 0);
         $j2     = (int)($_POST['jugador2_id'] ?? 0);
         $nombre = trim($_POST['nombre_equipo'] ?? '');
-        if (!$j1 || !$j2 || $j1 === $j2) { $err = 'Selecciona dos jugadores distintos.'; }
+        if (!$j1 || !$j2 || $j1 === $j2) { ld_redirect($id, 'equipos', '', 'Selecciona dos jugadores distintos.'); }
         else {
             if (!$nombre) {
                 $r1 = $db->prepare("SELECT apellido FROM jugadores WHERE id=?"); $r1->execute([$j1]);
@@ -81,16 +92,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $existe = $db->prepare("SELECT e.id FROM equipos e JOIN liga_equipos le ON le.equipo_id=e.id WHERE le.liga_id=? AND ((e.jugador1_id=? AND e.jugador2_id=?) OR (e.jugador1_id=? AND e.jugador2_id=?))");
                 $existe->execute([$id,$j1,$j2,$j2,$j1]);
-                if ($existe->fetch()) { $err = 'Esa pareja ya está inscrita.'; }
+                if ($existe->fetch()) { ld_redirect($id, 'equipos', '', 'Esa pareja ya está inscrita.'); }
                 else {
                     $db->prepare("INSERT INTO equipos (nombre,jugador1_id,jugador2_id) VALUES (?,?,?)")->execute([$nombre,$j1,$j2]);
                     $eid = $db->lastInsertId();
                     $db->prepare("INSERT IGNORE INTO liga_equipos (liga_id,equipo_id) VALUES (?,?)")->execute([$id,$eid]);
                     $db->prepare("INSERT IGNORE INTO clasificacion (liga_id,equipo_id) VALUES (?,?)")->execute([$id,$eid]);
-                    $ok = 'Equipo <strong>'.htmlspecialchars($nombre).'</strong> inscrito.';
+                    ld_redirect($id, 'equipos', 'Equipo <strong>'.htmlspecialchars($nombre).'</strong> inscrito.');
                 }
             } catch (Exception $e) {
-                $err = 'Error al crear equipo.';
+                ld_redirect($id, 'equipos', '', 'Error al crear equipo.');
             }
         }
 
@@ -100,42 +111,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bulk_action = $_POST['bulk_action'] ?? '';
         
         if (empty($partido_ids)) {
-            $err = 'No se seleccionaron partidos.';
+            ld_redirect($id, 'partidos', '', 'No se seleccionaron partidos.');
         } else {
             $ids_str = implode(',', array_map('intval', $partido_ids));
-            
+            $msg = '';
             if ($bulk_action === 'eliminar') {
                 $db->query("DELETE FROM partidos WHERE id IN ($ids_str)");
-                $ok = count($partido_ids) . ' partidos eliminados.';
+                $msg = count($partido_ids) . ' partidos eliminados.';
             } elseif ($bulk_action === 'estado_pendiente') {
                 $db->query("UPDATE partidos SET estado='pendiente', ganador_id=NULL, sets_local=NULL, sets_visitante=NULL WHERE id IN ($ids_str)");
-                $ok = 'Estados actualizados a Pendiente.';
+                $msg = 'Estados actualizados a Pendiente.';
             } elseif ($bulk_action === 'cambiar_recinto') {
                 $rid = (int)($_POST['bulk_recinto_id'] ?? 0) ?: null;
-                $stmt = $db->prepare("UPDATE partidos SET recinto_id=? WHERE id IN ($ids_str)");
-                $stmt->execute([$rid]);
-                $ok = 'Recintos actualizados.';
+                $db->prepare("UPDATE partidos SET recinto_id=? WHERE id IN ($ids_str)")->execute([$rid]);
+                $msg = 'Recintos actualizados.';
             } elseif ($bulk_action === 'cambiar_fecha') {
                 $n_fecha = trim($_POST['bulk_nombre_fecha'] ?? '');
                 $n_jornada = (int)($_POST['bulk_jornada'] ?? 0) ?: null;
                 if ($n_fecha) {
-                    $stmt = $db->prepare("UPDATE partidos SET nombre_fecha=?, jornada=? WHERE id IN ($ids_str)");
-                    $stmt->execute([$n_fecha, $n_jornada]);
-                    $ok = 'Información de jornada actualizada.';
+                    $db->prepare("UPDATE partidos SET nombre_fecha=?, jornada=? WHERE id IN ($ids_str)")->execute([$n_fecha, $n_jornada]);
+                    $msg = 'Información de jornada actualizada.';
                 }
             } elseif ($bulk_action === 'cambiar_fecha_programada') {
                 $n_fecha_prog = trim($_POST['bulk_fecha_programada'] ?? '');
                 if ($n_fecha_prog) {
-                    $stmt = $db->prepare("UPDATE partidos SET fecha_programada=? WHERE id IN ($ids_str)");
-                    $stmt->execute([str_replace('T', ' ', $n_fecha_prog) . ':00']);
-                    $ok = 'Fecha y hora de los partidos actualizada.';
+                    $db->prepare("UPDATE partidos SET fecha_programada=? WHERE id IN ($ids_str)")->execute([str_replace('T', ' ', $n_fecha_prog) . ':00']);
+                    $msg = 'Fecha y hora de los partidos actualizada.';
                 }
             } elseif ($bulk_action === 'poner_alerta') {
                 $alerta = trim($_POST['bulk_alerta'] ?? '');
-                $stmt = $db->prepare("UPDATE partidos SET alerta_admin=? WHERE id IN ($ids_str)");
-                $stmt->execute([$alerta ?: null]);
-                $ok = 'Alertas actualizadas.';
+                $db->prepare("UPDATE partidos SET alerta_admin=? WHERE id IN ($ids_str)")->execute([$alerta ?: null]);
+                $msg = 'Alertas actualizadas.';
             }
+            ld_redirect($id, 'partidos', $msg ?: 'Acción aplicada.');
         }
 
     // ── Quitar equipo ───────────────────────────────────────
@@ -144,17 +152,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($eid) {
             $db->prepare("DELETE FROM liga_equipos WHERE liga_id=? AND equipo_id=?")->execute([$id,$eid]);
             $db->prepare("DELETE FROM clasificacion WHERE liga_id=? AND equipo_id=?")->execute([$id,$eid]);
-            $ok = 'Equipo quitado.';
+            ld_redirect($id, 'equipos', 'Equipo quitado.');
         }
 
     // ── Recalcular clasificación ────────────────────────────
     } elseif ($action === 'recalcular') {
         epl_recalcular_clasificacion($id);
-        $ok = 'Clasificación recalculada.';
+        ld_redirect($id, $tab, 'Clasificación recalculada.');
 
     // ── Asignar puntos ranking ──────────────────────────────
     } elseif ($action === 'asignar_puntos') {
-        if ($liga['estado'] !== 'finalizada') { $err = 'La competición debe estar finalizada.'; }
+        if ($liga['estado'] !== 'finalizada') { ld_redirect($id, $tab, '', 'La competición debe estar finalizada.'); }
         else {
             $rows = $db->prepare("SELECT c.posicion,c.equipo_id,e.jugador1_id,e.jugador2_id FROM clasificacion c JOIN equipos e ON e.id=c.equipo_id WHERE c.liga_id=? ORDER BY c.posicion ASC, c.puntos DESC");
             $rows->execute([$id]);
@@ -171,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $asignados++;
                 }
             }
-            $ok = "Puntos asignados a {$asignados} jugadores.";
+            ld_redirect($id, $tab, "Puntos asignados a {$asignados} jugadores.");
         }
 
     // ── Crear partido ───────────────────────────────────────
@@ -182,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $jornada     = (int)($_POST['jornada']             ?? 0) ?: null;
         $nombre_f    = trim($_POST['nombre_fecha']         ?? '') ?: null;
         $recinto_id  = (int)($_POST['recinto_id']            ?? 0) ?: null;
-        if (!$local_id || !$vis_id || $local_id === $vis_id) { $err = 'Selecciona equipos distintos.'; }
+        if (!$local_id || !$vis_id || $local_id === $vis_id) { ld_redirect($id, 'partidos', '', 'Selecciona equipos distintos.'); }
         else {
             $db->prepare("INSERT INTO partidos (liga_id,equipo_local_id,equipo_visitante_id,jornada,nombre_fecha,recinto_id,fecha_programada) VALUES (?,?,?,?,?,?,?)")
                ->execute([$id,$local_id,$vis_id,$jornada,$nombre_f,$recinto_id,$fecha]);
@@ -190,8 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->prepare("INSERT IGNORE INTO liga_equipos (liga_id,equipo_id) VALUES (?,?)")->execute([$id,$eid]);
                 $db->prepare("INSERT IGNORE INTO clasificacion (liga_id,equipo_id) VALUES (?,?)")->execute([$id,$eid]);
             }
-            $ok = 'Partido creado.';
-            $tab = 'partidos';
+            ld_redirect($id, 'partidos', 'Partido creado.');
         }
 
     // ── Editar resultado ────────────────────────────────────
@@ -219,8 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db->prepare("UPDATE partidos SET estado=?,fecha_programada=?,fecha_jugado=?,jornada=?,nombre_fecha=?,recinto_id=?,sets_local=?,sets_visitante=?,games_s1_local=?,games_s1_visitante=?,games_s2_local=?,games_s2_visitante=?,games_s3_local=?,games_s3_visitante=?,ganador_id=?,alerta_admin=? WHERE id=?")
            ->execute([$est,$fecha_p,$fecha_j?:null,$jornada,$nombre_f,$recinto_id,$sets_l,$sets_v,$sets[1]['l'],$sets[1]['v'],$sets[2]['l'],$sets[2]['v'],$sets[3]['l'],$sets[3]['v'],$ganador_id,$alerta_a,$pid]);
         epl_recalcular_clasificacion($id);
-        $ok  = 'Partido actualizado.';
-        $tab = 'partidos';
+        ld_redirect($id, 'partidos', 'Partido actualizado.');
     }
 }
 
