@@ -99,10 +99,12 @@ _flattenRecintos($_rec_roots, $_rec_children, 0, $todos_recintos, $map_recintos_
   <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
   <main class="dash-main">
-    <div class="dash-header flex justify-between items-center">
+    <div class="dash-header flex justify-between items-center" style="flex-wrap:wrap;gap:.75rem">
       <h1 class="dash-title">Partidos</h1>
-      <button onclick="document.getElementById('modalCrearPartido').style.display='flex'"
-              class="btn btn-primary">+ Partido</button>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;width:100%;max-width:max-content">
+        <button onclick="document.getElementById('modalCrearPartido').style.display='flex'"
+                class="btn btn-primary" style="flex:1;text-align:center">+ Partido</button>
+      </div>
     </div>
 
     <?php if ($ok): ?><div class="alert alert-success"><?= epl_h($ok) ?></div><?php endif; ?>
@@ -161,28 +163,26 @@ _flattenRecintos($_rec_roots, $_rec_children, 0, $todos_recintos, $map_recintos_
 
     <div class="card">
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+        <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.85rem">
           <thead>
             <tr style="background:var(--navy);color:#fff">
-            <tr style="background:var(--navy);color:#fff">
               <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Fecha / Jornada</th>
-              <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Liga</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Liga</th>
               <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Local</th>
               <th style="padding:.7rem 1rem;text-align:center;font-size:.72rem;text-transform:uppercase">Resultado</th>
               <th style="padding:.7rem 1rem;text-align:right;font-size:.72rem;text-transform:uppercase">Visitante</th>
               <th style="padding:.7rem 1rem;text-align:center;font-size:.72rem;text-transform:uppercase">Estado</th>
-              <th style="padding:.7rem 1rem;text-align:center;font-size:.72rem;text-transform:uppercase">Cancha</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;text-align:center;font-size:.72rem;text-transform:uppercase">Cancha</th>
               <th style="padding:.7rem 1rem;text-align:center;font-size:.72rem;text-transform:uppercase">Editar</th>
-            </tr>
             </tr>
           </thead>
           <tbody>
             <?php if (empty($partidos)): ?>
-            <tr><td colspan="7" style="padding:2rem;text-align:center;color:var(--gray-400)">No hay partidos en esta liga.</td></tr>
+            <tr><td colspan="8" style="padding:2rem;text-align:center;color:var(--gray-400)">No hay partidos en esta liga.</td></tr>
             <?php endif; ?>
             <?php foreach ($partidos as $p): ?>
             <tr style="border-bottom:1px solid var(--gray-100)">
-              <td style="padding:.65rem 1rem">
+              <td data-label="Fecha / Jornada" style="padding:.65rem 1rem">
                 <div style="font-weight:700;color:var(--navy);font-size:.75rem">
                   <?= $p['fecha_programada'] ? date('d/m H:i', strtotime($p['fecha_programada'])) : '—' ?>
                 </div>
@@ -190,11 +190,11 @@ _flattenRecintos($_rec_roots, $_rec_children, 0, $todos_recintos, $map_recintos_
                   <?= epl_h($p['nombre_fecha'] ?: 'Jornada '.$p['jornada']) ?>
                 </div>
               </td>
-              <td style="padding:.65rem 1rem;font-size:.75rem;color:var(--gray-600)">
+              <td data-label="Liga" class="hide-mobile" style="padding:.65rem 1rem;font-size:.75rem;color:var(--gray-600)">
                 <?= epl_h($p['liga_nombre']) ?>
               </td>
-              <td style="padding:.65rem 1rem;font-weight:600;color:var(--navy)"><?= epl_h($p['local_nombre']) ?></td>
-              <td style="padding:.65rem 1rem;text-align:center">
+              <td data-label="Local" style="padding:.65rem 1rem;font-weight:600;color:var(--navy)"><?= epl_h($p['local_nombre']) ?></td>
+              <td data-label="Resultado" style="padding:.65rem 1rem;text-align:center">
                 <?php if ($p['estado']==='jugado'): ?>
                   <span style="font-family:var(--font-head);font-size:1rem"><?= $p['sets_local'] ?>–<?= $p['sets_visitante'] ?></span>
                   <?php
@@ -203,15 +203,15 @@ _flattenRecintos($_rec_roots, $_rec_children, 0, $todos_recintos, $map_recintos_
                   if($ss): ?><div style="font-size:.7rem;color:var(--gray-400)"><?= implode(' ',$ss) ?></div><?php endif; ?>
                 <?php else: ?><span style="color:var(--gray-400)">—</span><?php endif; ?>
               </td>
-              <td style="padding:.65rem 1rem;font-weight:600;color:var(--navy);text-align:right"><?= epl_h($p['visitante_nombre']) ?></td>
-              <td style="padding:.65rem 1rem;text-align:center">
+              <td data-label="Visitante" style="padding:.65rem 1rem;font-weight:600;color:var(--navy);text-align:right"><?= epl_h($p['visitante_nombre']) ?></td>
+              <td data-label="Estado" style="padding:.65rem 1rem;text-align:center">
                 <?php $bc=match($p['estado']){'jugado'=>'badge-jugado','pendiente'=>'badge-pendiente','walkover'=>'badge-walkover',default=>'badge-reprog'}; ?>
                 <span class="badge <?= $bc ?>"><?= $p['estado'] ?></span>
               </td>
-              <td style="padding:.65rem 1rem;text-align:center;font-size:.72rem;color:var(--gray-500)">
+              <td data-label="Cancha" class="hide-mobile" style="padding:.65rem 1rem;text-align:center;font-size:.72rem;color:var(--gray-500)">
                 <?= epl_h($p['recinto_id'] ? ($map_recintos_full[$p['recinto_id']] ?? '—') : '—') ?>
               </td>
-              <td style="padding:.65rem 1rem;text-align:center">
+              <td data-label="Editar" style="padding:.65rem 1rem;text-align:center">
                 <button onclick='editarPartido(<?= json_encode($p) ?>)' class="btn btn-sm" style="border:1px solid var(--gray-200);font-size:.72rem">Editar</button>
               </td>
             </tr>

@@ -100,7 +100,9 @@ _flatRecintos($_sr_roots, $_sr_children, 0, $todos_recintos);
         </div>
         <h1 class="dash-title">Recintos</h1>
       </div>
-      <button onclick="document.getElementById('modalCrear').style.display='flex'" class="btn btn-primary btn-sm">+ Nuevo recinto</button>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;width:100%;max-width:max-content">
+        <button onclick="document.getElementById('modalCrear').style.display='flex'" class="btn btn-primary btn-sm" style="flex:1;text-align:center">+ Nuevo recinto</button>
+      </div>
     </div>
 
     <?php if ($ok): ?><div class="alert alert-success"><?= $ok ?></div><?php endif; ?>
@@ -120,14 +122,14 @@ _flatRecintos($_sr_roots, $_sr_children, 0, $todos_recintos);
 
     <div class="card">
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.84rem">
+        <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.84rem">
           <thead>
             <tr style="background:var(--navy);color:#fff">
               <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase">Nombre</th>
-              <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase">Superior</th>
-              <th style="padding:.7rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase">Dirección</th>
-              <th style="padding:.7rem 1rem;text-align:center;font-size:.7rem;text-transform:uppercase">Sub-recintos</th>
-              <th style="padding:.7rem 1rem;text-align:center;font-size:.7rem;text-transform:uppercase">Partidos</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase">Superior</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase">Dirección</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;text-align:center;font-size:.7rem;text-transform:uppercase">Sub-recintos</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;text-align:center;font-size:.7rem;text-transform:uppercase">Partidos</th>
               <th style="padding:.7rem 1rem;font-size:.7rem;text-transform:uppercase"></th>
             </tr>
           </thead>
@@ -139,15 +141,15 @@ _flatRecintos($_sr_roots, $_sr_children, 0, $todos_recintos);
                 $pad    = $depth * 1.5;
             ?>
             <tr style="border-bottom:1px solid var(--gray-100);<?= $depth>0?'background:var(--gray-50)':'' ?>">
-              <td style="padding:.65rem 1rem;padding-left:<?= 1 + $pad ?>rem">
+              <td data-label="Nombre" style="padding:.65rem 1rem;padding-left:<?= 1 + $pad ?>rem">
                 <span style="font-weight:<?= $depth===0?'700':'600' ?>;color:var(--navy)">
                   <?= $prefix . epl_h($r['nombre']) ?>
                 </span>
               </td>
-              <td style="padding:.65rem 1rem;font-size:.8rem;color:var(--gray-500)">
+              <td data-label="Superior" class="hide-mobile" style="padding:.65rem 1rem;font-size:.8rem;color:var(--gray-500)">
                 <?= $r['superior_nombre'] ? epl_h($r['superior_nombre']) : '<span style="color:var(--gray-300)">—</span>' ?>
               </td>
-              <td style="padding:.65rem 1rem;font-size:.8rem;color:var(--gray-600)">
+              <td data-label="Dirección" class="hide-mobile" style="padding:.65rem 1rem;font-size:.8rem;color:var(--gray-600)">
                 <?php if ($r['direccion']): ?>
                   <?= epl_h($r['direccion']) ?>
                   <?php if ($r['url_maps']): ?>
@@ -157,17 +159,17 @@ _flatRecintos($_sr_roots, $_sr_children, 0, $todos_recintos);
                   <span style="color:var(--gray-300)">—</span>
                 <?php endif; ?>
               </td>
-              <td style="padding:.65rem 1rem;text-align:center;color:var(--gray-500)">
+              <td data-label="Sub-recintos" class="hide-mobile" style="padding:.65rem 1rem;text-align:center;color:var(--gray-500)">
                 <?= $r['total_hijos'] ?: '—' ?>
               </td>
-              <td style="padding:.65rem 1rem;text-align:center">
+              <td data-label="Partidos" class="hide-mobile" style="padding:.65rem 1rem;text-align:center">
                 <?php if ($r['total_partidos'] > 0): ?>
                   <span style="font-weight:700;color:var(--navy)"><?= $r['total_partidos'] ?></span>
                 <?php else: ?>
                   <span style="color:var(--gray-300)">—</span>
                 <?php endif; ?>
               </td>
-              <td style="padding:.65rem 1rem">
+              <td data-label="Acciones" style="padding:.65rem 1rem">
                 <div style="display:flex;gap:.35rem;justify-content:flex-end">
                   <button onclick='showEditar(<?= json_encode($r) ?>)'
                           class="btn btn-sm" style="border:1px solid var(--gold);color:var(--gold-dark);font-size:.7rem">Editar</button>

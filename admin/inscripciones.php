@@ -91,13 +91,13 @@ $inscripciones = $db->query("
 
     <div class="card">
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+        <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.85rem">
           <thead>
             <tr style="background:var(--navy);color:#fff">
               <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Jugador</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Liga</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Equipo</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Fecha</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Liga</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Equipo</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Fecha</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Estado</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Pago</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Acciones</th>
@@ -116,20 +116,20 @@ $inscripciones = $db->query("
               $pagoColor = $insc['pago_estado'] === 'pagado' ? '#22c55e' : ($insc['pago_estado'] === 'exento' ? 'var(--gold)' : '#ef4444');
             ?>
             <tr style="border-bottom:1px solid var(--gray-100)">
-              <td style="padding:.7rem 1rem">
+              <td data-label="Jugador" style="padding:.7rem 1rem">
                 <div style="font-weight:700;color:var(--navy)"><?= epl_h($insc['j_nombre'].' '.$insc['j_apellido']) ?></div>
                 <div style="font-size:.72rem;color:var(--gray-400)"><?= epl_h($insc['j_email']) ?></div>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center;color:var(--gray-600);font-size:.82rem"><?= epl_h($insc['liga_nombre']) ?></td>
-              <td style="padding:.7rem 1rem;text-align:center;color:var(--gray-600);font-size:.82rem"><?= $insc['equipo_nombre'] ? epl_h($insc['equipo_nombre']) : '<span style="color:var(--gray-400)">—</span>' ?></td>
-              <td style="padding:.7rem 1rem;text-align:center;color:var(--gray-400);font-size:.78rem"><?= date('d/m/Y', strtotime($insc['fecha'])) ?></td>
-              <td style="padding:.7rem 1rem;text-align:center">
+              <td data-label="Liga" class="hide-mobile" style="padding:.7rem 1rem;text-align:center;color:var(--gray-600);font-size:.82rem"><?= epl_h($insc['liga_nombre']) ?></td>
+              <td data-label="Equipo" class="hide-mobile" style="padding:.7rem 1rem;text-align:center;color:var(--gray-600);font-size:.82rem"><?= $insc['equipo_nombre'] ? epl_h($insc['equipo_nombre']) : '<span style="color:var(--gray-400)">—</span>' ?></td>
+              <td data-label="Fecha" class="hide-mobile" style="padding:.7rem 1rem;text-align:center;color:var(--gray-400);font-size:.78rem"><?= date('d/m/Y', strtotime($insc['fecha'])) ?></td>
+              <td data-label="Estado" style="padding:.7rem 1rem;text-align:center">
                 <span class="badge <?= $estBadge ?>"><?= ucfirst($insc['estado']) ?></span>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center;font-size:.78rem;font-weight:700;color:<?= $pagoColor ?>">
+              <td data-label="Pago" style="padding:.7rem 1rem;text-align:center;font-size:.78rem;font-weight:700;color:<?= $pagoColor ?>">
                 <?= ucfirst($insc['pago_estado']) ?>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center">
+              <td data-label="Acciones" style="padding:.7rem 1rem;text-align:center">
                 <div style="display:flex;gap:.4rem;justify-content:center;flex-wrap:wrap">
                   <?php if ($insc['estado'] === 'pendiente'): ?>
                     <form method="post" style="display:inline">

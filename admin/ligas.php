@@ -86,7 +86,9 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
   <main class="dash-main">
     <div class="dash-header flex justify-between items-center" style="flex-wrap:wrap;gap:.75rem">
       <h1 class="dash-title">Ligas y Torneos</h1>
-      <button onclick="document.getElementById('modalCrear').style.display='flex'" class="btn btn-primary btn-sm">+ Nueva competición</button>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;width:100%;max-width:max-content">
+        <button onclick="document.getElementById('modalCrear').style.display='flex'" class="btn btn-primary btn-sm" style="flex:1;text-align:center">+ Nueva competición</button>
+      </div>
     </div>
 
     <?php if ($ok): ?><div class="alert alert-success"><?= $ok ?></div><?php endif; ?>
@@ -94,14 +96,14 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
 
     <div class="card">
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.84rem">
+        <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.84rem">
           <thead>
             <tr style="background:var(--navy);color:#fff">
               <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Competición</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Tipo</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Recinto</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Fechas</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Equipos</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Tipo</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Recinto</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Fechas</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Equipos</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Estado</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Acciones</th>
             </tr>
@@ -109,16 +111,16 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
           <tbody>
             <?php foreach ($ligas as $l): ?>
             <tr style="border-bottom:1px solid var(--gray-100)">
-              <td style="padding:.7rem 1rem">
+              <td data-label="Competición" style="padding:.7rem 1rem">
                 <div style="font-weight:700;color:var(--navy)"><?= epl_h($l['nombre']) ?></div>
                 <div style="font-size:.7rem;color:var(--gray-400);margin-top:.15rem"><?= $fmt_label[$l['formato']] ?? '' ?> · <?= $l['categoria'] ? $l['categoria'].'ª cat.' : '' ?></div>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center">
+              <td data-label="Tipo" class="hide-mobile" style="padding:.7rem 1rem;text-align:center">
                 <span class="badge <?= $l['tipo']==='liga'?'badge-pendiente':'badge-reprog' ?>">
                   <?= $tipo_label[$l['tipo']] ?>
                 </span>
               </td>
-              <td style="padding:.7rem 1rem;font-size:.8rem;color:var(--gray-600)">
+              <td data-label="Recinto" class="hide-mobile" style="padding:.7rem 1rem;font-size:.8rem;color:var(--gray-600)">
                 <?php if ($l['recinto_nombre']): ?>
                   <div style="font-weight:600;color:var(--navy)"><?= epl_h($l['recinto_nombre']) ?></div>
                   <?php if ($l['recinto_superior_nombre']): ?>
@@ -128,18 +130,18 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
                   <?= epl_h($l['sede']) ?>
                 <?php else: ?>—<?php endif; ?>
               </td>
-              <td style="padding:.7rem 1rem;font-size:.78rem;color:var(--gray-600);white-space:nowrap">
+              <td data-label="Fechas" class="hide-mobile" style="padding:.7rem 1rem;font-size:.78rem;color:var(--gray-600);white-space:nowrap">
                 <?= $l['fecha_inicio'] ? date('d/m/Y', strtotime($l['fecha_inicio'])) : '—' ?>
                 <?php if ($l['fecha_fin']): ?>
                   <br><?= date('d/m/Y', strtotime($l['fecha_fin'])) ?>
                 <?php endif; ?>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center;font-weight:700;color:var(--navy)">
+              <td data-label="Equipos" class="hide-mobile" style="padding:.7rem 1rem;text-align:center;font-weight:700;color:var(--navy)">
                 <?= $l['total_equipos'] ?>
                 <div style="font-size:.7rem;font-weight:400;color:var(--gray-400)"><?= $l['total_partidos'] ?> partidos</div>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center">
-                <?php 
+              <td data-label="Estado" style="padding:.7rem 1rem;text-align:center">
+                <?php
                 $est_auto = epl_get_liga_status($l);
                 $labels = [
                   'proximamente'=>'Próximamente',
@@ -152,7 +154,7 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
                   <?= $labels[$est_auto] ?? $est_auto ?>
                 </span>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center">
+              <td data-label="Acciones" style="padding:.7rem 1rem;text-align:center">
                 <a href="liga_detalle.php?id=<?= $l['id'] ?>" class="btn btn-sm" style="background:var(--navy);color:#fff;font-size:.72rem">
                   Gestionar →
                 </a>

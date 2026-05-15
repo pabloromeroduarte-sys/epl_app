@@ -48,9 +48,11 @@ $jugadores = $db->query("SELECT id,nombre,apellido FROM jugadores WHERE estado='
   <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
   <main class="dash-main">
-    <div class="dash-header flex justify-between items-center">
+    <div class="dash-header flex justify-between items-center" style="flex-wrap:wrap;gap:.75rem">
       <h1 class="dash-title">Equipos</h1>
-      <button onclick="document.getElementById('modalCrearEquipo').style.display='flex'" class="btn btn-primary">+ Nuevo equipo</button>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;width:100%;max-width:max-content">
+        <button onclick="document.getElementById('modalCrearEquipo').style.display='flex'" class="btn btn-primary" style="flex:1;text-align:center">+ Nuevo equipo</button>
+      </div>
     </div>
 
     <?php if ($ok): ?><div class="alert alert-success"><?= epl_h($ok) ?></div><?php endif; ?>
@@ -58,22 +60,22 @@ $jugadores = $db->query("SELECT id,nombre,apellido FROM jugadores WHERE estado='
 
     <div class="card">
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+        <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.85rem">
           <thead>
             <tr style="background:var(--navy);color:#fff">
               <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Equipo</th>
-              <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Jugador 1</th>
-              <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Jugador 2</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Jugador 1</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Jugador 2</th>
               <th style="padding:.7rem 1rem;text-align:center;font-size:.72rem;text-transform:uppercase">Estado</th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($equipos as $e): ?>
             <tr style="border-bottom:1px solid var(--gray-100)">
-              <td style="padding:.7rem 1rem;font-weight:700;color:var(--navy)"><?= epl_h($e['nombre']) ?></td>
-              <td style="padding:.7rem 1rem"><?= epl_h($e['j1n'].' '.$e['j1a']) ?></td>
-              <td style="padding:.7rem 1rem"><?= epl_h($e['j2n'].' '.$e['j2a']) ?></td>
-              <td style="padding:.7rem 1rem;text-align:center">
+              <td data-label="Equipo" style="padding:.7rem 1rem;font-weight:700;color:var(--navy)"><?= epl_h($e['nombre']) ?></td>
+              <td data-label="Jugador 1" class="hide-mobile" style="padding:.7rem 1rem"><?= epl_h($e['j1n'].' '.$e['j1a']) ?></td>
+              <td data-label="Jugador 2" class="hide-mobile" style="padding:.7rem 1rem"><?= epl_h($e['j2n'].' '.$e['j2a']) ?></td>
+              <td data-label="Estado" style="padding:.7rem 1rem;text-align:center">
                 <span class="badge <?= $e['estado']==='activo'?'badge-jugado':'badge-walkover' ?>"><?= $e['estado'] ?></span>
               </td>
             </tr>

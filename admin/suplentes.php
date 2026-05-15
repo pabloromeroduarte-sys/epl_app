@@ -56,13 +56,13 @@ if ($filtro_liga) {
     <?php if ($filtro_liga): ?>
     <div class="card">
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+        <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.85rem">
           <thead>
             <tr style="background:var(--navy);color:#fff">
               <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Suplente</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Equipo</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Nivel</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Partidos jugados</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Nivel</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Partidos jugados</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Estado</th>
             </tr>
           </thead>
@@ -72,13 +72,13 @@ if ($filtro_liga) {
               $pct = min(100, round($pj/9*100));
             ?>
             <tr style="border-bottom:1px solid var(--gray-100)">
-              <td style="padding:.7rem 1rem">
+              <td data-label="Suplente" style="padding:.7rem 1rem">
                 <div style="font-weight:700;color:var(--navy)"><?= epl_h($s['j_nombre'].' '.$s['j_apellido']) ?></div>
                 <?php if ($s['j_alias']): ?><div style="font-size:.7rem;color:var(--gold)">"<?= epl_h($s['j_alias']) ?>"</div><?php endif; ?>
               </td>
-              <td style="padding:.7rem 1rem;color:var(--gray-600)"><?= epl_h($s['equipo_nombre']) ?></td>
-              <td style="padding:.7rem 1rem;text-align:center"><?= $s['j_nivel'] ?>ª</td>
-              <td style="padding:.7rem 1rem;min-width:180px">
+              <td data-label="Equipo" style="padding:.7rem 1rem;color:var(--gray-600)"><?= epl_h($s['equipo_nombre']) ?></td>
+              <td data-label="Nivel" class="hide-mobile" style="padding:.7rem 1rem;text-align:center"><?= $s['j_nivel'] ?>ª</td>
+              <td data-label="Partidos jugados" class="hide-mobile" style="padding:.7rem 1rem;min-width:180px">
                 <div style="display:flex;align-items:center;gap:.75rem">
                   <div style="flex:1;background:var(--gray-200);border-radius:4px;height:8px">
                     <div style="width:<?= $pct ?>%;background:<?= $pj>=9?'var(--red)':($pj>=7?'var(--gold)':'var(--green)') ?>;height:8px;border-radius:4px"></div>
@@ -86,7 +86,7 @@ if ($filtro_liga) {
                   <span style="font-weight:700;font-size:.88rem;color:<?= $pj>=9?'var(--red)':'var(--navy)' ?>"><?= $pj ?>/9</span>
                 </div>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center">
+              <td data-label="Estado" style="padding:.7rem 1rem;text-align:center">
                 <span class="badge <?= $pj>=9?'badge-walkover':'badge-jugado' ?>">
                   <?= $pj>=9?'Máximo alcanzado':'Activo' ?>
                 </span>

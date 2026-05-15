@@ -69,36 +69,36 @@ require_once '../includes/header.php';
     
     <div class="card">
         <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+            <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.85rem">
                 <thead>
                     <tr style="background:var(--gray-100);color:var(--navy)">
                         <th style="padding:.75rem 1rem;text-align:left">Liga / Jornada</th>
                         <th style="padding:.75rem 1rem;text-align:left">Partido</th>
-                        <th style="padding:.75rem 1rem;text-align:left">Motivo / Alerta</th>
-                        <th style="padding:.75rem 1rem;text-align:center">Solicitado</th>
+                        <th class="hide-mobile" style="padding:.75rem 1rem;text-align:left">Motivo / Alerta</th>
+                        <th class="hide-mobile" style="padding:.75rem 1rem;text-align:center">Solicitado</th>
                         <th style="padding:.75rem 1rem;text-align:center">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($repro_sin_fecha as $p): ?>
                     <tr style="border-bottom:1px solid var(--gray-100)">
-                        <td style="padding:.8rem 1rem">
+                        <td data-label="Liga / Jornada" style="padding:.8rem 1rem">
                             <div style="font-weight:700;color:var(--navy)"><?= epl_h($p['liga_nombre']) ?></div>
                             <div style="font-size:.7rem;color:var(--gray-400)"><?= epl_h($p['nombre_fecha']) ?></div>
                         </td>
-                        <td style="padding:.8rem 1rem">
+                        <td data-label="Partido" style="padding:.8rem 1rem">
                             <div style="font-weight:600;color:var(--navy)"><?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?></div>
                         </td>
-                        <td style="padding:.8rem 1rem">
+                        <td data-label="Motivo / Alerta" class="hide-mobile" style="padding:.8rem 1rem">
                             <?php if ($p['rival_no_responde']): ?>
                                 <span class="badge badge-walkover" style="font-size:.65rem">RIVAL NO RESPONDE</span>
                             <?php endif; ?>
                             <div style="font-size:.75rem;color:var(--gray-600);margin-top:.2rem italic"><?= epl_h($p['motivo'] ?: 'Sin motivo especificado') ?></div>
                         </td>
-                        <td style="padding:.8rem 1rem;text-align:center;color:var(--gray-500);font-size:.75rem">
+                        <td data-label="Solicitado" class="hide-mobile" style="padding:.8rem 1rem;text-align:center;color:var(--gray-500);font-size:.75rem">
                             <?= $p['fecha_solicitud'] ? date('d/m/Y', strtotime($p['fecha_solicitud'])) : '—' ?>
                         </td>
-                        <td style="padding:.8rem 1rem;text-align:center">
+                        <td data-label="Acción" style="padding:.8rem 1rem;text-align:center">
                             <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn btn-sm btn-navy">Gestionar</a>
                         </td>
                     </tr>
@@ -118,32 +118,32 @@ require_once '../includes/header.php';
 
     <div class="card">
         <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+            <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.85rem">
                 <thead>
                     <tr style="background:var(--gray-100);color:var(--navy)">
                         <th style="padding:.75rem 1rem;text-align:left">Nueva Fecha</th>
                         <th style="padding:.75rem 1rem;text-align:left">Partido</th>
-                        <th style="padding:.75rem 1rem;text-align:left">Liga</th>
-                        <th style="padding:.75rem 1rem;text-align:left">Cancha</th>
+                        <th class="hide-mobile" style="padding:.75rem 1rem;text-align:left">Liga</th>
+                        <th class="hide-mobile" style="padding:.75rem 1rem;text-align:left">Cancha</th>
                         <th style="padding:.75rem 1rem;text-align:center">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($repro_con_fecha as $p): ?>
                     <tr style="border-bottom:1px solid var(--gray-100)">
-                        <td style="padding:.8rem 1rem">
+                        <td data-label="Nueva Fecha" style="padding:.8rem 1rem">
                             <div style="font-weight:700;color:var(--gold)"><?= date('d/m H:i', strtotime($p['fecha_programada'])) ?></div>
                         </td>
-                        <td style="padding:.8rem 1rem">
+                        <td data-label="Partido" style="padding:.8rem 1rem">
                             <div style="font-weight:600;color:var(--navy)"><?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?></div>
                         </td>
-                        <td style="padding:.8rem 1rem;color:var(--gray-600)">
+                        <td data-label="Liga" class="hide-mobile" style="padding:.8rem 1rem;color:var(--gray-600)">
                             <?= epl_h($p['liga_nombre']) ?>
                         </td>
-                        <td style="padding:.8rem 1rem;font-size:.75rem;color:var(--gray-500)">
+                        <td data-label="Cancha" class="hide-mobile" style="padding:.8rem 1rem;font-size:.75rem;color:var(--gray-500)">
                             <?= epl_h($p['recinto_nombre'] ?: 'No asignada') ?>
                         </td>
-                        <td style="padding:.8rem 1rem;text-align:center">
+                        <td data-label="Acción" style="padding:.8rem 1rem;text-align:center">
                             <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn btn-sm" style="border:1px solid var(--gray-200)">Ver</a>
                         </td>
                     </tr>
