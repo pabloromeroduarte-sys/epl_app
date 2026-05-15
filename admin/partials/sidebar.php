@@ -85,3 +85,16 @@ $cur = basename($_SERVER['PHP_SELF']);
     </a>
   </div>
 </nav>
+<script>
+// Centrar el ítem activo en la barra de navegación inferior al cargar la página
+(function () {
+  var nav = document.querySelector('.dash-bottom-nav-inner');
+  var active = document.querySelector('.dash-bottom-link.active');
+  if (!nav || !active) return;
+  // Calcular offset para centrar el ítem activo
+  var navW    = nav.offsetWidth;
+  var itemLeft = active.offsetLeft;
+  var itemW    = active.offsetWidth;
+  nav.scrollLeft = itemLeft - (navW / 2) + (itemW / 2);
+})();
+</script>
