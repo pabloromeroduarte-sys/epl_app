@@ -338,6 +338,54 @@ $total_partidos = count($partidos);
 $total_equipos  = count($equipos_liga);
 ?>
 <?php require_once '../includes/header.php'; ?>
+<style>
+/* ── Liga Detalle — Responsive ───────────────────────── */
+.ld-header-body   { display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem }
+.ld-header-info   { flex:1;min-width:0 }
+.ld-header-acts   { display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-start;flex-shrink:0 }
+.ld-tabs          { display:flex;gap:0;border-bottom:2px solid var(--gray-200);margin-bottom:1.5rem;overflow-x:auto }
+.ld-tabs a        { white-space:nowrap }
+.ld-filtros-form  { display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end }
+.ld-filtros-form > div { min-width:130px }
+
+/* Equipos: tabla en desktop, cards en móvil */
+.equipos-table-wrap { display:block }
+.equipos-cards      { display:none }
+
+/* Partidos: columnas opcionales */
+.pc-cancha, .pc-jornada { }
+
+/* Bulk bar móvil */
+.bulk-inner { display:flex;align-items:center;gap:.75rem;flex-wrap:wrap }
+
+@media (max-width:700px) {
+  .ld-header-acts        { width:100%;justify-content:stretch }
+  .ld-header-acts .btn   { flex:1;justify-content:center;text-align:center }
+  .ld-tabs a             { padding:.6rem .9rem !important;font-size:.75rem !important }
+
+  /* Equipos → cards */
+  .equipos-table-wrap    { display:none }
+  .equipos-cards         { display:block }
+
+  /* Partidos → ocultar cols pesadas */
+  .pc-cancha, .pc-jornada { display:none !important }
+
+  /* Filtros */
+  .ld-filtros-form > div { flex:1 1 100% }
+  .ld-filtros-form select,
+  .ld-filtros-form input  { width:100% !important }
+
+  /* Bulk bar */
+  .bulk-inner select { font-size:.72rem }
+}
+@media (max-width:700px) {
+  .pc-local, .pc-visitante { display:none !important }
+  .pc-mobile-teams { display:block !important }
+}
+@media (max-width:480px) {
+  .pc-result-score { font-size:.85rem !important }
+}
+</style>
 
 <div class="dash-layout">
   <?php include __DIR__ . '/partials/sidebar.php'; ?>
@@ -356,16 +404,16 @@ $total_equipos  = count($equipos_liga);
 
     <!-- ── Header liga ─────────────────────────────────── -->
     <div class="card mb-3">
-      <div class="card-body" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
-        <div>
+      <div class="card-body ld-header-body">
+        <div class="ld-header-info">
           <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.5rem">
-            <h2 style="font-family:var(--font-head);font-size:1.4rem;color:var(--navy);margin:0"><?= epl_h($liga['nombre']) ?></h2>
+            <h2 style="font-family:var(--font-head);font-size:1.3rem;color:var(--navy);margin:0;word-break:break-word"><?= epl_h($liga['nombre']) ?></h2>
             <span class="badge <?= $liga['tipo']==='liga'?'badge-pendiente':'badge-reprog' ?>"><?= $tipo_label[$liga['tipo']] ?></span>
             <span class="badge <?= $liga['estado']==='activa'?'badge-jugado':($liga['estado']==='finalizada'?'badge-walkover':'badge-pendiente') ?>">
               <?= ucfirst($liga['estado']) ?>
             </span>
           </div>
-          <div style="font-size:.83rem;color:var(--gray-600);display:flex;flex-wrap:wrap;gap:1.25rem">
+          <div style="font-size:.82rem;color:var(--gray-600);display:flex;flex-wrap:wrap;gap:.75rem 1.25rem">
             <?php if ($liga['sede']): ?><span>📍 <?= epl_h($liga['sede']) ?><?php if ($liga['url_maps']): ?> <a href="<?= epl_h($liga['url_maps']) ?>" target="_blank" style="color:var(--gold)">↗</a><?php endif; ?></span><?php endif; ?>
             <?php if ($liga['fecha_inicio']): ?><span>🗓 <?= date('d/m/Y',strtotime($liga['fecha_inicio'])) ?><?= $liga['fecha_fin'] ? ' → '.date('d/m/Y',strtotime($liga['fecha_fin'])) : '' ?></span><?php endif; ?>
             <span>🏆 <?= $fmt_label[$liga['formato']] ?></span>
@@ -375,15 +423,15 @@ $total_equipos  = count($equipos_liga);
             Puntos ranking: 🥇<?= $liga['puntos_1'] ?> · 🥈<?= $liga['puntos_2'] ?> · 🥉<?= $liga['puntos_3'] ?> · 4°<?= $liga['puntos_4'] ?> · Part.<?= $liga['puntos_grupos'] ?>
           </div>
         </div>
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-start">
+        <div class="ld-header-acts">
           <button onclick="document.getElementById('modalEditar').style.display='flex'"
                   class="btn btn-sm" style="border:1px solid var(--navy);color:var(--navy)">✏ Editar</button>
-          <form method="post" style="display:inline">
+          <form method="post" style="display:contents">
             <input type="hidden" name="action" value="recalcular">
             <button type="submit" class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600)">↺ Recalcular</button>
           </form>
           <?php if ($liga['estado']==='finalizada'): ?>
-          <form method="post" style="display:inline">
+          <form method="post" style="display:contents">
             <input type="hidden" name="action" value="asignar_puntos">
             <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('¿Asignar puntos de ranking a todos los jugadores?')">🏅 Asignar puntos</button>
           </form>
@@ -393,7 +441,7 @@ $total_equipos  = count($equipos_liga);
     </div>
 
     <!-- ── Sub-tabs ─────────────────────────────────────── -->
-    <div style="display:flex;gap:0;border-bottom:2px solid var(--gray-200);margin-bottom:1.5rem">
+    <div class="ld-tabs">
       <a href="liga_detalle.php?id=<?= $id ?>&tab=equipos"
          style="padding:.65rem 1.5rem;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;border-bottom:3px solid <?= $tab==='equipos'?'var(--gold)':'transparent' ?>;color:<?= $tab==='equipos'?'var(--navy)':'var(--gray-400)' ?>;margin-bottom:-2px">
         Equipos <span style="font-size:.75rem;font-weight:400">(<?= $total_equipos ?>)</span>
@@ -414,7 +462,8 @@ $total_equipos  = count($equipos_liga);
     </div>
 
     <div class="card">
-      <div style="overflow-x:auto">
+      <!-- ── Vista desktop: tabla ── -->
+      <div class="equipos-table-wrap" style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:.83rem">
           <thead>
             <tr style="background:var(--navy);color:#fff">
@@ -463,6 +512,48 @@ $total_equipos  = count($equipos_liga);
           </tbody>
         </table>
       </div>
+
+      <!-- ── Vista móvil: cards ── -->
+      <div class="equipos-cards">
+        <?php if (empty($equipos_liga)): ?>
+          <p style="padding:2rem;text-align:center;color:var(--gray-400)">Sin equipos inscritos.</p>
+        <?php endif; ?>
+        <?php foreach ($equipos_liga as $e): ?>
+        <div style="border-bottom:1px solid var(--gray-100);padding:.85rem 1rem">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;color:var(--navy);font-size:.9rem;margin-bottom:.4rem"><?= epl_h($e['nombre']) ?></div>
+              <div style="display:flex;align-items:center;gap:.35rem;margin-bottom:.25rem">
+                <img src="<?= epl_h(epl_foto_jugador($e['j1foto'],$e['j1n'].' '.$e['j1a'])) ?>" style="width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0">
+                <span style="font-size:.8rem;color:var(--gray-700)"><?= epl_h($e['j1n'].' '.$e['j1a']) ?></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:.35rem">
+                <img src="<?= epl_h(epl_foto_jugador($e['j2foto'],$e['j2n'].' '.$e['j2a'])) ?>" style="width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0">
+                <span style="font-size:.8rem;color:var(--gray-700)"><?= epl_h($e['j2n'].' '.$e['j2a']) ?></span>
+              </div>
+            </div>
+            <div style="text-align:center;flex-shrink:0">
+              <div style="font-size:1.3rem;font-weight:800;color:var(--gold);line-height:1"><?= $e['posicion'] ?: '—' ?></div>
+              <div style="font-size:.6rem;text-transform:uppercase;color:var(--gray-400)">Pos</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.6rem">
+            <div style="display:flex;gap:1rem;font-size:.78rem">
+              <span>PJ <strong><?= $e['pj']??0 ?></strong></span>
+              <span style="color:#16a34a">PG <strong><?= $e['pg']??0 ?></strong></span>
+              <span style="color:#dc2626">PP <strong><?= $e['pp']??0 ?></strong></span>
+              <span>Pts <strong style="color:var(--navy)"><?= $e['pts_tabla']??0 ?></strong></span>
+            </div>
+            <form method="post" style="display:inline">
+              <input type="hidden" name="action" value="quitar_equipo">
+              <input type="hidden" name="equipo_id" value="<?= $e['id'] ?>">
+              <button type="submit" class="btn btn-sm" style="border:1px solid #dc2626;color:#dc2626;font-size:.65rem;padding:.2rem .5rem"
+                      onclick="return confirm('¿Quitar este equipo?')">Quitar</button>
+            </form>
+          </div>
+        </div>
+        <?php endforeach; ?>
+      </div>
     </div>
 
     <?php if ($ranking_asignado): ?>
@@ -505,33 +596,33 @@ $total_equipos  = count($equipos_liga);
 
     <!-- Filtros -->
     <div class="card mb-3" style="padding:.75rem 1.25rem">
-      <form method="get" style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end">
+      <form method="get" class="ld-filtros-form">
         <input type="hidden" name="id" value="<?= $id ?>">
         <input type="hidden" name="tab" value="partidos">
-        <div style="flex:1;min-width:200px">
+        <div style="flex:1;min-width:160px">
           <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Buscar Jugador / Equipo</label>
           <input type="text" name="search" class="form-control" placeholder="Ej: Perez Gomez" value="<?= epl_h($f_search) ?>">
         </div>
-        <div>
-          <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Fecha / Jornada</label>
-          <select name="fecha" class="form-control" style="width:auto">
+        <div style="min-width:120px">
+          <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Fecha</label>
+          <select name="fecha" class="form-control">
             <option value="">Todas</option>
             <?php foreach ($fechas_disponibles as $fn): ?>
               <option value="<?= epl_h($fn) ?>" <?= $f_fecha===$fn?'selected':'' ?>><?= epl_h($fn) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
-        <div>
+        <div style="min-width:110px">
           <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Desde</label>
           <input type="date" name="desde" class="form-control" value="<?= epl_h($f_desde) ?>">
         </div>
-        <div>
+        <div style="min-width:110px">
           <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Hasta</label>
           <input type="date" name="hasta" class="form-control" value="<?= epl_h($f_hasta) ?>">
         </div>
-        <div>
+        <div style="min-width:110px">
           <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Estado</label>
-          <select name="estado_p" class="form-control" style="width:auto">
+          <select name="estado_p" class="form-control">
             <option value="">Todos</option>
             <option value="pendiente"    <?= $f_est==='pendiente'    ?'selected':'' ?>>Pendiente</option>
             <option value="jugado"       <?= $f_est==='jugado'       ?'selected':'' ?>>Jugado</option>
@@ -539,10 +630,12 @@ $total_equipos  = count($equipos_liga);
             <option value="walkover"     <?= $f_est==='walkover'     ?'selected':'' ?>>Walkover</option>
           </select>
         </div>
-        <button type="submit" class="btn btn-navy btn-sm">Filtrar</button>
-        <?php if ($f_fecha || $f_est || $f_search || $f_desde || $f_hasta): ?>
-          <a href="liga_detalle.php?id=<?= $id ?>&tab=partidos" class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600)">Limpiar</a>
-        <?php endif; ?>
+        <div style="display:flex;gap:.4rem;align-items:flex-end">
+          <button type="submit" class="btn btn-navy btn-sm">Filtrar</button>
+          <?php if ($f_fecha || $f_est || $f_search || $f_desde || $f_hasta): ?>
+            <a href="liga_detalle.php?id=<?= $id ?>&tab=partidos" class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600)">✕</a>
+          <?php endif; ?>
+        </div>
       </form>
     </div>
 
@@ -597,12 +690,11 @@ $total_equipos  = count($equipos_liga);
             <tr style="background:var(--navy);color:#fff">
               <th style="padding:.65rem .75rem;width:40px;text-align:center"><input type="checkbox" id="checkAllPartidos"></th>
               <th style="padding:.65rem .75rem;text-align:left;font-size:.7rem;text-transform:uppercase">Fecha</th>
-              <th style="padding:.65rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase">Local</th>
+              <th style="padding:.65rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase" class="pc-local">Local</th>
               <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase">Resultado</th>
-              <th style="padding:.65rem 1rem;text-align:right;font-size:.7rem;text-transform:uppercase">Visitante</th>
-              <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase">Estado</th>
-              <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase">Cancha</th>
-              <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase">Jornada</th>
+              <th style="padding:.65rem 1rem;text-align:right;font-size:.7rem;text-transform:uppercase" class="pc-visitante">Visitante</th>
+              <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase" class="pc-cancha">Cancha</th>
+              <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase" class="pc-jornada">Jornada</th>
               <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase"></th>
             </tr>
           </thead>
@@ -634,30 +726,34 @@ $total_equipos  = count($equipos_liga);
                   <div style="margin-top:.2rem"><span class="badge badge-walkover" style="font-size:.6rem;padding:.1rem .3rem"><?= epl_h($p['alerta_admin']) ?></span></div>
                 <?php endif; ?>
               </td>
-              <td style="padding:.6rem 1rem;font-weight:600;color:var(--navy)"><?= epl_h($p['local_nombre']) ?></td>
+              <td style="padding:.6rem 1rem;font-weight:600;color:var(--navy)" class="pc-local"><?= epl_h($p['local_nombre']) ?></td>
               <td style="padding:.6rem .75rem;text-align:center">
                 <?php if ($p['estado']==='jugado'): ?>
-                  <span style="font-family:var(--font-head);font-size:1rem;font-weight:700"><?= $p['sets_local'] ?>–<?= $p['sets_visitante'] ?></span>
+                  <span class="pc-result-score" style="font-family:var(--font-head);font-size:1rem;font-weight:700"><?= $p['sets_local'] ?>–<?= $p['sets_visitante'] ?></span>
                   <?php $ss=[];for($s=1;$s<=3;$s++){$gl=$p["games_s{$s}_local"];$gv=$p["games_s{$s}_visitante"];if($gl!==null)$ss[]="$gl-$gv";}
                   if($ss): ?><div style="font-size:.68rem;color:var(--gray-400)"><?= implode(' · ',$ss) ?></div><?php endif;
                 elseif (in_array($p['estado'],['walkover','no_presentado'])): ?>
                   <span style="font-size:.75rem;color:#dc2626;font-weight:700">W/O</span>
                 <?php else: ?><span style="color:var(--gray-300);font-size:.9rem">vs</span><?php endif; ?>
-              </td>
-              <td style="padding:.6rem 1rem;font-weight:600;color:var(--navy);text-align:right"><?= epl_h($p['visitante_nombre']) ?></td>
-              <td style="padding:.6rem .75rem;text-align:center">
-                <div class="info-val">
-                  <?php if ($p['recinto_nombre']): ?>
-                    <?= epl_h($p['recinto_nombre']) ?>
-                    <?php if ($p['recinto_superior_nombre']): ?>
-                      <span style="display:block;font-size:.7rem;color:var(--gray-400);font-weight:400"><?= epl_h($p['recinto_superior_nombre']) ?></span>
-                    <?php endif; ?>
-                  <?php else: ?>
-                    <?= epl_h($liga['sede'] ?: 'No definido') ?>
-                  <?php endif; ?>
+                <!-- Equipos visibles solo en móvil (cuando local/visitante cols están ocultas) -->
+                <div class="pc-mobile-teams" style="display:none;font-size:.72rem;color:var(--navy);margin-top:.2rem">
+                  <div><?= epl_h($p['local_nombre']) ?></div>
+                  <div style="color:var(--gray-400);font-size:.65rem">vs</div>
+                  <div><?= epl_h($p['visitante_nombre']) ?></div>
                 </div>
               </td>
-              <td style="padding:.6rem .75rem;text-align:center;font-size:.75rem;color:var(--gray-500)">
+              <td style="padding:.6rem 1rem;font-weight:600;color:var(--navy);text-align:right" class="pc-visitante"><?= epl_h($p['visitante_nombre']) ?></td>
+              <td style="padding:.6rem .75rem;text-align:center;font-size:.78rem" class="pc-cancha">
+                <?php if ($p['recinto_nombre']): ?>
+                  <?= epl_h($p['recinto_nombre']) ?>
+                  <?php if ($p['recinto_superior_nombre']): ?>
+                    <span style="display:block;font-size:.68rem;color:var(--gray-400)"><?= epl_h($p['recinto_superior_nombre']) ?></span>
+                  <?php endif; ?>
+                <?php else: ?>
+                  <span style="color:var(--gray-400)"><?= epl_h($liga['sede'] ?: '—') ?></span>
+                <?php endif; ?>
+              </td>
+              <td style="padding:.6rem .75rem;text-align:center;font-size:.75rem;color:var(--gray-500)" class="pc-jornada">
                 <?= $p['jornada'] ?: '—' ?>
               </td>
               <td style="padding:.6rem .75rem;text-align:center">
