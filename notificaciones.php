@@ -14,7 +14,6 @@ $notifs = epl_notif_listar($jid, 50);
 $page_title = 'Notificaciones';
 $active_nav = '';
 require_once __DIR__ . '/includes/header.php';
-require_once __DIR__ . '/includes/player_sidebar.php';
 ?>
 
 <div class="dash-layout">

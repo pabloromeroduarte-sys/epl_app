@@ -251,14 +251,14 @@ function epl_notif_marcar_todas_leidas(int $jugador_id): void {
 }
 
 function epl_notif_icono(string $tipo): string {
-    return match($tipo) {
-        'resultado'     => '⚽',
-        'reprogramacion'=> '📅',
-        'suplente'      => '👥',
-        'inscripcion'   => '✅',
-        'liga'          => '🏆',
-        'admin'         => '📢',
-        default         => '🔔',
-    };
+    $iconos = [
+        'resultado'      => '⚽',
+        'reprogramacion' => '📅',
+        'suplente'       => '👥',
+        'inscripcion'    => '✅',
+        'liga'           => '🏆',
+        'admin'          => '📢',
+    ];
+    return $iconos[$tipo] ?? '🔔';
 }
 
