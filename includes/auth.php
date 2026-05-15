@@ -30,8 +30,16 @@ function epl_jugador_por_email(string $email, bool $solo_activo = false): ?array
     $db = epl_db();
     $email = strtolower(trim($email));
     $where = 'email = ?' . ($solo_activo ? " AND estado = 'activo'" : '');
-    $st = $db->prepare('SELECT * FROM jugadores WHERE ' . $where . ' ORDER BY ' . epl_jugador_order_sql() . ' LIMIT 1');
-    $st->execute([$email]);
+    try {
+        // Orden preferido: fila con más datos de perfil (puede fallar si las columnas
+        // nuevas aún no existen en la BD — el catch usa fallback simple).
+        $st = $db->prepare('SELECT * FROM jugadores WHERE ' . $where . ' ORDER BY ' . epl_jugador_order_sql() . ' LIMIT 1');
+        $st->execute([$email]);
+    } catch (PDOException $e) {
+        // Columnas nuevas aún no migradas → fallback a id DESC
+        $st = $db->prepare('SELECT * FROM jugadores WHERE ' . $where . ' ORDER BY id DESC LIMIT 1');
+        $st->execute([$email]);
+    }
     $row = $st->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
         return null;
