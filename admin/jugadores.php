@@ -140,13 +140,13 @@ $jugadores = $st->fetchAll();
   <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
   <main class="dash-main">
-    <div class="dash-header flex justify-between items-center" style="flex-wrap:wrap;gap:.75rem">
+    <div class="dash-header" style="display:flex;flex-wrap:wrap;gap:.75rem;justify-content:space-between;align-items:center">
       <h1 class="dash-title">Jugadores <span style="font-size:1rem;color:var(--gray-400)">(<?= count($jugadores) ?>)</span></h1>
-      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;width:100%">
         <a href="?export=csv&nivel=<?= $f_nivel ?>&estado=<?= urlencode($f_estado) ?>&q=<?= urlencode($f_q) ?>"
-           class="btn btn-sm btn-outline-navy">↓ Exportar CSV</a>
+           class="btn btn-sm btn-outline-navy" style="flex:1;text-align:center">↓ Exportar CSV</a>
         <button onclick="document.getElementById('modalCrear').style.display='flex'"
-                class="btn btn-primary btn-sm">+ Nuevo jugador</button>
+                class="btn btn-primary btn-sm" style="flex:1">+ Nuevo jugador</button>
       </div>
     </div>
 
@@ -250,7 +250,7 @@ $jugadores = $st->fetchAll();
                 <span class="badge <?= $j['estado']==='activo'?'badge-jugado':($j['estado']==='suspendido'?'badge-walkover':'badge-reprog') ?>"><?= $j['estado'] ?></span>
               </td>
               <td data-label="Acciones" style="padding:.7rem 1rem">
-                <div style="display:flex;gap:.35rem;justify-content:center;flex-wrap:wrap">
+                <div style="display:flex;gap:.35rem;flex-wrap:wrap;width:100%">
                   <button onclick='showEditar(<?= json_encode($j) ?>)' class="btn btn-sm" style="border:1px solid var(--gold);color:var(--gold-dark);font-size:.7rem">Editar</button>
                   <form method="post" style="display:inline">
                     <input type="hidden" name="action" value="toggle_estado">
