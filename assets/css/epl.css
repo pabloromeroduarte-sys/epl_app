@@ -1410,24 +1410,23 @@ button { cursor: pointer; font-family: inherit; border: none; }
     padding: .75rem 1rem;
   }
   .admin-table-cards tbody td {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
+    display: block;
     padding: .3rem 0;
     border: none;
     font-size: .83rem;
   }
   .admin-table-cards tbody td::before {
     content: attr(data-label);
+    display: block;
     font-weight: 700;
-    font-size: .72rem;
+    font-size: .68rem;
     text-transform: uppercase;
     color: #94a3b8;
-    min-width: 80px;
-    flex-shrink: 0;
+    margin-bottom: .2rem;
   }
   .admin-table-cards tbody td:first-child::before { display: none; }
-  .admin-table-cards tbody td:first-child { font-weight: 700; font-size: .9rem; margin-bottom: .25rem; }
+  .admin-table-cards tbody td:first-child { font-weight: 700; font-size: .9rem; margin-bottom: .5rem; }
+  .admin-table-cards tbody td:not(:first-child) { border-top: 1px solid #f1f5f9; padding-top: .4rem; margin-top: .2rem; }
 }
 
 /* Ingresar resultado: campo fecha más ancho */
