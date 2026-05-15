@@ -9,24 +9,25 @@ $j = epl_jugador_actual();
 if (!$j) { header('Location: login.php'); exit; }
 
 $todos_torneos = epl_torneos_del_jugador($j['id']);
+$vista_todos   = isset($_GET['vista']) && $_GET['vista'] === 'todos';
+$sel_id        = $vista_todos ? 0 : (int)($_GET['id'] ?? 0);
 
-$activos    = [];
-$finalizados = [];
+if (!$vista_todos && !$sel_id && $todos_torneos) {
+    $sel_id = (int)$todos_torneos[0]['id'];
+}
 
+$liga = null;
 foreach ($todos_torneos as $t) {
-    $status = epl_get_liga_status($t);
-    if ($status === 'activa' || $status === 'inscripcion' || $status === 'proximamente') {
-        $activos[] = $t;
-    } else {
-        $finalizados[] = $t;
+    if ((int)$t['id'] === $sel_id) {
+        $liga = $t;
+        break;
     }
 }
 
-$sel_id = (int)($_GET['id'] ?? ($activos[0]['id'] ?? ($finalizados[0]['id'] ?? 0)));
-$liga = null;
-foreach ($todos_torneos as $t) {
-    if ($t['id'] == $sel_id) { $liga = $t; break; }
-}
+$finalizados = array_values(array_filter(
+    $todos_torneos,
+    static fn(array $t): bool => epl_get_liga_status($t) === 'finalizada'
+));
 
 $clasificacion = $liga ? epl_clasificacion($liga['id']) : [];
 $partidos_all  = $liga ? epl_partidos_liga($liga['id']) : [];
@@ -38,6 +39,11 @@ $jugados     = [];
 
 if ($liga) {
     $equipo = epl_equipo_del_jugador($j['id'], $liga['id']);
+    if (!$equipo && !empty($liga['equipo_id'])) {
+        $stEq = epl_db()->prepare('SELECT * FROM equipos WHERE id = ? LIMIT 1');
+        $stEq->execute([(int)$liga['equipo_id']]);
+        $equipo = $stEq->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
     if ($equipo) {
         foreach ($partidos_all as $p) {
             if ($p['equipo_local_id'] == $equipo['id'] || $p['equipo_visitante_id'] == $equipo['id']) {
@@ -75,26 +81,77 @@ require_once 'includes/header.php';
       <p style="color:var(--gray-400);font-size:.9rem">Tu actividad en ligas y torneos.</p>
     </div>
 
-    <!-- Tabs torneos activos -->
-    <?php if ($activos): ?>
+    <!-- Pestañas: todos los torneos inscritos -->
+    <?php if ($todos_torneos): ?>
     <div class="mt-tabs">
-      <?php foreach ($activos as $at): ?>
-        <a href="?id=<?= $at['id'] ?>" class="mt-tab <?= $sel_id == $at['id'] ? 'active' : '' ?>">
-          <span class="mt-tab-badge">EN JUEGO</span>
+      <a href="?vista=todos" class="mt-tab <?= $vista_todos ? 'active' : '' ?>">
+        <span class="mt-tab-badge">TODOS</span>
+        <span class="mt-tab-name"><?= count($todos_torneos) ?> torneo<?= count($todos_torneos) !== 1 ? 's' : '' ?></span>
+      </a>
+      <?php foreach ($todos_torneos as $at):
+        $badge = epl_torneo_estado_badge($at);
+      ?>
+        <a href="?id=<?= (int)$at['id'] ?>" class="mt-tab <?= !$vista_todos && $sel_id === (int)$at['id'] ? 'active' : '' ?>">
+          <span class="mt-tab-badge mt-tab-badge--<?= epl_h($badge['tone']) ?>"><?= epl_h($badge['label']) ?></span>
           <span class="mt-tab-name"><?= epl_h($at['nombre']) ?></span>
         </a>
       <?php endforeach; ?>
     </div>
     <?php endif; ?>
 
-    <?php if ($liga): ?>
-      <?php $is_active = (epl_get_liga_status($liga) !== 'finalizada'); ?>
+    <?php if ($vista_todos && $todos_torneos): ?>
+    <div class="mt-all-grid">
+      <?php foreach ($todos_torneos as $at):
+        $badge = epl_torneo_estado_badge($at);
+        $rol = $at['rol_equipo'] ?? '';
+        $insc_st = $at['inscripcion_estado'] ?? '';
+        $pago = $at['inscripcion_pago_estado'] ?? '';
+      ?>
+      <a href="?id=<?= (int)$at['id'] ?>" class="mt-all-card">
+        <div class="mt-all-card-top">
+          <span class="mt-tab-badge mt-tab-badge--<?= epl_h($badge['tone']) ?>"><?= epl_h($badge['label']) ?></span>
+          <?php if ($rol): ?>
+            <span class="mt-all-rol"><?= $rol === 'capitan' ? 'Capitán' : 'Partner' ?></span>
+          <?php endif; ?>
+        </div>
+        <h3 class="mt-all-title"><?= epl_h($at['nombre']) ?></h3>
+        <p class="mt-all-sub"><?= epl_h($at['temporada'] ?? '') ?> — <?= (int)($at['categoria'] ?? 0) ?>ª Cat. <?= ucfirst($at['sexo'] ?? '') ?></p>
+        <?php if (!empty($at['equipo_nombre'])): ?>
+          <p class="mt-all-meta">Equipo: <strong><?= epl_h($at['equipo_nombre']) ?></strong></p>
+        <?php endif; ?>
+        <?php if ($insc_st === 'pendiente'): ?>
+          <p class="mt-all-meta mt-all-meta--warn">En proceso — falta validar cupo del equipo</p>
+        <?php elseif ($pago && $pago !== 'pagado' && $pago !== 'exento'): ?>
+          <p class="mt-all-meta mt-all-meta--warn">Pago: <?= epl_h(ucfirst($pago)) ?></p>
+        <?php endif; ?>
+        <span class="mt-all-link">Ver detalle →</span>
+      </a>
+      <?php endforeach; ?>
+    </div>
+    <p style="margin-top:1.25rem;text-align:center">
+      <a href="<?= epl_url('inscribirse.php') ?>" class="btn btn-sm" style="border:1px solid var(--navy);color:var(--navy)">+ Nueva inscripción</a>
+    </p>
+
+    <?php elseif ($liga): ?>
+      <?php
+        $is_active = (epl_get_liga_status($liga) !== 'finalizada');
+        $badge_liga = epl_torneo_estado_badge($liga);
+        $liga_en_juego = epl_get_liga_status($liga) === 'activa';
+        $insc_ok = ($liga['inscripcion_estado'] ?? '') === 'aprobada';
+        $tiene_actividad = !empty($proximos) || !empty($jugados);
+        $solo_inscripcion = !$liga_en_juego || !$insc_ok || !$tiene_actividad;
+        $msg_insc = $solo_inscripcion ? epl_mensaje_torneo_inscripcion($liga, $j['id']) : null;
+      ?>
 
       <!-- Cabecera del torneo -->
       <div class="mt-hero">
         <div>
+          <span class="mt-tab-badge mt-tab-badge--<?= epl_h($badge_liga['tone']) ?>" style="margin-bottom:.5rem;display:inline-block"><?= epl_h($badge_liga['label']) ?></span>
           <h2 class="mt-hero-title"><?= epl_h($liga['nombre']) ?></h2>
-          <p class="mt-hero-sub"><?= epl_h($liga['temporada']) ?> — <?= $liga['categoria'] ?>ª Cat. <?= ucfirst($liga['sexo'] ?? '') ?></p>
+          <p class="mt-hero-sub"><?php if (!empty($liga['temporada'])): ?><?= epl_h($liga['temporada']) ?> — <?php endif; ?><?= (int)($liga['categoria'] ?? 0) ?>ª Cat. <?= ucfirst($liga['sexo'] ?? '') ?></p>
+          <?php if (!empty($liga['equipo_nombre'])): ?>
+            <p style="color:rgba(255,255,255,.6);font-size:.78rem;margin:.35rem 0 0">Equipo: <?= epl_h($liga['equipo_nombre']) ?></p>
+          <?php endif; ?>
         </div>
         <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
           <?php if ($mi_pos): ?>
@@ -110,7 +167,23 @@ require_once 'includes/header.php';
         </div>
       </div>
 
-      <?php if ($is_active): ?>
+      <?php if ($solo_inscripcion && $msg_insc): ?>
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-body" style="padding:1.5rem">
+          <h3 style="font-family:var(--font-head);font-size:.95rem;text-transform:uppercase;color:var(--navy);margin:0 0 .75rem">
+            <?= epl_h($msg_insc['titulo']) ?>
+          </h3>
+          <p style="margin:0 0 1rem;color:var(--gray-600);line-height:1.55"><?= epl_h($msg_insc['texto']) ?></p>
+          <p style="margin:0 0 1rem;font-size:.8rem;color:var(--gray-400)">
+            El cupo del equipo se confirma cuando <strong>capitán y partner</strong> validan su inscripción.
+            Seguí el avance en <a href="<?= epl_url('inscribirse.php') ?>" style="color:var(--gold);font-weight:600">Inscripciones</a>.
+          </p>
+          <a href="<?= epl_url('inscribirse.php') ?>" class="btn btn-gold btn-sm">Ir a inscripciones</a>
+          <a href="torneo.php?id=<?= (int)$liga['id'] ?>" class="btn btn-sm" style="margin-left:.5rem;border:1px solid var(--gray-200)">Ver torneo público</a>
+        </div>
+      </div>
+
+      <?php elseif ($is_active): ?>
 
       <!-- Grid principal: Próximos partidos + Ranking -->
       <div class="mt-main-grid">
@@ -284,13 +357,13 @@ require_once 'includes/header.php';
 
     <?php elseif (empty($todos_torneos)): ?>
       <div class="card p-5 text-center">
-        <p style="color:var(--gray-400)">Aún no participas en ningún torneo.</p>
-        <a href="inscribirse.php" class="btn btn-gold mt-3">Ver torneos disponibles</a>
+        <p style="color:var(--gray-400)">Aún no tienes inscripciones ni torneos asignados.</p>
+        <a href="<?= epl_url('inscribirse.php') ?>" class="btn btn-gold mt-3">Inscribirme a un torneo</a>
       </div>
     <?php endif; ?>
 
-    <!-- Torneos finalizados (miniaturas) -->
-    <?php if ($finalizados): ?>
+    <!-- Torneos finalizados (miniaturas) — solo en vista detalle -->
+    <?php if (!$vista_todos && $finalizados && $liga && epl_get_liga_status($liga) !== 'finalizada'): ?>
     <div style="margin-top:2.5rem">
       <h3 style="font-family:var(--font-head);color:var(--navy);text-transform:uppercase;font-size:.85rem;letter-spacing:.08em;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
         <svg style="width:16px;height:16px;color:var(--gray-400)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -319,8 +392,26 @@ require_once 'includes/header.php';
 .mt-tab:hover { border-color:var(--gold); }
 .mt-tab.active { background:var(--navy); border-color:var(--navy); }
 .mt-tab-badge { font-size:.58rem; font-weight:800; color:var(--gold); letter-spacing:.1em; text-transform:uppercase; }
+.mt-tab-badge--live { color:#4ade80; }
+.mt-tab-badge--signup { color:#93c5fd; }
+.mt-tab-badge--pending { color:#fbbf24; }
+.mt-tab-badge--done { color:#9ca3af; }
+.mt-tab-badge--soon { color:#c4b5fd; }
+.mt-tab.active .mt-tab-badge { color:var(--gold); }
 .mt-tab-name { font-family:var(--font-head); font-size:.95rem; color:var(--navy); text-transform:uppercase; line-height:1.2; }
 .mt-tab.active .mt-tab-name { color:var(--white); }
+
+/* ── Vista Todos ── */
+.mt-all-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1rem; margin-bottom:1rem; }
+.mt-all-card { background:var(--white); border:2px solid var(--gray-200); border-radius:14px; padding:1.15rem 1.25rem; text-decoration:none; transition:all .2s; display:flex; flex-direction:column; gap:.35rem; }
+.mt-all-card:hover { border-color:var(--gold); transform:translateY(-2px); box-shadow:0 6px 20px rgba(28,47,72,.08); }
+.mt-all-card-top { display:flex; justify-content:space-between; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.mt-all-rol { font-size:.62rem; font-weight:800; color:var(--navy); background:var(--gray-100); padding:.15rem .5rem; border-radius:999px; text-transform:uppercase; }
+.mt-all-title { font-family:var(--font-head); font-size:1rem; color:var(--navy); text-transform:uppercase; margin:0; line-height:1.2; }
+.mt-all-sub { font-size:.72rem; color:var(--gray-400); margin:0; text-transform:uppercase; font-weight:600; }
+.mt-all-meta { font-size:.78rem; color:var(--gray-600); margin:0; }
+.mt-all-meta--warn { color:#b45309; font-weight:600; }
+.mt-all-link { font-size:.75rem; font-weight:700; color:var(--gold); margin-top:.5rem; }
 
 /* ── Hero ── */
 .mt-hero { background:var(--navy); border-radius:16px; padding:1.5rem 2rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem; }

@@ -15,14 +15,6 @@ $tab = $_GET['tab'] ?? 'ingresos';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    // --- Guardar token MP ---
-    if ($action === 'guardar_config') {
-        epl_config_set('mp_access_token', trim($_POST['mp_access_token'] ?? ''));
-        epl_config_set('mp_modo',         in_array($_POST['mp_modo']??'sandbox',['sandbox','produccion']) ? $_POST['mp_modo'] : 'sandbox');
-        $ok  = 'Configuración guardada.';
-        $tab = 'config';
-    }
-
     // --- Forzar pago como completado ---
     if ($action === 'forzar_pago') {
         $pid = (int)($_POST['pago_id'] ?? 0);
@@ -155,8 +147,6 @@ $total_pendiente = array_sum(array_column(array_filter($pagos, fn($p) => $p['est
 $total_gastos    = array_sum(array_column($gastos, 'monto'));
 $saldo_neto      = $total_ingresos - $total_gastos;
 
-$mp_token = epl_config_get('mp_access_token');
-$mp_modo  = epl_config_get('mp_modo', 'sandbox');
 
 require_once '../includes/header.php';
 ?>
@@ -198,7 +188,7 @@ require_once '../includes/header.php';
 
     <!-- Tabs -->
     <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem">
-      <?php foreach(['ingresos'=>'Ingresos','gastos'=>'Gastos','saldos'=>'Saldos Clubes','resultado'=>'Estado Resultados','config'=>'Configuración'] as $t => $label): ?>
+      <?php foreach(['ingresos'=>'Ingresos','gastos'=>'Gastos','saldos'=>'Saldos Clubes','resultado'=>'Estado Resultados'] as $t => $label): ?>
         <a href="?tab=<?= $t ?>" style="padding:.45rem 1rem;border-radius:8px;font-size:.83rem;font-weight:700;text-decoration:none;
            background:<?= $tab===$t?'var(--navy)':'#f1f5f9' ?>;
            color:<?= $tab===$t?'#fff':'var(--gray-600)' ?>">
@@ -468,41 +458,6 @@ require_once '../includes/header.php';
         </div>
       </div>
 
-    </div>
-    <?php endif; ?>
-
-    <!-- ===== TAB: CONFIG ===== -->
-    <?php if ($tab === 'config'): ?>
-    <div class="card" style="max-width:600px">
-      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--gray-100)">
-        <h2 style="font-size:1rem;font-weight:700;color:var(--navy);margin:0">Configuración MercadoPago</h2>
-      </div>
-      <form method="POST" style="padding:1.5rem">
-        <input type="hidden" name="action" value="guardar_config">
-        <div style="margin-bottom:1rem">
-          <label style="display:block;font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:.4rem">Access Token (privado)</label>
-          <input type="text" name="mp_access_token" value="<?= epl_h($mp_token) ?>"
-                 placeholder="APP_USR-..." style="width:100%;padding:.6rem .8rem;border:1px solid var(--gray-200);border-radius:8px;font-size:.85rem;font-family:monospace">
-          <p style="font-size:.75rem;color:var(--gray-400);margin-top:.3rem">Obtenelo en <strong>mercadopago.com/developers</strong> → Tu App → Credenciales.</p>
-        </div>
-        <div style="margin-bottom:1.25rem">
-          <label style="display:block;font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:.4rem">Modo</label>
-          <select name="mp_modo" style="padding:.6rem .8rem;border:1px solid var(--gray-200);border-radius:8px;font-size:.85rem">
-            <option value="sandbox"    <?= $mp_modo==='sandbox'?'selected':'' ?>>Sandbox (pruebas)</option>
-            <option value="produccion" <?= $mp_modo==='produccion'?'selected':'' ?>>Producción (real)</option>
-          </select>
-        </div>
-        <?php if ($mp_token): ?>
-        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.75rem;margin-bottom:1rem;font-size:.82rem;color:#16a34a;font-weight:600">
-          ✓ Token configurado. <?= $mp_modo === 'produccion' ? '⚠️ Modo PRODUCCIÓN activo.' : 'Modo sandbox.' ?>
-        </div>
-        <?php else: ?>
-        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:.75rem;margin-bottom:1rem;font-size:.82rem;color:#92400e;font-weight:600">
-          ⚠ Sin token: los formularios de inscripción con pago no funcionarán. Los formularios gratuitos (precio=0) sí funcionan.
-        </div>
-        <?php endif; ?>
-        <button type="submit" class="btn btn-primary">Guardar configuración</button>
-      </form>
     </div>
     <?php endif; ?>
 

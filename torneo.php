@@ -100,16 +100,72 @@ if ($liga['foto_portada']) {
         <?php endif; ?>
       </div>
       <?php if ($liga['precio']): ?>
+      <?php
+        $pct_t = epl_liga_mp_comision_pct($liga);
+        $est_liq = $liga['precio'] > 0 ? epl_precio_neto_estimado_desde_bruto((float) $liga['precio'], $pct_t) : 0;
+      ?>
       <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:1.25rem 1.75rem;text-align:center;flex-shrink:0">
         <div style="font-size:.72rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.25rem">Inscripción</div>
         <div style="font-family:var(--font-head);font-size:2rem;color:var(--gold)"><?= number_format($liga['precio'],0,',','.') ?></div>
-        <div style="font-size:.75rem;color:rgba(255,255,255,.4)">CLP por jugador</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.4)">CLP por jugador · pago en línea</div>
+        <?php if ($liga['precio'] > 0): ?>
+        <div style="font-size:.68rem;color:rgba(255,255,255,.45);margin-top:.4rem;line-height:1.35">
+          Comisión referencial MP <?= rtrim(rtrim(number_format($pct_t, 2, ',', ''), '0'), ',') ?>% → líquido estimado ~$<?= number_format($est_liq, 0, ',', '.') ?></div>
+        <?php endif; ?>
       </div>
       <?php endif; ?>
     </div>
 
   </div>
 </section>
+
+<!-- Banner de Inscripción (solo cuando está abierta) -->
+<?php if ($liga['estado'] === 'inscripcion'): ?>
+<?php
+require_once 'includes/auth.php';
+$jugador_sesion = epl_jugador_actual();
+$ya_inscrito    = false;
+if ($jugador_sesion) {
+    $chk = $db->prepare("SELECT id FROM inscripciones WHERE jugador_id=? AND liga_id=? AND estado != 'rechazada'");
+    $chk->execute([$jugador_sesion['id'], $liga['id']]);
+    $ya_inscrito = (bool)$chk->fetch();
+}
+?>
+<div style="background:linear-gradient(135deg,#1C2F48 0%,#0f1e30 100%);padding:1.5rem 0;border-bottom:3px solid var(--gold)">
+  <div class="container" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+    <div>
+      <div style="color:var(--gold);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.25rem">🎾 Inscripciones abiertas</div>
+      <div style="color:#fff;font-weight:700;font-size:1rem">
+        <?php if ($liga['precio'] > 0): ?>
+          Inscripción: <span style="color:var(--gold)">$<?= number_format($liga['precio'],0,',','.') ?> CLP</span> por jugador
+        <?php else: ?>
+          <span style="color:#4ade80">¡Inscripción gratuita!</span>
+        <?php endif; ?>
+      </div>
+      <?php if ($liga['inscripcion_fin']): ?>
+        <div style="color:rgba(255,255,255,.5);font-size:.78rem;margin-top:.2rem">Cierre: <?= date('d/m/Y', strtotime($liga['inscripcion_fin'])) ?></div>
+      <?php endif; ?>
+    </div>
+    <div>
+      <?php if (!$jugador_sesion): ?>
+        <a href="<?= epl_url('login.php?back='.urlencode('/elitepadelleague/torneo.php?id='.$liga['id'])) ?>"
+           style="display:inline-block;background:var(--gold);color:var(--navy);font-weight:800;font-size:.9rem;text-transform:uppercase;padding:.8rem 2rem;border-radius:10px;text-decoration:none;letter-spacing:.05em">
+          Iniciar sesión para inscribirse →
+        </a>
+      <?php elseif ($ya_inscrito): ?>
+        <span style="background:#4ade80;color:#14532d;font-weight:800;font-size:.85rem;text-transform:uppercase;padding:.7rem 1.5rem;border-radius:10px;display:inline-block">
+          ✓ Ya estás inscrito
+        </span>
+      <?php else: ?>
+        <a href="<?= epl_url('inscribirse.php?liga='.$liga['id']) ?>"
+           style="display:inline-block;background:var(--gold);color:var(--navy);font-weight:800;font-size:.9rem;text-transform:uppercase;padding:.8rem 2rem;border-radius:10px;text-decoration:none;letter-spacing:.05em;box-shadow:0 4px 20px rgba(201,167,98,.4)">
+          Inscribirme ahora →
+        </a>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 
 <!-- Botones de Acción Superiores -->
 <div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
@@ -118,10 +174,12 @@ if ($liga['foto_portada']) {
       <svg style="width:1.4rem;height:1.4rem" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
       Volver a Torneos
     </a>
+    <?php if (in_array($liga['estado'], ['activa','inscripcion'])): ?>
     <a href="reprogramar.php" class="action-btn">
       <svg style="width:1.4rem;height:1.4rem; color:#ef4444" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
       Reprogramar Partido
     </a>
+    <?php endif; ?>
     <a href="#" class="action-btn">
       <svg style="width:1.4rem;height:1.4rem; color:var(--gold)" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
       Reglamento Oficial

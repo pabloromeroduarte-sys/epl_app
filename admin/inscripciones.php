@@ -119,6 +119,17 @@ $inscripciones = $db->query("
               <td data-label="Jugador" style="padding:.7rem 1rem">
                 <div style="font-weight:700;color:var(--navy)"><?= epl_h($insc['j_nombre'].' '.$insc['j_apellido']) ?></div>
                 <div style="font-size:.72rem;color:var(--gray-400)"><?= epl_h($insc['j_email']) ?></div>
+                <?php
+                  $rol_colors = ['capitan'=>'background:#dbeafe;color:#1e40af','partner'=>'background:#fce7f3;color:#9d174d'];
+                  $rc = $rol_colors[$insc['rol_equipo']] ?? '';
+                ?>
+                <span style="font-size:.68rem;font-weight:700;padding:.1rem .45rem;border-radius:5px;<?= $rc ?>"><?= $insc['rol_equipo'] ?></span>
+                <?php if ($insc['rol_equipo'] === 'capitan' && $insc['token']): ?>
+                  <div style="margin-top:.3rem">
+                    <a href="<?= epl_url('inscribirse_partner.php?token='.urlencode($insc['token'])) ?>" target="_blank"
+                       style="font-size:.68rem;color:#C9A762;font-weight:700;text-decoration:none">🔗 Link partner</a>
+                  </div>
+                <?php endif; ?>
               </td>
               <td data-label="Liga" class="hide-mobile" style="padding:.7rem 1rem;text-align:center;color:var(--gray-600);font-size:.82rem"><?= epl_h($insc['liga_nombre']) ?></td>
               <td data-label="Equipo" class="hide-mobile" style="padding:.7rem 1rem;text-align:center;color:var(--gray-600);font-size:.82rem"><?= $insc['equipo_nombre'] ? epl_h($insc['equipo_nombre']) : '<span style="color:var(--gray-400)">—</span>' ?></td>

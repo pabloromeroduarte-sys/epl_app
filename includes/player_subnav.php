@@ -29,7 +29,7 @@ $_equipo  = ($_liga && $_jugador) ? epl_equipo_del_jugador($_jugador['id'], $_li
         <a href="ingresar_resultado.php" class="player-subnav-link <?= $_ptab==='resultado'    ?'active':'' ?>">Resultado</a>
         <a href="reprogramar.php"        class="player-subnav-link <?= $_ptab==='reprogramar'  ?'active':'' ?>">Reprogramar</a>
         <a href="mis_suplentes.php"      class="player-subnav-link <?= $_ptab==='suplentes'    ?'active':'' ?>">Suplentes</a>
-        <a href="inscribirse.php"        class="player-subnav-link <?= $_ptab==='inscribirse'  ?'active':'' ?>">Inscribirme</a>
+        <a href="inscribirse.php"        class="player-subnav-link <?= $_ptab==='inscribirse'  ?'active':'' ?>">Inscripciones</a>
         <a href="mi_perfil.php"          class="player-subnav-link <?= $_ptab==='perfil'       ?'active':'' ?>">Mi Perfil</a>
         <?php if ($_jugador['rol']==='admin'): ?>
           <a href="admin/"               class="player-subnav-link player-subnav-admin">Admin</a>

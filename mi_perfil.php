@@ -5,11 +5,21 @@ require_once 'includes/auth.php';
 require_once 'includes/functions.php';
 epl_require_login();
 
+header("Cache-Control: no-cache, no-store, must-revalidate");
+
 $jugador_sess = epl_jugador_actual();
 $db = epl_db();
-$st = $db->prepare("SELECT * FROM jugadores WHERE id=?");
-$st->execute([$jugador_sess['id']]);
-$jugador = $st->fetch();
+$jugador = epl_jugador_db();
+
+if (!$jugador) {
+    session_destroy();
+    header('Location: /elitepadelleague/login.php');
+    exit;
+}
+
+$jugador_id = (int)$jugador['id'];
+
+$_epl_debug = false; // cambiar a true para ver diagnóstico
 
 $ok    = '';
 $error = '';
@@ -47,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $uploadDir = __DIR__ . '/uploads/jugadores/';
                     if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                    $newName = $jugador_sess['id'] . '_' . time() . '.' . $ext;
+                    $newName = $jugador_id . '_' . time() . '.' . $ext;
                     if (move_uploaded_file($_FILES['foto']['tmp_name'], $uploadDir . $newName)) {
                         if ($foto && file_exists($uploadDir . $foto)) unlink($uploadDir . $foto);
                         $foto = $newName;
@@ -64,12 +74,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $nombre,$apellido,$alias?:null,$rut?:null,$telefono?:null,
                     $fnac?:null,$sexo,$comuna?:null,$profesion?:null,$foto,
                     $nivel,$lado,$pala?:null,$talla?:null,$frecuencia,
-                    $jugador_sess['id']
+                    $jugador_id
                 ]);
+                epl_session_start();
                 $_SESSION['jugador']['nombre']   = $nombre;
                 $_SESSION['jugador']['apellido'] = $apellido;
                 $_SESSION['jugador']['foto']     = $foto;
-                $st->execute([$jugador_sess['id']]); $jugador = $st->fetch();
+                $jugador = epl_jugador_por_email($jugador['email']) ?? $jugador;
                 $ok = 'Perfil actualizado correctamente.';
             }
         }
@@ -88,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Las contraseñas no coinciden.';
         } else {
             $db->prepare("UPDATE jugadores SET password=? WHERE id=?")
-               ->execute([epl_hash_password($nuevo), $jugador_sess['id']]);
+               ->execute([epl_hash_password($nuevo), $jugador_id]);
             $ok = 'Contraseña actualizada.';
         }
     }
@@ -115,6 +126,18 @@ $profesiones = [
 
   <?php if ($ok):  ?><div class="alert alert-success"><?= epl_h($ok) ?></div><?php endif; ?>
   <?php if ($error): ?><div class="alert alert-error"><?= epl_h($error) ?></div><?php endif; ?>
+
+  <?php if ($_epl_debug ?? false): ?>
+  <div style="background:#1e293b;color:#94a3b8;font-size:.75rem;font-family:monospace;padding:1rem;border-radius:8px;margin-bottom:1rem;overflow-x:auto">
+    <strong style="color:#f0b429">DEBUG — ID en sesión: <?= (int)$jugador_sess['id'] ?> | ID en DB: <?= (int)$jugador['id'] ?></strong><br>
+    <?php foreach (['rut','telefono','sexo','fecha_nacimiento','nivel','lado','pala','talla','comuna','profesion','frecuencia_juego'] as $df): ?>
+      <span style="color:#64748b"><?= $df ?>:</span>
+      <span style="color:<?= ($jugador[$df] ?? null) !== null ? '#22c55e' : '#ef4444' ?>">
+        <?= ($jugador[$df] ?? null) !== null ? epl_h((string)$jugador[$df]) : 'NULL' ?>
+      </span> &nbsp;
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
 
   <!-- ── FORMULARIO ÚNICO ─────────────────────────────── -->
   <form method="post" enctype="multipart/form-data">

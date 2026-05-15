@@ -3,7 +3,11 @@
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/functions.php';
 
-$jugador = epl_jugador_actual();
+// No sobrescribir $jugador si la página ya cargó el perfil completo desde la BD (p. ej. mi_perfil.php)
+$jugador_nav = epl_jugador_actual();
+if (!isset($jugador)) {
+    $jugador = $jugador_nav;
+}
 $title   = isset($page_title) ? epl_h($page_title) . ' — Elite Padel League' : 'Elite Padel League';
 $active  = $active_nav ?? '';
 ?>
@@ -129,10 +133,10 @@ $active  = $active_nav ?? '';
                 
                 <!-- ZONA DE USUARIO DINÁMICA (PHP) -->
                 <div class="flex items-center gap-4">
-                  <?php if ($jugador): ?>
-                    <?php
-                      $dest = $jugador['rol'] === 'admin' ? epl_url('admin/') : epl_url('dashboard.php');
-                      $notif_count = epl_notif_no_leidas((int)$jugador['id']);
+                  <?php if ($jugador_nav): ?>
+                      <?php
+                      $dest = $jugador_nav['rol'] === 'admin' ? epl_url('admin/') : epl_url('dashboard.php');
+                      $notif_count = epl_notif_no_leidas((int)$jugador_nav['id']);
                     ?>
                     <!-- Campana notificaciones -->
                     <a href="<?= epl_url('notificaciones.php') ?>" class="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors" title="Notificaciones">
@@ -147,10 +151,10 @@ $active  = $active_nav ?? '';
                     </a>
                     <a href="<?= $dest ?>" class="flex items-center gap-2 group text-decoration-none">
                       <div class="w-10 h-10 rounded-full border-2 border-epl-gold overflow-hidden group-hover:scale-105 transition-transform flex items-center justify-center bg-epl-blue text-white">
-                        <img src="<?= epl_h(epl_foto_jugador($jugador['foto'], $jugador['nombre'] . ' ' . $jugador['apellido'])) ?>"
-                             alt="<?= epl_h($jugador['nombre']) ?>" class="w-full h-full object-cover">
+                        <img src="<?= epl_h(epl_foto_jugador($jugador_nav['foto'], $jugador_nav['nombre'] . ' ' . $jugador_nav['apellido'])) ?>"
+                             alt="<?= epl_h($jugador_nav['nombre']) ?>" class="w-full h-full object-cover">
                       </div>
-                      <span class="font-secondary font-black text-xs uppercase tracking-widest text-epl-blue group-hover:text-epl-gold transition-colors"><?= epl_h($jugador['nombre']) ?></span>
+                      <span class="font-secondary font-black text-xs uppercase tracking-widest text-epl-blue group-hover:text-epl-gold transition-colors"><?= epl_h($jugador_nav['nombre']) ?></span>
                     </a>
                     <a href="<?= epl_url('logout.php') ?>" class="font-secondary font-bold text-[10px] uppercase tracking-widest text-gray-400 hover:text-red-500 transition-colors ml-2 no-underline">SALIR</a>
                   <?php else: ?>
@@ -183,13 +187,13 @@ $active  = $active_nav ?? '';
             <a href="<?= epl_url('resultados.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Resultados</a>
             <a href="<?= epl_url('jugadores.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Jugadores</a>
             
-            <?php if ($jugador): ?>
-              <?php $dest = $jugador['rol'] === 'admin' ? epl_url('admin/') : epl_url('dashboard.php'); ?>
+            <?php if ($jugador_nav): ?>
+              <?php $dest = $jugador_nav['rol'] === 'admin' ? epl_url('admin/') : epl_url('dashboard.php'); ?>
               <a href="<?= $dest ?>" class="flex items-center justify-center gap-4 w-full border-2 border-epl-gold text-epl-gold py-5 rounded-2xl font-secondary font-black text-sm uppercase tracking-[0.2em] no-underline mt-4">
                   <div class="w-8 h-8 rounded-full overflow-hidden border-2 border-epl-gold">
-                    <img src="<?= epl_h(epl_foto_jugador($jugador['foto'], $jugador['nombre'] . ' ' . $jugador['apellido'])) ?>" alt="" class="w-full h-full object-cover">
+                    <img src="<?= epl_h(epl_foto_jugador($jugador_nav['foto'], $jugador_nav['nombre'] . ' ' . $jugador_nav['apellido'])) ?>" alt="" class="w-full h-full object-cover">
                   </div>
-                  <?= epl_h($jugador['nombre']) ?>
+                  <?= epl_h($jugador_nav['nombre']) ?>
               </a>
               <a href="<?= epl_url('logout.php') ?>" class="text-red-400 no-underline hover:text-red-300 transition-colors text-xl mt-4 text-center">Salir</a>
             <?php else: ?>

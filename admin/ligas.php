@@ -5,6 +5,7 @@ require_once '../includes/functions.php';
 epl_require_admin();
 
 $db  = epl_db();
+epl_ensure_ligas_columnas_mp_precio();
 $ok  = '';
 $err = '';
 
@@ -17,8 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $formato   = in_array($_POST['formato']??'',['liga_regular','mata_mata','grupos_mata_mata','liga_playoff']) ? $_POST['formato'] : 'liga_regular';
         $cat       = (int)($_POST['categoria'] ?? 0);
         $estado    = in_array($_POST['estado']??'inscripcion',['proximamente','inscripcion','activa','finalizada']) ? $_POST['estado'] : 'inscripcion';
-        $precio    = (float)($_POST['precio'] ?? 0) ?: null;
         $recinto_id = (int)($_POST['recinto_id'] ?? 0) ?: null;
+        $sede_txt  = trim($_POST['recinto'] ?? '');
         $url_maps  = trim($_POST['url_maps']  ?? '');
         $f_inicio  = trim($_POST['fecha_inicio'] ?? '') ?: null;
         $f_fin     = trim($_POST['fecha_fin']    ?? '') ?: null;
@@ -31,15 +32,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pg        = max(0,(int)($_POST['puntos_grupos'] ?? 10));
         $sexo      = in_array($_POST['sexo']??'', ['masculino','femenino','mixto']) ? $_POST['sexo'] : 'masculino';
 
-        if (!$nombre) { $err = 'El nombre es obligatorio.'; }
-        else {
+        $pErr = '';
+        $parsed = epl_liga_precio_desde_post($_POST, $pErr);
+
+        if (!$nombre) {
+            $err = 'El nombre es obligatorio.';
+        } elseif ($parsed === null) {
+            $err = $pErr !== '' ? $pErr : 'Revisa los datos del precio.';
+        } else {
+            [$precio, $precio_neto_deseado, $mp_comision_pct_db] = $parsed;
             $db->prepare("INSERT INTO ligas
-                (nombre,tipo,sexo,formato,categoria,estado,precio,sede,url_maps,
+                (nombre,tipo,sexo,formato,categoria,estado,precio,precio_neto_deseado,mp_comision_pct,sede,url_maps,
                  fecha_inicio,fecha_fin,inscripcion_inicio,inscripcion_fin,
                  puntos_1,puntos_2,puntos_3,puntos_4,puntos_grupos,recinto_id)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-               ->execute([$nombre,$tipo,$sexo,$formato,$cat?:null,$estado,$precio,
-                          $recinto?:null,$url_maps?:null,$f_inicio,$f_fin,$i_inicio,$i_fin,
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+               ->execute([$nombre,$tipo,$sexo,$formato,$cat?:null,$estado,$precio,$precio_neto_deseado,$mp_comision_pct_db,
+                          $sede_txt ?: null,$url_maps?:null,$f_inicio,$f_fin,$i_inicio,$i_fin,
                           $p1,$p2,$p3,$p4,$pg,$recinto_id]);
             $ok = 'Competición <strong>'.htmlspecialchars($nombre).'</strong> creada.';
         }
@@ -271,20 +279,66 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
           <input type="url" name="url_maps" class="form-control" placeholder="https://maps.google.com/...">
         </div>
 
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Estado inicial</label>
-            <select name="estado" class="form-control">
-              <option value="proximamente">Próximamente</option>
-              <option value="inscripcion" selected>Inscripción abierta</option>
-              <option value="activa">Activa</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Precio por jugador (CLP)</label>
-            <input type="number" name="precio" class="form-control" min="0" placeholder="45000">
-          </div>
+        <div class="form-group">
+          <label class="form-label">Estado inicial</label>
+          <select name="estado" class="form-control">
+            <option value="proximamente">Próximamente</option>
+            <option value="inscripcion" selected>Inscripción abierta</option>
+            <option value="activa">Activa</option>
+          </select>
         </div>
+
+        <?php
+          $pct_modal     = json_encode(epl_mp_comision_porcentaje_defecto());
+          $mp_step_modal = (int) max(1, epl_mp_redondeo_escalon_clp());
+        ?>
+        <p style="font-size:.72rem;color:var(--gray-600);margin:-.25rem 0 .5rem;line-height:1.45">
+          Mercado Pago: comisión global <strong><?= epl_h((string) epl_mp_comision_porcentaje_defecto()) ?>%</strong> y redondeo <strong>↑ a $<?= number_format($mp_step_modal, 0, ',', '.') ?></strong> (Configuración → Integraciones).
+        </p>
+        <div class="form-group" style="margin-bottom:.35rem">
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--navy)">
+            <input type="checkbox" name="precio_usar_liquido_mp" id="crear_precioLiquidoMp" value="1" style="width:18px;height:18px">
+            Calcular cobro desde líquido (comisión MP)
+          </label>
+        </div>
+        <div id="crear_bloqueLiquidoMp" style="display:none;margin-bottom:.5rem">
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Comisión MP esta liga (%)</label>
+              <input type="number" step="0.01" min="0" max="99" name="mp_comision_pct" id="crear_mp_comision_pct" class="form-control" placeholder="Vacío → global <?= epl_h((string) epl_mp_comision_porcentaje_defecto()) ?>">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Líquido deseado (CLP)</label>
+              <input type="number" step="1" min="1" name="precio_neto_deseado" id="crear_precio_neto_deseado" class="form-control" placeholder="Ej: 45000">
+            </div>
+          </div>
+          <div style="font-size:.78rem;background:#f8fafc;border:1px solid var(--gray-200);padding:.55rem;border-radius:8px">
+            Cobro al jugador (redondeo superior): $<span id="crear_previewBrutoMp">—</span> CLP</div>
+        </div>
+        <div id="crear_wrapPrecioFijo" class="form-group">
+          <label class="form-label">Precio por jugador (CLP) — fijo</label>
+          <input type="number" name="precio" id="crear_precio_manual" class="form-control" min="0" placeholder="45000 o 0 gratis">
+        </div>
+        <script>
+        (function(){
+          var chk = document.getElementById('crear_precioLiquidoMp');
+          var bloq = document.getElementById('crear_bloqueLiquidoMp');
+          var wrapF = document.getElementById('crear_wrapPrecioFijo');
+          var pctE = document.getElementById('crear_mp_comision_pct');
+          var netoE = document.getElementById('crear_precio_neto_deseado');
+          var out = document.getElementById('crear_previewBrutoMp');
+          var defP = <?= $pct_modal ?>;
+          var stepMp = <?= json_encode($mp_step_modal) ?>;
+          function pPct(){ var r=(pctE.value||'').replace(',','.'); if(r===''||isNaN(r)) return defP; var x=parseFloat(r); return (x>0&&x<100)?x:defP }
+          function br(){ var n=parseFloat(netoE.value)||0,p=pPct(); if(n<=0||p>=100) return 0; var raw=n/(1-p/100); return Math.ceil(raw/stepMp)*stepMp; }
+          function rf(){ out.textContent = br() ? br().toLocaleString('es-CL') : '—'; }
+          function tg(){ var on=chk.checked; bloq.style.display = on?'block':'none'; wrapF.style.display = on?'none':'block'; rf(); }
+          chk.addEventListener('change', tg);
+          pctE.addEventListener('input', rf);
+          netoE.addEventListener('input', rf);
+          tg();
+        })();
+        </script>
 
         <!-- Puntos de ranking -->
         <p style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);margin:1rem 0 .75rem;border-top:1px solid var(--gray-200);padding-top:1rem">

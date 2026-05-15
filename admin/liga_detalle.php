@@ -5,6 +5,7 @@ require_once '../includes/functions.php';
 epl_require_admin();
 
 $db  = epl_db();
+epl_ensure_ligas_columnas_mp_precio();
 $id  = (int)($_GET['id'] ?? 0);
 $tab = in_array($_GET['tab'] ?? '', ['equipos','partidos']) ? $_GET['tab'] : 'equipos';
 $ok  = '';
@@ -35,7 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $formato   = in_array($_POST['formato']??'',['liga_regular','mata_mata','grupos_mata_mata','liga_playoff']) ? $_POST['formato'] : $liga['formato'];
         $cat       = (int)($_POST['categoria'] ?? 0);
         $estado    = in_array($_POST['estado']??'',['proximamente','inscripcion','activa','finalizada']) ? $_POST['estado'] : $liga['estado'];
-        $precio    = (float)($_POST['precio'] ?? 0) ?: null;
         $recinto_id = (int)($_POST['recinto_id'] ?? 0) ?: null;
         $url_maps  = trim($_POST['url_maps']  ?? '');
         $f_inicio  = trim($_POST['fecha_inicio'] ?? '') ?: null;
@@ -47,17 +47,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $p3        = max(0,(int)($_POST['puntos_3']      ?? $liga['puntos_3']));
         $p4        = max(0,(int)($_POST['puntos_4']      ?? $liga['puntos_4']));
         $pg        = max(0,(int)($_POST['puntos_grupos'] ?? $liga['puntos_grupos']));
+        $sede_txt  = trim($_POST['recinto'] ?? '');
         if (!$nombre) { $err = 'El nombre es obligatorio.'; }
+        elseif (($parsed = epl_liga_precio_desde_post($_POST, $pErr)) === null) { $err = $pErr; }
         else {
+            [$precio, $precio_neto_deseado, $mp_comision_pct_db] = $parsed;
             $db->prepare("UPDATE ligas SET
-                nombre=?,tipo=?,sexo=?,formato=?,categoria=?,estado=?,precio=?,
+                nombre=?,tipo=?,sexo=?,formato=?,categoria=?,estado=?,precio=?,precio_neto_deseado=?,mp_comision_pct=?,
                 sede=?,url_maps=?,fecha_inicio=?,fecha_fin=?,
                 inscripcion_inicio=?,inscripcion_fin=?,
                 puntos_1=?,puntos_2=?,puntos_3=?,puntos_4=?,puntos_grupos=?,
                 recinto_id=?
                 WHERE id=?")
-               ->execute([$nombre,$tipo,$sexo,$formato,$cat?:null,$estado,$precio,
-                          $recinto?:null,$url_maps?:null,$f_inicio,$f_fin,$i_inicio,$i_fin,
+               ->execute([$nombre,$tipo,$sexo,$formato,$cat?:null,$estado,$precio,$precio_neto_deseado,$mp_comision_pct_db,
+                          $sede_txt?:null,$url_maps?:null,$f_inicio,$f_fin,$i_inicio,$i_fin,
                           $p1,$p2,$p3,$p4,$pg,$recinto_id,$id]);
             $ok = 'Liga actualizada.';
             $stL->execute([$id]); $liga = $stL->fetch();
@@ -770,8 +773,70 @@ $total_equipos  = count($equipos_liga);
         <div class="form-group"><label class="form-label">URL Google Maps</label><input type="url" name="url_maps" class="form-control" value="<?= epl_h($liga['url_maps']??'') ?>"></div>
         <div class="grid-2">
           <div class="form-group"><label class="form-label">Estado</label><select name="estado" class="form-control"><option value="proximamente" <?= $liga['estado']==='proximamente'?'selected':'' ?>>Próximamente</option><option value="inscripcion" <?= $liga['estado']==='inscripcion'?'selected':'' ?>>Inscripción</option><option value="activa" <?= $liga['estado']==='activa'?'selected':'' ?>>Activa</option><option value="finalizada" <?= $liga['estado']==='finalizada'?'selected':'' ?>>Finalizada</option></select></div>
-          <div class="form-group"><label class="form-label">Precio (CLP)</label><input type="number" name="precio" class="form-control" min="0" value="<?= $liga['precio']??'' ?>"></div>
         </div>
+        <?php
+          $pld = $liga['precio_neto_deseado'];
+          $liquido_checked = ($pld !== null && $pld !== '' && (float) $pld > 0);
+          $pct_liga = $liga['mp_comision_pct'] ?? null;
+          $pct_liga_show = ($pct_liga !== null && $pct_liga !== '') ? rtrim(rtrim((string)$pct_liga, '0'), '.') : '';
+          $pct_def_js = json_encode(epl_mp_comision_porcentaje_defecto());
+          $mp_step_js = (int) epl_mp_redondeo_escalon_clp();
+        ?>
+        <p style="font-size:.72rem;color:var(--gray-600);margin:.35rem 0 .5rem;line-height:1.45">
+          Mercado Pago: comisión global <strong><?= htmlspecialchars((string)epl_mp_comision_porcentaje_defecto(), ENT_QUOTES, 'UTF-8') ?>%</strong> y redondeo <strong>↑ a $<?= number_format($mp_step_js, 0, ',', '.') ?></strong> (Configuración → Integraciones); podés cambiar el % abajo por liga.
+        </p>
+        <div class="form-group" style="margin-bottom:.6rem">
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--navy)">
+            <input type="checkbox" name="precio_usar_liquido_mp" id="precioLiquidoMp" value="1" <?= $liquido_checked ? 'checked' : '' ?> style="width:18px;height:18px">
+            Calcular cobro desde líquido que quiero (tras comisión MP)
+          </label>
+        </div>
+        <div id="bloqueLiquidoMp" style="margin-bottom:.75rem;<?= $liquido_checked ? '' : 'display:none' ?>">
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Comisión MP esta liga (%)</label>
+              <input type="number" step="0.01" min="0" max="99" name="mp_comision_pct" id="mp_comision_pct" class="form-control" value="<?= epl_h($pct_liga_show) ?>" placeholder="Vacío → usa global <?= epl_h((string) epl_mp_comision_porcentaje_defecto()) ?>%">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Líquido que querés recibir (CLP)</label>
+              <input type="number" step="1" min="1" name="precio_neto_deseado" id="precio_neto_deseado" class="form-control" value="<?= $liquido_checked ? epl_h(rtrim(rtrim(number_format((float)$pld, 2, '.', ''), '0'), '.')) : '' ?>" placeholder="Ej: 45000">
+            </div>
+          </div>
+          <div style="font-size:.8rem;color:var(--gray-700);margin-top:.35rem;background:#f8fafc;border:1px solid var(--gray-200);padding:.65rem;border-radius:8px">
+            <strong>Cobro al jugador (redondeo superior):</strong> $<span id="previewBrutoMp">—</span> CLP
+            <span style="color:var(--gray-400);font-size:.75rem;margin-left:.25rem">(precio técnico, luego múltiplos de <?= number_format($mp_step_js, 0, ',', '.') ?>)</span>
+          </div>
+        </div>
+        <div class="form-group" id="bloquePrecioFijoWrap" style="margin-bottom:0;<?= $liquido_checked ? 'display:none' : '' ?>">
+          <label class="form-label">Precio por jugador (CLP) — modo fijo</label>
+          <input type="number" name="precio" id="precio_manual" class="form-control" min="0" placeholder="0 = gratis"
+            value="<?= isset($liga['precio']) && $liga['precio'] !== '' && $liga['precio'] !== null ? (int) round((float) $liga['precio']) : '' ?>">
+        </div>
+        <script>
+        (function(){
+          var chk = document.getElementById('precioLiquidoMp');
+          var bloq = document.getElementById('bloqueLiquidoMp');
+          var wrapFijo = document.getElementById('bloquePrecioFijoWrap');
+          var pctEl = document.getElementById('mp_comision_pct');
+          var netoEl = document.getElementById('precio_neto_deseado');
+          var out = document.getElementById('previewBrutoMp');
+          var defPct = <?= $pct_def_js ?>;
+          var stepMp = <?= json_encode(max(1, $mp_step_js)) ?>;
+          function parsePct(){ var r = (pctEl.value||'').replace(',','.'); if(r===''||isNaN(r)) return defPct; var x=parseFloat(r); return (x>0&&x<100)?x:defPct }
+          function bruto(){
+            var n=parseFloat(netoEl.value)||0,p=parsePct();
+            if(n<=0||p>=100) return 0;
+            var raw = n/(1-p/100);
+            return Math.ceil(raw/stepMp)*stepMp;
+          }
+          function refrescar(){ var b=bruto(); out.textContent = b ? b.toLocaleString('es-CL') : '—'; }
+          function toggle(){ var on=chk.checked; bloq.style.display= on?'':'none'; wrapFijo.style.display= on?'none':'block'; refrescar(); }
+          chk.addEventListener('change',toggle);
+          pctEl.addEventListener('input',refrescar);
+          netoEl.addEventListener('input',refrescar);
+          toggle();
+        })();
+        </script>
         <p style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);margin:1rem 0 .75rem;border-top:1px solid var(--gray-200);padding-top:1rem">Puntos de ranking</p>
         <div class="grid-2">
           <div class="form-group"><label class="form-label">🥇 1°</label><input type="number" name="puntos_1" class="form-control" min="0" value="<?= $liga['puntos_1'] ?>"></div>

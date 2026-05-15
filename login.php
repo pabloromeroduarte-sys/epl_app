@@ -4,7 +4,13 @@ require_once 'includes/functions.php';
 
 // Redirigir si ya está logueado
 if (epl_jugador_actual()) {
-    header('Location: dashboard.php');
+    $back = $_GET['back'] ?? 'dashboard.php';
+    $dest = (str_starts_with($back, '/') && !str_contains($back, '//') && !str_contains($back, '..'))
+        ? $back
+        : ((str_contains($back, 'inscribirse') || str_contains($back, '.php'))
+            ? epl_url(ltrim($back, '/'))
+            : epl_url('dashboard.php'));
+    header('Location: ' . $dest);
     exit;
 }
 
@@ -19,9 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Completa todos los campos.';
     } elseif (epl_login($email, $password)) {
         $jugador = epl_jugador_actual();
-        // Redirigir a back si es URL relativa segura
-        $dest = filter_var($back, FILTER_VALIDATE_URL) ? 'dashboard.php' : ltrim($back, '/');
-        header("Location: $dest");
+        // Redirigir al destino original (back debe ser path absoluto con /)
+        $dest = (str_starts_with($back, '/') && !str_contains($back, '//') && !str_contains($back, '..'))
+            ? $back
+            : ((str_contains($back, 'inscribirse') || str_contains($back, '.php'))
+                ? epl_url(ltrim($back, '/'))
+                : epl_url('dashboard.php'));
+        header('Location: ' . $dest);
         exit;
     } else {
         $error = 'Email o contraseña incorrectos.';

@@ -72,6 +72,8 @@ try {
     step("  · estado ENUM ligas: " . $e->getMessage(), 'warn');
 }
 addCol($db, 'ligas', 'precio',              "DECIMAL(10,2) DEFAULT NULL AFTER `estado`");
+addCol($db, 'ligas', 'precio_neto_deseado', "DECIMAL(12,2) NULL DEFAULT NULL AFTER `precio`");
+addCol($db, 'ligas', 'mp_comision_pct',     "DECIMAL(8,4) NULL DEFAULT NULL AFTER `precio_neto_deseado`");
 addCol($db, 'ligas', 'sede',                "VARCHAR(200) DEFAULT NULL AFTER `fecha_fin`");
 addCol($db, 'ligas', 'url_maps',            "VARCHAR(500) DEFAULT NULL AFTER `sede`");
 addCol($db, 'ligas', 'foto_portada',        "VARCHAR(500) DEFAULT NULL AFTER `descripcion`");
