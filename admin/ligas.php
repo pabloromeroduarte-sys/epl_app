@@ -62,20 +62,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$ligas = $db->query("
-    SELECT l.*,
-           r.nombre AS recinto_nombre,
-           rs.nombre AS recinto_superior_nombre,
-           COUNT(DISTINCT le.equipo_id) AS total_equipos,
-           COUNT(DISTINCT p.id) AS total_partidos
-    FROM ligas l
-    LEFT JOIN recintos r ON r.id = l.recinto_id
-    LEFT JOIN recintos rs ON rs.id = r.superior_id
-    LEFT JOIN liga_equipos le ON le.liga_id = l.id
-    LEFT JOIN partidos p ON p.liga_id = l.id
-    GROUP BY l.id
-    ORDER BY l.id DESC
-")->fetchAll();
+try {
+    $ligas = $db->query("
+        SELECT l.*,
+               r.nombre AS recinto_nombre,
+               rs.nombre AS recinto_superior_nombre,
+               COUNT(DISTINCT le.equipo_id) AS total_equipos,
+               COUNT(DISTINCT p.id) AS total_partidos
+        FROM ligas l
+        LEFT JOIN recintos r ON r.id = l.recinto_id
+        LEFT JOIN recintos rs ON rs.id = r.superior_id
+        LEFT JOIN liga_equipos le ON le.liga_id = l.id
+        LEFT JOIN partidos p ON p.liga_id = l.id
+        GROUP BY l.id
+        ORDER BY l.id DESC
+    ")->fetchAll();
+} catch (PDOException $e) {
+    // Fallback sin JOIN de recinto si la columna aún no existe
+    $ligas = $db->query("
+        SELECT l.*,
+               NULL AS recinto_nombre,
+               NULL AS recinto_superior_nombre,
+               COUNT(DISTINCT le.equipo_id) AS total_equipos,
+               COUNT(DISTINCT p.id) AS total_partidos
+        FROM ligas l
+        LEFT JOIN liga_equipos le ON le.liga_id = l.id
+        LEFT JOIN partidos p ON p.liga_id = l.id
+        GROUP BY l.id
+        ORDER BY l.id DESC
+    ")->fetchAll();
+}
 
 $tipo_label  = ['liga'=>'Liga','torneo'=>'Americano'];
 $fmt_label   = [

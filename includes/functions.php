@@ -697,16 +697,37 @@ function epl_ensure_ligas_columnas_mp_precio(): void {
     $done = true;
     try {
         $db = epl_db();
-        $exists = $db->query("SHOW COLUMNS FROM ligas LIKE 'precio_neto_deseado'")->fetch();
-        if (!$exists) {
-            $db->exec('ALTER TABLE ligas ADD COLUMN precio_neto_deseado DECIMAL(12,2) NULL DEFAULT NULL AFTER precio');
+
+        // Columnas nuevas que podrían no existir en instancias antiguas.
+        // Clave => [tipo SQL, posición AFTER col (o null para al final)]
+        $nuevas = [
+            'precio_neto_deseado' => ["DECIMAL(12,2) NULL DEFAULT NULL",           'precio'],
+            'mp_comision_pct'     => ["DECIMAL(8,4) NULL DEFAULT NULL",             'precio_neto_deseado'],
+            'sexo'                => ["ENUM('masculino','femenino','mixto') DEFAULT 'masculino'", 'categoria'],
+            'url_maps'            => ["VARCHAR(500) DEFAULT NULL",                  'sede'],
+            'recinto_id'          => ["INT UNSIGNED NULL DEFAULT NULL",             null],
+            'puntos_1'            => ["INT UNSIGNED NOT NULL DEFAULT 100",          null],
+            'puntos_2'            => ["INT UNSIGNED NOT NULL DEFAULT 70",           'puntos_1'],
+            'puntos_3'            => ["INT UNSIGNED NOT NULL DEFAULT 50",           'puntos_2'],
+            'puntos_4'            => ["INT UNSIGNED NOT NULL DEFAULT 30",           'puntos_3'],
+            'puntos_grupos'       => ["INT UNSIGNED NOT NULL DEFAULT 10",           'puntos_4'],
+        ];
+
+        // Obtener columnas existentes una sola vez
+        $existing = [];
+        foreach ($db->query("SHOW COLUMNS FROM ligas")->fetchAll() as $r) {
+            $existing[] = strtolower($r['Field']);
         }
-        $exists2 = $db->query("SHOW COLUMNS FROM ligas LIKE 'mp_comision_pct'")->fetch();
-        if (!$exists2) {
-            $db->exec('ALTER TABLE ligas ADD COLUMN mp_comision_pct DECIMAL(8,4) NULL DEFAULT NULL AFTER precio_neto_deseado');
+
+        foreach ($nuevas as $col => [$tipoDef, $after]) {
+            if (in_array(strtolower($col), $existing)) {
+                continue;
+            }
+            $afterSql = $after ? " AFTER `$after`" : '';
+            $db->exec("ALTER TABLE ligas ADD COLUMN `$col` $tipoDef$afterSql");
         }
     } catch (Throwable $e) {
-        // sin permisos ALTER: el admin puede correr migration/update_v2.php
+        // sin permisos ALTER: correr migration/update_v2.php manualmente
     }
 }
 
