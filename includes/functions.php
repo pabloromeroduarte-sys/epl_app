@@ -262,3 +262,80 @@ function epl_notif_icono(string $tipo): string {
     return $iconos[$tipo] ?? '🔔';
 }
 
+// -------------------------------------------------------
+// Configuración global (clave/valor)
+// -------------------------------------------------------
+
+function epl_config_get(string $clave, string $default = ''): string {
+    static $cache = [];
+    if (!isset($cache[$clave])) {
+        try {
+            $st = epl_db()->prepare("SELECT valor FROM configuracion WHERE clave = ?");
+            $st->execute([$clave]);
+            $cache[$clave] = $st->fetchColumn() ?: '';
+        } catch (\Throwable $e) {
+            return $default;
+        }
+    }
+    return $cache[$clave] !== '' ? $cache[$clave] : $default;
+}
+
+function epl_config_set(string $clave, string $valor): void {
+    epl_db()->prepare("INSERT INTO configuracion (clave, valor) VALUES (?,?) ON DUPLICATE KEY UPDATE valor=VALUES(valor)")
+             ->execute([$clave, $valor]);
+}
+
+// -------------------------------------------------------
+// ERP Financiero — pagos
+// -------------------------------------------------------
+
+function epl_pago_crear(array $data): int {
+    $db = epl_db();
+    $st = $db->prepare("
+        INSERT INTO pagos (liga_id, jugador_id, inscripcion_id, concepto, rol, monto, estado, metodo, mp_preference_id, token_ref, equipo_token, notas)
+        VALUES (:liga_id, :jugador_id, :inscripcion_id, :concepto, :rol, :monto, :estado, :metodo, :mp_preference_id, :token_ref, :equipo_token, :notas)
+    ");
+    $st->execute([
+        ':liga_id'          => $data['liga_id']          ?? null,
+        ':jugador_id'       => $data['jugador_id']       ?? null,
+        ':inscripcion_id'   => $data['inscripcion_id']   ?? null,
+        ':concepto'         => $data['concepto']         ?? '',
+        ':rol'              => $data['rol']              ?? 'manual',
+        ':monto'            => $data['monto']            ?? 0,
+        ':estado'           => $data['estado']           ?? 'pendiente',
+        ':metodo'           => $data['metodo']           ?? null,
+        ':mp_preference_id' => $data['mp_preference_id'] ?? null,
+        ':token_ref'        => $data['token_ref']        ?? null,
+        ':equipo_token'     => $data['equipo_token']     ?? null,
+        ':notas'            => $data['notas']            ?? null,
+    ]);
+    return (int)$db->lastInsertId();
+}
+
+function epl_pago_completar(string $token_ref, string $mp_payment_id): bool {
+    $st = epl_db()->prepare("UPDATE pagos SET estado='completado', mp_payment_id=? WHERE token_ref=? AND estado='pendiente'");
+    $st->execute([$mp_payment_id, $token_ref]);
+    return $st->rowCount() > 0;
+}
+
+function epl_pagos_listar(int $liga_id = 0, string $estado = ''): array {
+    $db = epl_db();
+    $where = [];
+    $params = [];
+    if ($liga_id) { $where[] = 'p.liga_id = ?'; $params[] = $liga_id; }
+    if ($estado)  { $where[] = 'p.estado = ?';  $params[] = $estado; }
+    $sql = "
+        SELECT p.*,
+               l.nombre AS liga_nombre,
+               j.nombre AS jugador_nombre_real, j.apellido AS jugador_apellido
+        FROM pagos p
+        LEFT JOIN ligas l    ON l.id = p.liga_id
+        LEFT JOIN jugadores j ON j.id = p.jugador_id
+        " . ($where ? 'WHERE ' . implode(' AND ', $where) : '') . "
+        ORDER BY p.fecha DESC
+    ";
+    $st = $db->prepare($sql);
+    $st->execute($params);
+    return $st->fetchAll();
+}
+

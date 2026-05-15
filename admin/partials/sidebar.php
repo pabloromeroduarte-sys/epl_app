@@ -18,6 +18,7 @@ $cur = basename($_SERVER['PHP_SELF']);
       <a href="dashboard_repro.php" class="dash-nav-link <?= $cur==='dashboard_repro.php'?'active':'' ?>" style="color:var(--gold)">Reprogramaciones</a>
       <a href="inscripciones.php" class="dash-nav-link <?= $cur==='inscripciones.php'?'active':'' ?>">Inscripciones</a>
       <a href="suplentes.php"    class="dash-nav-link <?= $cur==='suplentes.php'   ?'active':'' ?>">Suplentes</a>
+      <a href="erp_financiero.php" class="dash-nav-link <?= $cur==='erp_financiero.php'?'active':'' ?>" style="color:var(--gold)">💰 ERP Financiero</a>
     </div>
     <div class="dash-nav-section">
       <div class="dash-nav-label">Acciones</div>
