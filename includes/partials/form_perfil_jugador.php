@@ -109,14 +109,12 @@ $list_palas   = 'lista_palas_' . $pf_prefix;
 <div style="<?= $grid ?>">
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">
     <label class="<?= $lbl ?>" for="<?= $id('comuna') ?>">Comuna</label>
-    <input type="text" name="comuna" id="<?= $id('comuna') ?>" value="<?= $pf_h('comuna') ?>"
-           list="<?= $list_comunas ?>" placeholder="Escribe tu comuna..." autocomplete="off"
-           class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
-    <datalist id="<?= $list_comunas ?>">
+    <select name="comuna" id="<?= $id('comuna') ?>" class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
+      <option value="">- Selecciona tu comuna -</option>
       <?php foreach (epl_lista_comunas_chile() as $c): ?>
-        <option value="<?= epl_h($c) ?>">
+        <option value="<?= epl_h($c) ?>" <?= ($pf_val['comuna'] ?? '') === $c ? 'selected' : '' ?>><?= epl_h($c) ?></option>
       <?php endforeach; ?>
-    </datalist>
+    </select>
   </div>
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">
     <label class="<?= $lbl ?>" for="<?= $id('profesion') ?>">Sector / Profesión</label>
@@ -158,14 +156,12 @@ $list_palas   = 'lista_palas_' . $pf_prefix;
 <div style="<?= $grid ?>">
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">
     <label class="<?= $lbl ?>" for="<?= $id('pala') ?>">Marca de pala</label>
-    <input type="text" name="pala" id="<?= $id('pala') ?>" value="<?= $pf_h('pala') ?>"
-           list="<?= $list_palas ?>" placeholder="Marca / Modelo" autocomplete="off"
-           class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
-    <datalist id="<?= $list_palas ?>">
+    <select name="pala" id="<?= $id('pala') ?>" class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
+      <option value="">- Selecciona marca -</option>
       <?php foreach (epl_lista_marcas_pala() as $mp): ?>
-        <option value="<?= epl_h($mp) ?>">
+        <option value="<?= epl_h($mp) ?>" <?= ($pf_val['pala'] ?? '') === $mp ? 'selected' : '' ?>><?= epl_h($mp) ?></option>
       <?php endforeach; ?>
-    </datalist>
+    </select>
   </div>
   <?php if ($pf_show_talla): ?>
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">
