@@ -123,6 +123,14 @@ $_ranking = $_rk->fetch();
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
       <span>Inscrip.</span>
     </a>
+    <a href="<?= epl_url('notificaciones.php') ?>" class="dash-bottom-link <?= $_ptab==='notificaciones'?'active':'' ?>" style="position:relative">
+      <?php $_nb = epl_notif_no_leidas((int)$_j['id']); ?>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      <?php if ($_nb > 0): ?>
+        <span style="position:absolute;top:4px;right:10px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;border-radius:999px;min-width:15px;height:15px;display:flex;align-items:center;justify-content:center;padding:0 3px"><?= $_nb > 9 ? '9+' : $_nb ?></span>
+      <?php endif; ?>
+      <span>Notif.</span>
+    </a>
     <a href="<?= epl_url('mi_perfil.php') ?>" class="dash-bottom-link <?= $_ptab==='perfil'?'active':'' ?>">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
       <span>Perfil</span>
