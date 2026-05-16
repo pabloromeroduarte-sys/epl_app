@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_eliminar'] ?? '')) {
     try {
         $del_id = (int)($_POST['insc_id'] ?? 0);
         if ($del_id) {
-            $chk = $db->prepare("SELECT id, token, equipo_id FROM inscripciones WHERE id=? AND jugador_id=? AND estado='pendiente'");
+            $chk = $db->prepare("SELECT id, token, equipo_id FROM inscripciones WHERE id=? AND jugador_id=?");
             $chk->execute([$del_id, $jugador['id']]);
             $row = $chk->fetch();
             if ($row) {
@@ -656,7 +656,7 @@ try {
               Pago: <?= ucfirst($insc['pago_estado']) ?>
             </span>
 
-            <?php if ($insc['estado'] === 'pendiente' && $esCap): ?>
+            <?php if ($esCap): ?>
               <form method="POST" style="margin:0">
                 <input type="hidden" name="epl_eliminar" value="1">
                 <input type="hidden" name="insc_id"     value="<?= $insc['id'] ?>">
