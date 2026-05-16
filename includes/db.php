@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 date_default_timezone_set('America/Santiago');
+ini_set('default_charset', 'UTF-8');
+mb_internal_encoding('UTF-8');
 
 function epl_env(string $key, string $default = ''): string {
     static $cache = [];

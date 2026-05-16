@@ -1,7 +1,7 @@
-﻿<?php
+<?php
 /**
- * Formulario de inscripciÃ³n pÃºblico â€” Partner (por token del CapitÃ¡n)
- * Flujo: token en URL â†’ completa perfil â†’ paga â†’ equipo confirmado
+ * Formulario de inscripción público — Partner (por token del Capitán)
+ * Flujo: token en URL → completa perfil → paga → equipo confirmado
  */
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
@@ -14,14 +14,14 @@ $error = '';
 $token = preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['token'] ?? '');
 
 if (!$token) {
-    $page_title = 'Enlace invÃ¡lido';
+    $page_title = 'Enlace inválido';
     require_once __DIR__ . '/includes/header.php';
-    echo '<div style="padding:4rem 1rem;text-align:center"><h2 style="color:#1C2F48">Enlace no vÃ¡lido</h2><p>Este enlace de inscripciÃ³n no existe o ya fue utilizado.</p></div>';
+    echo '<div style="padding:4rem 1rem;text-align:center"><h2 style="color:#1C2F48">Enlace no válido</h2><p>Este enlace de inscripción no existe o ya fue utilizado.</p></div>';
     require_once __DIR__ . '/includes/footer.php';
     exit;
 }
 
-// Buscar inscripciÃ³n del capitÃ¡n con ese token
+// Buscar inscripción del capitán con ese token
 $insc_cap = $db->prepare("
     SELECT i.*, l.nombre AS liga_nombre, l.precio,
            j.nombre AS cap_nombre, j.apellido AS cap_apellido
@@ -37,7 +37,7 @@ $insc_cap = $insc_cap->fetch();
 if (!$insc_cap) {
     $page_title = 'Enlace expirado';
     require_once __DIR__ . '/includes/header.php';
-    echo '<div style="padding:4rem 1rem;text-align:center"><h2 style="color:#1C2F48">Enlace no encontrado</h2><p>Este enlace no existe, ya venciÃ³, o el equipo ya estÃ¡ completo.</p></div>';
+    echo '<div style="padding:4rem 1rem;text-align:center"><h2 style="color:#1C2F48">Enlace no encontrado</h2><p>Este enlace no existe, ya venció, o el equipo ya está completo.</p></div>';
     require_once __DIR__ . '/includes/footer.php';
     exit;
 }
@@ -70,7 +70,7 @@ if ($jugador_sesion && empty($_GET['pago'])) {
     }
 }
 
-// â”€â”€ Retorno exitoso de MercadoPago â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Retorno exitoso de MercadoPago ──────────────────────────────
 if (isset($_GET['pago']) && $_GET['pago'] === 'exito') {
     $payment_id = isset($_GET['payment_id']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['payment_id']) : 'Gratis';
     $token_p    = preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['token_partner'] ?? '');
@@ -81,19 +81,19 @@ if (isset($_GET['pago']) && $_GET['pago'] === 'exito') {
            ->execute([$payment_id, $token_p]);
     }
 
-    $page_title = 'Â¡Equipo Confirmado!';
+    $page_title = '¡Equipo Confirmado!';
     require_once __DIR__ . '/includes/header.php';
     ?>
     <div style="min-height:80vh;display:flex;align-items:center;justify-content:center;padding:2rem 1rem;background:#f8fafc">
       <div style="background:#fff;border-radius:20px;box-shadow:0 4px 30px rgba(0,0,0,.08);padding:2.5rem;max-width:480px;width:100%;text-align:center">
-        <div style="font-size:3.5rem;margin-bottom:1rem">ðŸŽ¾</div>
-        <h1 style="font-size:1.5rem;font-weight:800;color:#1C2F48;text-transform:uppercase;margin:0 0 .75rem">Â¡Equipo Confirmado!</h1>
+        <div style="font-size:3.5rem;margin-bottom:1rem">🎾</div>
+        <h1 style="font-size:1.5rem;font-weight:800;color:#1C2F48;text-transform:uppercase;margin:0 0 .75rem">¡Equipo Confirmado!</h1>
         <p style="color:#64748b;font-weight:600;margin-bottom:1.5rem">
-          TÃº y <strong><?= epl_h($insc_cap['cap_nombre'] . ' ' . $insc_cap['cap_apellido']) ?></strong>
-          estÃ¡n inscritos en <strong><?= epl_h($insc_cap['liga_nombre']) ?></strong>.
+          Tú y <strong><?= epl_h($insc_cap['cap_nombre'] . ' ' . $insc_cap['cap_apellido']) ?></strong>
+          están inscritos en <strong><?= epl_h($insc_cap['liga_nombre']) ?></strong>.
         </p>
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;font-size:.88rem;color:#16a34a;font-weight:700">
-          Cupo confirmado. Cuando tu capitÃ¡n tambiÃ©n valide, el equipo quedarÃ¡ listo para jugar.
+          Cupo confirmado. Cuando tu capitán también valide, el equipo quedará listo para jugar.
         </div>
         <a href="<?= epl_url('dashboard.php') ?>" style="display:inline-block;background:#1C2F48;color:#C9A762;font-weight:800;font-size:.9rem;text-transform:uppercase;padding:.8rem 1.75rem;border-radius:10px;text-decoration:none">
           Ir a mi Dashboard
@@ -105,12 +105,24 @@ if (isset($_GET['pago']) && $_GET['pago'] === 'exito') {
     exit;
 }
 
-// â”€â”€ Retorno fallido â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Retorno fallido ─────────────────────────────────────────────
 if (isset($_GET['pago']) && $_GET['pago'] === 'fallo') {
     $error = 'El pago no pudo completarse. Intenta nuevamente.';
 }
 
-// â”€â”€ Procesar formulario â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+require_once __DIR__ . '/includes/epl_perfil_data.php';
+
+$jugador_actual = epl_jugador_db() ?: epl_jugador_actual();
+$pf_val         = epl_perfil_val_desde_jugador($jugador_actual);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['epl_partner'])) {
+    foreach (array_keys($pf_val) as $campo) {
+        if (isset($_POST[$campo])) {
+            $pf_val[$campo] = trim((string) $_POST[$campo]);
+        }
+    }
+}
+
+// ── Procesar formulario ─────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['epl_partner'])) {
     $nombre     = trim($_POST['nombre']    ?? '');
     $apellido   = trim($_POST['apellido']  ?? '');
@@ -133,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['epl_partner'])) {
         $liga_id = (int)$insc_cap['liga_id'];
         $precio  = (float)($insc_cap['precio'] ?? 0);
 
-        // Si estÃ¡ logueado, usar su id; si no, buscar/crear por email (fila canÃ³nica)
+        // Si está logueado, usar su id; si no, buscar/crear por email (fila canónica)
         $email = strtolower(trim($email));
         $canon = epl_jugador_por_email($email, false);
 
@@ -147,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['epl_partner'])) {
                ->execute([$nombre, $apellido, $rut, $telefono, $nivel, $lado, $sexo, $fn, $comuna, $profesion, $pala, $talla, $frecuencia, $pid]);
         }
 
-        // Crear/buscar equipo con el capitÃ¡n
+        // Crear/buscar equipo con el capitán
         $cap_id = (int)$insc_cap['jugador_id'];
         $stEq   = $db->prepare("SELECT id FROM equipos WHERE (jugador1_id=? AND jugador2_id=?) OR (jugador1_id=? AND jugador2_id=?) LIMIT 1");
         $stEq->execute([$cap_id, $pid, $pid, $cap_id]);
@@ -156,18 +168,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['epl_partner'])) {
         if (!$equipo_id) {
             $cap_row = $db->prepare("SELECT apellido FROM jugadores WHERE id=?");
             $cap_row->execute([$cap_id]);
-            $cap_ape = $cap_row->fetchColumn() ?? 'CapitÃ¡n';
+            $cap_ape = $cap_row->fetchColumn() ?? 'Capitán';
             $db->prepare("INSERT INTO equipos (nombre, jugador1_id, jugador2_id) VALUES (?,?,?)")
                ->execute([$cap_ape . ' / ' . ($apellido ?: $nombre), $cap_id, $pid]);
             $equipo_id = (int)$db->lastInsertId();
         }
 
-        // Actualizar equipo en inscripciÃ³n del capitÃ¡n
+        // Actualizar equipo en inscripción del capitán
         $db->prepare("UPDATE inscripciones SET equipo_id=? WHERE token=? AND rol_equipo='capitan'")->execute([$equipo_id, $token]);
 
         $token_partner = bin2hex(random_bytes(20));
 
-        // Registrar inscripciÃ³n del partner
+        // Registrar inscripción del partner
         $db->prepare("INSERT INTO inscripciones (jugador_id, liga_id, equipo_id, rol_equipo, token, estado, pago_estado, pago_monto) VALUES (?,?,?,?,?,?,?,?)")
            ->execute([$pid, $liga_id, $equipo_id, 'partner', $token_partner, 'pendiente', 'pendiente', $precio ?: null]);
         $insc_id = (int)$db->lastInsertId();
@@ -182,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['epl_partner'])) {
             'liga_id'      => $liga_id,
             'jugador_id'   => $pid,
             'inscripcion_id' => $insc_id,
-            'concepto'     => 'InscripciÃ³n Partner EPL â€” ' . $insc_cap['liga_nombre'],
+            'concepto'     => 'Inscripción Partner EPL — ' . $insc_cap['liga_nombre'],
             'rol'          => 'partner',
             'monto'        => $precio,
             'estado'       => $precio > 0 ? 'pendiente' : 'completado',
@@ -203,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['epl_partner'])) {
 
         $body_mp = json_encode([
             'items' => [[
-                'title'       => 'InscripciÃ³n Partner EPL â€” ' . $insc_cap['liga_nombre'],
+                'title'       => 'Inscripción Partner EPL — ' . $insc_cap['liga_nombre'],
                 'quantity'    => 1,
                 'unit_price'  => (int)$precio,
                 'currency_id' => 'CLP',
@@ -240,19 +252,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['epl_partner'])) {
     }
 }
 
-$page_title = 'Confirmar inscripciÃ³n â€” Partner';
+$page_title = 'Confirmar inscripción — Partner';
 require_once __DIR__ . '/includes/header.php';
-require_once __DIR__ . '/includes/epl_perfil_data.php';
 
-$jugador_actual = epl_jugador_db() ?: epl_jugador_actual();
-$pf_val         = epl_perfil_val_desde_jugador($jugador_actual);
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    foreach (array_keys($pf_val) as $campo) {
-        if (isset($_POST[$campo])) {
-            $pf_val[$campo] = trim((string) $_POST[$campo]);
-        }
-    }
-}
 ?>
 
 <div style="min-height:80vh;background:#f8fafc;padding:2rem 1rem">
@@ -260,10 +262,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div style="text-align:center;margin-bottom:2rem">
       <div style="font-size:.75rem;font-weight:700;color:#C9A762;text-transform:uppercase;letter-spacing:.15em;margin-bottom:.5rem">Elite Padel League</div>
-      <h1 style="font-size:1.7rem;font-weight:800;color:#1C2F48;text-transform:uppercase;margin:0 0 .5rem">Confirma tu inscripciÃ³n</h1>
+      <h1 style="font-size:1.7rem;font-weight:800;color:#1C2F48;text-transform:uppercase;margin:0 0 .5rem">Confirma tu inscripción</h1>
       <p style="color:#64748b;font-weight:500;font-size:.9rem">
         <strong><?= epl_h($insc_cap['cap_nombre'] . ' ' . $insc_cap['cap_apellido']) ?></strong>
-        te invitÃ³ a jugar en <strong><?= epl_h($insc_cap['liga_nombre']) ?></strong>.
+        te invitó a jugar en <strong><?= epl_h($insc_cap['liga_nombre']) ?></strong>.
       </p>
       <?php if ($insc_cap['precio'] > 0): ?>
         <div style="display:inline-block;background:#1C2F48;color:#C9A762;font-weight:800;padding:.4rem 1rem;border-radius:8px;font-size:.85rem;margin-top:.5rem">
@@ -271,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
       <?php else: ?>
         <div style="display:inline-block;background:#f0fdf4;color:#16a34a;font-weight:800;padding:.4rem 1rem;border-radius:8px;font-size:.85rem;margin-top:.5rem;border:1px solid #bbf7d0">
-          Â¡InscripciÃ³n gratuita!
+          ¡Inscripción gratuita!
         </div>
       <?php endif; ?>
     </div>
@@ -283,15 +285,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if (!$jugador_actual): ?>
     <!-- Banner login si ya tiene cuenta -->
     <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
-      <div style="font-size:.85rem;color:#475569;font-weight:600">Â¿Ya tenÃ©s cuenta en Elite Padel League?</div>
+      <div style="font-size:.85rem;color:#475569;font-weight:600">¿Ya tenés cuenta en Elite Padel League?</div>
       <a href="<?= epl_url('login.php?back=' . urlencode('inscribirse_partner.php?token=' . $token)) ?>"
          style="background:#1C2F48;color:#C9A762;font-weight:800;font-size:.82rem;text-transform:uppercase;padding:.55rem 1.1rem;border-radius:8px;text-decoration:none;letter-spacing:.04em;white-space:nowrap">
-        Iniciar sesiÃ³n â†’
+        Iniciar sesión →
       </a>
     </div>
     <?php else: ?>
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.83rem;color:#15803d;font-weight:700">
-      âœ“ Logueado como <?= epl_h($jugador_actual['nombre'].' '.$jugador_actual['apellido']) ?> â€” tus datos estÃ¡n pre-completados.
+      ✓ Logueado como <?= epl_h($jugador_actual['nombre'].' '.$jugador_actual['apellido']) ?> — tus datos están pre-completados.
     </div>
     <?php endif; ?>
 
@@ -309,11 +311,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         include __DIR__ . '/includes/partials/form_perfil_jugador.php';
         ?>
-
-        <button type="submit" style="width:100%;padding:.9rem;background:#1C2F48;color:#C9A762;font-weight:800;font-size:.95rem;text-transform:uppercase;border:none;border-radius:12px;cursor:pointer;letter-spacing:.04em">
-          <?= $insc_cap['precio'] > 0 ? 'Confirmar e ir a pagar â†’' : 'Confirmar mi inscripciÃ³n â†’' ?>
+        <button type="submit" style="width:100%;padding:.9rem;background:#1C2F48;color:#C9A762;font-weight:800;font-size:.95rem;text-transform:uppercase;border:none;border-radius:12px;cursor:pointer;letter-spacing:.04em;margin-top:.5rem">
+          <?= $insc_cap['precio'] > 0 ? 'Confirmar e ir a pagar →' : 'Confirmar mi inscripción →' ?>
         </button>
       </form>
+
     </div>
 
   </div>

@@ -82,7 +82,7 @@ $list_palas   = 'lista_palas_' . $pf_prefix;
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">
     <label class="<?= $lbl ?>" for="<?= $id('sexo') ?>">Sexo</label>
     <select name="sexo" id="<?= $id('sexo') ?>" class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
-      <option value="">— No indicar —</option>
+      <option value="">- No indicar -</option>
       <option value="M"    <?= ($pf_val['sexo'] ?? '') === 'M' ? 'selected' : '' ?>>Masculino</option>
       <option value="F"    <?= ($pf_val['sexo'] ?? '') === 'F' ? 'selected' : '' ?>>Femenino</option>
       <option value="otro" <?= ($pf_val['sexo'] ?? '') === 'otro' ? 'selected' : '' ?>>Otro</option>
@@ -121,7 +121,7 @@ $list_palas   = 'lista_palas_' . $pf_prefix;
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">
     <label class="<?= $lbl ?>" for="<?= $id('profesion') ?>">Sector / Profesión</label>
     <select name="profesion" id="<?= $id('profesion') ?>" class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
-      <option value="">— Selecciona —</option>
+      <option value="">- Selecciona -</option>
       <?php foreach (epl_lista_profesiones() as $pr): ?>
         <option value="<?= epl_h($pr) ?>" <?= ($pf_val['profesion'] ?? '') === $pr ? 'selected' : '' ?>><?= epl_h($pr) ?></option>
       <?php endforeach; ?>
@@ -147,7 +147,7 @@ $list_palas   = 'lista_palas_' . $pf_prefix;
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">
     <label class="<?= $lbl ?>" for="<?= $id('lado') ?>">Lado de juego</label>
     <select name="lado" id="<?= $id('lado') ?>" class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
-      <option value="">— No definido —</option>
+      <option value="">- No definido -</option>
       <option value="derecha" <?= ($pf_val['lado'] ?? '') === 'derecha' ? 'selected' : '' ?>>Drive</option>
       <option value="reves"   <?= ($pf_val['lado'] ?? '') === 'reves'   ? 'selected' : '' ?>>Revés</option>
       <option value="ambos"   <?= ($pf_val['lado'] ?? '') === 'ambos'   ? 'selected' : '' ?>>Ambos</option>
@@ -171,7 +171,7 @@ $list_palas   = 'lista_palas_' . $pf_prefix;
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">
     <label class="<?= $lbl ?>" for="<?= $id('talla') ?>">Talla de camiseta</label>
     <select name="talla" id="<?= $id('talla') ?>" class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
-      <option value="">— Selecciona —</option>
+      <option value="">- Selecciona -</option>
       <?php foreach (['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] as $t): ?>
         <option value="<?= $t ?>" <?= ($pf_val['talla'] ?? '') === $t ? 'selected' : '' ?>><?= $t ?></option>
       <?php endforeach; ?>
@@ -181,7 +181,7 @@ $list_palas   = 'lista_palas_' . $pf_prefix;
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">
     <label class="<?= $lbl ?>" for="<?= $id('frecuencia_juego') ?>">Frecuencia de juego</label>
     <select name="frecuencia_juego" id="<?= $id('frecuencia_juego') ?>" class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
-      <option value="">— No indicar —</option>
+      <option value="">- No indicar -</option>
       <option value="1_semana"  <?= ($pf_val['frecuencia_juego'] ?? '') === '1_semana' ? 'selected' : '' ?>>1 vez por semana</option>
       <option value="2_semana"  <?= ($pf_val['frecuencia_juego'] ?? '') === '2_semana' ? 'selected' : '' ?>>2 veces por semana</option>
       <option value="3_o_mas"   <?= ($pf_val['frecuencia_juego'] ?? '') === '3_o_mas' ? 'selected' : '' ?>>3 o más por semana</option>
@@ -195,7 +195,7 @@ $list_palas   = 'lista_palas_' . $pf_prefix;
 <div style="<?= $pf_compact ? $wrap : 'form-group' ?>">
   <label class="<?= $lbl ?>" for="<?= $id('frecuencia_juego') ?>">Frecuencia de juego</label>
   <select name="frecuencia_juego" id="<?= $id('frecuencia_juego') ?>" class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
-    <option value="">— Selecciona —</option>
+    <option value="">- Selecciona -</option>
     <option value="1_semana"  <?= ($pf_val['frecuencia_juego'] ?? '') === '1_semana' ? 'selected' : '' ?>>1 vez por semana</option>
     <option value="2_semana"  <?= ($pf_val['frecuencia_juego'] ?? '') === '2_semana' ? 'selected' : '' ?>>2 veces por semana</option>
     <option value="3_o_mas"   <?= ($pf_val['frecuencia_juego'] ?? '') === '3_o_mas' ? 'selected' : '' ?>>3 o más veces</option>

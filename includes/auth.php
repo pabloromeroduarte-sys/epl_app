@@ -2,6 +2,10 @@
 declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 
+if (!headers_sent()) {
+    header('Content-Type: text/html; charset=UTF-8');
+}
+
 function epl_session_start(): void {
     if (session_status() === PHP_SESSION_NONE) {
         session_start([
