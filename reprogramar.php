@@ -91,51 +91,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
 
         $db->prepare("UPDATE partidos SET estado='reprogramado' WHERE id=?")->execute([$partido_id]);
 
-        $destinatarios = [];
-        $jugadores_ids = array_unique([$partido['l1'], $partido['l2'], $partido['v1'], $partido['v2']]);
-        foreach ($jugadores_ids as $jid) {
-            if ($jid != $jugador['id']) {
-                $stJ = $db->prepare("SELECT email FROM jugadores WHERE id=?");
-                $stJ->execute([$jid]);
-                if ($row = $stJ->fetch()) $destinatarios[] = $row['email'];
-            }
-        }
-        $stA = $db->query("SELECT email FROM jugadores WHERE rol='admin' AND estado='activo'");
-        while ($row = $stA->fetch()) $destinatarios[] = $row['email'];
-        $destinatarios = array_unique($destinatarios);
-
-        if ($destinatarios) {
-            $to      = implode(', ', $destinatarios);
-            $subject = "Solicitud de Reprogramación: " . $partido['local_nombre'] . " vs " . $partido['visitante_nombre'];
-            $cuerpo  = "Hola,\n\nSe ha solicitado una reprogramación para el partido:\n";
-            $cuerpo .= "Partido: " . $partido['local_nombre'] . " vs " . $partido['visitante_nombre'] . "\n";
-            $cuerpo .= "Solicitante: " . $jugador['nombre'] . " " . $jugador['apellido'] . "\n";
-            $cuerpo .= "Motivo: " . $motivo . "\n";
-            if ($rival_no_resp) {
-                $cuerpo .= "Estado: El rival no responde ni coordina.\n";
-            } else {
-                $cuerpo .= "Nueva fecha propuesta: " . date('d/m/Y H:i', strtotime($fecha_propuesta)) . "\n";
-                $cuerpo .= "Acuerdo: Confirmado por mutuo acuerdo.\n";
-            }
-            $cuerpo .= "\nLa organización revisará la solicitud a la brevedad.\n\nAtentamente,\nElite Padel League";
-            $headers  = "From: Elite Padel League <no-reply@elitepadelleague.com>\r\n";
-            $headers .= "Reply-To: no-reply@elitepadelleague.com\r\n";
-            @mail($to, $subject, $cuerpo, $headers);
-        }
-
-        // Notificar a los jugadores del partido y a los admins
+        // Notificar in-app + email (SMTP) a jugadores del partido rival y a los admins
         $solicitante_nombre = $jugador['nombre'] . ' ' . $jugador['apellido'];
         $partido_str = $partido['local_nombre'] . ' vs ' . $partido['visitante_nombre'];
         $fecha_str   = $fecha_final ? date('d/m/Y H:i', strtotime($fecha_final)) : 'a coordinar';
+        $motivo_txt  = $motivo ? " Motivo: {$motivo}." : '';
 
         epl_notif_partido(
             $partido_id,
             'reprogramacion',
             "📅 Solicitud de reprogramación: {$partido_str}",
-            "{$solicitante_nombre} solicitó reprogramar el partido para el {$fecha_str}.",
+            "{$solicitante_nombre} solicitó reprogramar el partido para el {$fecha_str}.{$motivo_txt}",
             epl_url('mis_torneos.php'),
             true,                       // incluir admins
-            [(int)$jugador['id']]       // excluir al solicitante (ya sabe lo que hizo)
+            [(int)$jugador['id']]       // excluir al solicitante
         );
 
         $ok = true;
