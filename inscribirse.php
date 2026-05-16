@@ -81,6 +81,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_aceptar'] ?? '')) {
                 // Gratis — aceptar directamente
                 $db->prepare("UPDATE inscripciones SET pago_estado='pagado', estado='aprobada' WHERE id=?")->execute([$acc_id]);
                 epl_pago_completar($row['token'], 'Gratis');
+
+                // Notificar al capitán que su partner aceptó
+                $cap_insc = $db->prepare("SELECT i.jugador_id, j.nombre, j.apellido FROM inscripciones i JOIN jugadores j ON j.id=i.jugador_id WHERE i.equipo_id=? AND i.rol_equipo='capitan' LIMIT 1");
+                $cap_insc->execute([$row['equipo_id']]);
+                if ($cap_row = $cap_insc->fetch()) {
+                    $partner_nombre = ($jugador['nombre'] ?? '') . ' ' . ($jugador['apellido'] ?? '');
+                    epl_notif_crear((int)$cap_row['jugador_id'], 'inscripcion',
+                        '✅ Tu partner aceptó la invitación',
+                        trim($partner_nombre) . ' aceptó unirse a tu equipo en ' . $row['liga_nombre'] . '.',
+                        epl_url('inscribirse.php')
+                    );
+                }
+
                 $ok = '¡Invitación aceptada! Ya estás inscrito en ' . epl_h($row['liga_nombre']) . '.';
             } else {
                 // Paga — crear preferencia MP y redirigir
@@ -147,12 +160,26 @@ if (isset($_GET['pago']) && $_GET['pago'] === 'exito' && isset($_GET['token'])) 
     $payment_id = isset($_GET['payment_id']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['payment_id']) : 'Gratis';
 
     epl_pago_completar($token_ret, $payment_id);
-    $db->prepare("UPDATE inscripciones SET pago_estado='pagado', pago_ref=? WHERE token=?")
+    $db->prepare("UPDATE inscripciones SET pago_estado='pagado', pago_ref=?, estado='aprobada' WHERE token=?")
        ->execute([$payment_id, $token_ret]);
 
-    $insc_row = $db->prepare("SELECT i.*, l.nombre AS liga_nombre FROM inscripciones i JOIN ligas l ON l.id=i.liga_id WHERE i.token=?");
+    $insc_row = $db->prepare("SELECT i.*, l.nombre AS liga_nombre, j.nombre AS j_nombre, j.apellido AS j_apellido FROM inscripciones i JOIN ligas l ON l.id=i.liga_id JOIN jugadores j ON j.id=i.jugador_id WHERE i.token=?");
     $insc_row->execute([$token_ret]);
     $insc_row = $insc_row->fetch();
+
+    // Notificar al capitán si fue el partner quien pagó
+    if ($insc_row && $insc_row['rol_equipo'] === 'partner' && $insc_row['equipo_id']) {
+        $cap_insc = $db->prepare("SELECT i.jugador_id FROM inscripciones i WHERE i.equipo_id=? AND i.rol_equipo='capitan' LIMIT 1");
+        $cap_insc->execute([$insc_row['equipo_id']]);
+        if ($cap_jid = $cap_insc->fetchColumn()) {
+            $partner_nombre = trim(($insc_row['j_nombre'] ?? '') . ' ' . ($insc_row['j_apellido'] ?? ''));
+            epl_notif_crear((int)$cap_jid, 'inscripcion',
+                '✅ Tu partner confirmó el pago',
+                $partner_nombre . ' pagó su inscripción en ' . $insc_row['liga_nombre'] . '. ¡Ya están inscritos!',
+                epl_url('inscribirse.php')
+            );
+        }
+    }
 
     $page_title = '¡Inscripción Confirmada!';
     require_once 'includes/header.php';

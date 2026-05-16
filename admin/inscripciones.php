@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($id && $action === 'aprobar') {
         // Aprobar inscripción: también asignar equipo a liga si aplica
-        $stI = $db->prepare("SELECT * FROM inscripciones WHERE id=?");
+        $stI = $db->prepare("SELECT i.*, l.nombre AS liga_nombre FROM inscripciones i JOIN ligas l ON l.id=i.liga_id WHERE i.id=?");
         $stI->execute([$id]);
         $insc = $stI->fetch();
 
@@ -25,14 +25,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($insc['equipo_id']) {
                 $db->prepare("INSERT IGNORE INTO liga_equipos (liga_id, equipo_id) VALUES (?,?)")
                    ->execute([$insc['liga_id'], $insc['equipo_id']]);
-                // Asegurar clasificación
                 $db->prepare("INSERT IGNORE INTO clasificacion (liga_id, equipo_id) VALUES (?,?)")
                    ->execute([$insc['liga_id'], $insc['equipo_id']]);
             }
+
+            // Notificar al jugador
+            epl_notif_crear((int)$insc['jugador_id'], 'inscripcion',
+                '✅ Inscripción aprobada',
+                'Tu inscripción en ' . $insc['liga_nombre'] . ' fue aprobada. ¡Ya eres parte de la liga!',
+                epl_url('inscribirse.php')
+            );
+
             $ok = 'Inscripción aprobada.';
         }
     } elseif ($id && $action === 'rechazar') {
+        $stI = $db->prepare("SELECT i.*, l.nombre AS liga_nombre FROM inscripciones i JOIN ligas l ON l.id=i.liga_id WHERE i.id=?");
+        $stI->execute([$id]);
+        $insc = $stI->fetch();
         $db->prepare("UPDATE inscripciones SET estado='rechazada' WHERE id=?")->execute([$id]);
+
+        // Notificar al jugador
+        if ($insc) {
+            epl_notif_crear((int)$insc['jugador_id'], 'inscripcion',
+                '❌ Inscripción no aprobada',
+                'Tu solicitud en ' . $insc['liga_nombre'] . ' no fue aprobada. Contacta al organizador para más info.',
+                epl_url('inscribirse.php')
+            );
+        }
+
         $ok = 'Inscripción rechazada.';
     } elseif ($id && $action === 'marcar_pagado') {
         $db->prepare("UPDATE inscripciones SET pago_estado='pagado' WHERE id=?")->execute([$id]);
