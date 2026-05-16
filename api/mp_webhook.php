@@ -72,18 +72,30 @@ if ($status === 'approved' && $external_ref) {
     // Marcar el pago como completado
     epl_pago_completar($external_ref, (string)$payment_id);
 
-    // Marcar inscripción como pagada
-    $db->prepare("UPDATE inscripciones SET pago_estado='pagado', pago_ref=? WHERE token=?")
-       ->execute([(string)$payment_id, $external_ref]);
+    // Marcar inscripción como pagada y aprobada
+    $db->prepare("UPDATE inscripciones SET pago_estado='pagado', pago_ref=?,
+        estado = IF(equipo_id IS NOT NULL, 'aprobada', 'pendiente')
+        WHERE token=?")->execute([(string)$payment_id, $external_ref]);
 
-    // Notificar al jugador
+    // Si fue el partner, aprobar también al capitán
     $insc = $db->prepare("
-        SELECT i.jugador_id, l.nombre AS liga_nombre
+        SELECT i.*, l.nombre AS liga_nombre
         FROM inscripciones i JOIN ligas l ON l.id=i.liga_id
         WHERE i.token=?
     ");
     $insc->execute([$external_ref]);
     $insc = $insc->fetch();
+
+    if ($insc && $insc['rol_equipo'] === 'partner' && $insc['equipo_id']) {
+        $db->prepare("UPDATE inscripciones SET estado='aprobada' WHERE equipo_id=? AND rol_equipo='capitan' AND pago_estado='pagado'")
+           ->execute([$insc['equipo_id']]);
+    }
+
+    // Activar equipo en la liga
+    if ($insc && $insc['equipo_id'] && $insc['estado'] === 'aprobada') {
+        epl_activar_equipo_en_liga((int)$insc['equipo_id'], (int)$insc['liga_id']);
+    }
+
     if ($insc) {
         epl_notif_crear(
             (int)$insc['jugador_id'],

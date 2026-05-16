@@ -934,6 +934,12 @@ function epl_pago_completar(string $token_ref, string $mp_payment_id): bool {
     return $st->rowCount() > 0;
 }
 
+function epl_activar_equipo_en_liga(int $equipo_id, int $liga_id): void {
+    $db = epl_db();
+    $db->prepare("INSERT IGNORE INTO liga_equipos (liga_id, equipo_id) VALUES (?,?)")->execute([$liga_id, $equipo_id]);
+    $db->prepare("INSERT IGNORE INTO clasificacion (liga_id, equipo_id) VALUES (?,?)")->execute([$liga_id, $equipo_id]);
+}
+
 function epl_pagos_listar(int $liga_id = 0, string $estado = ''): array {
     $db = epl_db();
     $where = [];

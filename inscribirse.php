@@ -133,6 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_aceptar'] ?? '')) {
                 // Gratis — aceptar directamente
                 $db->prepare("UPDATE inscripciones SET pago_estado='pagado', estado='aprobada' WHERE id=?")->execute([$acc_id]);
                 epl_pago_completar($row['token'], 'Gratis');
+                // Aprobar también al capitán y activar el equipo en la liga
+                $db->prepare("UPDATE inscripciones SET estado='aprobada' WHERE equipo_id=? AND rol_equipo='capitan' AND pago_estado='pagado'")->execute([$row['equipo_id']]);
+                epl_activar_equipo_en_liga((int)$row['equipo_id'], (int)$row['liga_id']);
 
                 // Notificar al capitán que su partner aceptó
                 $cap_insc = $db->prepare("SELECT i.jugador_id, j.nombre, j.apellido FROM inscripciones i JOIN jugadores j ON j.id=i.jugador_id WHERE i.equipo_id=? AND i.rol_equipo='capitan' LIMIT 1");
@@ -226,6 +229,11 @@ if (isset($_GET['pago']) && $_GET['pago'] === 'exito' && isset($_GET['token'])) 
     if ($insc_row && $insc_row['rol_equipo'] === 'partner' && $insc_row['equipo_id']) {
         $db->prepare("UPDATE inscripciones SET estado='aprobada' WHERE equipo_id=? AND rol_equipo='capitan' AND pago_estado='pagado'")
            ->execute([$insc_row['equipo_id']]);
+    }
+
+    // Activar equipo en la liga cuando la inscripción queda aprobada
+    if ($insc_row && $insc_row['equipo_id'] && $insc_row['estado'] === 'aprobada') {
+        epl_activar_equipo_en_liga((int)$insc_row['equipo_id'], (int)$insc_row['liga_id']);
     }
 
     // Notificar al capitán si fue el partner quien pagó
