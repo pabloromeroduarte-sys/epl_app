@@ -61,10 +61,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
 
     $stVal = $db->prepare("
         SELECT p.*, el.jugador1_id AS l1, el.jugador2_id AS l2, ev.jugador1_id AS v1, ev.jugador2_id AS v2,
-               el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+               el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+               r.nombre AS recinto_nombre, rs.nombre AS recinto_superior, rss.nombre AS recinto_raiz
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        LEFT JOIN recintos r   ON r.id   = p.recinto_id
+        LEFT JOIN recintos rs  ON rs.id  = r.superior_id
+        LEFT JOIN recintos rss ON rss.id = rs.superior_id
         WHERE p.id=? AND (p.equipo_local_id=? OR p.equipo_visitante_id=?)
           AND p.estado IN ('pendiente','reprogramado')
           AND (p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR) OR p.fecha_programada IS NULL)
@@ -95,13 +99,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
         $solicitante_nombre = $jugador['nombre'] . ' ' . $jugador['apellido'];
         $partido_str = $partido['local_nombre'] . ' vs ' . $partido['visitante_nombre'];
         $fecha_str   = $fecha_final ? date('d/m/Y H:i', strtotime($fecha_final)) : 'a coordinar';
-        $motivo_txt  = $motivo ? " Motivo: {$motivo}." : '';
+
+        // Recinto: construir ruta completa (raíz › sede › cancha)
+        $recinto_partes = array_filter([
+            $partido['recinto_raiz']     ?? null,
+            $partido['recinto_superior'] ?? null,
+            $partido['recinto_nombre']   ?? null,
+        ]);
+        $recinto_txt = $recinto_partes ? implode(' › ', $recinto_partes) : 'Sin recinto asignado';
+
+        // Jornada / fecha del torneo
+        $jornada_txt = '';
+        if (!empty($partido['jornada']))      $jornada_txt .= 'Jornada ' . $partido['jornada'];
+        if (!empty($partido['nombre_fecha'])) $jornada_txt .= ($jornada_txt ? ' — ' : '') . $partido['nombre_fecha'];
+
+        // Fecha original del partido
+        $fecha_original_txt = $partido['fecha_programada']
+            ? date('d/m/Y H:i', strtotime($partido['fecha_programada']))
+            : 'Sin fecha asignada';
+
+        $lineas = [
+            "Partido: {$partido_str}",
+            "Liga: {$liga['nombre']}",
+        ];
+        if ($jornada_txt)  $lineas[] = "Jornada: {$jornada_txt}";
+        $lineas[] = "Fecha original: {$fecha_original_txt}";
+        $lineas[] = "Recinto: {$recinto_txt}";
+        $lineas[] = "Fecha propuesta: {$fecha_str}";
+        if ($motivo)       $lineas[] = "Motivo: {$motivo}";
+
+        $mensaje_notif = "{$solicitante_nombre} solicitó reprogramar el partido.\n\n" . implode("\n", $lineas);
 
         epl_notif_partido(
             $partido_id,
             'reprogramacion',
             "📅 Solicitud de reprogramación: {$partido_str}",
-            "{$solicitante_nombre} solicitó reprogramar el partido para el {$fecha_str}.{$motivo_txt}",
+            $mensaje_notif,
             epl_url('mis_torneos.php'),
             true,                       // incluir admins
             [(int)$jugador['id']]       // excluir al solicitante
