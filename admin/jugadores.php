@@ -140,13 +140,13 @@ $jugadores = $st->fetchAll();
   <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
   <main class="dash-main">
-    <div class="dash-header flex justify-between items-center" style="flex-wrap:wrap;gap:.75rem">
+    <div class="dash-header" style="display:flex;flex-wrap:wrap;gap:.75rem;justify-content:space-between;align-items:center">
       <h1 class="dash-title">Jugadores <span style="font-size:1rem;color:var(--gray-400)">(<?= count($jugadores) ?>)</span></h1>
-      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;width:100%">
         <a href="?export=csv&nivel=<?= $f_nivel ?>&estado=<?= urlencode($f_estado) ?>&q=<?= urlencode($f_q) ?>"
-           class="btn btn-sm btn-outline-navy">↓ Exportar CSV</a>
+           class="btn btn-sm btn-outline-navy" style="flex:1;text-align:center">↓ Exportar CSV</a>
         <button onclick="document.getElementById('modalCrear').style.display='flex'"
-                class="btn btn-primary btn-sm">+ Nuevo jugador</button>
+                class="btn btn-primary btn-sm" style="flex:1">+ Nuevo jugador</button>
       </div>
     </div>
 
@@ -187,13 +187,13 @@ $jugadores = $st->fetchAll();
 
     <div class="card">
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.83rem">
+        <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.83rem">
           <thead>
             <tr style="background:var(--navy);color:#fff">
               <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Jugador</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Contacto</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Deportivo</th>
-              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Rol</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Deportivo</th>
+              <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Rol</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Estado</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Acciones</th>
             </tr>
@@ -212,7 +212,7 @@ $jugadores = $st->fetchAll();
                   </div>
                 </div>
               </td>
-              <td style="padding:.7rem 1rem">
+              <td data-label="Contacto" style="padding:.7rem 1rem">
                 <div style="font-size:.8rem;color:var(--gray-600)"><?= epl_h($j['email']) ?></div>
                 <?php if ($j['telefono']): ?>
                   <?php
@@ -232,7 +232,7 @@ $jugadores = $st->fetchAll();
                 <?php endif; ?>
                 <?php if ($j['comuna']): ?><div style="font-size:.7rem;color:var(--gray-400)"><?= epl_h($j['comuna']) ?></div><?php endif; ?>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center">
+              <td data-label="Deportivo" class="hide-mobile" style="padding:.7rem 1rem;text-align:center">
                 <?php if ($j['nivel']): ?>
                   <span style="font-size:.75rem;font-weight:700;color:var(--navy)"><?= $j['nivel'] ?>ª cat.</span>
                 <?php endif; ?>
@@ -243,14 +243,14 @@ $jugadores = $st->fetchAll();
                   <div style="font-size:.68rem;color:var(--gray-400)"><?= epl_h($j['pala']) ?></div>
                 <?php endif; ?>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center">
+              <td data-label="Rol" class="hide-mobile" style="padding:.7rem 1rem;text-align:center">
                 <span class="badge <?= $j['rol']==='admin'?'badge-walkover':'badge-pendiente' ?>"><?= $j['rol'] ?></span>
               </td>
-              <td style="padding:.7rem 1rem;text-align:center">
+              <td data-label="Estado" style="padding:.7rem 1rem;text-align:center">
                 <span class="badge <?= $j['estado']==='activo'?'badge-jugado':($j['estado']==='suspendido'?'badge-walkover':'badge-reprog') ?>"><?= $j['estado'] ?></span>
               </td>
-              <td style="padding:.7rem 1rem">
-                <div style="display:flex;gap:.35rem;justify-content:center;flex-wrap:wrap">
+              <td data-label="Acciones" style="padding:.7rem 1rem">
+                <div style="display:flex;gap:.35rem;flex-wrap:wrap;width:100%">
                   <button onclick='showEditar(<?= json_encode($j) ?>)' class="btn btn-sm" style="border:1px solid var(--gold);color:var(--gold-dark);font-size:.7rem">Editar</button>
                   <form method="post" style="display:inline">
                     <input type="hidden" name="action" value="toggle_estado">
@@ -393,9 +393,9 @@ $jugadores = $st->fetchAll();
             <label class="form-label">Lado</label>
             <select name="lado" id="editarLado" class="form-control">
               <option value="">— No definido —</option>
-              <option value="derecha">Derecha (Drive)</option>
-              <option value="reves">Revés (Backhand)</option>
-              <option value="ambos">Ambos lados</option>
+              <option value="derecha">Drive</option>
+              <option value="reves">Revés</option>
+              <option value="ambos">Ambos</option>
             </select>
           </div>
         </div>
