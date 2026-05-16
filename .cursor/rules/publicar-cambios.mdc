@@ -1,33 +1,31 @@
 ---
-description: Publicar a GitHub y VPS solo cuando el usuario aprueba (él no toca terminal)
+description: Publicar solo cuando aprueba; pasos simples copiar/pegar
 alwaysApply: true
 ---
 
-# Publicar cuando el usuario aprueba
+# Publicar (como con Claude)
 
-El usuario **no quiere usar terminal**. Solo dice que está listo y vos subís todo.
+El usuario **no quiere tecnicismos**. Solo pasos para copiar y pegar.
 
-## Frases que significan «publicá ya» (GitHub + VPS)
+## Cuando diga: publica / queda arriba / haz el pull / está aprobado
 
-"publica", "publica todo", "sube todo", "queda arriba", "está aprobado", "sube a producción", "envía al vps", "despliega"
+1. Ejecutá (vos): `.\scripts\publicar.ps1 -Mensaje "..."` desde `C:\xampp\htdocs\elitepadelleague` (permisos git_write + network).
 
-## Qué hacer (sin pedirle que ejecute nada)
+2. Respondé con **esto** (sin rodeos):
 
-1. `git status` — resumen de 1–2 líneas de qué va.
-2. Ejecutar (vos, con permisos git_write + network/all):
+**Vultr:** my.vultr.com → tu servidor → View Console → pegá:
 
-```powershell
-cd C:\xampp\htdocs\elitepadelleague
-.\scripts\publicar.ps1 -Aprobado -Mensaje "descripción clara del cambio"
+```bash
+git -C /home/elitepadel/htdocs/padel.207.246.68.77.nip.io pull origin main
 ```
 
-3. Si el webhook falla (token, SSL, git en servidor): intentar `curl -k` al deploy; si sigue fallando, decirle **solo entonces** que en Vultr haga `git pull` en una línea, o que arregle permisos de `.git` una vez.
+3. Si el pull falla por permisos, agregá antes:
+
+```bash
+sudo chown -R elitepadel:elitepadel /home/elitepadel/htdocs/padel.207.246.68.77.nip.io
+```
 
 ## Prohibido
 
-- `git push` o deploy **antes** de que apruebe.
-- Pedirle que corra scripts, PowerShell o git salvo que el deploy falló y no hay otra opción.
-
-## Commit
-
-- Español, una frase con el porqué. Sin `.env` ni secretos.
+- Push o deploy antes de que apruebe.
+- Párrafos técnicos (webhook, tokens, CI, etc.) salvo que pregunte.

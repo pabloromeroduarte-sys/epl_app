@@ -8,6 +8,24 @@ require_once 'includes/functions.php';
 $j = epl_jugador_actual();
 if (!$j) { header('Location: login.php'); exit; }
 
+$flash_ok  = '';
+$flash_err = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_borrar_insc'] ?? '')) {
+    $res = epl_inscripcion_eliminar_jugador((int)($_POST['insc_id'] ?? 0), (int)$j['id']);
+    if ($res['ok']) {
+        $redir = 'mis_torneos.php?ok=borrado';
+        if (!empty($_POST['liga_id'])) {
+            $redir = 'mis_torneos.php?vista=todos&ok=borrado';
+        }
+        header('Location: ' . epl_url($redir));
+        exit;
+    }
+    $flash_err = $res['error'] ?? 'No se pudo eliminar.';
+}
+if (isset($_GET['ok']) && $_GET['ok'] === 'borrado') {
+    $flash_ok = 'Inscripción eliminada.';
+}
+
 $todos_torneos = epl_torneos_del_jugador($j['id']);
 $vista_todos   = isset($_GET['vista']) && $_GET['vista'] === 'todos';
 $sel_id        = $vista_todos ? 0 : (int)($_GET['id'] ?? 0);
@@ -80,6 +98,12 @@ require_once 'includes/header.php';
       <h1 class="dash-title">Mis Torneos</h1>
       <p style="color:var(--gray-400);font-size:.9rem">Tu actividad en ligas y torneos.</p>
     </div>
+    <?php if ($flash_ok): ?>
+      <div class="alert alert-success" style="margin-top:.75rem"><?= epl_h($flash_ok) ?></div>
+    <?php endif; ?>
+    <?php if ($flash_err): ?>
+      <div class="alert alert-error" style="margin-top:.75rem"><?= epl_h($flash_err) ?></div>
+    <?php endif; ?>
 
     <!-- Pestañas: todos los torneos inscritos -->
     <?php if ($todos_torneos): ?>
@@ -107,7 +131,8 @@ require_once 'includes/header.php';
         $insc_st = $at['inscripcion_estado'] ?? '';
         $pago = $at['inscripcion_pago_estado'] ?? '';
       ?>
-      <a href="?id=<?= (int)$at['id'] ?>" class="mt-all-card">
+      <div class="mt-all-card">
+        <a href="?id=<?= (int)$at['id'] ?>" class="mt-all-card-link">
         <div class="mt-all-card-top">
           <span class="mt-tab-badge mt-tab-badge--<?= epl_h($badge['tone']) ?>"><?= epl_h($badge['label']) ?></span>
           <?php if ($rol): ?>
@@ -125,7 +150,16 @@ require_once 'includes/header.php';
           <p class="mt-all-meta mt-all-meta--warn">Pago: <?= epl_h(ucfirst($pago)) ?></p>
         <?php endif; ?>
         <span class="mt-all-link">Ver detalle →</span>
-      </a>
+        </a>
+        <?php if (epl_mostrar_boton_borrar_inscripcion_prueba() && !empty($at['inscripcion_id']) && $insc_st === 'pendiente' && $rol === 'capitan'): ?>
+        <form method="post" class="mt-all-borrar" onsubmit="return confirm('¿Eliminar esta inscripción de prueba?');">
+          <input type="hidden" name="epl_borrar_insc" value="1">
+          <input type="hidden" name="insc_id" value="<?= (int)$at['inscripcion_id'] ?>">
+          <input type="hidden" name="liga_id" value="<?= (int)$at['id'] ?>">
+          <button type="submit">Eliminar inscripción (prueba)</button>
+        </form>
+        <?php endif; ?>
+      </div>
       <?php endforeach; ?>
     </div>
     <p style="margin-top:1.25rem;text-align:center">
@@ -164,6 +198,13 @@ require_once 'includes/header.php';
             <span class="badge badge-walkover">FINALIZADO</span>
           <?php endif; ?>
           <a href="torneo.php?id=<?= $liga['id'] ?>" class="btn btn-sm" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)">Ver torneo público →</a>
+          <?php if (epl_mostrar_boton_borrar_inscripcion_prueba() && !empty($liga['inscripcion_id']) && ($liga['inscripcion_estado'] ?? '') === 'pendiente' && ($liga['rol_equipo'] ?? '') === 'capitan'): ?>
+          <form method="post" onsubmit="return confirm('¿Eliminar esta inscripción de prueba?');">
+            <input type="hidden" name="epl_borrar_insc" value="1">
+            <input type="hidden" name="insc_id" value="<?= (int)$liga['inscripcion_id'] ?>">
+            <button type="submit" class="btn btn-sm" style="background:rgba(220,38,38,.25);color:#fecaca;border:1px solid rgba(248,113,113,.5)">Eliminar inscripción (prueba)</button>
+          </form>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -403,8 +444,11 @@ require_once 'includes/header.php';
 
 /* ── Vista Todos ── */
 .mt-all-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1rem; margin-bottom:1rem; }
-.mt-all-card { background:var(--white); border:2px solid var(--gray-200); border-radius:14px; padding:1.15rem 1.25rem; text-decoration:none; transition:all .2s; display:flex; flex-direction:column; gap:.35rem; }
+.mt-all-card { background:var(--white); border:2px solid var(--gray-200); border-radius:14px; padding:1.15rem 1.25rem; transition:all .2s; display:flex; flex-direction:column; gap:.35rem; }
 .mt-all-card:hover { border-color:var(--gold); transform:translateY(-2px); box-shadow:0 6px 20px rgba(28,47,72,.08); }
+.mt-all-card-link { text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:.35rem; flex:1; }
+.mt-all-borrar { margin-top:.5rem; padding-top:.65rem; border-top:1px dashed var(--gray-200); }
+.mt-all-borrar button { font-size:.72rem; font-weight:700; color:#dc2626; background:none; border:none; cursor:pointer; text-decoration:underline; padding:0; }
 .mt-all-card-top { display:flex; justify-content:space-between; align-items:center; gap:.5rem; flex-wrap:wrap; }
 .mt-all-rol { font-size:.62rem; font-weight:800; color:var(--navy); background:var(--gray-100); padding:.15rem .5rem; border-radius:999px; text-transform:uppercase; }
 .mt-all-title { font-family:var(--font-head); font-size:1rem; color:var(--navy); text-transform:uppercase; margin:0; line-height:1.2; }

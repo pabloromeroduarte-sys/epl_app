@@ -415,6 +415,56 @@ function epl_notif_invitacion_partner(int $partner_id, string $cap_nombre, strin
 }
 
 /** Crea inscripción partner para jugador del sistema; devuelve su token. */
+/** Botón temporal para borrar inscripciones en pruebas (Mis Torneos / Inscripciones). */
+function epl_mostrar_boton_borrar_inscripcion_prueba(): bool {
+    return true;
+}
+
+/**
+ * Elimina inscripción pendiente del jugador (capitán). Devuelve ['ok'=>bool, 'error'=>?string].
+ */
+function epl_inscripcion_eliminar_jugador(int $insc_id, int $jugador_id): array {
+    if ($insc_id <= 0 || $jugador_id <= 0) {
+        return ['ok' => false, 'error' => 'Inscripción no válida.'];
+    }
+    try {
+        epl_ensure_inscripciones_schema();
+        $db = epl_db();
+        $chk = $db->prepare("SELECT id, token, equipo_id, rol_equipo FROM inscripciones WHERE id=? AND jugador_id=? AND estado='pendiente'");
+        $chk->execute([$insc_id, $jugador_id]);
+        $row = $chk->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return ['ok' => false, 'error' => 'No se encontró la inscripción o ya no está pendiente.'];
+        }
+        if (!empty($row['token'])) {
+            try {
+                $db->prepare('DELETE FROM pagos WHERE token_ref=?')->execute([$row['token']]);
+            } catch (Throwable $e) {
+                error_log('epl_inscripcion_eliminar pagos cap: ' . $e->getMessage());
+            }
+        }
+        $equipo_id = (int)($row['equipo_id'] ?? 0);
+        if ($equipo_id > 0 && ($row['rol_equipo'] ?? '') === 'capitan') {
+            $pi = $db->prepare("SELECT token FROM inscripciones WHERE equipo_id=? AND rol_equipo='partner'");
+            $pi->execute([$equipo_id]);
+            $pt = $pi->fetchColumn();
+            if ($pt) {
+                try {
+                    $db->prepare('DELETE FROM pagos WHERE token_ref=?')->execute([$pt]);
+                } catch (Throwable $e) {
+                    error_log('epl_inscripcion_eliminar pagos partner: ' . $e->getMessage());
+                }
+                $db->prepare("DELETE FROM inscripciones WHERE equipo_id=? AND rol_equipo='partner'")->execute([$equipo_id]);
+            }
+        }
+        $db->prepare('DELETE FROM inscripciones WHERE id=?')->execute([$insc_id]);
+        return ['ok' => true];
+    } catch (Throwable $e) {
+        error_log('epl_inscripcion_eliminar: ' . $e->getMessage());
+        return ['ok' => false, 'error' => 'No se pudo eliminar. Intenta de nuevo.'];
+    }
+}
+
 function epl_registrar_partner_sistema(PDO $db, int $partner_id, int $liga_id, int $equipo_id, float $precio): string {
     $chkP = $db->prepare("SELECT token FROM inscripciones WHERE jugador_id=? AND liga_id=? AND estado != 'rechazada'");
     $chkP->execute([$partner_id, $liga_id]);

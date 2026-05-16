@@ -1,23 +1,44 @@
-# Elite Padel League
+# Elite Padel League — cómo publicar
 
-## Flujo de trabajo (importante)
+## Mientras desarrollás
 
-1. **Desarrollás y probás en local** (`http://localhost/elitepadelleague/`).
-2. **Nada se sube** a GitHub ni al VPS hasta que vos digas que está aprobado.
-3. **Cuando apruebes**, publicá todo junto (GitHub + VPS):
+- Probá en local: `http://localhost/elitepadelleague/`
+- **No subas nada** hasta que el usuario diga que está listo.
+
+## Cuando el usuario diga que publique
+
+Ejemplos: *"publica todo"*, *"queda arriba"*, *"haz el pull"*, *"está aprobado"*.
+
+### 1) Subir a GitHub
 
 ```powershell
-.\scripts\publicar.ps1 -Aprobado -Mensaje "qué cambiaste y por qué"
+cd C:\xampp\htdocs\elitepadelleague
+.\scripts\publicar.ps1 -Mensaje "descripción breve del cambio"
 ```
 
-O pedile al asistente en Cursor: **«Publica todo: [descripción]»**
+(Sin `-Aprobado` si solo pide GitHub. Con `-Aprobado` si también toca el servidor.)
 
-**No** hagas `git push` ni despliegue por tu cuenta antes de que el usuario apruebe.
+### 2) Actualizar el sitio en Vultr
 
-## Si el webhook del VPS falla
+Decile al usuario que abra **my.vultr.com** → su servidor → **View Console** y pegue **solo esta línea**:
 
-El jugador/admin puede hacer en la consola Vultr: `cd` a la carpeta del proyecto y `git pull`.
+```bash
+git -C /home/elitepadel/htdocs/padel.207.246.68.77.nip.io pull origin main
+```
 
-## Rama
+Si sale error de permisos, que pegue antes:
 
-Trabajar en **`main`**. No commitear `.env` ni `.claude/`.
+```bash
+sudo chown -R elitepadel:elitepadel /home/elitepadel/htdocs/padel.207.246.68.77.nip.io
+```
+
+y vuelva a hacer el `git pull`.
+
+### 3) Listo
+
+El sitio queda actualizado. No des explicaciones técnicas largas: pasos copiar/pegar.
+
+## Reglas
+
+- Rama `main`. No commitear `.env`.
+- Mensaje de commit en español, una frase.
