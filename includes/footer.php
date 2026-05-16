@@ -72,6 +72,74 @@
 </div>
 
 <!-- =======================================================
+     EPL CONFIRM MODAL
+     ======================================================= -->
+<div id="epl-confirm-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,20,33,.88);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:9999998;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:#fff;border-radius:18px;padding:2rem 1.75rem 1.75rem;max-width:380px;width:100%;box-shadow:0 30px 70px rgba(0,0,0,.45);animation:eplModalIn .17s ease">
+    <div style="text-align:center;margin-bottom:1.1rem">
+      <div id="epl-confirm-icon-wrap" style="width:54px;height:54px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(220,38,38,.1)">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+    </div>
+    <h3 id="epl-confirm-title" style="font-size:1rem;font-weight:800;color:#1C2F48;text-align:center;margin:0 0 .55rem;font-family:'Montserrat',sans-serif">Confirmar acción</h3>
+    <p id="epl-confirm-msg" style="font-size:.875rem;color:#64748b;text-align:center;line-height:1.55;margin:0 0 1.6rem;font-family:'Montserrat',sans-serif"></p>
+    <div style="display:flex;gap:.6rem">
+      <button id="epl-confirm-cancel" type="button" style="flex:1;padding:.7rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.84rem;font-weight:700;color:#64748b;background:#f8fafc;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background .12s">Cancelar</button>
+      <button id="epl-confirm-ok" type="button" style="flex:1;padding:.7rem;border:none;border-radius:10px;font-size:.84rem;font-weight:700;color:#fff;background:#dc2626;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background .12s">Confirmar</button>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes eplModalIn { from { opacity:0;transform:scale(.93) translateY(6px) } to { opacity:1;transform:scale(1) translateY(0) } }
+#epl-confirm-cancel:hover { background:#f1f5f9 !important }
+#epl-confirm-ok:hover { filter:brightness(1.1) }
+</style>
+<script>
+(function(){
+  var overlay  = document.getElementById('epl-confirm-overlay');
+  var titleEl  = document.getElementById('epl-confirm-title');
+  var msgEl    = document.getElementById('epl-confirm-msg');
+  var okBtn    = document.getElementById('epl-confirm-ok');
+  var cancelBtn= document.getElementById('epl-confirm-cancel');
+  var iconWrap = document.getElementById('epl-confirm-icon-wrap');
+
+  function eplConfirmClose() { overlay.style.display = 'none'; }
+
+  window.eplConfirm = function(msg, onConfirm, opts) {
+    opts = opts || {};
+    titleEl.textContent = opts.title || 'Confirmar acción';
+    msgEl.textContent   = msg;
+    okBtn.textContent   = opts.confirmText || 'Confirmar';
+    var danger = opts.danger !== false;
+    okBtn.style.background    = danger ? '#dc2626' : '#C9A762';
+    iconWrap.style.background = danger ? 'rgba(220,38,38,.1)' : 'rgba(201,167,98,.15)';
+    iconWrap.querySelector('svg').setAttribute('stroke', danger ? '#dc2626' : '#C9A762');
+    overlay.style.display = 'flex';
+    okBtn.onclick = function() { eplConfirmClose(); onConfirm(); };
+  };
+
+  cancelBtn.onclick = eplConfirmClose;
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) eplConfirmClose(); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') eplConfirmClose(); });
+
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-confirm]');
+    if (!btn || btn._eplOk) return;
+    e.preventDefault();
+    var msg  = btn.dataset.confirm;
+    var danger = btn.dataset.confirmDanger !== 'false';
+    var title= btn.dataset.confirmTitle || undefined;
+    var okTxt= btn.dataset.confirmOk || undefined;
+    window.eplConfirm(msg, function(){
+      btn._eplOk = true;
+      btn.click();
+      btn._eplOk = false;
+    }, { danger: danger, title: title, confirmText: okTxt });
+  }, true);
+})();
+</script>
+
+<!-- =======================================================
      EPL GLOBAL LOADER (Bloqueo de pantalla al enviar formularios)
      ======================================================= -->
 <script>

@@ -476,7 +476,7 @@ $total_equipos  = count($equipos_liga);
           <?php if ($liga['estado']==='finalizada'): ?>
           <form method="post" style="display:contents">
             <input type="hidden" name="action" value="asignar_puntos">
-            <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('¿Asignar puntos de ranking a todos los jugadores?')">🏅 Asignar puntos</button>
+            <button type="submit" class="btn btn-sm btn-primary" data-confirm="¿Asignar puntos de ranking a todos los jugadores?" data-confirm-danger="false" data-confirm-ok="Sí, asignar" data-confirm-title="Asignar puntos de ranking">🏅 Asignar puntos</button>
           </form>
           <?php endif; ?>
         </div>
@@ -546,7 +546,7 @@ $total_equipos  = count($equipos_liga);
                   <input type="hidden" name="action" value="quitar_equipo">
                   <input type="hidden" name="equipo_id" value="<?= $e['id'] ?>">
                   <button type="submit" class="btn btn-sm" style="border:1px solid #dc2626;color:#dc2626;font-size:.68rem"
-                          onclick="return confirm('¿Quitar este equipo?')">Quitar</button>
+                          data-confirm="¿Quitar este equipo?" data-confirm-ok="Quitar">Quitar</button>
                 </form>
               </td>
             </tr>
@@ -721,7 +721,7 @@ $total_equipos  = count($equipos_liga);
           <input type="number" name="bulk_jornada" class="form-control" placeholder="Jornada N°" style="width:80px; font-size:.75rem">
         </div>
 
-        <button type="submit" class="btn btn-gold btn-sm" onclick="return confirm('¿Aplicar acción masiva a los partidos seleccionados?')">Aplicar</button>
+        <button type="submit" class="btn btn-gold btn-sm" data-confirm="¿Aplicar acción masiva a los partidos seleccionados?" data-confirm-danger="false" data-confirm-ok="Aplicar">Aplicar</button>
         <button type="button" class="btn btn-sm" style="background:none; color:rgba(255,255,255,.6)" onclick="deselectAllPartidos()">Cancelar</button>
       </form>
     </div>

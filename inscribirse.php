@@ -669,7 +669,7 @@ try {
               <form method="POST" style="margin:0">
                 <input type="hidden" name="epl_eliminar" value="1">
                 <input type="hidden" name="insc_id"     value="<?= $insc['id'] ?>">
-                <button type="submit" onclick="return confirm('¿Eliminar esta inscripción?')"
+                <button type="submit" data-confirm="¿Eliminar esta inscripción?" data-confirm-ok="Eliminar"
                   style="font-size:.7rem;font-weight:700;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">
                   Eliminar
                 </button>

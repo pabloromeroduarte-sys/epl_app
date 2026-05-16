@@ -178,7 +178,7 @@ _flatRecintos($_sr_roots, $_sr_children, 0, $todos_recintos);
                     <input type="hidden" name="action" value="eliminar">
                     <input type="hidden" name="id" value="<?= $r['id'] ?>">
                     <button type="submit" class="btn btn-sm" style="border:1px solid #dc2626;color:#dc2626;font-size:.7rem"
-                            onclick="return confirm('¿Eliminar <?= epl_h($r['nombre']) ?>?')">Eliminar</button>
+                            data-confirm="¿Eliminar <?= epl_h($r['nombre']) ?>?" data-confirm-ok="Eliminar">Eliminar</button>
                   </form>
                   <?php endif; ?>
                 </div>

@@ -257,7 +257,7 @@ if ($equipo && $liga) {
                 <input type="hidden" name="action" value="desactivar">
                 <input type="hidden" name="suplente_id" value="<?= $sup['id'] ?>">
                 <button type="submit" class="btn btn-sm" style="border:1px solid #ef4444;color:#ef4444;font-size:.72rem"
-                        onclick="return confirm('¿Remover este suplente?')">Remover</button>
+                        data-confirm="¿Remover este suplente?" data-confirm-ok="Remover">Remover</button>
               </form>
             </div>
           </div>
