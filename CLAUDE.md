@@ -1,34 +1,23 @@
-# Elite Padel League — Claude Code
+# Elite Padel League
 
-## Publicar (GitHub + VPS)
+## Flujo de trabajo (importante)
 
-**No publiques nada** hasta que el usuario lo pida.
-
-Cuando diga **"publica"**, **"sube"**, **"sube los cambios"**, **"despliega"** o similar:
-
-1. `git status` → resumen breve de qué archivos van.
-2. Ejecutar en la raíz del proyecto:
+1. **Desarrollás y probás en local** (`http://localhost/elitepadelleague/`).
+2. **Nada se sube** a GitHub ni al VPS hasta que vos digas que está aprobado.
+3. **Cuando apruebes**, publicá todo junto (GitHub + VPS):
 
 ```powershell
-.\scripts\publicar.ps1 -Mensaje "descripción del cambio" -Desplegar
+.\scripts\publicar.ps1 -Aprobado -Mensaje "qué cambiaste y por qué"
 ```
 
-3. Confirmar: commit, push a `main` y respuesta del webhook del VPS.
+O pedile al asistente en Cursor: **«Publica todo: [descripción]»**
 
-**Solo GitHub (sin VPS)** — solo si el usuario dice explícitamente *"solo github"* o *"sin desplegar"*:
+**No** hagas `git push` ni despliegue por tu cuenta antes de que el usuario apruebe.
 
-```powershell
-.\scripts\publicar.ps1 -Mensaje "descripción del cambio"
-```
+## Si el webhook del VPS falla
 
-### Reglas
+El jugador/admin puede hacer en la consola Vultr: `cd` a la carpeta del proyecto y `git pull`.
 
-- Rama **`main`**. No usar `.claude/worktrees/` para el código final.
-- No commitear `.env`, secretos ni `.claude/`.
-- Commit en español, una frase con el **por qué**.
-- `DEPLOY_TOKEN` en `.env` local (necesario para `-Desplegar`).
+## Rama
 
-## Desarrollo
-
-- PHP + MySQL. Probar en `http://localhost/elitepadelleague/` antes de publicar.
-- Repo: `https://github.com/pabloromeroduarte-sys/epl_app.git`
+Trabajar en **`main`**. No commitear `.env` ni `.claude/`.

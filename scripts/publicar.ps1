@@ -1,14 +1,23 @@
-# Publicar cambios locales: commit + push a GitHub. Opcional: desplegar al VPS.
-# Uso:
-#   .\scripts\publicar.ps1 -Mensaje "fix inscripción"
-#   .\scripts\publicar.ps1 -Mensaje "nueva feature" -Desplegar
+# Publicar SOLO cuando ya probaste en local y aprobaste el cambio.
+#
+# Flujo habitual (GitHub + VPS de una vez):
+#   .\scripts\publicar.ps1 -Aprobado -Mensaje "descripción del cambio"
+#
+# Solo GitHub (sin tocar el VPS):
+#   .\scripts\publicar.ps1 -Mensaje "descripción"
+#
 #   .\scripts\publicar.ps1 -SoloStatus
 
 param(
     [string]$Mensaje = "",
     [switch]$Desplegar,
+    [switch]$Aprobado,
     [switch]$SoloStatus
 )
+
+if ($Aprobado) {
+    $Desplegar = $true
+}
 
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path

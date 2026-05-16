@@ -1,30 +1,33 @@
 ---
-description: Subir cambios a GitHub y VPS solo cuando el usuario lo pida explícitamente
+description: Publicar a GitHub y VPS solo cuando el usuario aprueba (él no toca terminal)
 alwaysApply: true
 ---
 
-# Publicar cambios (GitHub / VPS)
+# Publicar cuando el usuario aprueba
 
-**Nunca** hagas `git push` ni despliegue al VPS por tu cuenta. Solo cuando el usuario lo pida ("publica", "sube", "sube los cambios", "despliega", etc.).
+El usuario **no quiere usar terminal**. Solo dice que está listo y vos subís todo.
 
-## Qué hacer cuando lo pida (por defecto: GitHub + VPS)
+## Frases que significan «publicá ya» (GitHub + VPS)
 
-1. Revisa `git status` y resume qué archivos cambiarán.
-2. Ejecuta desde la raíz del proyecto:
+"publica", "publica todo", "sube todo", "queda arriba", "está aprobado", "sube a producción", "envía al vps", "despliega"
+
+## Qué hacer (sin pedirle que ejecute nada)
+
+1. `git status` — resumen de 1–2 líneas de qué va.
+2. Ejecutar (vos, con permisos git_write + network/all):
 
 ```powershell
-.\scripts\publicar.ps1 -Mensaje "mensaje claro del cambio" -Desplegar
+cd C:\xampp\htdocs\elitepadelleague
+.\scripts\publicar.ps1 -Aprobado -Mensaje "descripción clara del cambio"
 ```
 
-**Solo si dice explícitamente "solo github" / "sin desplegar":** omite `-Desplegar`.
+3. Si el webhook falla (token, SSL, git en servidor): intentar `curl -k` al deploy; si sigue fallando, decirle **solo entonces** que en Vultr haga `git pull` en una línea, o que arregle permisos de `.git` una vez.
 
-3. Si no hay cambios locales pero pide publicar en el VPS, usa `-Desplegar` igual (solo webhook).
-4. Usa `git_write` y `network` / `all` en el comando si hace falta.
-5. Confirma al usuario: commit, push y si el deploy respondió bien.
+## Prohibido
 
-## Reglas
+- `git push` o deploy **antes** de que apruebe.
+- Pedirle que corra scripts, PowerShell o git salvo que el deploy falló y no hay otra opción.
 
-- Mensaje de commit en español, una frase que diga el **por qué**.
-- No commitear `.env` ni secretos.
-- El workflow `.github/workflows/deploy.yml` ya **no** despliega en cada push; solo manual en GitHub Actions o con `-Desplegar`.
-- Si el deploy falla por token, indicar que configure `DEPLOY_TOKEN` en `.env` local (mismo valor que en GitHub Secrets y en el VPS).
+## Commit
+
+- Español, una frase con el porqué. Sin `.env` ni secretos.
