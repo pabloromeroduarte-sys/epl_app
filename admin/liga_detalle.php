@@ -124,6 +124,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($bulk_action === 'cambiar_recinto') {
                 $rid = (int)($_POST['bulk_recinto_id'] ?? 0) ?: null;
                 $db->prepare("UPDATE partidos SET recinto_id=? WHERE id IN ($ids_str)")->execute([$rid]);
+                // Notificar jugadores de cada partido afectado
+                foreach ($partido_ids as $pid_b) {
+                    epl_notif_partido((int)$pid_b, 'reprogramacion',
+                        '📅 Nueva cancha asignada',
+                        'La cancha de tu partido fue modificada por la organización. Revisá los detalles en Mis Partidos.',
+                        epl_url('mis_torneos.php')
+                    );
+                }
                 $msg = 'Recintos actualizados.';
             } elseif ($bulk_action === 'cambiar_fecha') {
                 $n_fecha = trim($_POST['bulk_nombre_fecha'] ?? '');
@@ -135,7 +143,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($bulk_action === 'cambiar_fecha_programada') {
                 $n_fecha_prog = trim($_POST['bulk_fecha_programada'] ?? '');
                 if ($n_fecha_prog) {
-                    $db->prepare("UPDATE partidos SET fecha_programada=? WHERE id IN ($ids_str)")->execute([str_replace('T', ' ', $n_fecha_prog) . ':00']);
+                    $fecha_db = str_replace('T', ' ', $n_fecha_prog) . ':00';
+                    $db->prepare("UPDATE partidos SET fecha_programada=? WHERE id IN ($ids_str)")->execute([$fecha_db]);
+                    $fecha_fmt = date('d/m/Y H:i', strtotime($fecha_db));
+                    // Notificar jugadores de cada partido afectado
+                    foreach ($partido_ids as $pid_b) {
+                        epl_notif_partido((int)$pid_b, 'reprogramacion',
+                            '📅 Nueva fecha de partido',
+                            "Tu partido fue reprogramado para el {$fecha_fmt}. Revisá los detalles en Mis Partidos.",
+                            epl_url('mis_torneos.php')
+                        );
+                    }
                     $msg = 'Fecha y hora de los partidos actualizada.';
                 }
             } elseif ($bulk_action === 'poner_alerta') {
@@ -217,15 +235,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sets[$s] = ['l'=>$gl,'v'=>$gv];
             if ($gl !== null && $gv !== null) { if ($gl > $gv) $sets_l++; else $sets_v++; }
         }
+
+        // Leer datos anteriores para detectar cambios de fecha/cancha
+        $stP = $db->prepare("SELECT * FROM partidos WHERE id=?"); $stP->execute([$pid]); $p2 = $stP->fetch();
+
         $ganador_id = null;
         if ($est === 'jugado') {
-            $stP = $db->prepare("SELECT * FROM partidos WHERE id=?"); $stP->execute([$pid]); $p2 = $stP->fetch();
             $ganador_id = $sets_l > $sets_v ? $p2['equipo_local_id'] : $p2['equipo_visitante_id'];
         }
         $alerta_a = trim($_POST['alerta_admin'] ?? '') ?: null;
         $db->prepare("UPDATE partidos SET estado=?,fecha_programada=?,fecha_jugado=?,jornada=?,nombre_fecha=?,recinto_id=?,sets_local=?,sets_visitante=?,games_s1_local=?,games_s1_visitante=?,games_s2_local=?,games_s2_visitante=?,games_s3_local=?,games_s3_visitante=?,ganador_id=?,alerta_admin=? WHERE id=?")
            ->execute([$est,$fecha_p,$fecha_j?:null,$jornada,$nombre_f,$recinto_id,$sets_l,$sets_v,$sets[1]['l'],$sets[1]['v'],$sets[2]['l'],$sets[2]['v'],$sets[3]['l'],$sets[3]['v'],$ganador_id,$alerta_a,$pid]);
         epl_recalcular_clasificacion($id);
+
+        // Notificar a los jugadores si cambiaron la fecha o la cancha
+        $fecha_cambio   = $fecha_p && $fecha_p !== ($p2['fecha_programada'] ?? '');
+        $recinto_cambio = $recinto_id !== ((int)($p2['recinto_id'] ?? 0) ?: null);
+        if ($p2 && ($fecha_cambio || $recinto_cambio)) {
+            $partes = [];
+            if ($fecha_cambio)   $partes[] = 'nueva fecha: ' . date('d/m/Y H:i', strtotime($fecha_p));
+            if ($recinto_cambio) $partes[] = 'nueva cancha asignada';
+            $cambios_str = ucfirst(implode(' · ', $partes));
+            epl_notif_partido($pid, 'reprogramacion',
+                '📅 Cambio en tu partido',
+                $cambios_str . '. Revisá los detalles en Mis Partidos.',
+                epl_url('mis_torneos.php')
+            );
+        }
+
         ld_redirect($id, 'partidos', 'Partido actualizado.');
     }
 }

@@ -524,6 +524,37 @@ function epl_notif_crear(int $jugador_id, string $tipo, string $titulo, string $
     epl_mail_notificacion_jugador($jugador_id, $titulo, $mensaje, $url);
 }
 
+/**
+ * Notifica a todos los jugadores de un partido (ambos equipos) y opcionalmente a los admins.
+ */
+function epl_notif_partido(int $partido_id, string $tipo, string $titulo, string $mensaje, string $url = '', bool $incluir_admins = false, array $excluir_ids = []): void {
+    $db = epl_db();
+
+    // Jugadores de los dos equipos
+    $st = $db->prepare("
+        SELECT DISTINCT j.id
+        FROM partidos p
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        JOIN jugadores j ON j.id IN (el.jugador1_id, el.jugador2_id, ev.jugador1_id, ev.jugador2_id)
+        WHERE p.id = ? AND j.id NOT IN (" . (count($excluir_ids) ? implode(',', array_map('intval', $excluir_ids)) : '0') . ")
+    ");
+    $st->execute([$partido_id]);
+    foreach ($st->fetchAll() as $row) {
+        epl_notif_crear((int)$row['id'], $tipo, $titulo, $mensaje, $url);
+    }
+
+    // Admins (opconal)
+    if ($incluir_admins) {
+        $stA = $db->query("SELECT id FROM jugadores WHERE rol='admin' AND estado='activo'");
+        foreach ($stA->fetchAll() as $row) {
+            if (!in_array((int)$row['id'], $excluir_ids)) {
+                epl_notif_crear((int)$row['id'], $tipo, $titulo, $mensaje, $url);
+            }
+        }
+    }
+}
+
 function epl_notif_no_leidas(int $jugador_id): int {
     $db = epl_db();
     $st = $db->prepare("SELECT COUNT(*) FROM notificaciones WHERE jugador_id = ? AND leida = 0");
