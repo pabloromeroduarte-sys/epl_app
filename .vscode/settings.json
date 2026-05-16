@@ -1,0 +1,10 @@
+{
+  "files.watcherExclude": {
+    "**/.claude/**": true,
+    "**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/.claude/**": true,
+    "**/node_modules/**": true
+  }
+}

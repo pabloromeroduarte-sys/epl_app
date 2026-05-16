@@ -8,9 +8,15 @@ require_once 'includes/auth.php';
 require_once 'includes/functions.php';
 epl_require_login();
 
-$db      = epl_db();
+$db = epl_db();
+epl_ensure_inscripciones_schema();
+
 // Leer siempre desde DB para tener datos de perfil actualizados
 $jugador = epl_jugador_db() ?: epl_jugador_actual();
+if (!$jugador || empty($jugador['id'])) {
+    header('Location: ' . epl_url('login.php'));
+    exit;
+}
 
 // Ligas en inscripción o activas
 $ligas = $db->query("SELECT * FROM ligas WHERE estado IN ('inscripcion','activa') ORDER BY id DESC")->fetchAll();
@@ -20,31 +26,52 @@ $error = '';
 
 // ── Eliminar inscripción pendiente (sólo capitán) ──────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_eliminar'] ?? '')) {
-    $del_id = (int)($_POST['insc_id'] ?? 0);
-    if ($del_id) {
-        $chk = $db->prepare("SELECT id, token, equipo_id FROM inscripciones WHERE id=? AND jugador_id=? AND estado='pendiente'");
-        $chk->execute([$del_id, $jugador['id']]);
-        $row = $chk->fetch();
-        if ($row) {
-            $db->prepare("DELETE FROM pagos WHERE token_ref=?")->execute([$row['token']]);
-            if ($row['equipo_id']) {
-                // Delete partner inscription too
-                $pi = $db->prepare("SELECT token FROM inscripciones WHERE equipo_id=? AND rol_equipo='partner'");
-                $pi->execute([$row['equipo_id']]);
-                $pt = $pi->fetchColumn();
-                if ($pt) {
-                    $db->prepare("DELETE FROM pagos WHERE token_ref=?")->execute([$pt]);
-                    $db->prepare("DELETE FROM inscripciones WHERE equipo_id=? AND rol_equipo='partner'")->execute([$row['equipo_id']]);
+    try {
+        $del_id = (int)($_POST['insc_id'] ?? 0);
+        if ($del_id) {
+            $chk = $db->prepare("SELECT id, token, equipo_id FROM inscripciones WHERE id=? AND jugador_id=? AND estado='pendiente'");
+            $chk->execute([$del_id, $jugador['id']]);
+            $row = $chk->fetch();
+            if ($row) {
+                if (!empty($row['token'])) {
+                    try {
+                        $db->prepare("DELETE FROM pagos WHERE token_ref=?")->execute([$row['token']]);
+                    } catch (Throwable $e) {
+                        error_log('inscribirse eliminar pagos cap: ' . $e->getMessage());
+                    }
                 }
+                if ($row['equipo_id']) {
+                    $pi = $db->prepare("SELECT token FROM inscripciones WHERE equipo_id=? AND rol_equipo='partner'");
+                    $pi->execute([$row['equipo_id']]);
+                    $pt = $pi->fetchColumn();
+                    if ($pt) {
+                        try {
+                            $db->prepare("DELETE FROM pagos WHERE token_ref=?")->execute([$pt]);
+                        } catch (Throwable $e) {
+                            error_log('inscribirse eliminar pagos partner: ' . $e->getMessage());
+                        }
+                        $db->prepare("DELETE FROM inscripciones WHERE equipo_id=? AND rol_equipo='partner'")->execute([$row['equipo_id']]);
+                    }
+                }
+                $db->prepare("DELETE FROM inscripciones WHERE id=?")->execute([$del_id]);
+                header('Location: ' . epl_url('inscribirse.php') . '?ok=eliminada');
+                exit;
             }
-            $db->prepare("DELETE FROM inscripciones WHERE id=?")->execute([$del_id]);
-            $ok = 'Inscripción eliminada.';
+            $error = 'No se pudo eliminar: inscripción no encontrada o ya no está pendiente.';
         }
+    } catch (Throwable $e) {
+        error_log('inscribirse eliminar: ' . $e->getMessage());
+        $error = 'No se pudo eliminar la inscripción. Intenta de nuevo o contacta al organizador.';
     }
+}
+
+if (isset($_GET['ok']) && $_GET['ok'] === 'eliminada') {
+    $ok = 'Inscripción eliminada.';
 }
 
 // ── Completar inscripción gratis atascada (pago_estado='pendiente' en liga sin precio) ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_completar_gratis'] ?? '')) {
+    try {
     $fix_id = (int)($_POST['insc_id'] ?? 0);
     if ($fix_id) {
         $chk = $db->prepare("
@@ -61,6 +88,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_completar_gratis'] ?? 
             header('Location: ' . epl_url('inscribirse.php') . '?pago=exito&token=' . urlencode($row['token']));
             exit;
         }
+    }
+    } catch (Throwable $e) {
+        error_log('inscribirse completar_gratis: ' . $e->getMessage());
+        $error = 'No se pudo completar la inscripción.';
     }
 }
 
@@ -289,6 +320,7 @@ if (isset($_GET['pago']) && $_GET['pago'] === 'fallo') {
 
 // ── Procesar formulario (nueva inscripción como capitán) ────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_inscribir'] ?? '')) {
+    try {
     $liga_id    = (int)($_POST['liga_id']    ?? 0);
     $partner_id = (int)($_POST['partner_id'] ?? 0);
 
@@ -405,45 +437,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_inscribir'] ?? '')) {
             }
         }
     }
+    } catch (Throwable $e) {
+        error_log('inscribirse nueva: ' . $e->getMessage());
+        $error = 'No se pudo registrar la inscripción. Si el problema continúa, ejecuta migration/update_v2.php o contacta al organizador.';
+    }
 }
 
 // Otros jugadores disponibles como compañeros
-$otros_jugadores = $db->query("
-    SELECT id, nombre, apellido, alias FROM jugadores
-    WHERE estado='activo' AND id != {$jugador['id']}
-    ORDER BY apellido, nombre
-")->fetchAll();
+$otros_jugadores = [];
+try {
+    $otros_jugadores = $db->query("
+        SELECT id, nombre, apellido, alias FROM jugadores
+        WHERE estado='activo' AND id != " . (int)$jugador['id'] . "
+        ORDER BY apellido, nombre
+    ")->fetchAll();
+} catch (Throwable $e) {
+    error_log('inscribirse jugadores: ' . $e->getMessage());
+}
 
 // Mis inscripciones — enriquecidas con datos de partner/capitán
-$mis_inscripciones = $db->prepare("
-    SELECT i.*,
-           l.nombre  AS liga_nombre,
-           l.temporada,
-           l.precio  AS liga_precio,
-           e.nombre  AS equipo_nombre,
-           e.jugador1_id AS eq_cap_id,
-           e.jugador2_id AS eq_par_id,
-           pi2.id    AS partner_insc_id,
-           pi2.token AS partner_token,
-           pi2.estado AS partner_insc_estado,
-           pj.nombre  AS partner_nombre,
-           pj.apellido AS partner_apellido,
-           cj.nombre  AS capitan_nombre,
-           cj.apellido AS capitan_apellido
-    FROM inscripciones i
-    JOIN ligas l ON l.id = i.liga_id
-    LEFT JOIN equipos e ON e.id = i.equipo_id
-    LEFT JOIN inscripciones pi2
-           ON i.rol_equipo = 'capitan'
-          AND pi2.equipo_id = i.equipo_id
-          AND pi2.rol_equipo = 'partner'
-    LEFT JOIN jugadores pj ON i.rol_equipo = 'capitan' AND pj.id = pi2.jugador_id
-    LEFT JOIN jugadores cj ON i.rol_equipo = 'partner' AND cj.id = e.jugador1_id
-    WHERE i.jugador_id = ?
-    ORDER BY i.fecha DESC
-");
-$mis_inscripciones->execute([$jugador['id']]);
-$mis_inscripciones = $mis_inscripciones->fetchAll();
+$mis_inscripciones = [];
+try {
+    $stMis = $db->prepare("
+        SELECT i.*,
+               l.nombre  AS liga_nombre,
+               l.temporada,
+               l.precio  AS liga_precio,
+               e.nombre  AS equipo_nombre,
+               e.jugador1_id AS eq_cap_id,
+               e.jugador2_id AS eq_par_id,
+               pi2.id    AS partner_insc_id,
+               pi2.token AS partner_token,
+               pi2.estado AS partner_insc_estado,
+               pj.nombre  AS partner_nombre,
+               pj.apellido AS partner_apellido,
+               cj.nombre  AS capitan_nombre,
+               cj.apellido AS capitan_apellido
+        FROM inscripciones i
+        JOIN ligas l ON l.id = i.liga_id
+        LEFT JOIN equipos e ON e.id = i.equipo_id
+        LEFT JOIN inscripciones pi2
+               ON i.rol_equipo = 'capitan'
+              AND pi2.equipo_id = i.equipo_id
+              AND pi2.rol_equipo = 'partner'
+        LEFT JOIN jugadores pj ON i.rol_equipo = 'capitan' AND pj.id = pi2.jugador_id
+        LEFT JOIN jugadores cj ON i.rol_equipo = 'partner' AND cj.id = e.jugador1_id
+        WHERE i.jugador_id = ?
+        ORDER BY i.fecha DESC
+    ");
+    $stMis->execute([$jugador['id']]);
+    $mis_inscripciones = $stMis->fetchAll();
+} catch (Throwable $e) {
+    error_log('inscribirse listar: ' . $e->getMessage());
+    $error = $error ?: 'Error al cargar tus inscripciones. Ejecuta migration/update_v2.php en el servidor.';
+}
 ?>
 <?php require_once 'includes/header.php'; ?>
 

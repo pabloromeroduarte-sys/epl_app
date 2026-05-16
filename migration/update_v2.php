@@ -98,6 +98,45 @@ addCol($db, 'inscripciones', 'token',      "VARCHAR(64) DEFAULT NULL AFTER `rol_
 addCol($db, 'inscripciones', 'pago_monto', "DECIMAL(10,2) DEFAULT NULL AFTER `pago_estado`");
 addCol($db, 'inscripciones', 'pago_ref',   "VARCHAR(200) DEFAULT NULL AFTER `pago_monto`");
 
+// ── 5b. pagos y notificaciones (inscripciones jugador) ───
+step('── pagos / notificaciones ──', 'warn');
+$db->exec("CREATE TABLE IF NOT EXISTS `pagos` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `liga_id` INT UNSIGNED DEFAULT NULL,
+  `jugador_id` INT UNSIGNED DEFAULT NULL,
+  `inscripcion_id` INT UNSIGNED DEFAULT NULL,
+  `concepto` VARCHAR(300) NOT NULL DEFAULT '',
+  `rol` VARCHAR(30) NOT NULL DEFAULT 'manual',
+  `monto` DECIMAL(10,2) NOT NULL DEFAULT 0,
+  `estado` ENUM('pendiente','completado','rechazado') NOT NULL DEFAULT 'pendiente',
+  `metodo` VARCHAR(80) DEFAULT NULL,
+  `mp_preference_id` VARCHAR(120) DEFAULT NULL,
+  `mp_payment_id` VARCHAR(120) DEFAULT NULL,
+  `token_ref` VARCHAR(64) DEFAULT NULL,
+  `equipo_token` VARCHAR(64) DEFAULT NULL,
+  `notas` TEXT DEFAULT NULL,
+  `fecha` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_token_ref` (`token_ref`),
+  KEY `idx_inscripcion` (`inscripcion_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+step('  ✓ tabla pagos OK', 'ok');
+
+$db->exec("CREATE TABLE IF NOT EXISTS `notificaciones` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `jugador_id` INT UNSIGNED NOT NULL,
+  `tipo` VARCHAR(50) NOT NULL,
+  `titulo` VARCHAR(150) NOT NULL,
+  `mensaje` TEXT NOT NULL,
+  `url` VARCHAR(255) DEFAULT NULL,
+  `leida` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_jugador_leida` (`jugador_id`, `leida`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+step('  ✓ tabla notificaciones OK', 'ok');
+
 // ── 6. Tabla suplentes ───────────────────────────────────
 step('── suplentes ──', 'warn');
 $db->exec("CREATE TABLE IF NOT EXISTS `suplentes` (

@@ -6,7 +6,8 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
 
-$db    = epl_db();
+$db = epl_db();
+epl_ensure_inscripciones_schema();
 $error = '';
 
 // Leer token

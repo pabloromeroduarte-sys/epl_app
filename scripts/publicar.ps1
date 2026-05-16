@@ -1,0 +1,90 @@
+# Publicar cambios locales: commit + push a GitHub. Opcional: desplegar al VPS.
+# Uso:
+#   .\scripts\publicar.ps1 -Mensaje "fix inscripción"
+#   .\scripts\publicar.ps1 -Mensaje "nueva feature" -Desplegar
+#   .\scripts\publicar.ps1 -SoloStatus
+
+param(
+    [string]$Mensaje = "",
+    [switch]$Desplegar,
+    [switch]$SoloStatus
+)
+
+$ErrorActionPreference = "Stop"
+$root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+Set-Location $root
+
+function Get-DeployToken {
+    if ($env:DEPLOY_TOKEN) { return $env:DEPLOY_TOKEN.Trim() }
+    $envFile = Join-Path $root ".env"
+    if (-not (Test-Path $envFile)) { return $null }
+    foreach ($line in Get-Content $envFile -Encoding UTF8) {
+        if ($line -match '^\s*DEPLOY_TOKEN\s*=\s*(.+)\s*$') {
+            return $matches[1].Trim().Trim('"').Trim("'")
+        }
+    }
+    return $null
+}
+
+Write-Host "=== EPL publicar ===" -ForegroundColor Cyan
+Write-Host "Rama: $(git branch --show-current)" -ForegroundColor Gray
+git status -sb
+
+if ($SoloStatus) { exit 0 }
+
+$status = git status --porcelain
+if (-not $status) {
+    Write-Host "No hay cambios que commitear." -ForegroundColor Yellow
+    if (-not $Desplegar) { exit 0 }
+}
+else {
+    if (-not $Mensaje.Trim()) {
+        Write-Error "Indica -Mensaje 'descripción del cambio'"
+    }
+    git add -A
+  # No subir secretos por accidente
+    git reset HEAD .env 2>$null
+    git reset HEAD .env.* 2>$null
+    $staged = git diff --cached --name-only
+    if (-not $staged) {
+        Write-Host "Tras excluir .env no queda nada que commitear." -ForegroundColor Yellow
+        if (-not $Desplegar) { exit 0 }
+    }
+    else {
+        git commit -m $Mensaje.Trim()
+        Write-Host "Commit creado." -ForegroundColor Green
+    }
+}
+
+$branch = git branch --show-current
+if (-not $branch) { $branch = "main" }
+
+Write-Host "Push a origin/$branch ..." -ForegroundColor Cyan
+git push origin $branch
+Write-Host "GitHub actualizado." -ForegroundColor Green
+
+if ($Desplegar) {
+    $token = Get-DeployToken
+    if (-not $token) {
+        Write-Error "DEPLOY_TOKEN no encontrado. Añádelo en .env o variable de entorno DEPLOY_TOKEN."
+    }
+    $urls = @(
+        "https://padel.207.246.68.77.nip.io/deploy_webhook.php?token=$token",
+        "https://207.246.68.77/deploy_webhook.php?token=$token"
+    )
+    $ok = $false
+    foreach ($url in $urls) {
+        try {
+            Write-Host "Deploy: $url" -ForegroundColor Cyan
+            $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 120
+            Write-Host $r.Content
+            $ok = $true
+            break
+        }
+        catch {
+            Write-Host "Fallo: $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+    if (-not $ok) { exit 1 }
+    Write-Host "VPS actualizado." -ForegroundColor Green
+}

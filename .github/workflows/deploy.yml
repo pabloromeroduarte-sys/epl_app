@@ -1,9 +1,8 @@
 name: Despliegue EPL App a Vultr
 
+# Solo manual: no despliega al VPS con cada push. El agente o tú lo disparáis cuando toque.
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   deploy:

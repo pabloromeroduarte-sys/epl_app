@@ -514,14 +514,24 @@ function epl_vincular_partner_por_token_capitan(string $token_capitan, int $juga
 // -------------------------------------------------------
 
 function epl_notif_crear(int $jugador_id, string $tipo, string $titulo, string $mensaje, string $url = ''): void {
-    $db = epl_db();
-    $st = $db->prepare("INSERT INTO notificaciones (jugador_id, tipo, titulo, mensaje, url) VALUES (?,?,?,?,?)");
-    $st->execute([$jugador_id, $tipo, $titulo, $mensaje, $url ?: null]);
-
-    if (!function_exists('epl_mail_notificacion_jugador')) {
-        require_once __DIR__ . '/mail.php';
+    try {
+        epl_ensure_inscripciones_schema();
+        $db = epl_db();
+        $st = $db->prepare("INSERT INTO notificaciones (jugador_id, tipo, titulo, mensaje, url) VALUES (?,?,?,?,?)");
+        $st->execute([$jugador_id, $tipo, $titulo, $mensaje, $url ?: null]);
+    } catch (Throwable $e) {
+        error_log('epl_notif_crear: ' . $e->getMessage());
+        return;
     }
-    epl_mail_notificacion_jugador($jugador_id, $titulo, $mensaje, $url);
+
+    try {
+        if (!function_exists('epl_mail_notificacion_jugador')) {
+            require_once __DIR__ . '/mail.php';
+        }
+        epl_mail_notificacion_jugador($jugador_id, $titulo, $mensaje, $url);
+    } catch (Throwable $e) {
+        error_log('epl_notif_crear mail: ' . $e->getMessage());
+    }
 }
 
 /**
@@ -763,10 +773,87 @@ function epl_ensure_ligas_columnas_mp_precio(): void {
 }
 
 // -------------------------------------------------------
+// Esquema mínimo inscripciones / pagos / notificaciones
+// -------------------------------------------------------
+
+function epl_ensure_inscripciones_schema(): void {
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $done = true;
+    try {
+        $db = epl_db();
+
+        $inscCols = [];
+        foreach ($db->query('SHOW COLUMNS FROM inscripciones')->fetchAll() as $r) {
+            $inscCols[] = strtolower($r['Field']);
+        }
+        $addInsc = static function (string $col, string $def) use ($db, &$inscCols): void {
+            if (in_array(strtolower($col), $inscCols, true)) {
+                return;
+            }
+            $db->exec("ALTER TABLE inscripciones ADD COLUMN `$col` $def");
+            $inscCols[] = strtolower($col);
+        };
+        $addInsc('rol_equipo', "ENUM('capitan','partner') NOT NULL DEFAULT 'capitan' AFTER `equipo_id`");
+        $addInsc('token', "VARCHAR(64) DEFAULT NULL AFTER `rol_equipo`");
+        $addInsc('pago_monto', "DECIMAL(10,2) DEFAULT NULL AFTER `pago_estado`");
+        $addInsc('pago_ref', "VARCHAR(200) DEFAULT NULL AFTER `pago_monto`");
+
+        $db->exec("CREATE TABLE IF NOT EXISTS `pagos` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `liga_id` INT UNSIGNED DEFAULT NULL,
+            `jugador_id` INT UNSIGNED DEFAULT NULL,
+            `inscripcion_id` INT UNSIGNED DEFAULT NULL,
+            `concepto` VARCHAR(300) NOT NULL DEFAULT '',
+            `rol` VARCHAR(30) NOT NULL DEFAULT 'manual',
+            `monto` DECIMAL(10,2) NOT NULL DEFAULT 0,
+            `estado` ENUM('pendiente','completado','rechazado') NOT NULL DEFAULT 'pendiente',
+            `metodo` VARCHAR(80) DEFAULT NULL,
+            `mp_preference_id` VARCHAR(120) DEFAULT NULL,
+            `mp_payment_id` VARCHAR(120) DEFAULT NULL,
+            `token_ref` VARCHAR(64) DEFAULT NULL,
+            `equipo_token` VARCHAR(64) DEFAULT NULL,
+            `notas` TEXT DEFAULT NULL,
+            `fecha` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_token_ref` (`token_ref`),
+            KEY `idx_inscripcion` (`inscripcion_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $db->exec("CREATE TABLE IF NOT EXISTS `notificaciones` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `jugador_id` INT UNSIGNED NOT NULL,
+            `tipo` VARCHAR(50) NOT NULL,
+            `titulo` VARCHAR(150) NOT NULL,
+            `mensaje` TEXT NOT NULL,
+            `url` VARCHAR(255) DEFAULT NULL,
+            `leida` TINYINT(1) NOT NULL DEFAULT 0,
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_jugador_leida` (`jugador_id`, `leida`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $jugCols = [];
+        foreach ($db->query('SHOW COLUMNS FROM jugadores')->fetchAll() as $r) {
+            $jugCols[] = strtolower($r['Field']);
+        }
+        if (!in_array('alias', $jugCols, true)) {
+            $db->exec("ALTER TABLE jugadores ADD COLUMN `alias` VARCHAR(100) DEFAULT NULL AFTER `apellido`");
+        }
+    } catch (Throwable $e) {
+        error_log('epl_ensure_inscripciones_schema: ' . $e->getMessage());
+    }
+}
+
+// -------------------------------------------------------
 // ERP Financiero — pagos
 // -------------------------------------------------------
 
 function epl_pago_crear(array $data): int {
+    epl_ensure_inscripciones_schema();
     $db = epl_db();
     $st = $db->prepare("
         INSERT INTO pagos (liga_id, jugador_id, inscripcion_id, concepto, rol, monto, estado, metodo, mp_preference_id, token_ref, equipo_token, notas)

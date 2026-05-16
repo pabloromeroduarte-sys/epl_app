@@ -1,0 +1,30 @@
+---
+description: Subir cambios a GitHub y VPS solo cuando el usuario lo pida explícitamente
+alwaysApply: true
+---
+
+# Publicar cambios (GitHub / VPS)
+
+**Nunca** hagas `git push` ni despliegue al VPS por tu cuenta. Solo cuando el usuario lo pida ("publica", "sube", "sube los cambios", "despliega", etc.).
+
+## Qué hacer cuando lo pida (por defecto: GitHub + VPS)
+
+1. Revisa `git status` y resume qué archivos cambiarán.
+2. Ejecuta desde la raíz del proyecto:
+
+```powershell
+.\scripts\publicar.ps1 -Mensaje "mensaje claro del cambio" -Desplegar
+```
+
+**Solo si dice explícitamente "solo github" / "sin desplegar":** omite `-Desplegar`.
+
+3. Si no hay cambios locales pero pide publicar en el VPS, usa `-Desplegar` igual (solo webhook).
+4. Usa `git_write` y `network` / `all` en el comando si hace falta.
+5. Confirma al usuario: commit, push y si el deploy respondió bien.
+
+## Reglas
+
+- Mensaje de commit en español, una frase que diga el **por qué**.
+- No commitear `.env` ni secretos.
+- El workflow `.github/workflows/deploy.yml` ya **no** despliega en cada push; solo manual en GitHub Actions o con `-Desplegar`.
+- Si el deploy falla por token, indicar que configure `DEPLOY_TOKEN` en `.env` local (mismo valor que en GitHub Secrets y en el VPS).
