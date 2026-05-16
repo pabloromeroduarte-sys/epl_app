@@ -212,12 +212,32 @@ if (isset($_GET['pago']) && $_GET['pago'] === 'exito' && isset($_GET['token'])) 
     $payment_id = isset($_GET['payment_id']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['payment_id']) : 'Gratis';
 
     epl_pago_completar($token_ret, $payment_id);
-    $db->prepare("UPDATE inscripciones SET pago_estado='pagado', pago_ref=?, estado='aprobada' WHERE token=?")
-       ->execute([$payment_id, $token_ret]);
+    // Solo aprobar si el equipo ya está completo (partner confirmado).
+    // Si no hay partner aún, queda pendiente hasta que el partner confirme.
+    $db->prepare("
+        UPDATE inscripciones i
+        SET i.pago_estado='pagado', i.pago_ref=?,
+            i.estado = IF(
+                i.equipo_id IS NOT NULL AND EXISTS(
+                    SELECT 1 FROM inscripciones p
+                    WHERE p.equipo_id = i.equipo_id
+                      AND p.rol_equipo = 'partner'
+                      AND p.pago_estado = 'pagado'
+                ),
+                'aprobada', 'pendiente'
+            )
+        WHERE i.token=?
+    ")->execute([$payment_id, $token_ret]);
 
     $insc_row = $db->prepare("SELECT i.*, l.nombre AS liga_nombre, j.nombre AS j_nombre, j.apellido AS j_apellido FROM inscripciones i JOIN ligas l ON l.id=i.liga_id JOIN jugadores j ON j.id=i.jugador_id WHERE i.token=?");
     $insc_row->execute([$token_ret]);
     $insc_row = $insc_row->fetch();
+
+    // Si fue el partner quien pagó, aprobar también al capitán
+    if ($insc_row && $insc_row['rol_equipo'] === 'partner' && $insc_row['equipo_id']) {
+        $db->prepare("UPDATE inscripciones SET estado='aprobada' WHERE equipo_id=? AND rol_equipo='capitan' AND pago_estado='pagado'")
+           ->execute([$insc_row['equipo_id']]);
+    }
 
     // Notificar al capitán si fue el partner quien pagó
     if ($insc_row && $insc_row['rol_equipo'] === 'partner' && $insc_row['equipo_id']) {
