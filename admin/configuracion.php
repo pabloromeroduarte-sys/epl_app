@@ -88,6 +88,7 @@ $mp_modo  = epl_config_get('mp_modo', 'sandbox');
 $mp_pv    = trim(epl_config_get('mp_comision_porcentaje'));
 $mp_pv    = ($mp_pv !== '' && is_numeric(str_replace(',', '.', $mp_pv))) ? str_replace(',', '.', $mp_pv) : '3.49';
 $mp_escalon = (string) epl_mp_redondeo_escalon_clp();
+$smtp = [
     'enabled'    => epl_config_get('smtp_enabled', '0') === '1',
     'host'       => epl_config_get('smtp_host'),
     'port'       => epl_config_get('smtp_port', '587'),
