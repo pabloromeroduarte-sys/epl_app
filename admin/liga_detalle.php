@@ -759,7 +759,7 @@ $total_equipos  = count($equipos_liga);
               </td>
             </tr>
             <?php endif; ?>
-            <tr style="border-bottom:1px solid var(--gray-100)">
+            <tr id="p<?= $p['id'] ?>" style="border-bottom:1px solid var(--gray-100)">
               <td style="padding:.6rem .75rem;text-align:center">
                 <input type="checkbox" name="partido_ids[]" value="<?= $p['id'] ?>" class="partido-check" data-group="<?= epl_h($p['nombre_fecha']) ?>" form="bulkForm">
               </td>
@@ -1322,5 +1322,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (opts[i].getAttribute('data-tipo') !== tipo) opts[i].style.display = 'none';
     }
 });
+</script>
+<script>
+// Resaltar partido específico si viene desde dashboard de reprogramaciones
+(function(){
+    var hash = location.hash;
+    if (!hash || !/^#p\d+$/.test(hash)) return;
+    var row = document.querySelector(hash);
+    if (!row) return;
+    row.scrollIntoView({behavior:'smooth', block:'center'});
+    row.style.transition = 'background .3s';
+    row.style.background = 'rgba(201,167,98,.18)';
+    setTimeout(function(){ row.style.background = ''; }, 3000);
+})();
 </script>
 <?php require_once '../includes/footer.php'; ?>

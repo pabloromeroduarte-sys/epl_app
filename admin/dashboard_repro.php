@@ -99,7 +99,7 @@ require_once '../includes/header.php';
                             <?= $p['fecha_solicitud'] ? date('d/m/Y', strtotime($p['fecha_solicitud'])) : '—' ?>
                         </td>
                         <td data-label="Acción" style="padding:.8rem 1rem;text-align:center">
-                            <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn btn-sm btn-navy">Gestionar</a>
+                            <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos#p<?= $p['id'] ?>" class="btn btn-sm btn-navy">Gestionar</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -144,7 +144,7 @@ require_once '../includes/header.php';
                             <?= epl_h($p['recinto_nombre'] ?: 'No asignada') ?>
                         </td>
                         <td data-label="Acción" style="padding:.8rem 1rem;text-align:center">
-                            <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn btn-sm" style="border:1px solid var(--gray-200)">Ver</a>
+                            <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos#p<?= $p['id'] ?>" class="btn btn-sm" style="border:1px solid var(--gray-200)">Ver</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
