@@ -312,14 +312,12 @@ if ($val['telefono']) {
         <div class="grid-2">
           <div class="form-group">
             <label class="form-label" for="comuna">Comuna</label>
-            <input type="text" name="comuna" id="comuna" class="form-control"
-                   value="<?= epl_h($val['comuna']) ?>"
-                   list="lista_comunas" placeholder="Escribe tu comuna..." autocomplete="off">
-            <datalist id="lista_comunas">
+            <select name="comuna" id="comuna" class="form-control">
+              <option value="">— Selecciona —</option>
               <?php foreach ($comunas as $c): ?>
-                <option value="<?= epl_h($c) ?>">
+                <option value="<?= epl_h($c) ?>" <?= $val['comuna']===$c?'selected':'' ?>><?= epl_h($c) ?></option>
               <?php endforeach; ?>
-            </datalist>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label" for="profesion">Sector / Profesión</label>
