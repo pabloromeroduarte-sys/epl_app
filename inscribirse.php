@@ -43,6 +43,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_eliminar'] ?? '')) {
     }
 }
 
+// ── Completar inscripción gratis atascada (pago_estado='pendiente' en liga sin precio) ──
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_completar_gratis'] ?? '')) {
+    $fix_id = (int)($_POST['insc_id'] ?? 0);
+    if ($fix_id) {
+        $chk = $db->prepare("
+            SELECT i.id, i.token, l.precio
+            FROM inscripciones i
+            JOIN ligas l ON l.id = i.liga_id
+            WHERE i.id=? AND i.jugador_id=? AND i.estado='pendiente' AND i.pago_estado='pendiente' AND i.rol_equipo='capitan'
+        ");
+        $chk->execute([$fix_id, $jugador['id']]);
+        $row = $chk->fetch();
+        if ($row && (float)($row['precio'] ?? 0) <= 0) {
+            $db->prepare("UPDATE inscripciones SET pago_estado='pagado' WHERE id=?")->execute([$fix_id]);
+            epl_pago_completar((string)$row['token'], 'Gratis');
+            header('Location: ' . epl_url('inscribirse.php') . '?pago=exito&token=' . urlencode($row['token']));
+            exit;
+        }
+    }
+}
+
 // ── Aceptar invitación como partner ────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_aceptar'] ?? '')) {
     $acc_id = (int)($_POST['insc_id'] ?? 0);
@@ -581,9 +602,9 @@ $mis_inscripciones = $mis_inscripciones->fetchAll();
                   <label class="form-label" style="font-size:.72rem">Lado preferido</label>
                   <select name="lado" class="form-control" style="font-size:.82rem;padding:.4rem .65rem">
                     <option value="">— No definido —</option>
-                    <option value="derecha" <?= ($jugador['lado'] ?? '') === 'derecha' ? 'selected' : '' ?>>Derecha (Drive)</option>
-                    <option value="reves"   <?= ($jugador['lado'] ?? '') === 'reves'   ? 'selected' : '' ?>>Revés (Backhand)</option>
-                    <option value="ambos"   <?= ($jugador['lado'] ?? '') === 'ambos'   ? 'selected' : '' ?>>Ambos lados</option>
+                    <option value="derecha" <?= ($jugador['lado'] ?? '') === 'derecha' ? 'selected' : '' ?>>Drive</option>
+                    <option value="reves"   <?= ($jugador['lado'] ?? '') === 'reves'   ? 'selected' : '' ?>>Revés</option>
+                    <option value="ambos"   <?= ($jugador['lado'] ?? '') === 'ambos'   ? 'selected' : '' ?>>Ambos</option>
                   </select>
                 </div>
                 <div class="form-group" style="margin:0">
@@ -663,11 +684,19 @@ $mis_inscripciones = $mis_inscripciones->fetchAll();
                   Eliminar
                 </button>
               </form>
-              <?php if ($insc['pago_estado'] === 'pagado'): ?>
-                <a href="https://wa.me/?text=<?= $partnerConCuenta ? $wsp_cap : $wsp_token ?>" target="_blank"
-                   style="font-size:.7rem;font-weight:700;color:#25D366;text-decoration:none">
-                  📲 Reenviar WSP
-                </a>
+              <a href="https://wa.me/?text=<?= $partnerConCuenta ? $wsp_cap : $wsp_token ?>" target="_blank"
+                 style="font-size:.7rem;font-weight:700;color:#25D366;text-decoration:none">
+                📲 <?= $partnerConCuenta ? 'Avisar al partner' : 'Enviar link partner' ?>
+              </a>
+              <?php if ($insc['pago_estado'] === 'pendiente' && (float)($insc['liga_precio'] ?? 0) <= 0): ?>
+                <form method="POST" style="margin:0">
+                  <input type="hidden" name="epl_completar_gratis" value="1">
+                  <input type="hidden" name="insc_id" value="<?= $insc['id'] ?>">
+                  <button type="submit"
+                    style="font-size:.7rem;font-weight:700;color:#0ea5e9;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">
+                    Completar inscripción
+                  </button>
+                </form>
               <?php endif; ?>
             <?php endif; ?>
           </div>

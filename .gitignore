@@ -4,3 +4,6 @@
 /temp_archive/
 /node_modules/
 .env
+
+# Claude Code — muchos ficheros aquí pueden colgar watchers del IDE (p. ej. Antigravity)
+.claude/

@@ -260,9 +260,9 @@ $profesiones = [
             <label class="form-label">Lado de juego</label>
             <select name="lado" class="form-control">
               <option value="">— No definido —</option>
-              <option value="derecha" <?= ($jugador['lado']??'')==='derecha'?'selected':'' ?>>Derecha (Drive)</option>
-              <option value="reves"   <?= ($jugador['lado']??'')==='reves'  ?'selected':'' ?>>Revés (Backhand)</option>
-              <option value="ambos"   <?= ($jugador['lado']??'')==='ambos'  ?'selected':'' ?>>Ambos lados</option>
+              <option value="derecha" <?= ($jugador['lado']??'')==='derecha'?'selected':'' ?>>Drive</option>
+              <option value="reves"   <?= ($jugador['lado']??'')==='reves'  ?'selected':'' ?>>Revés</option>
+              <option value="ambos"   <?= ($jugador['lado']??'')==='ambos'  ?'selected':'' ?>>Ambos</option>
             </select>
           </div>
         </div>

@@ -393,9 +393,9 @@ $jugadores = $st->fetchAll();
             <label class="form-label">Lado</label>
             <select name="lado" id="editarLado" class="form-control">
               <option value="">— No definido —</option>
-              <option value="derecha">Derecha (Drive)</option>
-              <option value="reves">Revés (Backhand)</option>
-              <option value="ambos">Ambos lados</option>
+              <option value="derecha">Drive</option>
+              <option value="reves">Revés</option>
+              <option value="ambos">Ambos</option>
             </select>
           </div>
         </div>

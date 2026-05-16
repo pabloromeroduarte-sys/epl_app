@@ -35,12 +35,11 @@ $proximos = $liga ? array_slice(epl_partidos_liga($liga['id'], 'pendiente'), 0, 
                           url('https://epleague.cl/wp-content/uploads/2026/03/high-angle-tennis-palette-balls-arrangement-scaled.jpg');
         background-size: cover;
         background-position: center center;
-        /* Efecto parallax suave en desktop */
-        background-attachment: fixed; 
+        /* scroll: WebViews de IDEs suelen ir mal con background-attachment: fixed + cover */
+        background-attachment: scroll;
         width: 100%;
         display: block;
     }
-    @media (max-width: 768px) { .hero-section { background-attachment: scroll; } }
     .giant-title { line-height: 0.95; letter-spacing: -0.01em; }
 
     /* ---------------------------------------------------
