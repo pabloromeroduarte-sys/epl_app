@@ -405,13 +405,15 @@ function epl_wsp_invitar_partner_sin_cuenta(string $url_token): string {
 }
 
 function epl_notif_invitacion_partner(int $partner_id, string $cap_nombre, string $liga_nombre): void {
-    epl_notif_crear(
-        $partner_id,
-        'inscripcion',
-        'Invitación de partner',
-        trim($cap_nombre) . ' te invitó en ' . $liga_nombre . '. Entrá a Inscripciones en tu perfil y aceptá la invitación.',
-        epl_url_inscripciones()
-    );
+    $titulo  = 'Invitación de partner';
+    $mensaje = trim($cap_nombre) . ' te invitó en ' . $liga_nombre . '. Entrá a Inscripciones en tu perfil y aceptá la invitación.';
+    $url     = epl_url_inscripciones();
+    epl_notif_crear($partner_id, 'inscripcion', $titulo, $mensaje, $url);
+    try {
+        epl_mail_notificacion_jugador($partner_id, $titulo, $mensaje, $url);
+    } catch (Throwable $e) {
+        error_log('epl_notif_invitacion_partner mail: ' . $e->getMessage());
+    }
 }
 
 /** Crea inscripción partner para jugador del sistema; devuelve su token. */
