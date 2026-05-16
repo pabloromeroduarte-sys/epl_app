@@ -98,7 +98,7 @@ function epl_jugador_db(): ?array {
 function epl_require_login(): void {
     if (!epl_jugador_actual()) {
         $back = urlencode($_SERVER['REQUEST_URI']);
-        header("Location: /elitepadelleague/login.php?back=$back");
+        header('Location: ' . epl_url("login.php?back=$back"));
         exit;
     }
     epl_sync_jugador_sesion();
@@ -108,7 +108,7 @@ function epl_require_admin(): void {
     $j = epl_jugador_actual();
     if (!$j || $j['rol'] !== 'admin') {
         http_response_code(403);
-        header("Location: /elitepadelleague/dashboard.php");
+        header('Location: ' . epl_url('dashboard.php'));
         exit;
     }
 }
