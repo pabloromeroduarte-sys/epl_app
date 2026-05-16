@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Descargando codigo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Desplegando en servidor
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
@@ -21,18 +21,28 @@ jobs:
           port: 22
           source: "."
           target: "/home/${{ secrets.SERVER_USER }}/htdocs/padel.207.246.68.77.nip.io"
-          strip_components: 0
+          rm: false
 
       - name: Configurando entorno en servidor
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            cd /home/${{ secrets.SERVER_USER }}/htdocs/padel.207.246.68.77.nip.io
-            if [ -f .env.prod ]; then
-              mv .env.prod .env
-              echo ".env configurado con éxito"
+            TARGET="/home/${{ secrets.SERVER_USER }}/htdocs/padel.207.246.68.77.nip.io"
+            # Si scp creó subcarpeta, mover contenido al nivel correcto
+            if [ -d "$TARGET/." ] && [ -f "$TARGET/index.php" ]; then
+              echo "Archivos en $TARGET OK"
+            elif [ -d "$TARGET/home" ]; then
+              cp -r "$TARGET/home/${{ secrets.SERVER_USER }}/htdocs/padel.207.246.68.77.nip.io/." "$TARGET/"
+              rm -rf "$TARGET/home"
+              echo "Corregida estructura de directorio"
             fi
+            if [ -f "$TARGET/.env.prod" ]; then
+              mv "$TARGET/.env.prod" "$TARGET/.env"
+              echo ".env configurado"
+            fi
+            echo "Deploy completado: $(date)"
+            ls "$TARGET" | head -20
