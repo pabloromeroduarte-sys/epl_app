@@ -56,27 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_completar_gratis'] ?? 
         $chk->execute([$fix_id, $jugador['id']]);
         $row = $chk->fetch();
         if ($row && (float)($row['precio'] ?? 0) <= 0) {
-            $db->prepare("UPDATE inscripciones SET pago_estado='pagado', estado='aprobada' WHERE id=?")->execute([$fix_id]);
-            // Crear registro de pago si no existe
-            $pago_existe = $db->prepare("SELECT id FROM pagos WHERE token_ref=?");
-            $pago_existe->execute([$row['token']]);
-            if (!$pago_existe->fetchColumn()) {
-                epl_pago_crear([
-                    'liga_id'        => null,
-                    'jugador_id'     => (int)$jugador['id'],
-                    'inscripcion_id' => $row['id'],
-                    'concepto'       => 'Inscripción gratis completada',
-                    'rol'            => 'capitan',
-                    'monto'          => 0,
-                    'estado'         => 'completado',
-                    'metodo'         => 'Gratis',
-                    'token_ref'      => (string)$row['token'],
-                    'equipo_token'   => (string)$row['token'],
-                ]);
-            } else {
-                epl_pago_completar((string)$row['token'], 'Gratis');
-            }
-            header('Location: ' . epl_url('inscribirse.php') . '?pago=exito&token=' . urlencode((string)$row['token']));
+            $db->prepare("UPDATE inscripciones SET pago_estado='pagado' WHERE id=?")->execute([$fix_id]);
+            epl_pago_completar((string)$row['token'], 'Gratis');
+            header('Location: ' . epl_url('inscribirse.php') . '?pago=exito&token=' . urlencode($row['token']));
             exit;
         }
     }
@@ -344,96 +326,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_inscribir'] ?? '')) {
                 }
             }
 
-            $token   = bin2hex(random_bytes(20));
-            $insc_id = 0;
-            $pago_id = 0;
+            $token = bin2hex(random_bytes(20));
+            $db->prepare("INSERT INTO inscripciones (jugador_id, liga_id, equipo_id, rol_equipo, token, estado, pago_estado, pago_monto) VALUES (?,?,?,?,?,?,?,?)")
+               ->execute([$jugador['id'], $liga_id, $equipo_id, 'capitan', $token, 'pendiente', 'pendiente', $precio ?: null]);
+            $insc_id = (int)$db->lastInsertId();
 
-            try {
-                $db->prepare("INSERT INTO inscripciones (jugador_id, liga_id, equipo_id, rol_equipo, token, estado, pago_estado, pago_monto) VALUES (?,?,?,?,?,?,?,?)")
-                   ->execute([$jugador['id'], $liga_id, $equipo_id, 'capitan', $token, 'pendiente', 'pendiente', $precio ?: null]);
-                $insc_id = (int)$db->lastInsertId();
+            // Partner elegido del sistema: inscripción + notificación en menú Inscripciones
+            if ($partner_id && $equipo_id) {
+                epl_registrar_partner_sistema($db, $partner_id, $liga_id, $equipo_id, $precio);
+                epl_notif_invitacion_partner(
+                    $partner_id,
+                    $jugador['nombre'] . ' ' . $jugador['apellido'],
+                    $liga_data['nombre']
+                );
+            }
 
-                // Partner elegido del sistema: inscripción + notificación en menú Inscripciones
-                if ($partner_id && $equipo_id) {
-                    epl_registrar_partner_sistema($db, $partner_id, $liga_id, $equipo_id, $precio);
-                    epl_notif_invitacion_partner(
-                        $partner_id,
-                        $jugador['nombre'] . ' ' . $jugador['apellido'],
-                        $liga_data['nombre']
-                    );
-                }
+            $pago_id = epl_pago_crear([
+                'liga_id'        => $liga_id,
+                'jugador_id'     => (int)$jugador['id'],
+                'inscripcion_id' => $insc_id,
+                'concepto'       => 'Inscripción Capitán EPL — ' . $liga_data['nombre'],
+                'rol'            => 'capitan',
+                'monto'          => $precio,
+                'estado'         => $precio > 0 ? 'pendiente' : 'completado',
+                'metodo'         => $precio > 0 ? 'MercadoPago' : 'Gratis',
+                'token_ref'      => $token,
+                'equipo_token'   => $token,
+            ]);
 
-                $pago_id = epl_pago_crear([
-                    'liga_id'        => $liga_id,
-                    'jugador_id'     => (int)$jugador['id'],
-                    'inscripcion_id' => $insc_id,
-                    'concepto'       => 'Inscripción Capitán EPL — ' . $liga_data['nombre'],
-                    'rol'            => 'capitan',
-                    'monto'          => $precio,
-                    'estado'         => $precio > 0 ? 'pendiente' : 'completado',
-                    'metodo'         => $precio > 0 ? 'MercadoPago' : 'Gratis',
-                    'token_ref'      => $token,
-                    'equipo_token'   => $token,
-                ]);
+            epl_notif_crear((int)$jugador['id'], 'inscripcion', 'Inscripción recibida',
+                'Tu solicitud en ' . $liga_data['nombre'] . ' fue registrada.', epl_url('dashboard.php'));
 
-                // Notificación (no crítica — no aborta si falla)
-                try {
-                    epl_notif_crear((int)$jugador['id'], 'inscripcion', 'Inscripción recibida',
-                        'Tu solicitud en ' . $liga_data['nombre'] . ' fue registrada.', epl_url('dashboard.php'));
-                } catch (Throwable $e) { /* notificación no crítica */ }
+            $base_url     = epl_url('inscribirse.php');
+            $mp_token_cfg = epl_config_get('mp_access_token');
 
-                $base_url     = epl_url('inscribirse.php');
-                $mp_token_cfg = epl_config_get('mp_access_token');
+            if ($precio <= 0 || !$mp_token_cfg) {
+                $db->prepare("UPDATE inscripciones SET pago_estado='pagado' WHERE id=?")->execute([$insc_id]);
+                epl_pago_completar($token, 'Gratis');
+                header('Location: ' . $base_url . '?pago=exito&token=' . urlencode($token));
+                exit;
+            }
 
-                if ($precio <= 0 || !$mp_token_cfg) {
-                    $db->prepare("UPDATE inscripciones SET pago_estado='pagado', estado='aprobada' WHERE id=?")->execute([$insc_id]);
-                    epl_pago_completar($token, 'Gratis');
-                    header('Location: ' . $base_url . '?pago=exito&token=' . urlencode($token));
-                    exit;
-                }
+            $body_mp = json_encode([
+                'items' => [[
+                    'title'       => 'Inscripción Capitán EPL — ' . $liga_data['nombre'],
+                    'quantity'    => 1,
+                    'unit_price'  => (int)$precio,
+                    'currency_id' => 'CLP',
+                ]],
+                'back_urls' => [
+                    'success' => $base_url . '?pago=exito&token=' . $token,
+                    'failure' => $base_url . '?pago=fallo&liga='  . $liga_id,
+                    'pending' => $base_url . '?pago=pendiente',
+                ],
+                'auto_return'        => 'approved',
+                'external_reference' => $token,
+            ]);
 
-                $body_mp = json_encode([
-                    'items' => [[
-                        'title'       => 'Inscripción Capitán EPL — ' . $liga_data['nombre'],
-                        'quantity'    => 1,
-                        'unit_price'  => (int)$precio,
-                        'currency_id' => 'CLP',
-                    ]],
-                    'back_urls' => [
-                        'success' => $base_url . '?pago=exito&token=' . $token,
-                        'failure' => $base_url . '?pago=fallo&liga='  . $liga_id,
-                        'pending' => $base_url . '?pago=pendiente',
-                    ],
-                    'auto_return'        => 'approved',
-                    'external_reference' => $token,
-                ]);
+            $ch = curl_init('https://api.mercadopago.com/checkout/preferences');
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => $body_mp,
+                CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $mp_token_cfg, 'Content-Type: application/json'],
+                CURLOPT_TIMEOUT        => 15,
+            ]);
+            $mp = json_decode(curl_exec($ch), true);
+            curl_close($ch);
 
-                $ch  = curl_init('https://api.mercadopago.com/checkout/preferences');
-                curl_setopt_array($ch, [
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_POST           => true,
-                    CURLOPT_POSTFIELDS     => $body_mp,
-                    CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $mp_token_cfg, 'Content-Type: application/json'],
-                    CURLOPT_TIMEOUT        => 15,
-                ]);
-                $mp_raw = curl_exec($ch);
-                curl_close($ch);
-                $mp = $mp_raw ? json_decode($mp_raw, true) : null;
-
-                if (isset($mp['init_point'])) {
-                    $db->prepare("UPDATE pagos SET mp_preference_id=? WHERE id=?")->execute([$mp['id'] ?? '', $pago_id]);
-                    header('Location: ' . $mp['init_point']);
-                    exit;
-                } else {
-                    $error = 'Error al conectar con MercadoPago: ' . ($mp['message'] ?? 'Sin respuesta');
-                    if ($pago_id) $db->prepare("DELETE FROM pagos WHERE id=?")->execute([$pago_id]);
-                    if ($insc_id) $db->prepare("DELETE FROM inscripciones WHERE id=?")->execute([$insc_id]);
-                }
-
-            } catch (Throwable $e) {
-                $error = 'Error al procesar la inscripción. Por favor intenta nuevamente.';
-                if ($pago_id) $db->prepare("DELETE FROM pagos WHERE id=?")->execute([$pago_id]);
-                if ($insc_id) $db->prepare("DELETE FROM inscripciones WHERE id=?")->execute([$insc_id]);
+            if (isset($mp['init_point'])) {
+                $db->prepare("UPDATE pagos SET mp_preference_id=? WHERE id=?")->execute([$mp['id'] ?? '', $pago_id]);
+                header('Location: ' . $mp['init_point']);
+                exit;
+            } else {
+                $error = 'Error al conectar con MercadoPago: ' . ($mp['message'] ?? 'Sin respuesta');
+                $db->prepare("DELETE FROM inscripciones WHERE id=?")->execute([$insc_id]);
+                $db->prepare("DELETE FROM pagos WHERE id=?")->execute([$pago_id]);
             }
         }
     }
@@ -558,16 +526,12 @@ $mis_inscripciones = $mis_inscripciones->fetchAll();
             // Para capitán: ¿tiene partner con cuenta?
             $partnerConCuenta = $esCap && $insc['partner_insc_id'];
             // Para capitán sin partner con cuenta: link de token
-            $url_partner_token = $insc['token']
-                ? epl_url('inscribirse_partner.php?token=' . urlencode((string)$insc['token']))
-                : '';
+            $url_partner_token = epl_url('inscribirse_partner.php?token=' . urlencode($insc['token']));
 
             $wsp_cap = $partnerConCuenta
                 ? epl_wsp_invitar_partner_con_cuenta((string)($insc['partner_nombre'] ?? ''), (string)$insc['liga_nombre'])
                 : '';
-            $wsp_token = $url_partner_token
-                ? epl_wsp_invitar_partner_sin_cuenta($url_partner_token)
-                : '';
+            $wsp_token = epl_wsp_invitar_partner_sin_cuenta($url_partner_token);
         ?>
         <?php if ($esPart && $insc['estado'] === 'pendiente'): ?>
         <!-- Invitación partner pendiente: card con formulario de perfil -->
@@ -720,12 +684,10 @@ $mis_inscripciones = $mis_inscripciones->fetchAll();
                   Eliminar
                 </button>
               </form>
-              <?php $wsp_href = $partnerConCuenta ? $wsp_cap : $wsp_token; if ($wsp_href): ?>
-              <a href="https://wa.me/?text=<?= $wsp_href ?>" target="_blank"
+              <a href="https://wa.me/?text=<?= $partnerConCuenta ? $wsp_cap : $wsp_token ?>" target="_blank"
                  style="font-size:.7rem;font-weight:700;color:#25D366;text-decoration:none">
                 📲 <?= $partnerConCuenta ? 'Avisar al partner' : 'Enviar link partner' ?>
               </a>
-              <?php endif; ?>
               <?php if ($insc['pago_estado'] === 'pendiente' && (float)($insc['liga_precio'] ?? 0) <= 0): ?>
                 <form method="POST" style="margin:0">
                   <input type="hidden" name="epl_completar_gratis" value="1">

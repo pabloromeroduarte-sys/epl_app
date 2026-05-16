@@ -16,27 +16,24 @@ jobs:
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
+          username: adminepl
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           source: "."
-          target: "/home/${{ secrets.SERVER_USER }}/htdocs/padel.207.246.68.77.nip.io"
+          target: "/home/adminepl/htdocs/padel.207.246.68.77.nip.io"
           rm: false
 
       - name: Configurando entorno en servidor
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
+          username: adminepl
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            TARGET="/home/${{ secrets.SERVER_USER }}/htdocs/padel.207.246.68.77.nip.io"
-            # Si scp creó subcarpeta, mover contenido al nivel correcto
-            if [ -d "$TARGET/." ] && [ -f "$TARGET/index.php" ]; then
-              echo "Archivos en $TARGET OK"
-            elif [ -d "$TARGET/home" ]; then
-              cp -r "$TARGET/home/${{ secrets.SERVER_USER }}/htdocs/padel.207.246.68.77.nip.io/." "$TARGET/"
+            TARGET="/home/adminepl/htdocs/padel.207.246.68.77.nip.io"
+            if [ -d "$TARGET/home" ]; then
+              cp -r "$TARGET/home/adminepl/htdocs/padel.207.246.68.77.nip.io/." "$TARGET/"
               rm -rf "$TARGET/home"
               echo "Corregida estructura de directorio"
             fi
