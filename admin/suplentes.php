@@ -252,7 +252,8 @@ if ($filtro_liga) {
 
         <div class="form-group">
           <label class="form-label">Jugador *</label>
-          <select name="jugador_id" class="form-control" required>
+          <input type="text" id="buscarJugador" placeholder="Buscar jugador..." class="form-control" style="margin-bottom:.35rem" oninput="filtrarSelect('jugador_id','buscarJugador')">
+          <select name="jugador_id" id="jugador_id" class="form-control" required size="5" style="height:auto">
             <option value="">— Selecciona jugador —</option>
             <?php foreach ($jugadores_todos as $j): ?>
               <option value="<?= $j['id'] ?>"><?= epl_h($j['apellido'] . ', ' . $j['nombre']) ?></option>
@@ -262,7 +263,8 @@ if ($filtro_liga) {
 
         <div class="form-group">
           <label class="form-label">Equipo al que suple *</label>
-          <select name="equipo_id" class="form-control" required>
+          <input type="text" id="buscarEquipo" placeholder="Buscar equipo..." class="form-control" style="margin-bottom:.35rem" oninput="filtrarSelect('equipo_id','buscarEquipo')">
+          <select name="equipo_id" id="equipo_id" class="form-control" required size="4" style="height:auto">
             <option value="">— Selecciona equipo —</option>
             <?php foreach ($equipos_liga as $eq): ?>
               <option value="<?= $eq['id'] ?>"><?= epl_h($eq['nombre']) ?></option>
@@ -304,6 +306,17 @@ if ($filtro_liga) {
 </div>
 
 <script>
+function filtrarSelect(selectId, inputId) {
+  var q = document.getElementById(inputId).value.toLowerCase();
+  var sel = document.getElementById(selectId);
+  Array.from(sel.options).forEach(function(opt) {
+    if (!opt.value) return; // skip placeholder
+    opt.style.display = opt.text.toLowerCase().includes(q) ? '' : 'none';
+  });
+  // Deseleccionar si la opción activa quedó oculta
+  if (sel.selectedOptions[0] && sel.selectedOptions[0].style.display === 'none') sel.value = '';
+}
+
 function abrirJornadas(supId, nombre, jugadas) {
   document.getElementById('jornadasTitulo').textContent = nombre;
   document.getElementById('jornadasSuplenteId').value = supId;
