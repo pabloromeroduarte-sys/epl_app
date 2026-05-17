@@ -4,6 +4,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/functions.php';
 
 function epl_smtp_habilitado(): bool {
+    if (epl_config_get('mail_pausado', '0') === '1') {
+        return false; // Modo mantenimiento: silencioso, no envía nada
+    }
     return epl_config_get('smtp_enabled', '0') === '1';
 }
 

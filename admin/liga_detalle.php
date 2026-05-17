@@ -765,6 +765,22 @@ $total_equipos  = count($equipos_liga);
               </td>
               <td style="padding:.6rem .75rem;font-size:.75rem;color:var(--gray-500)">
                 <?= $p['fecha_programada'] ? date('d/m H:i', strtotime($p['fecha_programada'])) : '—' ?>
+                <?php
+                  $_bc = match($p['estado']) {
+                      'jugado'        => 'badge-jugado',
+                      'walkover','no_presentado' => 'badge-walkover',
+                      'reprogramado'  => 'badge-reprog',
+                      default         => 'badge-pendiente',
+                  };
+                  $_lbl = match($p['estado']) {
+                      'jugado'        => 'Jugado',
+                      'walkover'      => 'W/O',
+                      'no_presentado' => 'No pres.',
+                      'reprogramado'  => 'Reprog.',
+                      default         => 'Pendiente',
+                  };
+                ?>
+                <div style="margin-top:.25rem"><span class="badge <?= $_bc ?>" style="font-size:.6rem;padding:.15rem .4rem"><?= $_lbl ?></span></div>
                 <?php if ($p['alerta_admin']): ?>
                   <div style="margin-top:.2rem"><span class="badge badge-walkover" style="font-size:.6rem;padding:.1rem .3rem"><?= epl_h($p['alerta_admin']) ?></span></div>
                 <?php endif; ?>

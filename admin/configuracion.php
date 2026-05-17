@@ -43,6 +43,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tab = 'integraciones';
     }
 
+    if ($action === 'pausar_mail') {
+        $nuevo = epl_config_get('mail_pausado', '0') === '1' ? '0' : '1';
+        epl_config_set('mail_pausado', $nuevo);
+        $ok = $nuevo === '1' ? '⏸ Correos pausados. No se enviará nada hasta que lo reactives.' : '▶ Correos reactivados.';
+    }
+
     if ($action === 'guardar_smtp' || $action === 'probar_smtp') {
         epl_config_set('smtp_enabled', !empty($_POST['smtp_enabled']) ? '1' : '0');
         epl_config_set('smtp_host', trim($_POST['smtp_host'] ?? ''));
@@ -186,11 +192,26 @@ $adminEmail = epl_jugador_actual()['email'] ?? '';
     <?php endif; ?>
 
     <?php if ($tab === 'general'): ?>
+    <?php $mail_pausado = epl_config_get('mail_pausado', '0') === '1'; ?>
     <div class="card" style="max-width:640px">
-      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--gray-100)">
-        <h2 style="font-size:1rem;font-weight:700;color:var(--navy);margin:0">Correo SMTP</h2>
-        <p style="font-size:.8rem;color:var(--gray-500);margin:.35rem 0 0">Envía emails cuando se crean notificaciones en la app (invitaciones, resultados, etc.).</p>
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <h2 style="font-size:1rem;font-weight:700;color:var(--navy);margin:0">Correo SMTP</h2>
+          <p style="font-size:.8rem;color:var(--gray-500);margin:.35rem 0 0">Envía emails cuando se crean notificaciones en la app (invitaciones, resultados, etc.).</p>
+        </div>
+        <form method="POST" style="margin:0">
+          <input type="hidden" name="action" value="pausar_mail">
+          <button type="submit" class="btn btn-sm" style="background:<?= $mail_pausado ? '#dc2626' : '#f59e0b' ?>;color:#fff;border:none;cursor:pointer;font-weight:700;white-space:nowrap">
+            <?= $mail_pausado ? '▶ Reactivar correos' : '⏸ Pausar correos' ?>
+          </button>
+        </form>
       </div>
+      <?php if ($mail_pausado): ?>
+      <div style="background:#fef2f2;border-bottom:1px solid #fecaca;padding:.75rem 1.25rem;font-size:.82rem;color:#dc2626;font-weight:600">
+        ⏸ Correos pausados — no se está enviando ningún mail. Pulsá "Reactivar correos" cuando termines.
+      </div>
+      <?php endif; ?>
+
       <form method="POST" style="padding:1.5rem">
         <?php
           $gmailAlias = $smtp['user'] !== '' && $smtp['from_email'] !== ''

@@ -6,6 +6,13 @@
 $is_jugado = ($p['estado'] === 'jugado');
 $jor_badge = $p['jornada'] ?? '—';
 $search_str = strtolower(($p['local_nombre']??'') . ' ' . ($p['visitante_nombre']??''));
+$_estado_cfg = match($p['estado'] ?? 'pendiente') {
+    'jugado'       => ['lbl' => 'Jugado',       'bg' => '#dcfce7', 'color' => '#15803d'],
+    'reprogramado' => ['lbl' => 'Reprogramado', 'bg' => '#dbeafe', 'color' => '#1d4ed8'],
+    'walkover'     => ['lbl' => 'W/O',          'bg' => '#fee2e2', 'color' => '#dc2626'],
+    'no_presentado'=> ['lbl' => 'No presentado','bg' => '#fee2e2', 'color' => '#dc2626'],
+    default        => ['lbl' => 'Pendiente',    'bg' => '#fef9c3', 'color' => '#92400e'],
+};
 ?>
 <div class="partido-card-v2" data-search="<?= $search_str ?>" data-jornada="<?= $jor_badge ?>">
   <!-- Columna 1: Info Fecha -->
@@ -18,6 +25,9 @@ $search_str = strtolower(($p['local_nombre']??'') . ' ' . ($p['visitante_nombre'
     <span class="partido-time">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
       <?= !empty($p['fecha_programada']) ? date('H:i', strtotime($p['fecha_programada'])) : '00:00' ?>
+    </span>
+    <span style="display:inline-block;margin-top:.35rem;padding:.18rem .55rem;border-radius:99px;font-size:.65rem;font-weight:700;letter-spacing:.04em;background:<?= $_estado_cfg['bg'] ?>;color:<?= $_estado_cfg['color'] ?>">
+      <?= $_estado_cfg['lbl'] ?>
     </span>
   </div>
 
