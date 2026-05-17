@@ -9,6 +9,19 @@ epl_require_admin();
 $db = epl_db();
 $liga = epl_liga_activa();
 
+// Migración automática: hacer partido_id nullable y agregar columna jornada
+try {
+    $cols = array_column($db->query("SHOW COLUMNS FROM suplente_partidos")->fetchAll(), 'Field');
+    if (!in_array('jornada', $cols)) {
+        $db->exec("ALTER TABLE suplente_partidos ADD COLUMN jornada TINYINT UNSIGNED NULL AFTER suplente_id");
+    }
+    // Hacer partido_id nullable si no lo es
+    $col = $db->query("SHOW COLUMNS FROM suplente_partidos LIKE 'partido_id'")->fetch();
+    if ($col && $col['Null'] === 'NO') {
+        $db->exec("ALTER TABLE suplente_partidos MODIFY partido_id INT UNSIGNED NULL DEFAULT NULL");
+    }
+} catch (Throwable $e) { /* ya migrado */ }
+
 $filtro_liga = (int)($_GET['liga_id'] ?? ($liga['id'] ?? 0));
 $ligas = $db->query("SELECT id, nombre, temporada FROM ligas ORDER BY id DESC")->fetchAll();
 
@@ -44,6 +57,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'agreg
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'guardar_jornadas') {
+    $sid       = (int)($_POST['suplente_id'] ?? 0);
+    $jornadas  = array_map('intval', (array)($_POST['jornadas'] ?? []));
+    if ($sid) {
+        // Jornadas ya registradas
+        $existentes = array_column(
+            $db->prepare("SELECT jornada FROM suplente_partidos WHERE suplente_id=? AND jornada IS NOT NULL")->execute([$sid]) ? [] : [],
+            'jornada'
+        );
+        $st = $db->prepare("SELECT jornada FROM suplente_partidos WHERE suplente_id=? AND jornada IS NOT NULL");
+        $st->execute([$sid]);
+        $existentes = array_map('intval', array_column($st->fetchAll(), 'jornada'));
+
+        $agregar  = array_diff($jornadas, $existentes);
+        $eliminar = array_diff($existentes, $jornadas);
+
+        $admin_id = epl_jugador_actual()['id'] ?? null;
+        foreach ($agregar as $j) {
+            $db->prepare("INSERT INTO suplente_partidos (suplente_id, jornada, partido_id, registrado_por) VALUES (?,?,NULL,?)")
+               ->execute([$sid, $j, $admin_id]);
+        }
+        foreach ($eliminar as $j) {
+            $db->prepare("DELETE FROM suplente_partidos WHERE suplente_id=? AND jornada=?")->execute([$sid, $j]);
+        }
+        $ok = 'Jornadas actualizadas.';
+        $filtro_liga = (int)($_POST['liga_id'] ?? 0);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'eliminar_suplente') {
     $sid = (int)($_POST['suplente_id'] ?? 0);
     if ($sid) {
@@ -67,6 +109,20 @@ if ($filtro_liga) {
     ");
     $suplentes->execute([$filtro_liga]);
     $suplentes = $suplentes->fetchAll();
+
+    // Cargar jornadas por suplente
+    $jornadas_por_suplente = [];
+    if ($suplentes) {
+        $ids = implode(',', array_column($suplentes, 'id'));
+        $rows = $db->query("SELECT suplente_id, jornada FROM suplente_partidos WHERE suplente_id IN ($ids) AND jornada IS NOT NULL ORDER BY jornada ASC")->fetchAll();
+        foreach ($rows as $r) {
+            $jornadas_por_suplente[(int)$r['suplente_id']][] = (int)$r['jornada'];
+        }
+    }
+    // Jornadas disponibles en la liga
+    $jornadas_liga = $db->prepare("SELECT DISTINCT jornada FROM partidos WHERE liga_id=? AND jornada IS NOT NULL ORDER BY jornada ASC");
+    $jornadas_liga->execute([$filtro_liga]);
+    $jornadas_liga = array_map('intval', array_column($jornadas_liga->fetchAll(), 'jornada'));
 }
 ?>
 <?php require_once '../includes/header.php'; ?>
@@ -110,6 +166,7 @@ if ($filtro_liga) {
               <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Nivel</th>
               <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Partidos jugados</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Estado</th>
+              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Jornadas jugadas</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase"></th>
             </tr>
           </thead>
@@ -137,6 +194,19 @@ if ($filtro_liga) {
                 <span class="badge <?= $pj>=9?'badge-walkover':'badge-jugado' ?>">
                   <?= $pj>=9?'Máximo alcanzado':'Activo' ?>
                 </span>
+              </td>
+              <td data-label="Jornadas" style="padding:.7rem 1rem">
+                <div style="display:flex;flex-wrap:wrap;gap:.3rem;align-items:center">
+                  <?php foreach ($jornadas_por_suplente[$s['id']] ?? [] as $jn): ?>
+                    <span style="display:inline-block;padding:.15rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700;background:#dbeafe;color:#1d4ed8">J<?= $jn ?></span>
+                  <?php endforeach; ?>
+                  <?php if (empty($jornadas_por_suplente[$s['id']])): ?>
+                    <span style="font-size:.75rem;color:var(--gray-400)">—</span>
+                  <?php endif; ?>
+                  <button type="button"
+                    onclick="abrirJornadas(<?= $s['id'] ?>, '<?= epl_h($s['j_nombre'].' '.$s['j_apellido']) ?>', <?= json_encode($jornadas_por_suplente[$s['id']] ?? []) ?>)"
+                    class="btn btn-sm" style="font-size:.65rem;padding:.2rem .5rem;margin-left:.3rem">✏️</button>
+                </div>
               </td>
               <td style="padding:.7rem 1rem;text-align:center">
                 <form method="post" onsubmit="return confirm('¿Eliminar esta galleta?')">
@@ -166,6 +236,8 @@ if ($filtro_liga) {
   $equipos_liga = $equipos_liga->fetchAll();
 
   $jugadores_todos = $db->query("SELECT id, nombre, apellido FROM jugadores WHERE estado='activo' ORDER BY apellido, nombre")->fetchAll();
+
+  if (empty($jornadas_liga)) $jornadas_liga = range(1, 19);
 ?>
 <div id="modalAgregarGalleta" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;padding:1rem">
   <div class="card" style="width:100%;max-width:420px">
@@ -203,6 +275,67 @@ if ($filtro_liga) {
     </div>
   </div>
 </div>
+
+<!-- Modal jornadas jugadas -->
+<div id="modalJornadas" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;padding:1rem">
+  <div class="card" style="width:100%;max-width:420px">
+    <div class="card-head">
+      <h3 id="jornadasTitulo" style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)">Jornadas jugadas</h3>
+      <button onclick="document.getElementById('modalJornadas').style.display='none'" style="background:none;font-size:1.5rem;color:var(--gray-400)">×</button>
+    </div>
+    <div class="card-body">
+      <p style="font-size:.8rem;color:var(--gray-500);margin:0 0 1rem">Seleccioná las jornadas en las que jugó este suplente:</p>
+      <form method="post" id="formJornadas">
+        <input type="hidden" name="action" value="guardar_jornadas">
+        <input type="hidden" name="liga_id" value="<?= $filtro_liga ?>">
+        <input type="hidden" name="suplente_id" id="jornadasSuplenteId">
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem" id="jornadasChips">
+          <?php foreach ($jornadas_liga as $jn): ?>
+            <label style="cursor:pointer">
+              <input type="checkbox" name="jornadas[]" value="<?= $jn ?>" id="jchk<?= $jn ?>" style="display:none">
+              <span id="jlbl<?= $jn ?>" style="display:inline-block;padding:.3rem .75rem;border-radius:99px;font-size:.8rem;font-weight:700;border:2px solid #cbd5e1;background:#f8fafc;color:#64748b;transition:.15s">J<?= $jn ?></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Guardar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirJornadas(supId, nombre, jugadas) {
+  document.getElementById('jornadasTitulo').textContent = nombre;
+  document.getElementById('jornadasSuplenteId').value = supId;
+  // Resetear todos los chips
+  document.querySelectorAll('#jornadasChips input[type=checkbox]').forEach(function(chk) {
+    chk.checked = false;
+    var lbl = document.getElementById('jlbl' + chk.value);
+    if (lbl) { lbl.style.background='#f8fafc'; lbl.style.color='#64748b'; lbl.style.borderColor='#cbd5e1'; }
+  });
+  // Marcar las jugadas
+  jugadas.forEach(function(j) {
+    var chk = document.getElementById('jchk' + j);
+    if (chk) {
+      chk.checked = true;
+      var lbl = document.getElementById('jlbl' + j);
+      if (lbl) { lbl.style.background='#1d4ed8'; lbl.style.color='#fff'; lbl.style.borderColor='#1d4ed8'; }
+    }
+  });
+  // Toggle visual al hacer click
+  document.querySelectorAll('#jornadasChips label').forEach(function(label) {
+    label.onclick = function() {
+      var chk = label.querySelector('input');
+      setTimeout(function() {
+        var lbl = label.querySelector('span');
+        if (chk.checked) { lbl.style.background='#1d4ed8'; lbl.style.color='#fff'; lbl.style.borderColor='#1d4ed8'; }
+        else { lbl.style.background='#f8fafc'; lbl.style.color='#64748b'; lbl.style.borderColor='#cbd5e1'; }
+      }, 0);
+    };
+  });
+  document.getElementById('modalJornadas').style.display = 'flex';
+}
+</script>
 <?php endif; ?>
 
 <?php require_once '../includes/footer.php'; ?>
