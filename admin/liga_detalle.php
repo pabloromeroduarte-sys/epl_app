@@ -14,13 +14,23 @@ epl_session_start();
 $ok  = $_SESSION['_ld_ok']  ?? '';  unset($_SESSION['_ld_ok']);
 $err = $_SESSION['_ld_err'] ?? '';  unset($_SESSION['_ld_err']);
 
-// Helper: redirigir con flash y volver a la pestaña correcta
-function ld_redirect(int $id, string $tab, string $ok = '', string $err = ''): void {
+// Helper: redirigir con flash y volver a la pestaña correcta (preserva filtros)
+function ld_redirect(int $id, string $tab, string $ok = '', string $err = '', string $extra = ''): void {
     epl_session_start();
     if ($ok)  $_SESSION['_ld_ok']  = $ok;
     if ($err) $_SESSION['_ld_err'] = $err;
-    header("Location: liga_detalle.php?id=$id&tab=$tab");
+    header("Location: liga_detalle.php?id=$id&tab=$tab" . ($extra ? "&$extra" : ''));
     exit;
+}
+
+// Construir string de filtros activos desde $_POST (para preservarlos al guardar)
+function ld_filtros_desde_post(): string {
+    $parts = [];
+    foreach (['fecha','estado_p','search','desde','hasta'] as $k) {
+        $v = trim($_POST["_f_$k"] ?? '');
+        if ($v !== '') $parts[] = urlencode($k) . '=' . urlencode($v);
+    }
+    return implode('&', $parts);
 }
 
 if (!$id) { header('Location: ligas.php'); exit; }
@@ -111,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bulk_action = $_POST['bulk_action'] ?? '';
         
         if (empty($partido_ids)) {
-            ld_redirect($id, 'partidos', '', 'No se seleccionaron partidos.');
+            ld_redirect($id, 'partidos', '', 'No se seleccionaron partidos.', ld_filtros_desde_post());
         } else {
             $ids_str = implode(',', array_map('intval', $partido_ids));
             $msg = '';
@@ -161,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->prepare("UPDATE partidos SET alerta_admin=? WHERE id IN ($ids_str)")->execute([$alerta ?: null]);
                 $msg = 'Alertas actualizadas.';
             }
-            ld_redirect($id, 'partidos', $msg ?: 'Acción aplicada.');
+            ld_redirect($id, 'partidos', $msg ?: 'Acción aplicada.', '', ld_filtros_desde_post());
         }
 
     // ── Quitar equipo ───────────────────────────────────────
@@ -263,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
         }
 
-        ld_redirect($id, 'partidos', 'Partido actualizado.');
+        ld_redirect($id, 'partidos', 'Partido actualizado.', '', ld_filtros_desde_post());
     }
 }
 
@@ -685,6 +695,11 @@ $total_equipos  = count($equipos_liga);
     <div class="card mb-3" id="bulkBar" style="display:none; position:sticky; top:1rem; z-index:100; background:var(--navy); color:#fff; padding:.75rem 1.25rem; border-radius:.5rem; box-shadow:0 10px 25px rgba(0,0,0,.2)">
       <form method="post" id="bulkForm" style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap">
         <input type="hidden" name="action" value="bulk_partidos">
+        <input type="hidden" name="_f_fecha"    value="<?= epl_h($f_fecha) ?>">
+        <input type="hidden" name="_f_estado_p" value="<?= epl_h($f_est) ?>">
+        <input type="hidden" name="_f_search"   value="<?= epl_h($f_search) ?>">
+        <input type="hidden" name="_f_desde"    value="<?= epl_h($f_desde) ?>">
+        <input type="hidden" name="_f_hasta"    value="<?= epl_h($f_hasta) ?>">
         <div style="font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.05em">
           <span id="bulkCount">0</span> seleccionados
         </div>
@@ -1110,6 +1125,12 @@ $total_equipos  = count($equipos_liga);
       <form method="post">
         <input type="hidden" name="action" value="editar_resultado">
         <input type="hidden" name="partido_id" id="editPartidoId">
+        <!-- Preservar filtros activos al guardar -->
+        <input type="hidden" name="_f_fecha"    value="<?= epl_h($f_fecha) ?>">
+        <input type="hidden" name="_f_estado_p" value="<?= epl_h($f_est) ?>">
+        <input type="hidden" name="_f_search"   value="<?= epl_h($f_search) ?>">
+        <input type="hidden" name="_f_desde"    value="<?= epl_h($f_desde) ?>">
+        <input type="hidden" name="_f_hasta"    value="<?= epl_h($f_hasta) ?>">
         <div class="grid-2">
           <div class="form-group">
             <label class="form-label">Nombre de fecha</label>
