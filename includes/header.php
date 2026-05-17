@@ -128,7 +128,8 @@ $active  = $active_nav ?? '';
                 <a href="<?= epl_url('clasificacion.php') ?>" class="nav-link-new <?= $active==='clasificacion'?'active':'' ?>">Clasificación</a>
                 <a href="<?= epl_url('resultados.php') ?>" class="nav-link-new <?= $active==='resultados'?'active':'' ?>">Resultados</a>
                 <a href="<?= epl_url('jugadores.php') ?>" class="nav-link-new <?= $active==='jugadores'?'active':'' ?>">Jugadores</a>
-                
+                <a href="<?= epl_url('reglamento.php') ?>" class="nav-link-new <?= $active==='reglamento'?'active':'' ?>">Reglamento</a>
+
                 <div class="nav-divider"></div>
                 
                 <!-- ZONA DE USUARIO DINÁMICA (PHP) -->
@@ -186,7 +187,8 @@ $active  = $active_nav ?? '';
             <a href="<?= epl_url('clasificacion.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Clasificación</a>
             <a href="<?= epl_url('resultados.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Resultados</a>
             <a href="<?= epl_url('jugadores.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Jugadores</a>
-            
+            <a href="<?= epl_url('reglamento.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Reglamento</a>
+
             <?php if ($jugador_nav): ?>
               <?php $dest = $jugador_nav['rol'] === 'admin' ? epl_url('admin/') : epl_url('dashboard.php'); ?>
               <a href="<?= $dest ?>" class="flex items-center justify-center gap-4 w-full border-2 border-epl-gold text-epl-gold py-5 rounded-2xl font-secondary font-black text-sm uppercase tracking-[0.2em] no-underline mt-4">

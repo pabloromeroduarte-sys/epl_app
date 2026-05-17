@@ -48,6 +48,7 @@
                     <a href="<?= epl_url('clasificacion.php') ?>" class="hover:text-white transition-colors">Clasificación</a>
                     <a href="<?= epl_url('resultados.php') ?>" class="hover:text-white transition-colors">Resultados</a>
                     <a href="<?= epl_url('jugadores.php') ?>" class="hover:text-white transition-colors">Jugadores</a>
+                    <a href="<?= epl_url('reglamento.php') ?>" class="hover:text-white transition-colors">Reglamento</a>
                 </nav>
             </div>
 
