@@ -72,6 +72,11 @@ Write-Host "Push a origin/$branch ..." -ForegroundColor Cyan
 git push origin $branch
 Write-Host "GitHub actualizado." -ForegroundColor Green
 
+# Sincronizar local (XAMPP) automáticamente
+Write-Host "Sincronizando local..." -ForegroundColor Cyan
+git -C $root pull origin main --ff-only 2>$null
+Write-Host "Local sincronizado." -ForegroundColor Green
+
 if ($Desplegar) {
     $token = Get-DeployToken
     if (-not $token) {
