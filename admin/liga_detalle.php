@@ -647,7 +647,7 @@ $total_equipos  = count($equipos_liga);
           <input type="text" name="search" class="form-control" placeholder="Ej: Perez Gomez" value="<?= epl_h($f_search) ?>">
         </div>
         <div style="min-width:120px">
-          <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Fecha</label>
+          <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Jornada</label>
           <select name="fecha" class="form-control">
             <option value="">Todas</option>
             <?php foreach ($fechas_disponibles as $fn): ?>

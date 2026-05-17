@@ -59,6 +59,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->prepare("UPDATE ligas SET estado=? WHERE id=?")->execute([$est,$id]);
             $ok = 'Estado actualizado.';
         }
+
+    } elseif ($action === 'eliminar') {
+        $id  = (int)($_POST['id'] ?? 0);
+        if ($id) {
+            try {
+                $db->exec("SET FOREIGN_KEY_CHECKS=0");
+                $db->prepare("DELETE FROM clasificacion       WHERE liga_id=?")->execute([$id]);
+                $db->prepare("DELETE FROM liga_equipos        WHERE liga_id=?")->execute([$id]);
+                $db->prepare("DELETE FROM inscripciones       WHERE liga_id=?")->execute([$id]);
+                $db->prepare("DELETE FROM ranking_puntos      WHERE liga_id=?")->execute([$id]);
+                $db->prepare("DELETE FROM partidos            WHERE liga_id=?")->execute([$id]);
+                $db->prepare("DELETE FROM ligas               WHERE id=?")->execute([$id]);
+                $db->exec("SET FOREIGN_KEY_CHECKS=1");
+                $ok = 'Competición eliminada.';
+            } catch (Throwable $e) {
+                $db->exec("SET FOREIGN_KEY_CHECKS=1");
+                $err = 'Error al eliminar: ' . $e->getMessage();
+            }
+        }
     }
 }
 
@@ -178,10 +197,17 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
                   <?= $labels[$est_auto] ?? $est_auto ?>
                 </span>
               </td>
-              <td data-label="Acciones" style="padding:.7rem 1rem;text-align:center">
+              <td data-label="Acciones" style="padding:.7rem 1rem;text-align:center;display:flex;gap:.4rem;justify-content:center;flex-wrap:wrap">
                 <a href="liga_detalle.php?id=<?= $l['id'] ?>" class="btn btn-sm" style="background:var(--navy);color:#fff;font-size:.72rem">
                   Gestionar →
                 </a>
+                <form method="post" onsubmit="return confirm('¿Eliminar «<?= epl_h(addslashes($l['nombre'])) ?>» y todos sus datos? Esta acción no se puede deshacer.')">
+                  <input type="hidden" name="action" value="eliminar">
+                  <input type="hidden" name="id" value="<?= $l['id'] ?>">
+                  <button type="submit" class="btn btn-sm" style="background:#dc2626;color:#fff;font-size:.72rem;border:none;cursor:pointer">
+                    Eliminar
+                  </button>
+                </form>
               </td>
             </tr>
             <?php endforeach; ?>
