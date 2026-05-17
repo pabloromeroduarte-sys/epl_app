@@ -246,6 +246,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($gl !== null && $gv !== null) { if ($gl > $gv) $sets_l++; else $sets_v++; }
         }
 
+        // Auto-cambiar a jugado si se ingresó resultado (sin importar lo que diga el select)
+        if (($sets_l + $sets_v) > 0 && in_array($est, ['pendiente', 'reprogramado'])) {
+            $est = 'jugado';
+        }
+
         // Leer datos anteriores para detectar cambios de fecha/cancha
         $stP = $db->prepare("SELECT * FROM partidos WHERE id=?"); $stP->execute([$pid]); $p2 = $stP->fetch();
 
