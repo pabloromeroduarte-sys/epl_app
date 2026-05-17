@@ -12,6 +12,46 @@ $liga = epl_liga_activa();
 $filtro_liga = (int)($_GET['liga_id'] ?? ($liga['id'] ?? 0));
 $ligas = $db->query("SELECT id, nombre, temporada FROM ligas ORDER BY id DESC")->fetchAll();
 
+$ok  = '';
+$err = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'agregar_suplente') {
+    $liga_id    = (int)($_POST['liga_id']    ?? 0);
+    $equipo_id  = (int)($_POST['equipo_id']  ?? 0);
+    $jugador_id = (int)($_POST['jugador_id'] ?? 0);
+
+    if (!$liga_id || !$equipo_id || !$jugador_id) {
+        $err = 'Completa todos los campos.';
+    } else {
+        // Verificar que no sea titular en la liga
+        $stTit = $db->prepare("SELECT COUNT(*) FROM equipos e JOIN liga_equipos le ON le.equipo_id=e.id WHERE le.liga_id=? AND (e.jugador1_id=? OR e.jugador2_id=?)");
+        $stTit->execute([$liga_id, $jugador_id, $jugador_id]);
+        if ($stTit->fetchColumn() > 0) {
+            $err = 'Ese jugador ya es titular en este torneo.';
+        } else {
+            // Verificar que no sea ya suplente del mismo equipo
+            $stDup = $db->prepare("SELECT COUNT(*) FROM suplentes WHERE liga_id=? AND equipo_id=? AND jugador_id=? AND estado='activo'");
+            $stDup->execute([$liga_id, $equipo_id, $jugador_id]);
+            if ($stDup->fetchColumn() > 0) {
+                $err = 'Ese jugador ya es suplente de ese equipo.';
+            } else {
+                $db->prepare("INSERT INTO suplentes (liga_id, equipo_id, jugador_id, registrado_por) VALUES (?,?,?,?)")
+                   ->execute([$liga_id, $equipo_id, $jugador_id, epl_jugador_actual()['id'] ?? null]);
+                $ok = 'Galleta agregada correctamente.';
+                $filtro_liga = $liga_id;
+            }
+        }
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'eliminar_suplente') {
+    $sid = (int)($_POST['suplente_id'] ?? 0);
+    if ($sid) {
+        $db->prepare("UPDATE suplentes SET estado='inactivo' WHERE id=?")->execute([$sid]);
+        $ok = 'Galleta eliminada.';
+    }
+}
+
 $suplentes = [];
 if ($filtro_liga) {
     $suplentes = $db->prepare("
@@ -35,9 +75,15 @@ if ($filtro_liga) {
   <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
   <main class="dash-main">
-    <div class="dash-header">
+    <div class="dash-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
       <h1 class="dash-title">Suplentes (Galletas)</h1>
+      <?php if ($filtro_liga): ?>
+      <button onclick="document.getElementById('modalAgregarGalleta').style.display='flex'" class="btn btn-primary btn-sm">+ Agregar Galleta</button>
+      <?php endif; ?>
     </div>
+
+    <?php if ($ok): ?><div class="alert alert-success"><?= epl_h($ok) ?></div><?php endif; ?>
+    <?php if ($err): ?><div class="alert alert-error"><?= epl_h($err) ?></div><?php endif; ?>
 
     <div class="card mb-4" style="padding:1rem 1.5rem">
       <form method="get" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
@@ -64,6 +110,7 @@ if ($filtro_liga) {
               <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Nivel</th>
               <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Partidos jugados</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Estado</th>
+              <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase"></th>
             </tr>
           </thead>
           <tbody>
@@ -91,6 +138,14 @@ if ($filtro_liga) {
                   <?= $pj>=9?'Máximo alcanzado':'Activo' ?>
                 </span>
               </td>
+              <td style="padding:.7rem 1rem;text-align:center">
+                <form method="post" onsubmit="return confirm('¿Eliminar esta galleta?')">
+                  <input type="hidden" name="action" value="eliminar_suplente">
+                  <input type="hidden" name="suplente_id" value="<?= $s['id'] ?>">
+                  <input type="hidden" name="liga_id" value="<?= $filtro_liga ?>">
+                  <button type="submit" class="btn btn-sm" style="background:#dc2626;color:#fff;border:none;cursor:pointer;font-size:.7rem">Eliminar</button>
+                </form>
+              </td>
             </tr>
             <?php endforeach; ?>
             <?php if (empty($suplentes)): ?>
@@ -104,5 +159,50 @@ if ($filtro_liga) {
 
   </main>
 </div>
+
+<?php if ($filtro_liga):
+  $equipos_liga = $db->prepare("SELECT e.id, e.nombre FROM equipos e JOIN liga_equipos le ON le.equipo_id=e.id WHERE le.liga_id=? ORDER BY e.nombre");
+  $equipos_liga->execute([$filtro_liga]);
+  $equipos_liga = $equipos_liga->fetchAll();
+
+  $jugadores_todos = $db->query("SELECT id, nombre, apellido FROM jugadores WHERE estado='activo' ORDER BY apellido, nombre")->fetchAll();
+?>
+<div id="modalAgregarGalleta" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;padding:1rem">
+  <div class="card" style="width:100%;max-width:420px">
+    <div class="card-head">
+      <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)">Agregar Galleta</h3>
+      <button onclick="document.getElementById('modalAgregarGalleta').style.display='none'" style="background:none;font-size:1.5rem;color:var(--gray-400)">×</button>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        <input type="hidden" name="action" value="agregar_suplente">
+        <input type="hidden" name="liga_id" value="<?= $filtro_liga ?>">
+
+        <div class="form-group">
+          <label class="form-label">Jugador *</label>
+          <select name="jugador_id" class="form-control" required>
+            <option value="">— Selecciona jugador —</option>
+            <?php foreach ($jugadores_todos as $j): ?>
+              <option value="<?= $j['id'] ?>"><?= epl_h($j['apellido'] . ', ' . $j['nombre']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Equipo al que suple *</label>
+          <select name="equipo_id" class="form-control" required>
+            <option value="">— Selecciona equipo —</option>
+            <?php foreach ($equipos_liga as $eq): ?>
+              <option value="<?= $eq['id'] ?>"><?= epl_h($eq['nombre']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Agregar galleta</button>
+      </form>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 
 <?php require_once '../includes/footer.php'; ?>
