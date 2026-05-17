@@ -348,7 +348,15 @@ $partidos = $db->prepare("
     LEFT JOIN recintos s ON s.id = r.superior_id
     LEFT JOIN recintos ss ON ss.id = s.superior_id
     $where_p
-    ORDER BY p.jornada ASC, p.fecha_programada ASC, r.nombre ASC
+    ORDER BY p.jornada ASC,
+             CASE p.estado
+               WHEN 'jugado'        THEN 0
+               WHEN 'walkover'      THEN 1
+               WHEN 'no_presentado' THEN 2
+               WHEN 'reprogramado'  THEN 3
+               ELSE 4
+             END ASC,
+             p.fecha_programada ASC, r.nombre ASC
 ");
 $partidos->execute($params_p);
 $partidos = $partidos->fetchAll();
