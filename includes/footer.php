@@ -45,9 +45,6 @@
                 <nav class="grid grid-cols-2 md:flex md:flex-col gap-y-1 gap-x-4 md:space-y-5 font-secondary font-black text-xs uppercase tracking-widest text-gray-400">
                     <a href="<?= epl_url() ?>" class="hover:text-white transition-colors">Inicio</a>
                     <a href="<?= epl_url('torneos.php') ?>" class="hover:text-white transition-colors">Torneos</a>
-                    <a href="<?= epl_url('clasificacion.php') ?>" class="hover:text-white transition-colors">Clasificación</a>
-                    <a href="<?= epl_url('resultados.php') ?>" class="hover:text-white transition-colors">Resultados</a>
-                    <a href="<?= epl_url('jugadores.php') ?>" class="hover:text-white transition-colors">Jugadores</a>
                     <a href="<?= epl_url('reglamento.php') ?>" class="hover:text-white transition-colors">Reglamento</a>
                 </nav>
             </div>

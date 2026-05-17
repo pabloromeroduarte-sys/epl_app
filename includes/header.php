@@ -125,9 +125,6 @@ $active  = $active_nav ?? '';
             <div class="hidden lg:flex items-center gap-10">
                 <a href="<?= epl_url() ?>" class="nav-link-new <?= $active==='inicio'?'active':'' ?>">Inicio</a>
                 <a href="<?= epl_url('torneos.php') ?>" class="nav-link-new <?= $active==='torneos'?'active':'' ?>">Torneos</a>
-                <a href="<?= epl_url('clasificacion.php') ?>" class="nav-link-new <?= $active==='clasificacion'?'active':'' ?>">Clasificación</a>
-                <a href="<?= epl_url('resultados.php') ?>" class="nav-link-new <?= $active==='resultados'?'active':'' ?>">Resultados</a>
-                <a href="<?= epl_url('jugadores.php') ?>" class="nav-link-new <?= $active==='jugadores'?'active':'' ?>">Jugadores</a>
                 <a href="<?= epl_url('reglamento.php') ?>" class="nav-link-new <?= $active==='reglamento'?'active':'' ?>">Reglamento</a>
 
                 <div class="nav-divider"></div>
@@ -184,9 +181,6 @@ $active  = $active_nav ?? '';
         <div class="flex flex-col gap-8 font-primary text-4xl uppercase text-white tracking-widest">
             <a href="<?= epl_url() ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Inicio</a>
             <a href="<?= epl_url('torneos.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Torneos</a>
-            <a href="<?= epl_url('clasificacion.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Clasificación</a>
-            <a href="<?= epl_url('resultados.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Resultados</a>
-            <a href="<?= epl_url('jugadores.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Jugadores</a>
             <a href="<?= epl_url('reglamento.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Reglamento</a>
 
             <?php if ($jugador_nav): ?>
