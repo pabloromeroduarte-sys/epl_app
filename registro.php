@@ -147,6 +147,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $fnac, $sexo, $comuna, $profesion, $nivel, $lado, $pala,
                 $frec,
             ]);
+
+            // Correo de bienvenida automático
+            try {
+                require_once __DIR__ . '/includes/mail.php';
+                require_once __DIR__ . '/includes/mail_automations.php';
+                epl_mail_bienvenida([
+                    'nombre'   => $nombre,
+                    'apellido' => $apellido,
+                    'email'    => $email,
+                ]);
+            } catch (Throwable $e) {
+                error_log('epl_mail_bienvenida: ' . $e->getMessage());
+            }
+
             epl_login($email, $password);
             header('Location: dashboard.php?bienvenido=1');
             exit;
