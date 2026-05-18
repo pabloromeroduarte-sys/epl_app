@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "cl.epleague.twa",
+    "sha256_cert_fingerprints": ["8B:3C:BB:EC:0A:DE:3B:C4:6B:24:DE:BC:6F:E7:CF:4B:CB:67:7C:6F:F0:4D:3E:BE:8E:5F:40:37:91:FF:51:9A"]
+  }
+}]
