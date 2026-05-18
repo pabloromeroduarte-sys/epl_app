@@ -103,6 +103,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                ]);
             $ok = 'Jugador actualizado.';
         }
+
+    } elseif ($action === 'mail_reset_masivo') {
+        require_once '../includes/mail.php';
+        $ids = array_map('intval', $_POST['jugador_ids'] ?? []);
+        if (empty($ids)) {
+            $err = 'No se seleccionaron jugadores.';
+        } else {
+            $enviados = 0; $fallidos = 0;
+            $ids_str = implode(',', $ids);
+            $jugadores_sel = $db->query("SELECT id, nombre, apellido, email FROM jugadores WHERE id IN ($ids_str) AND email != ''")->fetchAll();
+            foreach ($jugadores_sel as $j) {
+                $token = bin2hex(random_bytes(32));
+                $expires = date('Y-m-d H:i:s', time() + 72 * 3600);
+                $db->prepare("UPDATE jugadores SET reset_token=?, reset_token_expires=? WHERE id=?")
+                   ->execute([$token, $expires, $j['id']]);
+                $link = epl_url('recuperar.php') . '?token=' . $token;
+                $nombre = trim($j['nombre'] . ' ' . $j['apellido']);
+                $body = '<p style="margin:0 0 1rem;color:#334155">Hola <strong>' . epl_h($nombre) . '</strong>,</p>'
+                      . '<p style="margin:0 0 1rem;color:#334155">El administrador de <strong>Elite Padel League</strong> ha generado un enlace para que puedas cambiar tu contraseña.</p>'
+                      . '<p style="margin:0 0 1.5rem;color:#334155">El enlace es válido por <strong>72 horas</strong>.</p>'
+                      . '<p style="margin:0"><a href="' . epl_h($link) . '" style="display:inline-block;background:#1C2F48;color:#C9A762;font-weight:700;text-decoration:none;padding:.65rem 1.5rem;border-radius:8px">Cambiar mi contraseña</a></p>'
+                      . '<p style="margin:1.5rem 0 0;font-size:.8rem;color:#94a3b8">Si no solicitaste este cambio, podés ignorar este correo.</p>';
+                $html = epl_mail_plantilla('Cambio de contraseña — Elite Padel League', $body);
+                $res = epl_mail_enviar($j['email'], 'Cambio de contraseña — Elite Padel League', $html, $nombre);
+                $res['ok'] ? $enviados++ : $fallidos++;
+            }
+            $ok = "Correos enviados: {$enviados}" . ($fallidos ? " | Fallidos: {$fallidos}" : '') . '.';
+        }
     }
 }
 
@@ -118,12 +146,14 @@ $profesiones = [
 // ── Filtros ───────────────────────────────────────────────
 $f_nivel  = (int)($_GET['nivel']  ?? 0);
 $f_estado = $_GET['estado'] ?? '';
+$f_rol    = $_GET['rol'] ?? '';
 $f_q      = trim($_GET['q'] ?? '');
 
 $where = ['1=1'];
 $params = [];
 if ($f_nivel)  { $where[] = 'nivel=?'; $params[] = $f_nivel; }
 if ($f_estado) { $where[] = 'estado=?'; $params[] = $f_estado; }
+if ($f_rol)    { $where[] = 'rol=?';   $params[] = $f_rol; }
 if ($f_q) {
     $where[] = "(nombre LIKE ? OR apellido LIKE ? OR email LIKE ? OR rut LIKE ?)";
     $like = "%{$f_q}%";
@@ -143,7 +173,7 @@ $jugadores = $st->fetchAll();
     <div class="dash-header" style="display:flex;flex-wrap:wrap;gap:.75rem;justify-content:space-between;align-items:center">
       <h1 class="dash-title">Jugadores <span style="font-size:1rem;color:var(--gray-400)">(<?= count($jugadores) ?>)</span></h1>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;width:100%">
-        <a href="?export=csv&nivel=<?= $f_nivel ?>&estado=<?= urlencode($f_estado) ?>&q=<?= urlencode($f_q) ?>"
+        <a href="?export=csv&nivel=<?= $f_nivel ?>&estado=<?= urlencode($f_estado) ?>&rol=<?= urlencode($f_rol) ?>&q=<?= urlencode($f_q) ?>"
            class="btn btn-sm btn-outline-navy" style="flex:1;text-align:center">↓ Exportar CSV</a>
         <button onclick="document.getElementById('modalCrear').style.display='flex'"
                 class="btn btn-primary btn-sm" style="flex:1">+ Nuevo jugador</button>
@@ -178,10 +208,35 @@ $jugadores = $st->fetchAll();
             <option value="suspendido" <?= $f_estado==='suspendido'?'selected':'' ?>>Suspendido</option>
           </select>
         </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Rol</label>
+          <select name="rol" class="form-control" style="width:auto">
+            <option value="">Todos</option>
+            <option value="jugador" <?= $f_rol==='jugador'?'selected':'' ?>>Jugador</option>
+            <option value="admin"   <?= $f_rol==='admin'?'selected':'' ?>>Admin</option>
+          </select>
+        </div>
         <button type="submit" class="btn btn-navy btn-sm">Filtrar</button>
-        <?php if ($f_q || $f_nivel || $f_estado): ?>
+        <?php if ($f_q || $f_nivel || $f_estado || $f_rol): ?>
           <a href="jugadores.php" class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600)">Limpiar</a>
         <?php endif; ?>
+      </form>
+    </div>
+
+    <!-- Bulk bar correo masivo -->
+    <div id="bulkBarJug" style="display:none;position:sticky;top:1rem;z-index:100;background:var(--navy);color:#fff;padding:.75rem 1.25rem;border-radius:.5rem;box-shadow:0 10px 25px rgba(0,0,0,.2);margin-bottom:1rem">
+      <form method="post" id="bulkFormJug" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <input type="hidden" name="action" value="mail_reset_masivo">
+        <div style="font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em">
+          <span id="bulkCountJug">0</span> seleccionados
+        </div>
+        <button type="submit" class="btn btn-gold btn-sm"
+                data-confirm="¿Enviar correo de cambio de contraseña a los jugadores seleccionados?"
+                data-confirm-ok="Enviar">
+          ✉️ Enviar correo de cambio de clave
+        </button>
+        <button type="button" class="btn btn-sm" style="background:none;color:rgba(255,255,255,.6)"
+                onclick="deselectAllJug()">Cancelar</button>
       </form>
     </div>
 
@@ -190,6 +245,7 @@ $jugadores = $st->fetchAll();
         <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.83rem">
           <thead>
             <tr style="background:var(--navy);color:#fff">
+              <th style="padding:.7rem .5rem;width:36px;text-align:center"><input type="checkbox" id="checkAllJug" title="Seleccionar todos"></th>
               <th style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Jugador</th>
               <th style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Contacto</th>
               <th class="hide-mobile" style="padding:.7rem 1rem;font-size:.72rem;text-transform:uppercase">Deportivo</th>
@@ -201,6 +257,10 @@ $jugadores = $st->fetchAll();
           <tbody>
             <?php foreach ($jugadores as $j): ?>
             <tr style="border-bottom:1px solid var(--gray-100)">
+              <td style="padding:.7rem .5rem;text-align:center">
+                <input type="checkbox" class="jug-check" value="<?= $j['id'] ?>" form="bulkFormJug" name="jugador_ids[]"
+                       <?= empty($j['email']) ? 'disabled title="Sin email"' : '' ?>>
+              </td>
               <td style="padding:.7rem 1rem">
                 <div style="display:flex;align-items:center;gap:.65rem">
                   <img src="<?= epl_h(epl_foto_jugador($j['foto'],$j['nombre'].' '.$j['apellido'])) ?>"
@@ -267,7 +327,7 @@ $jugadores = $st->fetchAll();
             </tr>
             <?php endforeach; ?>
             <?php if (empty($jugadores)): ?>
-              <tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--gray-400)">No hay jugadores con ese filtro.</td></tr>
+              <tr><td colspan="7" style="padding:2rem;text-align:center;color:var(--gray-400)">No hay jugadores con ese filtro.</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
@@ -498,6 +558,25 @@ function showEditar(j) {
   document.getElementById('editarEstado').value        = j.estado       || 'activo';
   document.getElementById('modalEditar').style.display = 'flex';
 }
+</script>
+
+<script>
+// Bulk selección jugadores
+function updateBulkBarJug() {
+  const checks = document.querySelectorAll('.jug-check:checked');
+  document.getElementById('bulkCountJug').textContent = checks.length;
+  document.getElementById('bulkBarJug').style.display = checks.length > 0 ? 'block' : 'none';
+}
+function deselectAllJug() {
+  document.querySelectorAll('.jug-check').forEach(c => c.checked = false);
+  document.getElementById('checkAllJug').checked = false;
+  updateBulkBarJug();
+}
+document.getElementById('checkAllJug').addEventListener('change', function() {
+  document.querySelectorAll('.jug-check:not(:disabled)').forEach(c => c.checked = this.checked);
+  updateBulkBarJug();
+});
+document.querySelectorAll('.jug-check').forEach(c => c.addEventListener('change', updateBulkBarJug));
 </script>
 
 <?php require_once '../includes/footer.php'; ?>
