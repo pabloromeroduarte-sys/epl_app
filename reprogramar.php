@@ -30,7 +30,11 @@ if ($equipo) {
         LEFT JOIN jugadores jv2 ON jv2.id = ev.jugador2_id
         WHERE p.liga_id=? AND (p.equipo_local_id=? OR p.equipo_visitante_id=?)
           AND p.estado IN ('pendiente','reprogramado')
-          AND (p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR) OR p.fecha_programada IS NULL)
+          AND (
+            p.fecha_programada IS NULL
+            OR p.fecha_programada < NOW()
+            OR p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR)
+          )
         ORDER BY p.fecha_programada ASC
     ");
     $stP->execute([$liga['id'], $equipo['id'], $equipo['id']]);
@@ -71,13 +75,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
         LEFT JOIN recintos rss ON rss.id = rs.superior_id
         WHERE p.id=? AND (p.equipo_local_id=? OR p.equipo_visitante_id=?)
           AND p.estado IN ('pendiente','reprogramado')
-          AND (p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR) OR p.fecha_programada IS NULL)
+          AND (
+            p.fecha_programada IS NULL
+            OR p.fecha_programada < NOW()
+            OR p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR)
+          )
     ");
     $stVal->execute([$partido_id, $equipo['id'], $equipo['id']]);
     $partido = $stVal->fetch();
 
     if (!$partido) {
-        $error = 'Partido no válido o fuera de plazo (mínimo 48h).';
+        $error = 'Partido no válido o no autorizado.';
     } elseif (!$motivo) {
         $error = 'Debes ingresar el motivo.';
     } elseif (!$rival_no_resp && !$fecha_propuesta) {
@@ -156,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
 
   <div class="dash-header">
     <h1 class="dash-title">Reprogramar Partido</h1>
-    <p style="color:var(--gray-400);font-size:.88rem">Mínimo 48h de anticipación · Coordina con tu rival primero.</p>
+    <p style="color:var(--gray-400);font-size:.88rem">Coordina con tu rival y propone una nueva fecha.</p>
   </div>
 
   <?php if ($ok): ?>
@@ -187,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
         <span class="rp-step-dot">1</span>
         <div>
           <div class="rp-card-title">Selecciona el partido</div>
-          <div class="rp-card-sub">Mínimo 48h de anticipación.</div>
+          <div class="rp-card-sub">Partidos pendientes o con fecha vencida.</div>
         </div>
       </div>
       <input type="hidden" name="partido_id" id="hiddenPartidoIdRp">
@@ -563,6 +571,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (checked) {
     document.getElementById('hiddenPartidoIdRp').value = checked.value;
     cargarRivales(checked.dataset.rivales);
+    // Scroll suave al partido pre-seleccionado
+    setTimeout(() => {
+      checked.closest('.rp-partido-option')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 200);
   }
 });
 </script>
