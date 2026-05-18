@@ -2,24 +2,40 @@
   "name": "Elite Padel League",
   "short_name": "EPL",
   "description": "Gestión de ligas y torneos de pádel",
-  "start_url": "/",
+  "start_url": "/dashboard.php",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#0a1632",
   "background_color": "#0a1632",
+  "lang": "es",
+  "categories": ["sports"],
   "icons": [
     {
       "src": "/assets/img/logo-epl-square.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/assets/img/logo-epl-square.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/img/logo-epl-square.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/img/hero-padel.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide"
     }
   ]
 }
