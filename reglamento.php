@@ -19,7 +19,7 @@ require_once 'includes/header.php';
         background-color: #0A1421;
         background-image:
             linear-gradient(to bottom, rgba(10,20,33,.90) 0%, rgba(28,47,72,.75) 50%, rgba(10,20,33,.95) 100%),
-            url('<?= epl_url('assets/img/hero-reglamento.jpg') ?>');
+            url('<?= epl_url('assets/img/padel-bg.jpg') ?>');
         background-size: cover;
         background-position: center center;
         width: 100%;
