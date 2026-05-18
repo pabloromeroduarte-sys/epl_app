@@ -1,5 +1,5 @@
 <?php
-$page_title = 'Admin — Reprogramaciones & Pendientes';
+$page_title = 'Admin — Reprogramaciones por Equipo';
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 epl_require_admin();
@@ -10,7 +10,8 @@ $db = epl_db();
 $reprogramados = $db->query("
     SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada, p.estado, p.alerta_admin,
            l.id AS liga_id, l.nombre AS liga_nombre,
-           el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+           el.id AS local_id, el.nombre AS local_nombre,
+           ev.id AS visitante_id, ev.nombre AS visitante_nombre,
            r.nombre AS recinto_nombre,
            sr.motivo, sr.rival_no_responde, sr.created_at AS fecha_solicitud
     FROM partidos p
@@ -23,29 +24,14 @@ $reprogramados = $db->query("
     ORDER BY p.fecha_programada IS NULL DESC, p.fecha_programada ASC
 ")->fetchAll();
 
-// Pendientes por equipo (con detalle de cada partido pendiente)
-$pendientes_raw = $db->query("
-    SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada,
-           l.nombre AS liga_nombre, l.id AS liga_id,
-           el.id AS local_id, el.nombre AS local_nombre,
-           ev.id AS visitante_id, ev.nombre AS visitante_nombre,
-           r.nombre AS recinto_nombre
-    FROM partidos p
-    JOIN ligas l ON l.id = p.liga_id
-    JOIN equipos el ON el.id = p.equipo_local_id
-    JOIN equipos ev ON ev.id = p.equipo_visitante_id
-    LEFT JOIN recintos r ON r.id = p.recinto_id
-    WHERE p.estado = 'pendiente'
-    ORDER BY l.nombre ASC, el.nombre ASC, p.jornada ASC
-")->fetchAll();
-
-// Agrupar pendientes por equipo
+// Reprogramados por equipo
 $por_equipo = [];
-foreach ($pendientes_raw as $p) {
+foreach ($reprogramados as $p) {
     foreach ([
-        ['id' => $p['local_id'],     'nombre' => $p['local_nombre']],
-        ['id' => $p['visitante_id'], 'nombre' => $p['visitante_nombre']],
+        ['id' => (int)$p['local_id'] ?? 0,     'nombre' => $p['local_nombre']],
+        ['id' => (int)$p['visitante_id'] ?? 0,  'nombre' => $p['visitante_nombre']],
     ] as $eq) {
+        if (!$eq['id']) continue;
         $por_equipo[$eq['id']]['nombre']   = $eq['nombre'];
         $por_equipo[$eq['id']]['liga']     = $p['liga_nombre'];
         $por_equipo[$eq['id']]['liga_id']  = $p['liga_id'];
@@ -62,8 +48,8 @@ require_once '../includes/header.php';
 
   <main class="dash-main">
     <div class="dash-header">
-      <h1 class="dash-title">Reprogramaciones &amp; Pendientes</h1>
-      <p style="color:var(--gray-600);margin-top:.25rem">Control de partidos reprogramados y pendientes por equipo.</p>
+      <h1 class="dash-title">Reprogramaciones</h1>
+      <p style="color:var(--gray-600);margin-top:.25rem">Partidos que debían jugarse y fueron reprogramados.</p>
     </div>
 
     <!-- KPIs -->
@@ -82,14 +68,14 @@ require_once '../includes/header.php';
       </div>
       <div class="card" style="border-left:4px solid #3b82f6">
         <div class="card-body">
-          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Equipos con pendientes</div>
+          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Equipos afectados</div>
           <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count($por_equipo) ?></div>
         </div>
       </div>
       <div class="card" style="border-left:4px solid #10b981">
         <div class="card-body">
-          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Total partidos pendientes</div>
-          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count($pendientes_raw) ?></div>
+          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Total reprogramados</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count($reprogramados) ?></div>
         </div>
       </div>
     </div>
@@ -162,7 +148,7 @@ require_once '../includes/header.php';
     <!-- PENDIENTES POR EQUIPO -->
     <h2 style="font-family:var(--font-head);font-size:.9rem;text-transform:uppercase;color:var(--navy);margin:2rem 0 .75rem;display:flex;align-items:center;gap:.5rem">
       <span style="width:8px;height:8px;background:#3b82f6;border-radius:50%;display:inline-block"></span>
-      Partidos Pendientes por Equipo
+      Reprogramados por Equipo
     </h2>
 
     <?php if (empty($por_equipo)): ?>
@@ -176,7 +162,7 @@ require_once '../includes/header.php';
             <div style="font-weight:800;font-size:.9rem;color:var(--navy)"><?= epl_h($eq['nombre']) ?></div>
             <div style="font-size:.72rem;color:var(--gray-400)"><?= epl_h($eq['liga']) ?></div>
           </div>
-          <span style="background:#dbeafe;color:#1e40af;font-weight:700;font-size:.75rem;padding:.2rem .6rem;border-radius:99px"><?= count($eq['partidos']) ?> pendiente<?= count($eq['partidos'])>1?'s':'' ?></span>
+          <span style="background:#fef3c7;color:#b45309;font-weight:700;font-size:.75rem;padding:.2rem .6rem;border-radius:99px"><?= count($eq['partidos']) ?> reprogramado<?= count($eq['partidos'])>1?'s':'' ?></span>
         </div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:.75rem">
