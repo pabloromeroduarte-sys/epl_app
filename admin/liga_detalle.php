@@ -119,12 +119,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'bulk_partidos') {
         $partido_ids = $_POST['partido_ids'] ?? [];
         $bulk_action = $_POST['bulk_action'] ?? '';
-        
+
         if (empty($partido_ids)) {
             ld_redirect($id, 'partidos', '', 'No se seleccionaron partidos.', ld_filtros_desde_post());
         } else {
             $ids_str = implode(',', array_map('intval', $partido_ids));
             $msg = '';
+
+            // ── Exportar a CSV/Excel ──────────────────────────────
+            if ($bulk_action === 'exportar_excel') {
+                $rows = $db->query("
+                    SELECT p.jornada, p.nombre_fecha, p.fecha_programada, p.estado,
+                           el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+                           p.sets_local, p.sets_visitante,
+                           p.games_s1_local, p.games_s1_visitante,
+                           p.games_s2_local, p.games_s2_visitante,
+                           p.games_s3_local, p.games_s3_visitante,
+                           r.nombre AS recinto_nombre,
+                           l.nombre AS liga_nombre,
+                           sr.motivo
+                    FROM partidos p
+                    JOIN ligas l ON l.id = p.liga_id
+                    JOIN equipos el ON el.id = p.equipo_local_id
+                    JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                    LEFT JOIN recintos r ON r.id = p.recinto_id
+                    LEFT JOIN solicitudes_reprogramacion sr ON sr.partido_id = p.id
+                    WHERE p.id IN ($ids_str)
+                    ORDER BY p.fecha_programada IS NULL ASC, p.fecha_programada ASC
+                ")->fetchAll();
+
+                $nombre_archivo = 'partidos_' . $liga['nombre'] . '_' . date('Ymd') . '.csv';
+                $nombre_archivo = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $nombre_archivo);
+
+                header('Content-Type: text/csv; charset=UTF-8');
+                header('Content-Disposition: attachment; filename="' . $nombre_archivo . '"');
+                header('Cache-Control: no-cache');
+
+                $out = fopen('php://output', 'w');
+                // BOM UTF-8 para que Excel abra bien los tildes
+                fputs($out, "\xEF\xBB\xBF");
+
+                fputcsv($out, [
+                    'Liga','Jornada','Nombre Fecha','Fecha Programada','Hora',
+                    'Local','Visitante',
+                    'Sets Local','Sets Visitante',
+                    'Games S1 (L-V)','Games S2 (L-V)','Games S3 (L-V)',
+                    'Estado','Cancha','Motivo Reprog.'
+                ], ';');
+
+                foreach ($rows as $r) {
+                    $fp = $r['fecha_programada'];
+                    $es_ph = $fp && date('Y-m-d', strtotime($fp)) === '2026-12-31';
+                    $fecha_fmt = (!$fp || $es_ph) ? 'Sin fecha' : date('d/m/Y', strtotime($fp));
+                    $hora_fmt  = (!$fp || $es_ph) ? '' : date('H:i', strtotime($fp));
+
+                    $estado_label = match($r['estado']) {
+                        'jugado'        => 'Jugado',
+                        'pendiente'     => 'Pendiente',
+                        'reprogramado'  => 'Reprogramado',
+                        'walkover'      => 'Walkover',
+                        'no_presentado' => 'No presentado',
+                        default         => $r['estado'],
+                    };
+
+                    $s1 = ($r['games_s1_local'] !== null) ? $r['games_s1_local'].'-'.$r['games_s1_visitante'] : '';
+                    $s2 = ($r['games_s2_local'] !== null) ? $r['games_s2_local'].'-'.$r['games_s2_visitante'] : '';
+                    $s3 = ($r['games_s3_local'] !== null) ? $r['games_s3_local'].'-'.$r['games_s3_visitante'] : '';
+
+                    fputcsv($out, [
+                        $r['liga_nombre'],
+                        $r['jornada'] ? 'J'.$r['jornada'] : '',
+                        $r['nombre_fecha'] ?? '',
+                        $fecha_fmt,
+                        $hora_fmt,
+                        $r['local_nombre'],
+                        $r['visitante_nombre'],
+                        $r['sets_local'] ?? '',
+                        $r['sets_visitante'] ?? '',
+                        $s1, $s2, $s3,
+                        $estado_label,
+                        $r['recinto_nombre'] ?? '',
+                        $r['motivo'] ?? '',
+                    ], ';');
+                }
+                fclose($out);
+                exit;
+            }
+
             if ($bulk_action === 'eliminar') {
                 $db->query("DELETE FROM partidos WHERE id IN ($ids_str)");
                 $msg = count($partido_ids) . ' partidos eliminados.';
@@ -746,6 +827,7 @@ $total_equipos  = count($equipos_liga);
           <option value="poner_alerta" style="color:var(--navy)">⚠️ Poner/Quitar Alerta Admin</option>
           <option value="cambiar_recinto" style="color:var(--navy)">Cambiar Recinto/Cancha</option>
           <option value="cambiar_fecha" style="color:var(--navy)">Cambiar Nombre de Fecha/Jornada</option>
+          <option value="exportar_excel" style="color:#059669;font-weight:700">⬇ Exportar a Excel (.csv)</option>
           <option value="eliminar" style="color:#dc2626; font-weight:700">Eliminar permanentemente</option>
         </select>
 
