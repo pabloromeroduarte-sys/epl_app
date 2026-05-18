@@ -60,12 +60,13 @@ function epl_jugador_por_email(string $email, bool $solo_activo = false): ?array
 
 function epl_jugador_sesion_desde_fila(array $row): array {
     return [
-        'id'       => (int)$row['id'],
-        'email'    => $row['email'],
-        'nombre'   => $row['nombre'],
-        'apellido' => $row['apellido'],
-        'foto'     => $row['foto'] ?? null,
-        'rol'      => $row['rol'],
+        'id'                   => (int)$row['id'],
+        'email'                => $row['email'],
+        'nombre'               => $row['nombre'],
+        'apellido'             => $row['apellido'],
+        'foto'                 => $row['foto'] ?? null,
+        'rol'                  => $row['rol'],
+        'must_change_password' => (int)($row['must_change_password'] ?? 0),
     ];
 }
 
@@ -106,6 +107,15 @@ function epl_require_login(): void {
         exit;
     }
     epl_sync_jugador_sesion();
+    // Contraseña temporal — forzar cambio
+    $sess = epl_jugador_actual();
+    if (!empty($sess['must_change_password'])) {
+        $cur = basename((string)($_SERVER['PHP_SELF'] ?? ''));
+        if (!in_array($cur, ['cambiar_password.php', 'logout.php'], true)) {
+            header('Location: ' . epl_url('cambiar_password.php'));
+            exit;
+        }
+    }
 }
 
 function epl_require_admin(): void {

@@ -8,6 +8,10 @@ $db  = epl_db();
 $ok  = '';
 $err = '';
 
+// Migración: columna must_change_password
+try { $db->exec("ALTER TABLE jugadores ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0"); } catch (Throwable $e) {}
+
+
 // ── Exportar CSV ─────────────────────────────────────────
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     header('Content-Type: text/csv; charset=utf-8');
@@ -67,6 +71,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         else {
             $db->prepare("UPDATE jugadores SET password=? WHERE id=?")->execute([epl_hash_password($new), $id]);
             $ok = 'Contraseña actualizada.';
+        }
+
+    } elseif ($action === 'clave_temporal') {
+        // Asignar 123456 y forzar cambio al ingresar
+        $id = (int)($_POST['id'] ?? 0);
+        $st = $db->prepare("SELECT nombre, apellido FROM jugadores WHERE id=?");
+        $st->execute([$id]);
+        $jj = $st->fetch(PDO::FETCH_ASSOC);
+        $db->prepare("UPDATE jugadores SET password=?, must_change_password=1 WHERE id=?")
+           ->execute([epl_hash_password('123456'), $id]);
+        $ok = 'Clave temporal <strong>123456</strong> asignada a ' . epl_h(($jj['nombre']??'').' '.($jj['apellido']??'')) . '. Se pedirá cambio al ingresar.';
+
+    } elseif ($action === 'clave_temporal_masivo') {
+        $ids = array_map('intval', $_POST['jugador_ids'] ?? []);
+        if (empty($ids)) { $err = 'No se seleccionaron jugadores.'; }
+        else {
+            $ph = implode(',', array_fill(0, count($ids), '?'));
+            $params_upd = array_merge([epl_hash_password('123456')], $ids);
+            $db->prepare("UPDATE jugadores SET password=?, must_change_password=1 WHERE id IN ($ph)")
+               ->execute($params_upd);
+            $ok = 'Clave temporal <strong>123456</strong> asignada a ' . count($ids) . ' jugador(es). Deberán cambiarla al ingresar.';
         }
 
     } elseif ($action === 'editar') {
@@ -223,21 +248,32 @@ $jugadores = $st->fetchAll();
       </form>
     </div>
 
-    <!-- Bulk bar correo masivo -->
+    <!-- Bulk bar acciones masivas -->
     <div id="bulkBarJug" style="display:none;position:sticky;top:1rem;z-index:100;background:var(--navy);color:#fff;padding:.75rem 1.25rem;border-radius:.5rem;box-shadow:0 10px 25px rgba(0,0,0,.2);margin-bottom:1rem">
-      <form method="post" id="bulkFormJug" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-        <input type="hidden" name="action" value="mail_reset_masivo">
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
         <div style="font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em">
           <span id="bulkCountJug">0</span> seleccionados
         </div>
-        <button type="submit" class="btn btn-gold btn-sm"
-                data-confirm="¿Enviar correo de cambio de contraseña a los jugadores seleccionados?"
-                data-confirm-ok="Enviar">
-          ✉️ Enviar correo de cambio de clave
-        </button>
+        <!-- Correo reset -->
+        <form method="post" id="bulkFormJug" style="display:inline">
+          <input type="hidden" name="action" value="mail_reset_masivo">
+          <button type="submit" class="btn btn-gold btn-sm"
+                  data-confirm="¿Enviar correo de cambio de contraseña a los jugadores seleccionados?"
+                  data-confirm-ok="Enviar">
+            ✉️ Enviar correo cambio de clave
+          </button>
+        </form>
+        <!-- Clave temporal masiva -->
+        <form method="post" id="bulkFormClave" style="display:inline">
+          <input type="hidden" name="action" value="clave_temporal_masivo">
+          <button type="submit" class="btn btn-sm" style="background:#f59e0b;color:#fff;font-weight:700"
+                  onclick="return confirm('¿Asignar clave temporal 123456 a los seleccionados? Deberán cambiarla al ingresar.')">
+            🔑 Asignar clave temporal
+          </button>
+        </form>
         <button type="button" class="btn btn-sm" style="background:none;color:rgba(255,255,255,.6)"
                 onclick="deselectAllJug()">Cancelar</button>
-      </form>
+      </div>
     </div>
 
     <div class="card">
@@ -308,6 +344,11 @@ $jugadores = $st->fetchAll();
               </td>
               <td data-label="Estado" style="padding:.7rem 1rem;text-align:center">
                 <span class="badge <?= $j['estado']==='activo'?'badge-jugado':($j['estado']==='suspendido'?'badge-walkover':'badge-reprog') ?>"><?= $j['estado'] ?></span>
+                <?php if (!empty($j['must_change_password'])): ?>
+                  <div style="margin-top:.3rem">
+                    <span style="font-size:.65rem;font-weight:700;background:#fef9c3;color:#854d0e;padding:.1rem .45rem;border-radius:4px;white-space:nowrap">🔑 Clave temporal</span>
+                  </div>
+                <?php endif; ?>
               </td>
               <td data-label="Acciones" style="padding:.7rem 1rem">
                 <div style="display:flex;gap:.35rem;flex-wrap:wrap;width:100%">
@@ -322,6 +363,13 @@ $jugadores = $st->fetchAll();
                   </form>
                   <button onclick="showResetPass(<?= $j['id'] ?>, '<?= epl_h($j['nombre']) ?>')"
                           class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600);font-size:.7rem">Pass</button>
+                  <!-- Clave temporal 123456 -->
+                  <form method="post" style="display:inline"
+                        onsubmit="return confirm('¿Asignar clave temporal 123456 a <?= epl_h($j['nombre']) ?>? Deberá cambiarla al ingresar.')">
+                    <input type="hidden" name="action" value="clave_temporal">
+                    <input type="hidden" name="id" value="<?= $j['id'] ?>">
+                    <button type="submit" class="btn btn-sm" style="background:#fef9c3;border:1px solid #fbbf24;color:#854d0e;font-size:.7rem;font-weight:700">🔑 Temp</button>
+                  </form>
                 </div>
               </td>
             </tr>
@@ -564,8 +612,18 @@ function showEditar(j) {
 // Bulk selección jugadores
 function updateBulkBarJug() {
   const checks = document.querySelectorAll('.jug-check:checked');
+  const ids    = Array.from(checks).map(c => c.value);
   document.getElementById('bulkCountJug').textContent = checks.length;
   document.getElementById('bulkBarJug').style.display = checks.length > 0 ? 'block' : 'none';
+
+  // Sincronizar IDs a bulkFormClave (hidden inputs)
+  const formClave = document.getElementById('bulkFormClave');
+  formClave.querySelectorAll('input[name="jugador_ids[]"]').forEach(el => el.remove());
+  ids.forEach(id => {
+    const inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = 'jugador_ids[]'; inp.value = id;
+    formClave.appendChild(inp);
+  });
 }
 function deselectAllJug() {
   document.querySelectorAll('.jug-check').forEach(c => c.checked = false);
