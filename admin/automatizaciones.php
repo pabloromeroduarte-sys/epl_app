@@ -116,9 +116,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $coF  = epl_auto_render($auto['cuerpo'], $vars);
             $html = epl_mail_plantilla($asF, $coF);
             $res  = epl_mail_enviar($j['email']??'', $asF.' [PRUEBA]', $html);
+            // Loguear la prueba
+            epl_email_log_init();
+            epl_email_log((int)$auto['id'], $auto['nombre'], $auto['trigger_tipo'],
+                $j['email']??'', ($j['nombre']??'').' '.($j['apellido']??''), 'prueba',
+                $asF.' [PRUEBA]', $res['ok'], $res['error']??'');
             $ok  = $res['ok'] ? 'Prueba enviada a '.($j['email']??'').'.': '';
             $err = $res['ok'] ? '' : ($res['error']??'Error al enviar');
         }
+    }
+
+    if ($action === 'limpiar_log') {
+        $auto_id = (int)($_POST['auto_id'] ?? 0);
+        if ($auto_id) {
+            $db->prepare("DELETE FROM email_log WHERE auto_id=?")->execute([$auto_id]);
+        } else {
+            $db->exec("DELETE FROM email_log");
+        }
+        header('Location: automatizaciones.php?tab=historial'); exit;
     }
 }
 
@@ -128,16 +143,31 @@ if (!$editing && isset($_GET['editar'])) {
     $editing = $st->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
-$show_form = isset($_GET['nuevo']) || $editing !== null;
-$lista     = $db->query("SELECT * FROM email_automatizaciones ORDER BY trigger_tipo, activo DESC, nombre")->fetchAll(PDO::FETCH_ASSOC);
-$smtp_ok   = epl_smtp_habilitado();
-$app_name  = epl_config_get('smtp_from_name', 'Elite Padel League');
+$tab      = isset($_GET['tab']) && $_GET['tab'] === 'historial' ? 'historial' : 'automatizaciones';
+$show_form = ($tab === 'automatizaciones') && (isset($_GET['nuevo']) || $editing !== null);
+$lista    = $db->query("SELECT * FROM email_automatizaciones ORDER BY trigger_tipo, activo DESC, nombre")->fetchAll(PDO::FETCH_ASSOC);
+$smtp_ok  = epl_smtp_habilitado();
+$app_name = epl_config_get('smtp_from_name', 'Elite Padel League');
 
-// Datos JS: triggers y dests para el editor
-$triggers_js  = json_encode($triggers,    JSON_UNESCAPED_UNICODE);
-$dests_js     = json_encode($dest_labels, JSON_UNESCAPED_UNICODE);
-$editing_tipo = $editing['trigger_tipo']  ?? '';
-$editing_dest = $editing['destinatario']  ?? 'jugador';
+// Datos JS para el editor
+$editing_tipo = $editing['trigger_tipo'] ?? '';
+$editing_dest = $editing['destinatario'] ?? 'jugador';
+
+// Historial: inicializar tabla e inicializar log
+require_once '../includes/mail_automations.php';
+epl_email_log_init();
+
+// Datos del historial (siempre cargamos, para el badge de cantidad)
+$log_filtro_id = isset($_GET['auto_id']) ? (int)$_GET['auto_id'] : 0;
+if ($log_filtro_id) {
+    $stLog = $db->prepare("SELECT l.*, a.nombre as auto_nombre_rel FROM email_log l LEFT JOIN email_automatizaciones a ON a.id=l.auto_id WHERE l.auto_id=? ORDER BY l.enviado_at DESC LIMIT 200");
+    $stLog->execute([$log_filtro_id]);
+} else {
+    $stLog = $db->query("SELECT l.*, a.nombre as auto_nombre_rel FROM email_log l LEFT JOIN email_automatizaciones a ON a.id=l.auto_id ORDER BY l.enviado_at DESC LIMIT 200");
+}
+$log_rows   = $stLog ? $stLog->fetchAll(PDO::FETCH_ASSOC) : [];
+$log_total  = count($log_rows);
+$log_errors = count(array_filter($log_rows, fn($r) => $r['estado'] === 'error'));
 ?>
 <?php require_once '../includes/header.php'; ?>
 
@@ -207,14 +237,35 @@ $editing_dest = $editing['destinatario']  ?? 'jugador';
   <div class="auto-page">
 
   <!-- Header -->
-  <div class="dash-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1.5rem">
+  <div class="dash-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem">
     <div>
       <h1 class="dash-title">Automatizaciones</h1>
       <p style="color:#64748b;font-size:.88rem;margin:.3rem 0 0">Correos automáticos según eventos o campos del jugador.</p>
     </div>
-    <?php if (!$show_form): ?>
+    <?php if (!$show_form && $tab === 'automatizaciones'): ?>
     <a href="?nuevo=1" class="btn btn-primary" style="white-space:nowrap">+ Nueva automatización</a>
     <?php endif; ?>
+  </div>
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:.4rem;margin-bottom:1.5rem;border-bottom:2px solid #e2e8f0;padding-bottom:0">
+    <a href="automatizaciones.php" style="padding:.55rem 1.1rem;border-radius:8px 8px 0 0;font-size:.83rem;font-weight:700;text-decoration:none;border:2px solid transparent;border-bottom:none;margin-bottom:-2px;
+       background:<?= $tab==='automatizaciones' ? '#fff' : 'transparent' ?>;
+       border-color:<?= $tab==='automatizaciones' ? '#e2e8f0 #e2e8f0 #fff' : 'transparent' ?>;
+       color:<?= $tab==='automatizaciones' ? '#1C2F48' : '#94a3b8' ?>">
+      ✉ Automatizaciones
+    </a>
+    <a href="?tab=historial" style="padding:.55rem 1.1rem;border-radius:8px 8px 0 0;font-size:.83rem;font-weight:700;text-decoration:none;border:2px solid transparent;border-bottom:none;margin-bottom:-2px;
+       background:<?= $tab==='historial' ? '#fff' : 'transparent' ?>;
+       border-color:<?= $tab==='historial' ? '#e2e8f0 #e2e8f0 #fff' : 'transparent' ?>;
+       color:<?= $tab==='historial' ? '#1C2F48' : '#94a3b8' ?>">
+      📋 Historial
+      <?php if ($log_total > 0): ?>
+        <span style="background:<?= $log_errors > 0 ? '#fef2f2' : '#f0fdf4' ?>;color:<?= $log_errors > 0 ? '#dc2626' : '#15803d' ?>;font-size:.7rem;padding:.1rem .45rem;border-radius:999px;margin-left:.3rem">
+          <?= $log_total ?>
+        </span>
+      <?php endif; ?>
+    </a>
   </div>
 
   <?php if ($ok): ?><div class="alert alert-success"><?= epl_h($ok) ?></div><?php endif; ?>
@@ -227,7 +278,148 @@ $editing_dest = $editing['destinatario']  ?? 'jugador';
   </div>
   <?php endif; ?>
 
-  <?php if (!$show_form): ?>
+  <?php if ($tab === 'historial'): ?>
+  <!-- ══════════════ HISTORIAL ══════════════ -->
+  <div style="max-width:960px">
+
+    <!-- Filtros + acciones -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1.1rem">
+      <!-- Filtro por automatización -->
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+        <span style="font-size:.82rem;font-weight:700;color:#64748b">Filtrar:</span>
+        <a href="?tab=historial" style="font-size:.8rem;font-weight:700;padding:.35rem .75rem;border-radius:8px;text-decoration:none;
+           background:<?= !$log_filtro_id ? '#1C2F48' : '#f1f5f9' ?>;color:<?= !$log_filtro_id ? '#fff' : '#475569' ?>">
+          Todos
+        </a>
+        <?php foreach ($lista as $li): ?>
+        <a href="?tab=historial&auto_id=<?= (int)$li['id'] ?>" style="font-size:.8rem;font-weight:700;padding:.35rem .75rem;border-radius:8px;text-decoration:none;
+           background:<?= $log_filtro_id===$li['id'] ? '#1C2F48' : '#f1f5f9' ?>;color:<?= $log_filtro_id===$li['id'] ? '#fff' : '#475569' ?>">
+          <?= epl_h($li['nombre']) ?>
+        </a>
+        <?php endforeach; ?>
+      </div>
+      <!-- Limpiar log -->
+      <form method="POST" onsubmit="return confirm('¿Eliminar estos registros del historial?')">
+        <input type="hidden" name="action"  value="limpiar_log">
+        <input type="hidden" name="auto_id" value="<?= $log_filtro_id ?>">
+        <button type="submit" style="font-size:.78rem;font-weight:700;padding:.38rem .85rem;background:#fef2f2;color:#dc2626;border:none;border-radius:8px;cursor:pointer">
+          🗑 Limpiar<?= $log_filtro_id ? ' este historial' : ' todo' ?>
+        </button>
+      </form>
+    </div>
+
+    <?php if (empty($log_rows)): ?>
+    <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:12px;text-align:center;padding:2.5rem 1rem">
+      <div style="font-size:2rem;margin-bottom:.4rem">📭</div>
+      <p style="color:#64748b;font-size:.88rem;margin:0">Sin envíos registrados todavía.</p>
+    </div>
+    <?php else: ?>
+
+    <!-- Resumen rápido -->
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
+      <?php
+        $tot     = count($log_rows);
+        $enviados = count(array_filter($log_rows, fn($r) => $r['estado'] === 'enviado'));
+        $errores  = $tot - $enviados;
+        $pruebas  = count(array_filter($log_rows, fn($r) => $r['rol_destino'] === 'prueba'));
+      ?>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.6rem 1rem;font-size:.82rem;font-weight:700;color:#15803d">
+        ✓ <?= $enviados ?> enviados
+      </div>
+      <?php if ($errores): ?>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.6rem 1rem;font-size:.82rem;font-weight:700;color:#dc2626">
+        ✗ <?= $errores ?> con error
+      </div>
+      <?php endif; ?>
+      <?php if ($pruebas): ?>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:.6rem 1rem;font-size:.82rem;font-weight:700;color:#1e40af">
+        ▶ <?= $pruebas ?> pruebas
+      </div>
+      <?php endif; ?>
+    </div>
+
+    <!-- Tabla -->
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead>
+          <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0">
+            <th style="padding:.7rem 1rem;text-align:left;font-weight:700;color:#475569;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Fecha y hora</th>
+            <th style="padding:.7rem 1rem;text-align:left;font-weight:700;color:#475569;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em">Automatización</th>
+            <th style="padding:.7rem 1rem;text-align:left;font-weight:700;color:#475569;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em">Destinatario</th>
+            <th style="padding:.7rem 1rem;text-align:left;font-weight:700;color:#475569;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em">Asunto</th>
+            <th style="padding:.7rem 1rem;text-align:center;font-weight:700;color:#475569;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($log_rows as $i => $row):
+            $es_error  = $row['estado'] === 'error';
+            $es_prueba = $row['rol_destino'] === 'prueba';
+            $trig_info = $triggers[$row['trigger_tipo']] ?? ['icon'=>'✉','label'=>$row['trigger_tipo']];
+            $bg = $i % 2 === 0 ? '#fff' : '#fafafa';
+          ?>
+          <tr style="background:<?= $bg ?>;border-bottom:1px solid #f1f5f9" <?= $es_error ? 'title="'.epl_h($row['error_msg'] ?? '').'"' : '' ?>>
+            <!-- Fecha -->
+            <td style="padding:.65rem 1rem;white-space:nowrap;color:#64748b">
+              <?php
+                $ts  = strtotime($row['enviado_at']);
+                echo '<div style="font-weight:700;color:#1C2F48">'.date('d/m/Y', $ts).'</div>';
+                echo '<div style="font-size:.73rem">'.date('H:i:s', $ts).'</div>';
+              ?>
+            </td>
+            <!-- Automatización -->
+            <td style="padding:.65rem 1rem">
+              <div style="font-weight:700;color:#1C2F48;white-space:nowrap">
+                <?= $trig_info['icon'] ?> <?= epl_h($row['auto_nombre'] ?: ($row['auto_nombre_rel'] ?? '—')) ?>
+              </div>
+              <div style="font-size:.73rem;color:#94a3b8"><?= epl_h($trig_info['label']) ?></div>
+            </td>
+            <!-- Destinatario -->
+            <td style="padding:.65rem 1rem">
+              <div style="font-weight:600;color:#334155">
+                <?= epl_h($row['nombre_destino'] ?: $row['email_destino']) ?>
+              </div>
+              <div style="font-size:.73rem;color:#94a3b8"><?= epl_h($row['email_destino']) ?></div>
+              <?php if ($es_prueba): ?>
+                <span style="font-size:.7rem;font-weight:700;background:#eff6ff;color:#1e40af;padding:.1rem .4rem;border-radius:4px">PRUEBA</span>
+              <?php elseif ($row['rol_destino'] === 'admin'): ?>
+                <span style="font-size:.7rem;font-weight:700;background:#faf5ff;color:#7c3aed;padding:.1rem .4rem;border-radius:4px">ADMIN</span>
+              <?php endif; ?>
+            </td>
+            <!-- Asunto -->
+            <td style="padding:.65rem 1rem;max-width:220px">
+              <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#475569" title="<?= epl_h($row['asunto']) ?>">
+                <?= epl_h($row['asunto']) ?>
+              </div>
+            </td>
+            <!-- Estado -->
+            <td style="padding:.65rem 1rem;text-align:center">
+              <?php if ($es_error): ?>
+                <span style="display:inline-flex;align-items:center;gap:.3rem;background:#fef2f2;color:#dc2626;font-size:.75rem;font-weight:700;padding:.28rem .7rem;border-radius:999px" title="<?= epl_h($row['error_msg'] ?? '') ?>">
+                  ✗ Error
+                </span>
+                <?php if ($row['error_msg']): ?>
+                <div style="font-size:.7rem;color:#dc2626;margin-top:.2rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="<?= epl_h($row['error_msg']) ?>">
+                  <?= epl_h(mb_substr($row['error_msg'], 0, 60)) ?>…
+                </div>
+                <?php endif; ?>
+              <?php else: ?>
+                <span style="display:inline-flex;align-items:center;gap:.3rem;background:#f0fdf4;color:#15803d;font-size:.75rem;font-weight:700;padding:.28rem .7rem;border-radius:999px">
+                  ✓ Enviado
+                </span>
+              <?php endif; ?>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+    <?php if ($log_total >= 200): ?>
+    <p style="font-size:.78rem;color:#94a3b8;text-align:center;margin:.75rem 0 0">Mostrando los últimos 200 registros.</p>
+    <?php endif; ?>
+    <?php endif; ?>
+
+  </div>
+  <?php elseif (!$show_form): ?>
   <!-- ══════════════ LISTA ══════════════ -->
   <?php if (empty($lista)): ?>
   <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:14px;text-align:center;padding:3rem 1rem;max-width:640px">
