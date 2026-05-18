@@ -91,11 +91,7 @@ if ($equipo) {
             </li>
           <?php endforeach; ?>
         </ul>
-        <?php 
-          $link = "reprogramar.php";
-          if (count($atrasados) === 1) $link .= "?partido_id=" . $atrasados[0]['id'];
-        ?>
-        <a href="<?= $link ?>" class="btn btn-sm" style="background:#fff;color:#b91c1c;font-weight:700;border:none">Regularizar ahora →</a>
+        <a href="<?= epl_url('regularizar.php') ?>" class="btn btn-sm" style="background:#fff;color:#b91c1c;font-weight:700;border:none">Regularizar ahora →</a>
       </div>
     </div>
     <?php endif; ?>
