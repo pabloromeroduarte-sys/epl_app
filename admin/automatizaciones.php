@@ -19,6 +19,14 @@ $db->exec("CREATE TABLE IF NOT EXISTS email_automatizaciones (
     updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+// Migración: agregar columnas que pueden no existir en instalaciones anteriores
+foreach ([
+    "ALTER TABLE email_automatizaciones ADD COLUMN destinatario VARCHAR(20) NOT NULL DEFAULT 'jugador' AFTER trigger_tipo",
+    "ALTER TABLE email_automatizaciones ADD COLUMN updated_at   TIMESTAMP   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+] as $migration) {
+    try { $db->exec($migration); } catch (Throwable $e) { /* columna ya existe */ }
+}
+
 $triggers = [
     'registro'   => ['label'=>'Registro de cuenta',  'icon'=>'📝','color'=>'#6366f1','bg'=>'#eef2ff','campo'=>'Evento del sistema',        'cuando'=>'Cuando un jugador crea su cuenta'],
     'cumpleanos' => ['label'=>'Cumpleaños',           'icon'=>'🎂','color'=>'#f59e0b','bg'=>'#fffbeb','campo'=>'Campo: fecha_nacimiento',   'cuando'=>'Cuando la fecha de nacimiento coincide con hoy'],
