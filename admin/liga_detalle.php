@@ -151,8 +151,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $msg = 'Información de jornada actualizada.';
                 }
             } elseif ($bulk_action === 'cambiar_fecha_programada') {
+                $sin_fecha    = !empty($_POST['bulk_sin_fecha']);
                 $n_fecha_prog = trim($_POST['bulk_fecha_programada'] ?? '');
-                if ($n_fecha_prog) {
+                if ($sin_fecha) {
+                    $db->query("UPDATE partidos SET fecha_programada=NULL WHERE id IN ($ids_str)");
+                    $msg = 'Fecha eliminada — los partidos quedan Sin fecha.';
+                } elseif ($n_fecha_prog) {
                     $fecha_db = str_replace('T', ' ', $n_fecha_prog) . ':00';
                     $db->prepare("UPDATE partidos SET fecha_programada=? WHERE id IN ($ids_str)")->execute([$fecha_db]);
                     $fecha_fmt = date('d/m/Y H:i', strtotime($fecha_db));
@@ -749,8 +753,14 @@ $total_equipos  = count($equipos_liga);
           <input type="text" name="bulk_alerta" class="form-control" placeholder="Texto de la alerta..." style="width:250px; font-size:.75rem">
         </div>
 
-        <div id="bulkExtraFechaProg" style="display:none">
-          <input type="datetime-local" name="bulk_fecha_programada" class="form-control" style="width:auto; font-size:.75rem">
+        <div id="bulkExtraFechaProg" style="display:none;align-items:center;gap:.75rem;flex-wrap:wrap">
+          <input type="datetime-local" name="bulk_fecha_programada" id="bulkFechaProgInput" class="form-control" style="width:auto; font-size:.75rem">
+          <label style="display:flex;align-items:center;gap:.35rem;font-size:.75rem;color:#fff;font-weight:600;cursor:pointer;white-space:nowrap">
+            <input type="checkbox" name="bulk_sin_fecha" id="bulkSinFecha" value="1"
+              style="width:16px;height:16px;accent-color:#ef4444;cursor:pointer"
+              onchange="document.getElementById('bulkFechaProgInput').disabled = this.checked">
+            Sin fecha (limpiar)
+          </label>
         </div>
 
         <div id="bulkExtraRecinto" style="display:none">
@@ -810,7 +820,14 @@ $total_equipos  = count($equipos_liga);
                 <input type="checkbox" name="partido_ids[]" value="<?= $p['id'] ?>" class="partido-check" data-group="<?= epl_h($p['nombre_fecha']) ?>" form="bulkForm">
               </td>
               <td style="padding:.6rem .75rem;font-size:.75rem;color:var(--gray-500)">
-                <?= $p['fecha_programada'] ? date('d/m H:i', strtotime($p['fecha_programada'])) : '—' ?>
+                <?php
+                  $_fp = $p['fecha_programada'];
+                  $_es_placeholder = $_fp && date('Y-m-d', strtotime($_fp)) === '2026-12-31';
+                  if (!$_fp || $_es_placeholder): ?>
+                  <span style="background:#fee2e2;color:#dc2626;padding:.1rem .4rem;border-radius:4px;font-size:.68rem;font-weight:700">Sin fecha</span>
+                <?php else: ?>
+                  <?= date('d/m H:i', strtotime($_fp)) ?>
+                <?php endif; ?>
                 <?php
                   $_bc = match($p['estado']) {
                       'jugado'        => 'badge-jugado',
@@ -1347,7 +1364,11 @@ function toggleBulkExtra() {
   document.getElementById('bulkExtraEstado').style.display = (action === 'cambiar_estado') ? 'block' : 'none';
   document.getElementById('bulkExtraRecinto').style.display = (action === 'cambiar_recinto') ? 'block' : 'none';
   document.getElementById('bulkExtraFecha').style.display = (action === 'cambiar_fecha') ? 'flex' : 'none';
-  document.getElementById('bulkExtraFechaProg').style.display = (action === 'cambiar_fecha_programada') ? 'block' : 'none';
+  document.getElementById('bulkExtraFechaProg').style.display = (action === 'cambiar_fecha_programada') ? 'flex' : 'none';
+  if (action !== 'cambiar_fecha_programada') {
+    document.getElementById('bulkSinFecha').checked = false;
+    document.getElementById('bulkFechaProgInput').disabled = false;
+  }
   document.getElementById('bulkExtraAlerta').style.display = (action === 'poner_alerta') ? 'block' : 'none';
 }
 
