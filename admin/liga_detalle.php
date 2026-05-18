@@ -155,6 +155,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $n_fecha_prog = trim($_POST['bulk_fecha_programada'] ?? '');
                 if ($sin_fecha) {
                     $db->query("UPDATE partidos SET fecha_programada=NULL WHERE id IN ($ids_str)");
+                    // Si están reprogramados, limpiar recinto también
+                    $db->query("UPDATE partidos SET recinto_id=NULL WHERE id IN ($ids_str) AND estado='reprogramado'");
                     $msg = 'Fecha eliminada — los partidos quedan Sin fecha.';
                 } elseif ($n_fecha_prog) {
                     $fecha_db = str_replace('T', ' ', $n_fecha_prog) . ':00';
@@ -175,6 +177,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $estados_validos = ['pendiente','jugado','reprogramado','walkover','no_presentado'];
                 if (in_array($nuevo_estado, $estados_validos, true)) {
                     $db->prepare("UPDATE partidos SET estado=? WHERE id IN ($ids_str)")->execute([$nuevo_estado]);
+                    // Si se reprograma, limpiar recinto en los que no tienen fecha
+                    if ($nuevo_estado === 'reprogramado') {
+                        $db->query("UPDATE partidos SET recinto_id=NULL WHERE id IN ($ids_str) AND (fecha_programada IS NULL OR DATE(fecha_programada)='2026-12-31')");
+                    }
                     $msg = 'Estado actualizado a "' . $nuevo_estado . '".';
                 }
             } elseif ($bulk_action === 'poner_alerta') {
@@ -270,6 +276,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ganador_id = $sets_l > $sets_v ? $p2['equipo_local_id'] : $p2['equipo_visitante_id'];
         }
         $alerta_a = trim($_POST['alerta_admin'] ?? '') ?: null;
+        // Si se reprograma sin fecha, limpiar recinto automáticamente
+        if ($est === 'reprogramado' && !$fecha_p) {
+            $recinto_id = null;
+        }
         $db->prepare("UPDATE partidos SET estado=?,fecha_programada=?,fecha_jugado=?,jornada=?,nombre_fecha=?,recinto_id=?,sets_local=?,sets_visitante=?,games_s1_local=?,games_s1_visitante=?,games_s2_local=?,games_s2_visitante=?,games_s3_local=?,games_s3_visitante=?,ganador_id=?,alerta_admin=? WHERE id=?")
            ->execute([$est,$fecha_p,$fecha_j?:null,$jornada,$nombre_f,$recinto_id,$sets_l,$sets_v,$sets[1]['l'],$sets[1]['v'],$sets[2]['l'],$sets[2]['v'],$sets[3]['l'],$sets[3]['v'],$ganador_id,$alerta_a,$pid]);
         epl_recalcular_clasificacion($id);
