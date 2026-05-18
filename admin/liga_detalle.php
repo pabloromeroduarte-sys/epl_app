@@ -166,6 +166,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $msg = 'Fecha y hora de los partidos actualizada.';
                 }
+            } elseif ($bulk_action === 'cambiar_estado') {
+                $nuevo_estado = $_POST['bulk_estado'] ?? '';
+                $estados_validos = ['pendiente','jugado','reprogramado','walkover','no_presentado'];
+                if (in_array($nuevo_estado, $estados_validos, true)) {
+                    $db->prepare("UPDATE partidos SET estado=? WHERE id IN ($ids_str)")->execute([$nuevo_estado]);
+                    $msg = 'Estado actualizado a "' . $nuevo_estado . '".';
+                }
             } elseif ($bulk_action === 'poner_alerta') {
                 $alerta = trim($_POST['bulk_alerta'] ?? '');
                 $db->prepare("UPDATE partidos SET alerta_admin=? WHERE id IN ($ids_str)")->execute([$alerta ?: null]);
@@ -719,6 +726,7 @@ $total_equipos  = count($equipos_liga);
         
         <select name="bulk_action" id="bulkAction" class="form-control" style="width:auto; background:rgba(255,255,255,1); border-color:rgba(255,255,255,.2); color:var(--navy); font-size:.75rem" onchange="toggleBulkExtra()">
           <option value="" style="color:var(--navy)">— Acción masiva —</option>
+          <option value="cambiar_estado" style="color:var(--navy)">Cambiar Estado</option>
           <option value="estado_pendiente" style="color:var(--navy)">Mover a Pendiente (borrar resultado)</option>
           <option value="cambiar_fecha_programada" style="color:var(--navy)">Cambiar Fecha y Hora (Programación)</option>
           <option value="poner_alerta" style="color:var(--navy)">⚠️ Poner/Quitar Alerta Admin</option>
@@ -726,6 +734,16 @@ $total_equipos  = count($equipos_liga);
           <option value="cambiar_fecha" style="color:var(--navy)">Cambiar Nombre de Fecha/Jornada</option>
           <option value="eliminar" style="color:#dc2626; font-weight:700">Eliminar permanentemente</option>
         </select>
+
+        <div id="bulkExtraEstado" style="display:none">
+          <select name="bulk_estado" class="form-control" style="width:auto; font-size:.75rem; color:var(--navy)">
+            <option value="pendiente">Pendiente</option>
+            <option value="jugado">Jugado</option>
+            <option value="reprogramado">Reprogramado</option>
+            <option value="walkover">Walkover</option>
+            <option value="no_presentado">No presentado</option>
+          </select>
+        </div>
 
         <div id="bulkExtraAlerta" style="display:none">
           <input type="text" name="bulk_alerta" class="form-control" placeholder="Texto de la alerta..." style="width:250px; font-size:.75rem">
@@ -1326,6 +1344,7 @@ function deselectAllPartidos() {
 
 function toggleBulkExtra() {
   const action = document.getElementById('bulkAction').value;
+  document.getElementById('bulkExtraEstado').style.display = (action === 'cambiar_estado') ? 'block' : 'none';
   document.getElementById('bulkExtraRecinto').style.display = (action === 'cambiar_recinto') ? 'block' : 'none';
   document.getElementById('bulkExtraFecha').style.display = (action === 'cambiar_fecha') ? 'flex' : 'none';
   document.getElementById('bulkExtraFechaProg').style.display = (action === 'cambiar_fecha_programada') ? 'block' : 'none';
