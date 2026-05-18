@@ -8,10 +8,14 @@ if (!headers_sent()) {
 
 function epl_session_start(): void {
     if (session_status() === PHP_SESSION_NONE) {
+        $lifetime = 30 * 24 * 60 * 60; // 30 días
+        ini_set('session.gc_maxlifetime', (string)$lifetime);
         session_start([
             'cookie_httponly' => true,
             'cookie_samesite' => 'Lax',
             'use_strict_mode' => true,
+            'cookie_lifetime' => $lifetime,   // cookie persiste 30 días en el navegador
+            'gc_maxlifetime'  => $lifetime,   // servidor no borra la sesión por inactividad
         ]);
     }
 }
@@ -146,7 +150,12 @@ function epl_login(string $email, string $password): bool {
 function epl_logout(): void {
     epl_session_start();
     session_destroy();
-    setcookie(session_name(), '', time() - 3600, '/');
+    setcookie(session_name(), '', [
+        'expires'  => time() - 3600,
+        'path'     => '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
 }
 
 function epl_hash_password(string $password): string {
