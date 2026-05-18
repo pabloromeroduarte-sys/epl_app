@@ -30,7 +30,7 @@ $active  = $active_nav ?? '';
   <script>
   (function(){
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-    const VAPID_PUBLIC = "<?= htmlspecialchars($_ENV['VAPID_PUBLIC_KEY'] ?? '', ENT_QUOTES) ?>";
+    const VAPID_PUBLIC = "<?= htmlspecialchars(epl_env('VAPID_PUBLIC_KEY'), ENT_QUOTES) ?>";
     if (!VAPID_PUBLIC) return;
 
     function urlB64ToUint8Array(b64) {

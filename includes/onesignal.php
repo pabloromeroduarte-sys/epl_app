@@ -5,9 +5,9 @@ declare(strict_types=1);
  * Lee suscripciones desde push_subscriptions y usa VAPID del .env
  */
 function epl_push_notificar($jugador_ids, string $titulo, string $mensaje, string $url = ''): void {
-    $privPem   = base64_decode($_ENV['VAPID_PRIVATE_KEY'] ?? '');
-    $pubB64u   = $_ENV['VAPID_PUBLIC_KEY']  ?? '';
-    $subject   = $_ENV['VAPID_SUBJECT']     ?? 'mailto:admin@epleague.cl';
+    $privPem   = base64_decode(epl_env('VAPID_PRIVATE_KEY'));
+    $pubB64u   = epl_env('VAPID_PUBLIC_KEY');
+    $subject   = epl_env('VAPID_SUBJECT', 'mailto:admin@epleague.cl');
 
     if (!$privPem || !$pubB64u) return;
 
