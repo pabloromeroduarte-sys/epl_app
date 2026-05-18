@@ -6,7 +6,7 @@ epl_require_admin();
 
 $db = epl_db();
 
-// Todos los reprogramados con info completa
+// Todos los reprogramados — fechas reales primero (ASC), sin fecha al final
 $reprogramados = $db->query("
     SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada, p.estado, p.alerta_admin,
            l.id AS liga_id, l.nombre AS liga_nombre,
@@ -21,8 +21,29 @@ $reprogramados = $db->query("
     LEFT JOIN recintos r ON r.id = p.recinto_id
     LEFT JOIN solicitudes_reprogramacion sr ON sr.partido_id = p.id
     WHERE p.estado = 'reprogramado'
-    ORDER BY p.fecha_programada IS NULL DESC, p.fecha_programada ASC
+    ORDER BY
+        (p.fecha_programada IS NULL OR DATE(p.fecha_programada)='2026-12-31') ASC,
+        p.fecha_programada ASC
 ")->fetchAll();
+
+// Pendientes ordenados por fecha ASC (sin fecha al final)
+$pendientes = $db->query("
+    SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada,
+           l.id AS liga_id, l.nombre AS liga_nombre,
+           el.nombre AS local_nombre,
+           ev.nombre AS visitante_nombre,
+           r.nombre AS recinto_nombre
+    FROM partidos p
+    JOIN ligas l ON l.id = p.liga_id
+    JOIN equipos el ON el.id = p.equipo_local_id
+    JOIN equipos ev ON ev.id = p.equipo_visitante_id
+    LEFT JOIN recintos r ON r.id = p.recinto_id
+    WHERE p.estado = 'pendiente'
+    ORDER BY
+        (p.fecha_programada IS NULL) ASC,
+        p.fecha_programada ASC
+")->fetchAll();
+$n_pendientes = count($pendientes);
 
 // Helper: ¿es sin fecha? (NULL o placeholder 31/12/2026)
 $es_sin_fecha = fn($p) => !$p['fecha_programada'] || date('Y-m-d', strtotime($p['fecha_programada'])) === '2026-12-31';
@@ -41,8 +62,8 @@ $n_proximas  = $n_con_fecha - $n_vencidas; // con fecha futura
 $total = count($reprogramados);
 $pct_atraso = $total > 0 ? round(($n_vencidas / $total) * 100) : 0;
 
-// Total partidos jugados en ligas activas (para contexto)
-$total_jugados = (int)$db->query("SELECT COUNT(*) FROM partidos WHERE estado='jugado'")->fetchColumn();
+// Avance general
+$total_jugados  = (int)$db->query("SELECT COUNT(*) FROM partidos WHERE estado IN ('jugado','walkover','no_presentado')")->fetchColumn();
 $total_partidos = (int)$db->query("SELECT COUNT(*) FROM partidos")->fetchColumn();
 $pct_avance = $total_partidos > 0 ? round(($total_jugados / $total_partidos) * 100) : 0;
 
@@ -124,7 +145,7 @@ require_once '../includes/header.php';
 
           <!-- Avance general -->
           <div style="flex:1;min-width:180px;border-left:1px solid var(--gray-100);padding-left:1.25rem">
-            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);letter-spacing:.05em;margin-bottom:.4rem">Avance General Liga</div>
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);letter-spacing:.05em;margin-bottom:.4rem">Avance General</div>
             <div style="display:flex;align-items:baseline;gap:.5rem">
               <span style="font-size:2.2rem;font-weight:900;color:var(--navy)"><?= $pct_avance ?>%</span>
               <span style="font-size:.8rem;color:var(--gray-500);font-weight:600">jugados</span>
@@ -133,7 +154,7 @@ require_once '../includes/header.php';
               <div style="height:100%;width:<?= $pct_avance ?>%;background:var(--navy);border-radius:99px"></div>
             </div>
             <div style="margin-top:.4rem;font-size:.72rem;color:var(--gray-500)">
-              <strong><?= $total_jugados ?></strong> jugados de <strong><?= $total_partidos ?></strong> totales
+              <strong><?= $total_jugados ?></strong> jugados · <strong><?= $n_pendientes ?></strong> pendientes · <strong><?= $total ?></strong> reprog. · <strong><?= $total_partidos ?></strong> total
             </div>
           </div>
 
@@ -262,6 +283,84 @@ require_once '../includes/header.php';
           No hay partidos que coincidan con el filtro.
         </div>
       </div>
+    </div>
+
+    <!-- SECCIÓN PENDIENTES -->
+    <div style="margin-top:2.5rem">
+      <h2 style="font-family:var(--font-head);font-size:.9rem;text-transform:uppercase;color:var(--navy);margin:0 0 .75rem;display:flex;align-items:center;gap:.5rem">
+        <span style="width:8px;height:8px;background:#3b82f6;border-radius:50%;display:inline-block"></span>
+        Partidos Pendientes (<?= $n_pendientes ?>)
+        <span style="font-size:.7rem;font-weight:400;color:var(--gray-400);text-transform:none">— ordenados por fecha</span>
+      </h2>
+
+      <?php if (empty($pendientes)): ?>
+        <div class="card"><div class="card-body" style="text-align:center;color:var(--gray-400);padding:2rem">No hay partidos pendientes.</div></div>
+      <?php else: ?>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+            <thead>
+              <tr style="background:var(--navy);color:#fff">
+                <th style="padding:.6rem .75rem;text-align:left">Liga</th>
+                <th style="padding:.6rem .75rem;text-align:center">Jornada</th>
+                <th style="padding:.6rem .75rem;text-align:left">Nombre Fecha</th>
+                <th style="padding:.6rem .75rem;text-align:left">Partido</th>
+                <th style="padding:.6rem .75rem;text-align:left">Fecha</th>
+                <th style="padding:.6rem .75rem;text-align:left">Cancha</th>
+                <th style="padding:.6rem .75rem;text-align:center">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php
+                $ultima_fecha_p = null;
+                foreach ($pendientes as $p):
+                  $fecha_p = $p['fecha_programada'] ? date('Y-m-d', strtotime($p['fecha_programada'])) : null;
+                  $es_nueva_fecha = $fecha_p !== $ultima_fecha_p;
+                  $ultima_fecha_p = $fecha_p;
+              ?>
+              <?php if ($es_nueva_fecha && $fecha_p): ?>
+              <tr style="background:#f0f4ff">
+                <td colspan="7" style="padding:.35rem .75rem;font-size:.72rem;font-weight:800;color:#3730a3;letter-spacing:.04em">
+                  📅 <?= date('l d \d\e F Y', strtotime($p['fecha_programada'])) ?>
+                </td>
+              </tr>
+              <?php elseif ($es_nueva_fecha && !$fecha_p): ?>
+              <tr style="background:#fff7f7">
+                <td colspan="7" style="padding:.35rem .75rem;font-size:.72rem;font-weight:800;color:#dc2626;letter-spacing:.04em">
+                  ⚠ Sin fecha asignada
+                </td>
+              </tr>
+              <?php endif; ?>
+              <tr style="border-bottom:1px solid var(--gray-100)">
+                <td style="padding:.6rem .75rem;font-weight:600;color:var(--navy)"><?= epl_h($p['liga_nombre']) ?></td>
+                <td style="padding:.6rem .75rem;text-align:center">
+                  <?php if ($p['jornada']): ?>
+                    <span style="background:#e0e7ff;color:#3730a3;padding:.15rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700">J<?= $p['jornada'] ?></span>
+                  <?php else: ?>—<?php endif; ?>
+                </td>
+                <td style="padding:.6rem .75rem;color:var(--gray-600);font-size:.78rem"><?= epl_h($p['nombre_fecha'] ?: '—') ?></td>
+                <td style="padding:.6rem .75rem;font-weight:600">
+                  <?= epl_h($p['local_nombre']) ?> <span style="color:var(--gray-400)">vs</span> <?= epl_h($p['visitante_nombre']) ?>
+                </td>
+                <td style="padding:.6rem .75rem">
+                  <?php if ($p['fecha_programada']): ?>
+                    <div style="font-weight:700;color:var(--navy)"><?= date('d/m/Y', strtotime($p['fecha_programada'])) ?></div>
+                    <div style="font-size:.72rem;color:var(--gray-400)"><?= date('H:i', strtotime($p['fecha_programada'])) ?></div>
+                  <?php else: ?>
+                    <span style="background:#fee2e2;color:#dc2626;padding:.2rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700">Sin fecha</span>
+                  <?php endif; ?>
+                </td>
+                <td style="padding:.6rem .75rem;font-size:.78rem;color:var(--gray-600)"><?= epl_h($p['recinto_nombre'] ?: '—') ?></td>
+                <td style="padding:.6rem .75rem;text-align:center">
+                  <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn btn-sm btn-navy" style="font-size:.7rem;padding:.25rem .6rem">Gestionar</a>
+                </td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <?php endif; ?>
     </div>
 
   </main>
