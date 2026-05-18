@@ -1260,16 +1260,19 @@ button { cursor: pointer; font-family: inherit; border: none; }
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--navy);
-  border-top: 1px solid rgba(255,255,255,0.1);
+  background: rgba(10,22,50,0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255,255,255,0.12);
   z-index: 1000;
   padding-bottom: env(safe-area-inset-bottom);
   display: none;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.35);
 }
 @media (max-width: 992px) {
   .dash-layout { grid-template-columns: 1fr; }
   .dash-sidebar { display: none; }
-  .dash-main { padding: 1.25rem 1rem 5rem; }
+  .dash-main { padding: 1.25rem 1rem 6rem; }
   .dash-bottom-nav { display: block; }
 }
 .dash-bottom-nav-inner {
@@ -1278,36 +1281,57 @@ button { cursor: pointer; font-family: inherit; border: none; }
   scrollbar-width: none;
   -ms-overflow-style: none;
   scroll-snap-type: x mandatory;
-  padding: 0 0.25rem;
+  padding: 0 .5rem;
+  gap: .1rem;
 }
 .dash-bottom-nav-inner::-webkit-scrollbar {
   display: none;
 }
 .dash-bottom-link {
-  flex: 0 0 calc(100vw / 6);
-  max-width: 72px;
+  flex: 0 0 72px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: .45rem .15rem;
-  color: rgba(255,255,255,0.6);
+  gap: .2rem;
+  padding: .65rem .25rem .55rem;
+  color: rgba(255,255,255,0.5);
   text-decoration: none;
-  font-size: .58rem;
+  font-size: .62rem;
   font-weight: 600;
-  transition: all .2s;
+  letter-spacing: .01em;
+  transition: color .18s, transform .15s;
   scroll-snap-align: start;
+  border-radius: 12px;
+  margin: .3rem 0;
+  position: relative;
+}
+.dash-bottom-link:active {
+  transform: scale(.93);
 }
 .dash-bottom-link svg {
-  width: 18px;
-  height: 18px;
-  margin-bottom: .15rem;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  transition: color .18s;
 }
 .dash-bottom-link.active {
   color: var(--gold);
+  background: rgba(212,175,55,0.13);
 }
 .dash-bottom-link.active svg {
   color: var(--gold);
+}
+.dash-bottom-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -0.3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 3px;
+  background: var(--gold);
+  border-radius: 99px;
 }
 
 /* ── Mobile-first improvements ─────────────────────────── */
