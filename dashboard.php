@@ -29,7 +29,7 @@ $proximos  = array_filter($partidos, fn($p) => $p['estado'] === 'pendiente' || $
 $jugados   = array_filter($partidos, fn($p) => $p['estado'] === 'jugado');
 // Ordenar próximos de más cercano a más lejano
 usort($proximos, fn($a, $b) => strtotime($a['fecha_programada'] ?? '9999-12-31') <=> strtotime($b['fecha_programada'] ?? '9999-12-31'));
-$proximos  = array_slice(array_values($proximos), 0, 3);
+$proximos  = array_values($proximos); // todos, el JS limita a 3 visibles
 $recientes = array_slice(array_values($jugados), 0, 5);
 
 // Alerta de atrasos: partidos con fecha pasada sin resultado, o en estado reprogramado
@@ -135,12 +135,17 @@ if ($equipo) {
     <div class="card mb-4">
       <div class="card-head">
         <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)">Próximos partidos</h3>
-        <a href="ingresar_resultado.php" class="btn btn-primary btn-sm">+ Ingresar resultado</a>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <?php if (count($proximos) > 3): ?>
+            <button id="btnVerTodosProximos" onclick="verTodosProximos()" style="font-size:.78rem;color:var(--gold);font-weight:600;background:none;border:none;cursor:pointer;padding:0">Ver todos →</button>
+          <?php endif; ?>
+          <a href="ingresar_resultado.php" class="btn btn-primary btn-sm">+ Ingresar resultado</a>
+        </div>
       </div>
       <div class="card-body">
         <div class="partidos-list">
-          <?php foreach ($proximos as $p): ?>
-          <div class="partido-card-v2" style="padding:1rem">
+          <?php foreach ($proximos as $i => $p): ?>
+          <div class="partido-card-v2 proximo-item<?= $i >= 3 ? ' proximo-extra' : '' ?>" style="padding:1rem<?= $i >= 3 ? ';display:none' : '' ?>">
             <div class="partido-col-info" style="border:none">
               <span class="fecha-label" style="font-size:.6rem">Fecha <?= $p['jornada'] ?? '' ?></span>
               <div class="partido-date" style="font-size:.7rem">🗓 <?= $p['fecha_programada'] ? date('d/m', strtotime($p['fecha_programada'])) : 'TBD' ?></div>
@@ -225,6 +230,13 @@ if ($equipo) {
     <?php endif; ?>
 
 </main>
+<script>
+function verTodosProximos() {
+  document.querySelectorAll('.proximo-extra').forEach(el => el.style.display = '');
+  var btn = document.getElementById('btnVerTodosProximos');
+  if (btn) btn.style.display = 'none';
+}
+</script>
 </div>
 
 <?php require_once 'includes/footer.php'; ?>
