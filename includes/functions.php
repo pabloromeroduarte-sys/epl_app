@@ -576,6 +576,16 @@ function epl_notif_crear(int $jugador_id, string $tipo, string $titulo, string $
         return;
     }
 
+    // Push notification (OneSignal)
+    try {
+        if (!function_exists('epl_push_notificar')) {
+            require_once __DIR__ . '/onesignal.php';
+        }
+        epl_push_notificar($jugador_id, $titulo, $mensaje, $url);
+    } catch (Throwable $e) {
+        error_log('epl_notif_crear push: ' . $e->getMessage());
+    }
+
     try {
         if (!function_exists('epl_mail_notificacion_jugador')) {
             require_once __DIR__ . '/mail.php';

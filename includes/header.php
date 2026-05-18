@@ -18,6 +18,43 @@ $active  = $active_nav ?? '';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= $title ?></title>
   <link rel="icon" href="<?= epl_url('assets/img/favicon.png') ?>" type="image/png">
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EPL">
+  <meta name="theme-color" content="#0a1632">
+  <link rel="apple-touch-icon" href="/assets/img/logo-epl-square.png">
+  <!-- OneSignal Push -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "<?= $_ENV['ONESIGNAL_APP_ID'] ?? '' ?>",
+        serviceWorkerPath: "/OneSignalSDKWorker.js",
+        notifyButton: { enable: false },
+        promptOptions: {
+          slidedown: {
+            prompts: [{
+              type: "push",
+              autoPrompt: true,
+              text: {
+                actionMessage: "Recibe notificaciones de tus partidos",
+                acceptButton: "Permitir",
+                cancelButton: "Ahora no"
+              },
+              delay: { pageViews: 1, timeDelay: 3 }
+            }]
+          }
+        }
+      });
+      <?php $j = epl_jugador_actual(); if ($j): ?>
+      await OneSignal.login("<?= (int)$j['id'] ?>");
+      <?php endif; ?>
+    });
+  </script>
   
   <!-- 1. CEREBRO DE DISEÑO Y FUENTES -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
