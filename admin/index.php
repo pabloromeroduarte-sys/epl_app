@@ -70,6 +70,26 @@ $solicitudes = $db->query("
       </div>
     </div>
 
+    <!-- Test de notificaciones -->
+    <div class="card mb-4">
+      <div class="card-head">
+        <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)">🔔 Probar notificaciones</h3>
+      </div>
+      <div class="card-body" style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <p style="font-size:.85rem;color:var(--gray-500);margin:0">
+            Envía una notificación de prueba a tu propio dispositivo para verificar que el sistema funciona.
+            Debes tener la app instalada y haber aceptado los permisos de notificación.
+          </p>
+        </div>
+        <button id="btnTestPush" onclick="testPush()" class="btn btn-primary" style="flex-shrink:0;gap:.5rem">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          Enviar notificación de prueba
+        </button>
+        <div id="pushResult" style="display:none;font-size:.85rem;font-weight:600;padding:.5rem 1rem;border-radius:8px"></div>
+      </div>
+    </div>
+
     <!-- Solicitudes de reprogramación pendientes -->
     <?php if ($solicitudes): ?>
     <div class="card">
@@ -192,6 +212,33 @@ function showAprobar(id, fechaPropuesta) {
     document.getElementById('aprobarFecha').value = fechaPropuesta.substring(0, 16);
   }
   document.getElementById('modalAprobar').style.display = 'flex';
+}
+
+async function testPush() {
+  const btn = document.getElementById('btnTestPush');
+  const res = document.getElementById('pushResult');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  res.style.display = 'none';
+
+  try {
+    const r = await fetch('/api/test_push.php', { method: 'POST' });
+    const data = await r.json();
+    res.style.display = 'block';
+    res.style.background = data.ok ? '#f0fdf4' : '#fef2f2';
+    res.style.color = data.ok ? '#166534' : '#b91c1c';
+    res.style.border = '1px solid ' + (data.ok ? '#86efac' : '#fca5a5');
+    res.textContent = data.msg || (data.ok ? '✅ Enviado' : '❌ Error');
+  } catch(e) {
+    res.style.display = 'block';
+    res.style.background = '#fef2f2';
+    res.style.color = '#b91c1c';
+    res.style.border = '1px solid #fca5a5';
+    res.textContent = '❌ Error de conexión';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg> Enviar notificación de prueba';
 }
 </script>
 
