@@ -240,6 +240,16 @@ $profesiones = [
       </div>
     </div>
 
+    <!-- Acceso tutoriales -->
+    <a href="tutoriales.php" style="display:flex;align-items:center;gap:.85rem;background:linear-gradient(135deg,#1c2f48,#1a3a64);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem;text-decoration:none;color:#fff;">
+      <span style="font-size:1.5rem">📖</span>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:.88rem">Tutoriales y guías</div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.65);margin-top:.1rem">Cómo puntuar, reprogramar, inscribirte y más</div>
+      </div>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;opacity:.6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </a>
+
     <!-- Perfil deportivo -->
     <div class="card mb-3">
       <div class="card-head">
