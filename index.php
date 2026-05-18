@@ -32,7 +32,7 @@ $proximos = $liga ? array_slice(epl_partidos_liga($liga['id'], 'pendiente'), 0, 
         background-color: #0A1421;
         /* Imagen de fondo original restaurada */
         background-image: linear-gradient(to bottom, rgba(10, 20, 33, 0.85) 0%, rgba(28, 47, 72, 0.80) 50%, rgba(10, 20, 33, 0.95) 100%), 
-                          url('https://epleague.cl/wp-content/uploads/2026/03/high-angle-tennis-palette-balls-arrangement-scaled.jpg');
+                          url('https://respaldo.epleague.cl/wp-content/uploads/2026/03/high-angle-tennis-palette-balls-arrangement-scaled.jpg');
         background-size: cover;
         background-position: center center;
         /* scroll: WebViews de IDEs suelen ir mal con background-attachment: fixed + cover */
@@ -291,7 +291,7 @@ $proximos = $liga ? array_slice(epl_partidos_liga($liga['id'], 'pendiente'), 0, 
                 <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-epl-blue/10 rounded-full blur-2xl"></div>
                 
                 <!-- IMAGEN OFICIAL FILOSOFÍA -->
-                <img src="https://epleague.cl/wp-content/uploads/2026/04/Gemini_Generated_Image_hp9omohp9omohp9o-Editado-scaled.png" alt="Comunidad Elite Padel League" class="rounded-3xl shadow-2xl relative z-10 w-full object-cover aspect-[4/3]">
+                <img src="https://respaldo.epleague.cl/wp-content/uploads/2026/04/Gemini_Generated_Image_hp9omohp9omohp9o-Editado-scaled.png" alt="Comunidad Elite Padel League" class="rounded-3xl shadow-2xl relative z-10 w-full object-cover aspect-[4/3]">
                 
                 <!-- Badge Flotante -->
                 <div class="absolute -bottom-8 right-8 bg-white p-5 rounded-2xl shadow-xl z-20 flex items-center gap-4">

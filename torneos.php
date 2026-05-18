@@ -30,7 +30,7 @@ $ligas = $db->query("
     .hero-section {
         background-color: #0A1421;
         background-image: linear-gradient(to bottom, rgba(10, 20, 33, 0.90) 0%, rgba(28, 47, 72, 0.75) 50%, rgba(10, 20, 33, 0.95) 100%), 
-                          url('https://epleague.cl/wp-content/uploads/2026/03/tennis-paddles-balls-arrangement-scaled.jpg');
+                          url('https://respaldo.epleague.cl/wp-content/uploads/2026/03/tennis-paddles-balls-arrangement-scaled.jpg');
         background-size: cover; background-position: center center; width: 100%; display: block;
     }
     .giant-title { line-height: 0.9; letter-spacing: -0.02em; }
