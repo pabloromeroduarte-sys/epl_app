@@ -1,6 +1,6 @@
 <?php
 /**
- * Script para corregir problemas de codificación (doble encode UTF-8)
+ * Script para corregir problemas de codificaciÃ³n (doble encode UTF-8)
  * en la base de datos epleague.
  */
 error_reporting(E_ALL); ini_set('display_errors', 1);
@@ -11,8 +11,8 @@ $db = new PDO('mysql:host=localhost;dbname=epleague;charset=utf8mb4', 'root', ''
 
 function fix_str(?string $s): ?string {
     if (!$s) return $s;
-    // Si detectamos el patrón de doble encoding Ã
-    if (str_contains($s, 'Ã')) {
+    // Si detectamos el patrÃ³n de doble encoding Ã
+    if (str_contains($s, 'Ã')) {
         // Intentamos revertir el doble encoding
         // Esto asume que el string es UTF-8 pero los caracteres originales 
         // fueron interpretados como Latin1 antes de volver a guardarse en UTF-8.
@@ -58,4 +58,4 @@ foreach ($tables as $table => $cols) {
     echo "  -> $count registros corregidos.\n";
 }
 
-echo "\n¡Codificación corregida!\n";
+echo "\nÂ¡CodificaciÃ³n corregida!\n";
