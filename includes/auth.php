@@ -8,7 +8,7 @@ if (!headers_sent()) {
 
 function epl_session_start(): void {
     if (session_status() === PHP_SESSION_NONE) {
-        $lifetime = 30 * 24 * 60 * 60; // 30 días
+        $lifetime = 10 * 365 * 24 * 60 * 60; // ~10 años (sesión permanente)
         ini_set('session.gc_maxlifetime', (string)$lifetime);
         session_start([
             'cookie_httponly' => true,
