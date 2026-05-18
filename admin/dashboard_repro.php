@@ -54,16 +54,21 @@ require_once '../includes/header.php';
 
     <!-- KPIs -->
     <div class="grid-4 mb-4">
+      <?php
+        $es_sin_fecha = fn($p) => !$p['fecha_programada'] || date('Y-m-d', strtotime($p['fecha_programada'])) === '2026-12-31';
+        $n_sin_fecha  = count(array_filter($reprogramados, $es_sin_fecha));
+        $n_con_fecha  = count($reprogramados) - $n_sin_fecha;
+      ?>
       <div class="card" style="border-left:4px solid #ef4444">
         <div class="card-body">
           <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Reprogramados sin fecha</div>
-          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count(array_filter($reprogramados, fn($p) => !$p['fecha_programada'])) ?></div>
+          <div style="font-size:2rem;font-weight:800;color:#dc2626"><?= $n_sin_fecha ?></div>
         </div>
       </div>
       <div class="card" style="border-left:4px solid #f59e0b">
         <div class="card-body">
           <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Reprogramados con fecha</div>
-          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count(array_filter($reprogramados, fn($p) => $p['fecha_programada'])) ?></div>
+          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= $n_con_fecha ?></div>
         </div>
       </div>
       <div class="card" style="border-left:4px solid #3b82f6">
@@ -104,7 +109,7 @@ require_once '../includes/header.php';
           </thead>
           <tbody>
             <?php foreach ($reprogramados as $p): ?>
-            <?php $sin_fecha = !$p['fecha_programada']; ?>
+            <?php $sin_fecha = $es_sin_fecha($p); ?>
             <tr style="border-bottom:1px solid var(--gray-100);<?= $sin_fecha ? 'background:#fff7f7' : '' ?>">
               <td style="padding:.65rem .75rem;font-weight:600;color:var(--navy)"><?= epl_h($p['liga_nombre']) ?></td>
               <td style="padding:.65rem .75rem;text-align:center">
@@ -115,11 +120,11 @@ require_once '../includes/header.php';
               <td style="padding:.65rem .75rem;color:var(--gray-600);font-size:.78rem"><?= epl_h($p['nombre_fecha'] ?: '—') ?></td>
               <td style="padding:.65rem .75rem;font-weight:600"><?= epl_h($p['local_nombre']) ?> <span style="color:var(--gray-400)">vs</span> <?= epl_h($p['visitante_nombre']) ?></td>
               <td style="padding:.65rem .75rem">
-                <?php if ($p['fecha_programada']): ?>
+                <?php if ($sin_fecha): ?>
+                  <span style="background:#fee2e2;color:#dc2626;padding:.2rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700">⚠ Sin fecha</span>
+                <?php else: ?>
                   <div style="font-weight:700;color:#b45309"><?= date('d/m/Y', strtotime($p['fecha_programada'])) ?></div>
                   <div style="font-size:.72rem;color:var(--gray-400)"><?= date('H:i', strtotime($p['fecha_programada'])) ?></div>
-                <?php else: ?>
-                  <span style="background:#fee2e2;color:#dc2626;padding:.2rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700">Sin fecha</span>
                 <?php endif; ?>
               </td>
               <td style="padding:.65rem .75rem;font-size:.78rem;color:var(--gray-600)"><?= epl_h($p['recinto_nombre'] ?: '—') ?></td>
@@ -190,7 +195,8 @@ require_once '../includes/header.php';
                   <?= epl_h($rival) ?>
                 </td>
                 <td style="padding:.4rem .75rem;color:var(--gray-500)">
-                  <?= $pp['fecha_programada'] ? date('d/m H:i', strtotime($pp['fecha_programada'])) : '<span style="color:#9ca3af">TBD</span>' ?>
+                  <?php $_sf = $es_sin_fecha($pp); ?>
+                  <?= !$_sf ? date('d/m H:i', strtotime($pp['fecha_programada'])) : '<span style="color:#dc2626;font-weight:700;font-size:.68rem">Sin fecha</span>' ?>
                 </td>
               </tr>
               <?php endforeach; ?>
