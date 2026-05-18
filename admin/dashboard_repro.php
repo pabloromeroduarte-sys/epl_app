@@ -1,37 +1,58 @@
 <?php
-$page_title = 'Admin — Dashboard de Reprogramaciones';
+$page_title = 'Admin — Reprogramaciones & Pendientes';
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 epl_require_admin();
 
 $db = epl_db();
 
-// 1. Partidos reprogramados sin fecha asignada (los que tienen NULL o son de solicitudes "Rival no responde")
-$repro_sin_fecha = $db->query("
-    SELECT p.*, l.nombre AS liga_nombre, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
-           sr.motivo, sr.created_at AS fecha_solicitud, sr.rival_no_responde
-    FROM partidos p
-    JOIN ligas l ON l.id = p.liga_id
-    JOIN equipos el ON el.id = p.equipo_local_id
-    JOIN equipos ev ON ev.id = p.equipo_visitante_id
-    LEFT JOIN solicitudes_reprogramacion sr ON sr.partido_id = p.id
-    WHERE p.estado = 'reprogramado' AND (p.fecha_programada IS NULL OR sr.rival_no_responde = 1)
-    ORDER BY sr.created_at DESC
-")->fetchAll();
-
-// 2. Partidos reprogramados CON fecha pero pendientes de jugar
-$repro_con_fecha = $db->query("
-    SELECT p.*, l.nombre AS liga_nombre, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
-           r.nombre AS recinto_nombre
+// Todos los reprogramados con info completa
+$reprogramados = $db->query("
+    SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada, p.estado, p.alerta_admin,
+           l.id AS liga_id, l.nombre AS liga_nombre,
+           el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+           r.nombre AS recinto_nombre,
+           sr.motivo, sr.rival_no_responde, sr.created_at AS fecha_solicitud
     FROM partidos p
     JOIN ligas l ON l.id = p.liga_id
     JOIN equipos el ON el.id = p.equipo_local_id
     JOIN equipos ev ON ev.id = p.equipo_visitante_id
     LEFT JOIN recintos r ON r.id = p.recinto_id
     LEFT JOIN solicitudes_reprogramacion sr ON sr.partido_id = p.id
-    WHERE p.estado = 'reprogramado' AND p.fecha_programada IS NOT NULL AND (sr.rival_no_responde = 0 OR sr.rival_no_responde IS NULL)
-    ORDER BY p.fecha_programada ASC
+    WHERE p.estado = 'reprogramado'
+    ORDER BY p.fecha_programada IS NULL DESC, p.fecha_programada ASC
 ")->fetchAll();
+
+// Pendientes por equipo (con detalle de cada partido pendiente)
+$pendientes_raw = $db->query("
+    SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada,
+           l.nombre AS liga_nombre, l.id AS liga_id,
+           el.id AS local_id, el.nombre AS local_nombre,
+           ev.id AS visitante_id, ev.nombre AS visitante_nombre,
+           r.nombre AS recinto_nombre
+    FROM partidos p
+    JOIN ligas l ON l.id = p.liga_id
+    JOIN equipos el ON el.id = p.equipo_local_id
+    JOIN equipos ev ON ev.id = p.equipo_visitante_id
+    LEFT JOIN recintos r ON r.id = p.recinto_id
+    WHERE p.estado = 'pendiente'
+    ORDER BY l.nombre ASC, el.nombre ASC, p.jornada ASC
+")->fetchAll();
+
+// Agrupar pendientes por equipo
+$por_equipo = [];
+foreach ($pendientes_raw as $p) {
+    foreach ([
+        ['id' => $p['local_id'],     'nombre' => $p['local_nombre']],
+        ['id' => $p['visitante_id'], 'nombre' => $p['visitante_nombre']],
+    ] as $eq) {
+        $por_equipo[$eq['id']]['nombre']   = $eq['nombre'];
+        $por_equipo[$eq['id']]['liga']     = $p['liga_nombre'];
+        $por_equipo[$eq['id']]['liga_id']  = $p['liga_id'];
+        $por_equipo[$eq['id']]['partidos'][] = $p;
+    }
+}
+uasort($por_equipo, fn($a,$b) => strcmp($a['nombre'], $b['nombre']));
 
 require_once '../includes/header.php';
 ?>
@@ -41,120 +62,162 @@ require_once '../includes/header.php';
 
   <main class="dash-main">
     <div class="dash-header">
-      <h1 class="dash-title">Dashboard de Reprogramaciones</h1>
-      <p style="color:var(--gray-600);margin-top:.25rem">Control de partidos que necesitan nueva fecha o seguimiento.</p>
+      <h1 class="dash-title">Reprogramaciones &amp; Pendientes</h1>
+      <p style="color:var(--gray-600);margin-top:.25rem">Control de partidos reprogramados y pendientes por equipo.</p>
     </div>
 
-    <div class="grid-2 mb-4">
-        <div class="card" style="border-left:4px solid #ef4444">
-            <div class="card-body">
-                <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Sin Fecha Asignada</div>
-                <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count($repro_sin_fecha) ?></div>
-                <p style="font-size:.75rem;color:var(--gray-500)">Partidos en "limbo" por reprogramación o falta de respuesta.</p>
-            </div>
+    <!-- KPIs -->
+    <div class="grid-4 mb-4">
+      <div class="card" style="border-left:4px solid #ef4444">
+        <div class="card-body">
+          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Reprogramados sin fecha</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count(array_filter($reprogramados, fn($p) => !$p['fecha_programada'])) ?></div>
         </div>
-        <div class="card" style="border-left:4px solid #f59e0b">
-            <div class="card-body">
-                <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Pendientes de Jugar</div>
-                <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count($repro_con_fecha) ?></div>
-                <p style="font-size:.75rem;color:var(--gray-500)">Reprogramaciones ya coordinadas con fecha establecida.</p>
-            </div>
+      </div>
+      <div class="card" style="border-left:4px solid #f59e0b">
+        <div class="card-body">
+          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Reprogramados con fecha</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count(array_filter($reprogramados, fn($p) => $p['fecha_programada'])) ?></div>
         </div>
+      </div>
+      <div class="card" style="border-left:4px solid #3b82f6">
+        <div class="card-body">
+          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Equipos con pendientes</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count($por_equipo) ?></div>
+        </div>
+      </div>
+      <div class="card" style="border-left:4px solid #10b981">
+        <div class="card-body">
+          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Total partidos pendientes</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count($pendientes_raw) ?></div>
+        </div>
+      </div>
     </div>
 
-    <h2 style="font-family:var(--font-head);font-size:.9rem;text-transform:uppercase;color:var(--navy);margin:2rem 0 1rem;display:flex;align-items:center;gap:.5rem">
-        <span style="width:8px;height:8px;background:#ef4444;border-radius:50%"></span>
-        Partidos Críticos (Sin Fecha)
-    </h2>
-    
-    <div class="card">
-        <div style="overflow-x:auto">
-            <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.85rem">
-                <thead>
-                    <tr style="background:var(--gray-100);color:var(--navy)">
-                        <th style="padding:.75rem 1rem;text-align:left">Liga / Jornada</th>
-                        <th style="padding:.75rem 1rem;text-align:left">Partido</th>
-                        <th class="hide-mobile" style="padding:.75rem 1rem;text-align:left">Motivo / Alerta</th>
-                        <th class="hide-mobile" style="padding:.75rem 1rem;text-align:center">Solicitado</th>
-                        <th style="padding:.75rem 1rem;text-align:center">Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($repro_sin_fecha as $p): ?>
-                    <tr style="border-bottom:1px solid var(--gray-100)">
-                        <td data-label="Liga / Jornada" style="padding:.8rem 1rem">
-                            <div style="font-weight:700;color:var(--navy)"><?= epl_h($p['liga_nombre']) ?></div>
-                            <div style="font-size:.7rem;color:var(--gray-400)"><?= epl_h($p['nombre_fecha']) ?></div>
-                        </td>
-                        <td data-label="Partido" style="padding:.8rem 1rem">
-                            <div style="font-weight:600;color:var(--navy)"><?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?></div>
-                        </td>
-                        <td data-label="Motivo / Alerta" class="hide-mobile" style="padding:.8rem 1rem">
-                            <?php if ($p['rival_no_responde']): ?>
-                                <span class="badge badge-walkover" style="font-size:.65rem">RIVAL NO RESPONDE</span>
-                            <?php endif; ?>
-                            <div style="font-size:.75rem;color:var(--gray-600);margin-top:.2rem italic"><?= epl_h($p['motivo'] ?: 'Sin motivo especificado') ?></div>
-                        </td>
-                        <td data-label="Solicitado" class="hide-mobile" style="padding:.8rem 1rem;text-align:center;color:var(--gray-500);font-size:.75rem">
-                            <?= $p['fecha_solicitud'] ? date('d/m/Y', strtotime($p['fecha_solicitud'])) : '—' ?>
-                        </td>
-                        <td data-label="Acción" style="padding:.8rem 1rem;text-align:center">
-                            <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos#p<?= $p['id'] ?>" class="btn btn-sm btn-navy">Gestionar</a>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($repro_sin_fecha)): ?>
-                        <tr><td colspan="5" style="padding:2rem;text-align:center;color:var(--gray-400)">No hay partidos críticos pendientes.</td></tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <h2 style="font-family:var(--font-head);font-size:.9rem;text-transform:uppercase;color:var(--navy);margin:2rem 0 1rem;display:flex;align-items:center;gap:.5rem">
-        <span style="width:8px;height:8px;background:#f59e0b;border-radius:50%"></span>
-        Próximos Partidos Reprogramados
+    <!-- TABLA REPROGRAMADOS -->
+    <h2 style="font-family:var(--font-head);font-size:.9rem;text-transform:uppercase;color:var(--navy);margin:1.5rem 0 .75rem;display:flex;align-items:center;gap:.5rem">
+      <span style="width:8px;height:8px;background:#f59e0b;border-radius:50%;display:inline-block"></span>
+      Todos los Partidos Reprogramados (<?= count($reprogramados) ?>)
     </h2>
 
-    <div class="card">
-        <div style="overflow-x:auto">
-            <table class="admin-table-cards" style="width:100%;border-collapse:collapse;font-size:.85rem">
-                <thead>
-                    <tr style="background:var(--gray-100);color:var(--navy)">
-                        <th style="padding:.75rem 1rem;text-align:left">Nueva Fecha</th>
-                        <th style="padding:.75rem 1rem;text-align:left">Partido</th>
-                        <th class="hide-mobile" style="padding:.75rem 1rem;text-align:left">Liga</th>
-                        <th class="hide-mobile" style="padding:.75rem 1rem;text-align:left">Cancha</th>
-                        <th style="padding:.75rem 1rem;text-align:center">Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($repro_con_fecha as $p): ?>
-                    <tr style="border-bottom:1px solid var(--gray-100)">
-                        <td data-label="Nueva Fecha" style="padding:.8rem 1rem">
-                            <div style="font-weight:700;color:var(--gold)"><?= date('d/m H:i', strtotime($p['fecha_programada'])) ?></div>
-                        </td>
-                        <td data-label="Partido" style="padding:.8rem 1rem">
-                            <div style="font-weight:600;color:var(--navy)"><?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?></div>
-                        </td>
-                        <td data-label="Liga" class="hide-mobile" style="padding:.8rem 1rem;color:var(--gray-600)">
-                            <?= epl_h($p['liga_nombre']) ?>
-                        </td>
-                        <td data-label="Cancha" class="hide-mobile" style="padding:.8rem 1rem;font-size:.75rem;color:var(--gray-500)">
-                            <?= epl_h($p['recinto_nombre'] ?: 'No asignada') ?>
-                        </td>
-                        <td data-label="Acción" style="padding:.8rem 1rem;text-align:center">
-                            <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos#p<?= $p['id'] ?>" class="btn btn-sm" style="border:1px solid var(--gray-200)">Ver</a>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($repro_con_fecha)): ?>
-                        <tr><td colspan="5" style="padding:2rem;text-align:center;color:var(--gray-400)">No hay reprogramaciones con fecha futura.</td></tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+    <div class="card mb-4">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+          <thead>
+            <tr style="background:var(--navy);color:#fff">
+              <th style="padding:.6rem .75rem;text-align:left">Liga</th>
+              <th style="padding:.6rem .75rem;text-align:center">Jornada</th>
+              <th style="padding:.6rem .75rem;text-align:left">Nombre Fecha</th>
+              <th style="padding:.6rem .75rem;text-align:left">Partido</th>
+              <th style="padding:.6rem .75rem;text-align:left">Fecha Prog.</th>
+              <th style="padding:.6rem .75rem;text-align:left">Cancha</th>
+              <th style="padding:.6rem .75rem;text-align:left">Motivo</th>
+              <th style="padding:.6rem .75rem;text-align:center">Estado</th>
+              <th style="padding:.6rem .75rem;text-align:center">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($reprogramados as $p): ?>
+            <?php $sin_fecha = !$p['fecha_programada']; ?>
+            <tr style="border-bottom:1px solid var(--gray-100);<?= $sin_fecha ? 'background:#fff7f7' : '' ?>">
+              <td style="padding:.65rem .75rem;font-weight:600;color:var(--navy)"><?= epl_h($p['liga_nombre']) ?></td>
+              <td style="padding:.65rem .75rem;text-align:center">
+                <?php if ($p['jornada']): ?>
+                  <span style="background:#e0e7ff;color:#3730a3;padding:.15rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700">J<?= $p['jornada'] ?></span>
+                <?php else: ?>—<?php endif; ?>
+              </td>
+              <td style="padding:.65rem .75rem;color:var(--gray-600);font-size:.78rem"><?= epl_h($p['nombre_fecha'] ?: '—') ?></td>
+              <td style="padding:.65rem .75rem;font-weight:600"><?= epl_h($p['local_nombre']) ?> <span style="color:var(--gray-400)">vs</span> <?= epl_h($p['visitante_nombre']) ?></td>
+              <td style="padding:.65rem .75rem">
+                <?php if ($p['fecha_programada']): ?>
+                  <div style="font-weight:700;color:#b45309"><?= date('d/m/Y', strtotime($p['fecha_programada'])) ?></div>
+                  <div style="font-size:.72rem;color:var(--gray-400)"><?= date('H:i', strtotime($p['fecha_programada'])) ?></div>
+                <?php else: ?>
+                  <span style="background:#fee2e2;color:#dc2626;padding:.2rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700">Sin fecha</span>
+                <?php endif; ?>
+              </td>
+              <td style="padding:.65rem .75rem;font-size:.78rem;color:var(--gray-600)"><?= epl_h($p['recinto_nombre'] ?: '—') ?></td>
+              <td style="padding:.65rem .75rem;font-size:.75rem;color:var(--gray-500);max-width:160px">
+                <?php if ($p['rival_no_responde']): ?>
+                  <span style="background:#fee2e2;color:#dc2626;padding:.1rem .4rem;border-radius:4px;font-size:.68rem;font-weight:700;display:block;margin-bottom:.2rem">RIVAL NO RESPONDE</span>
+                <?php endif; ?>
+                <?= epl_h(mb_strimwidth($p['motivo'] ?? '', 0, 60, '…')) ?>
+              </td>
+              <td style="padding:.65rem .75rem;text-align:center">
+                <span style="background:#dbeafe;color:#1d4ed8;padding:.2rem .55rem;border-radius:99px;font-size:.68rem;font-weight:700">Reprogramado</span>
+              </td>
+              <td style="padding:.65rem .75rem;text-align:center">
+                <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn btn-sm btn-navy" style="font-size:.7rem;padding:.25rem .6rem">Gestionar</a>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+            <?php if (empty($reprogramados)): ?>
+              <tr><td colspan="9" style="padding:2rem;text-align:center;color:var(--gray-400)">No hay partidos reprogramados.</td></tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
     </div>
+
+    <!-- PENDIENTES POR EQUIPO -->
+    <h2 style="font-family:var(--font-head);font-size:.9rem;text-transform:uppercase;color:var(--navy);margin:2rem 0 .75rem;display:flex;align-items:center;gap:.5rem">
+      <span style="width:8px;height:8px;background:#3b82f6;border-radius:50%;display:inline-block"></span>
+      Partidos Pendientes por Equipo
+    </h2>
+
+    <?php if (empty($por_equipo)): ?>
+      <div class="card"><div class="card-body" style="text-align:center;color:var(--gray-400);padding:2rem">No hay partidos pendientes.</div></div>
+    <?php else: ?>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1rem">
+      <?php foreach ($por_equipo as $eq_id => $eq): ?>
+      <div class="card" style="border-top:3px solid var(--navy)">
+        <div style="padding:.75rem 1rem .5rem;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:800;font-size:.9rem;color:var(--navy)"><?= epl_h($eq['nombre']) ?></div>
+            <div style="font-size:.72rem;color:var(--gray-400)"><?= epl_h($eq['liga']) ?></div>
+          </div>
+          <span style="background:#dbeafe;color:#1e40af;font-weight:700;font-size:.75rem;padding:.2rem .6rem;border-radius:99px"><?= count($eq['partidos']) ?> pendiente<?= count($eq['partidos'])>1?'s':'' ?></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:.75rem">
+            <thead>
+              <tr style="background:var(--gray-100)">
+                <th style="padding:.4rem .75rem;text-align:center;color:var(--gray-500)">Jornada</th>
+                <th style="padding:.4rem .75rem;text-align:left;color:var(--gray-500)">Rival</th>
+                <th style="padding:.4rem .75rem;text-align:left;color:var(--gray-500)">Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($eq['partidos'] as $pp): ?>
+              <?php
+                $rival = ($pp['local_id'] == $eq_id) ? $pp['visitante_nombre'] : $pp['local_nombre'];
+                $es_local = ($pp['local_id'] == $eq_id);
+              ?>
+              <tr style="border-bottom:1px solid var(--gray-100)">
+                <td style="padding:.4rem .75rem;text-align:center">
+                  <?php if ($pp['jornada']): ?>
+                    <span style="background:#e0e7ff;color:#3730a3;padding:.1rem .4rem;border-radius:99px;font-size:.68rem;font-weight:700">J<?= $pp['jornada'] ?></span>
+                  <?php else: ?>—<?php endif; ?>
+                </td>
+                <td style="padding:.4rem .75rem">
+                  <span style="font-size:.65rem;color:var(--gray-400);margin-right:.25rem"><?= $es_local ? 'L' : 'V' ?></span>
+                  <?= epl_h($rival) ?>
+                </td>
+                <td style="padding:.4rem .75rem;color:var(--gray-500)">
+                  <?= $pp['fecha_programada'] ? date('d/m H:i', strtotime($pp['fecha_programada'])) : '<span style="color:#9ca3af">TBD</span>' ?>
+                </td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:.5rem .75rem;text-align:right">
+          <a href="liga_detalle.php?id=<?= $eq['liga_id'] ?>&tab=partidos" style="font-size:.72rem;color:var(--navy)">Ver en liga →</a>
+        </div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 
   </main>
 </div>
