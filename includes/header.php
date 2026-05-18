@@ -26,34 +26,43 @@ $active  = $active_nav ?? '';
   <meta name="apple-mobile-web-app-title" content="EPL">
   <meta name="theme-color" content="#0a1632">
   <link rel="apple-touch-icon" href="/assets/img/logo-epl-square.png">
-  <!-- OneSignal Push -->
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <!-- Web Push nativo -->
   <script>
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-      await OneSignal.init({
-        appId: "<?= $_ENV['ONESIGNAL_APP_ID'] ?? '' ?>",
-        serviceWorkerPath: "/OneSignalSDKWorker.js",
-        notifyButton: { enable: false },
-        promptOptions: {
-          slidedown: {
-            prompts: [{
-              type: "push",
-              autoPrompt: true,
-              text: {
-                actionMessage: "Recibe notificaciones de tus partidos",
-                acceptButton: "Permitir",
-                cancelButton: "Ahora no"
-              },
-              delay: { pageViews: 1, timeDelay: 3 }
-            }]
-          }
-        }
+  (function(){
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    const VAPID_PUBLIC = "<?= htmlspecialchars($_ENV['VAPID_PUBLIC_KEY'] ?? '', ENT_QUOTES) ?>";
+    if (!VAPID_PUBLIC) return;
+
+    function urlB64ToUint8Array(b64) {
+      const pad = '='.repeat((4 - b64.length % 4) % 4);
+      const raw = atob((b64 + pad).replace(/-/g,'+').replace(/_/g,'/'));
+      return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+    }
+
+    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+      reg.pushManager.getSubscription().then(function(existing) {
+        if (existing) return; // ya suscrito
+        // Solo pedir permiso si el usuario está logueado
+        <?php $jj = epl_jugador_actual(); if ($jj): ?>
+        setTimeout(function() {
+          Notification.requestPermission().then(function(perm) {
+            if (perm !== 'granted') return;
+            reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC)
+            }).then(function(sub) {
+              fetch('/push_subscribe.php', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(sub)
+              });
+            }).catch(function(){});
+          });
+        }, 3000);
+        <?php endif; ?>
       });
-      <?php $j = epl_jugador_actual(); if ($j): ?>
-      await OneSignal.login("<?= (int)$j['id'] ?>");
-      <?php endif; ?>
     });
+  })();
   </script>
   
   <!-- 1. CEREBRO DE DISEÑO Y FUENTES -->
