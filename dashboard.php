@@ -81,9 +81,27 @@ if ($equipo) {
     <script>
     (function() {
       if (localStorage.getItem('push_dismissed')) return;
+      if (localStorage.getItem('push_subscribed')) return;  // ya activó antes
       if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-      if (Notification.permission === 'granted') return; // ya tiene permiso
       if (Notification.permission === 'denied') return;  // ya denegó
+
+      // Si ya tiene permiso, verificar si tiene suscripción activa
+      if (Notification.permission === 'granted') {
+        navigator.serviceWorker.ready.then(function(reg) {
+          reg.pushManager.getSubscription().then(function(sub) {
+            if (sub) {
+              // Ya suscrito, guardar y no mostrar banner
+              localStorage.setItem('push_subscribed', '1');
+            } else {
+              // Tiene permiso pero no suscripción: mostrar banner para re-suscribir
+              document.getElementById('bannerPush').style.display = 'flex';
+            }
+          });
+        });
+        return;
+      }
+
+      // permission === 'default': mostrar banner
       document.getElementById('bannerPush').style.display = 'flex';
     })();
 
@@ -105,11 +123,14 @@ if ($equipo) {
             userVisibleOnly: true,
             applicationServerKey: urlB64(VAPID_PUBLIC)
           });
+        }
+        if (sub) {
           await fetch('/push_subscribe.php', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify(sub)
           });
+          localStorage.setItem('push_subscribed', '1');
         }
         banner.innerHTML = '<span style="color:#86efac;font-size:.85rem;font-weight:700">✅ ¡Notificaciones activadas!</span>';
         setTimeout(() => banner.style.display = 'none', 3000);
