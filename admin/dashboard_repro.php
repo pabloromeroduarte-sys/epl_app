@@ -27,9 +27,24 @@ $reprogramados = $db->query("
 // Helper: ¿es sin fecha? (NULL o placeholder 31/12/2026)
 $es_sin_fecha = fn($p) => !$p['fecha_programada'] || date('Y-m-d', strtotime($p['fecha_programada'])) === '2026-12-31';
 
+// Helper: ¿ya venció? (tiene fecha real, está en el pasado y sigue sin jugarse)
+$hoy = new DateTime();
+$es_vencida = fn($p) => !$es_sin_fecha($p) && new DateTime($p['fecha_programada']) < $hoy;
+
 // KPI counts
 $n_sin_fecha = count(array_filter($reprogramados, $es_sin_fecha));
 $n_con_fecha = count($reprogramados) - $n_sin_fecha;
+$n_vencidas  = count(array_filter($reprogramados, $es_vencida));
+$n_proximas  = $n_con_fecha - $n_vencidas; // con fecha futura
+
+// Porcentaje de atraso = vencidas / total * 100
+$total = count($reprogramados);
+$pct_atraso = $total > 0 ? round(($n_vencidas / $total) * 100) : 0;
+
+// Total partidos jugados en ligas activas (para contexto)
+$total_jugados = (int)$db->query("SELECT COUNT(*) FROM partidos WHERE estado='jugado'")->fetchColumn();
+$total_partidos = (int)$db->query("SELECT COUNT(*) FROM partidos")->fetchColumn();
+$pct_avance = $total_partidos > 0 ? round(($total_jugados / $total_partidos) * 100) : 0;
 
 // Reprogramados por equipo, ordenados por cantidad DESC
 $por_equipo = [];
@@ -66,6 +81,65 @@ require_once '../includes/header.php';
 
     <!-- Filtro activo -->
     <div id="filtroActivo" style="display:none;margin:.5rem 0 1rem;padding:.5rem .9rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:.78rem;color:#1d4ed8;font-weight:600"></div>
+
+    <!-- PANEL DE ATRASO -->
+    <div class="card mb-4" style="border:2px solid <?= $pct_atraso >= 50 ? '#dc2626' : ($pct_atraso >= 25 ? '#f59e0b' : '#10b981') ?>">
+      <div class="card-body" style="padding:1rem 1.25rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem">
+
+          <!-- Bloque principal atraso -->
+          <div style="flex:1;min-width:220px">
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);letter-spacing:.05em;margin-bottom:.4rem">Estado de Reprogramaciones</div>
+            <div style="display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap">
+              <span style="font-size:2.2rem;font-weight:900;color:<?= $pct_atraso >= 50 ? '#dc2626' : ($pct_atraso >= 25 ? '#b45309' : '#059669') ?>"><?= $pct_atraso ?>%</span>
+              <span style="font-size:.8rem;color:var(--gray-500);font-weight:600">de atraso</span>
+            </div>
+            <!-- Barra de atraso -->
+            <div style="margin-top:.6rem;height:8px;background:#f3f4f6;border-radius:99px;overflow:hidden">
+              <div style="height:100%;width:<?= $pct_atraso ?>%;background:<?= $pct_atraso >= 50 ? '#dc2626' : ($pct_atraso >= 25 ? '#f59e0b' : '#10b981') ?>;border-radius:99px;transition:width .4s"></div>
+            </div>
+            <div style="margin-top:.4rem;font-size:.72rem;color:var(--gray-500)">
+              <strong style="color:<?= $pct_atraso >= 50 ? '#dc2626' : ($pct_atraso >= 25 ? '#b45309' : '#059669') ?>"><?= $n_vencidas ?></strong> de <?= $total ?> reprogramados ya deberían haberse jugado
+            </div>
+          </div>
+
+          <!-- Desglose -->
+          <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center">
+            <div class="kpi-card" id="kpi-vencidas" onclick="filtrarKpi('vencidas')" style="text-align:center;cursor:pointer;padding:.5rem .75rem;border-radius:8px;transition:all .15s;min-width:80px">
+              <div style="font-size:1.6rem;font-weight:900;color:#dc2626"><?= $n_vencidas ?></div>
+              <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;color:#9ca3af">Vencidas 🔴</div>
+              <div style="font-size:.6rem;color:#9ca3af">fecha pasó</div>
+            </div>
+            <div class="kpi-card" id="kpi-proximas" onclick="filtrarKpi('proximas')" style="text-align:center;cursor:pointer;padding:.5rem .75rem;border-radius:8px;transition:all .15s;min-width:80px">
+              <div style="font-size:1.6rem;font-weight:900;color:#2563eb"><?= $n_proximas ?></div>
+              <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;color:#9ca3af">Próximas 📅</div>
+              <div style="font-size:.6rem;color:#9ca3af">fecha futura</div>
+            </div>
+            <div style="text-align:center;padding:.5rem .75rem;border-radius:8px;min-width:80px">
+              <div style="font-size:1.6rem;font-weight:900;color:#dc2626"><?= $n_sin_fecha ?></div>
+              <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;color:#9ca3af">Sin fecha ⚠</div>
+              <div style="font-size:.6rem;color:#9ca3af">sin agendar</div>
+            </div>
+          </div>
+
+          <!-- Avance general -->
+          <div style="flex:1;min-width:180px;border-left:1px solid var(--gray-100);padding-left:1.25rem">
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);letter-spacing:.05em;margin-bottom:.4rem">Avance General Liga</div>
+            <div style="display:flex;align-items:baseline;gap:.5rem">
+              <span style="font-size:2.2rem;font-weight:900;color:var(--navy)"><?= $pct_avance ?>%</span>
+              <span style="font-size:.8rem;color:var(--gray-500);font-weight:600">jugados</span>
+            </div>
+            <div style="margin-top:.6rem;height:8px;background:#f3f4f6;border-radius:99px;overflow:hidden">
+              <div style="height:100%;width:<?= $pct_avance ?>%;background:var(--navy);border-radius:99px"></div>
+            </div>
+            <div style="margin-top:.4rem;font-size:.72rem;color:var(--gray-500)">
+              <strong><?= $total_jugados ?></strong> jugados de <strong><?= $total_partidos ?></strong> totales
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
 
     <!-- KPIs clickeables -->
     <div class="grid-4 mb-4">
@@ -144,11 +218,13 @@ require_once '../includes/header.php';
           </thead>
           <tbody id="tablaBody">
             <?php foreach ($reprogramados as $p): ?>
-            <?php $sin_fecha = $es_sin_fecha($p); ?>
+            <?php $sin_fecha = $es_sin_fecha($p); $vencida = $es_vencida($p); ?>
             <tr class="repro-row"
                 data-sf="<?= $sin_fecha ? '1' : '0' ?>"
+                data-vencida="<?= $vencida ? '1' : '0' ?>"
+                data-proxima="<?= (!$sin_fecha && !$vencida) ? '1' : '0' ?>"
                 data-eq="<?= $p['local_id'] ?>,<?= $p['visitante_id'] ?>"
-                style="border-bottom:1px solid var(--gray-100);<?= $sin_fecha ? 'background:#fff7f7' : '' ?>">
+                style="border-bottom:1px solid var(--gray-100);<?= $sin_fecha ? 'background:#fff7f7' : ($vencida ? 'background:#fff0f0' : '') ?>">
               <td style="padding:.65rem .75rem;font-weight:600;color:var(--navy)"><?= epl_h($p['liga_nombre']) ?></td>
               <td style="padding:.65rem .75rem;text-align:center">
                 <?php if ($p['jornada']): ?>
@@ -210,6 +286,10 @@ function aplicarFiltro() {
       show = row.dataset.sf === '1';
     } else if (filtroActual === 'con-fecha') {
       show = row.dataset.sf === '0';
+    } else if (filtroActual === 'vencidas') {
+      show = row.dataset.vencida === '1';
+    } else if (filtroActual === 'proximas') {
+      show = row.dataset.proxima === '1';
     } else if (filtroActual && filtroActual.startsWith('eq:')) {
       var eqId = filtroActual.split(':')[1];
       var eqs = row.dataset.eq.split(',');
@@ -231,6 +311,14 @@ function aplicarFiltro() {
     fa.style.display = 'block';
     fa.innerHTML = '⚠ Mostrando solo partidos <strong>sin fecha programada</strong> (' + visible + ')';
     titulo.textContent = 'Sin Fecha (' + visible + ')';
+  } else if (filtroActual === 'vencidas') {
+    fa.style.display = 'block';
+    fa.innerHTML = '🔴 Mostrando solo partidos <strong>vencidos</strong> — fecha ya pasó y siguen sin jugarse (' + visible + ')';
+    titulo.textContent = 'Vencidos (' + visible + ')';
+  } else if (filtroActual === 'proximas') {
+    fa.style.display = 'block';
+    fa.innerHTML = '📅 Mostrando solo partidos <strong>con fecha futura</strong> (' + visible + ')';
+    titulo.textContent = 'Próximos (' + visible + ')';
   } else if (filtroActual === 'con-fecha') {
     fa.style.display = 'block';
     fa.innerHTML = '📅 Mostrando solo partidos <strong>con fecha programada</strong> (' + visible + ')';
