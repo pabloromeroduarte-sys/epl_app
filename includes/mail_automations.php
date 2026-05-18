@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 /**
- * Automatizaciones de correo: bienvenida, cumpleaños.
- * Lee las plantillas desde la tabla `email_automatizaciones`.
- * Requiere mail.php y functions.php cargados.
+ * Motor de automatizaciones de correo.
+ * Lee las plantillas activas desde `email_automatizaciones`.
+ * Requiere mail.php y functions.php ya cargados.
  */
 
 /**
- * Sustituye variables {{nombre}}, {{apellido}}, {{email}} en una plantilla.
+ * Sustituye {{variable}} en una plantilla.
  * @param array<string,string> $vars
  */
 function epl_auto_render(string $tpl, array $vars): string {
@@ -18,99 +18,81 @@ function epl_auto_render(string $tpl, array $vars): string {
 }
 
 /**
- * Obtiene la automatización activa para un tipo de disparo.
- * @return array<string,mixed>|null
+ * Despacha todas las automatizaciones activas para un trigger dado.
+ * Maneja destinatario: 'jugador', 'admins', 'ambos'.
+ *
+ * @param string             $trigger  'registro' | 'cumpleanos'
+ * @param array<string,mixed> $jugador  Debe tener nombre, apellido, email
  */
-function epl_auto_obtener(string $trigger_tipo): ?array {
-    static $cache = [];
-    if (array_key_exists($trigger_tipo, $cache)) return $cache[$trigger_tipo];
+function epl_auto_dispatch(string $trigger, array $jugador): void {
+    if (!epl_smtp_habilitado()) return;
 
     $db = epl_db();
-    // Aseguramos que la tabla exista sin error fatal si se llama antes que el admin
     try {
-        $st = $db->prepare("SELECT * FROM email_automatizaciones WHERE trigger_tipo=? AND activo=1 LIMIT 1");
-        $st->execute([$trigger_tipo]);
-        $row = $st->fetch(PDO::FETCH_ASSOC) ?: null;
+        $st = $db->prepare("SELECT * FROM email_automatizaciones WHERE trigger_tipo=? AND activo=1");
+        $st->execute([$trigger]);
+        $autos = $st->fetchAll(PDO::FETCH_ASSOC);
     } catch (Throwable $e) {
-        $row = null;
+        error_log('epl_auto_dispatch: ' . $e->getMessage());
+        return;
     }
-
-    $cache[$trigger_tipo] = $row;
-    return $row;
-}
-
-/**
- * Envía el correo de bienvenida al nuevo jugador.
- * @param array<string,mixed> $jugador  Debe tener: nombre, apellido, email
- */
-function epl_mail_bienvenida(array $jugador): void {
-    if (!epl_smtp_habilitado()) return;
-
-    $auto = epl_auto_obtener('bienvenida');
-    if (!$auto) return; // Sin automatización activa para este tipo
-
-    $email    = trim((string)($jugador['email']    ?? ''));
-    $nombre   = trim((string)($jugador['nombre']   ?? ''));
-    $apellido = trim((string)($jugador['apellido'] ?? ''));
-    if (!$email) return;
-
-    $vars = ['nombre' => $nombre, 'apellido' => $apellido, 'email' => $email];
-    $asuntoFinal = epl_auto_render($auto['asunto'], $vars);
-    $cuerpoFinal = epl_auto_render($auto['cuerpo'], $vars);
-    $html = epl_mail_plantilla($asuntoFinal, $cuerpoFinal);
-    epl_mail_enviar($email, $asuntoFinal, $html, trim($nombre . ' ' . $apellido));
-}
-
-/**
- * Envía el correo de cumpleaños al jugador.
- * @param array<string,mixed> $jugador
- */
-function epl_mail_cumpleanos_jugador(array $jugador): void {
-    if (!epl_smtp_habilitado()) return;
-
-    $auto = epl_auto_obtener('cumpleanos_jugador');
-    if (!$auto) return;
-
-    $email    = trim((string)($jugador['email']    ?? ''));
-    $nombre   = trim((string)($jugador['nombre']   ?? ''));
-    $apellido = trim((string)($jugador['apellido'] ?? ''));
-    if (!$email) return;
-
-    $vars = ['nombre' => $nombre, 'apellido' => $apellido, 'email' => $email];
-    $asuntoFinal = epl_auto_render($auto['asunto'], $vars);
-    $cuerpoFinal = epl_auto_render($auto['cuerpo'], $vars);
-    $html = epl_mail_plantilla($asuntoFinal, $cuerpoFinal);
-    epl_mail_enviar($email, $asuntoFinal, $html, trim($nombre . ' ' . $apellido));
-}
-
-/**
- * Envía aviso de cumpleaños a todos los administradores.
- * @param array<string,mixed> $jugador  El jugador que cumple años
- */
-function epl_mail_cumpleanos_admins(array $jugador): void {
-    if (!epl_smtp_habilitado()) return;
-
-    $auto = epl_auto_obtener('cumpleanos_admin');
-    if (!$auto) return;
+    if (empty($autos)) return;
 
     $nombre   = trim((string)($jugador['nombre']   ?? ''));
     $apellido = trim((string)($jugador['apellido'] ?? ''));
     $email    = trim((string)($jugador['email']    ?? ''));
+    $vars     = ['nombre' => $nombre, 'apellido' => $apellido, 'email' => $email];
 
-    $db = epl_db();
-    $admins = $db->query("SELECT email, nombre FROM jugadores WHERE rol='admin' AND estado='activo'")->fetchAll(PDO::FETCH_ASSOC);
-    if (empty($admins)) return;
+    foreach ($autos as $auto) {
+        $asuntoF = epl_auto_render($auto['asunto'], $vars);
+        $cuerpoF = epl_auto_render($auto['cuerpo'], $vars);
+        $html    = epl_mail_plantilla($asuntoF, $cuerpoF);
+        $dest    = $auto['destinatario'] ?? 'jugador';
 
-    $vars = ['nombre' => $nombre, 'apellido' => $apellido, 'email' => $email];
-    $asuntoFinal = epl_auto_render($auto['asunto'], $vars);
-    $cuerpoFinal = epl_auto_render($auto['cuerpo'], $vars);
-    $html = epl_mail_plantilla($asuntoFinal, $cuerpoFinal);
+        // Enviar al jugador
+        if (in_array($dest, ['jugador', 'ambos'], true) && $email) {
+            epl_mail_enviar($email, $asuntoF, $html, trim($nombre . ' ' . $apellido));
+        }
 
-    foreach ($admins as $admin) {
-        $adminEmail  = trim((string)($admin['email']  ?? ''));
-        $adminNombre = trim((string)($admin['nombre'] ?? ''));
-        if ($adminEmail) {
-            epl_mail_enviar($adminEmail, $asuntoFinal, $html, $adminNombre);
+        // Enviar a admins
+        if (in_array($dest, ['admins', 'ambos'], true)) {
+            try {
+                $admins = $db->query(
+                    "SELECT email, nombre FROM jugadores WHERE rol='admin' AND estado='activo' AND email IS NOT NULL AND email<>''"
+                )->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($admins as $adm) {
+                    $admEmail  = trim((string)($adm['email']  ?? ''));
+                    $admNombre = trim((string)($adm['nombre'] ?? ''));
+                    if ($admEmail) {
+                        epl_mail_enviar($admEmail, $asuntoF, $html, $admNombre);
+                    }
+                }
+            } catch (Throwable $e) {
+                error_log('epl_auto_dispatch admins: ' . $e->getMessage());
+            }
         }
     }
+}
+
+// ─── Helpers de conveniencia (usados en registro.php y cron) ─────────────────
+
+/** @param array<string,mixed> $jugador */
+function epl_mail_bienvenida(array $jugador): void {
+    epl_auto_dispatch('registro', $jugador);
+}
+
+/** @param array<string,mixed> $jugador */
+function epl_mail_cumpleanos_jugador(array $jugador): void {
+    epl_auto_dispatch('cumpleanos', $jugador);
+}
+
+/**
+ * Mantiene compatibilidad: el cron llama esto pero ahora
+ * epl_auto_dispatch ya maneja destinatario=admins / ambos.
+ * Aquí solo despachamos si hay una auto específica para admins.
+ * @param array<string,mixed> $jugador
+ */
+function epl_mail_cumpleanos_admins(array $jugador): void {
+    // No-op: epl_mail_cumpleanos_jugador ya cubre destinatario=ambos y destinatario=admins.
+    // Se mantiene para no romper llamadas existentes en cron_cumpleanos.php.
 }
