@@ -15,7 +15,7 @@ $cur = basename($_SERVER['PHP_SELF']);
       <a href="ligas.php"        class="dash-nav-link <?= in_array($cur,['ligas.php','liga_detalle.php'])?'active':'' ?>">Ligas / Torneos</a>
       <a href="recintos.php"    class="dash-nav-link <?= $cur==='recintos.php'?'active':'' ?>" style="padding-left:1.75rem;font-size:.8rem;color:rgba(255,255,255,.65)">↳ Recintos</a>
       <a href="partidos.php"     class="dash-nav-link <?= $cur==='partidos.php'    ?'active':'' ?>">Partidos</a>
-      <a href="dashboard_repro.php" class="dash-nav-link <?= $cur==='dashboard_repro.php'?'active':'' ?>" style="color:var(--gold)">Reprogramaciones</a>
+      <a href="dashboard_repro.php" class="dash-nav-link <?= $cur==='dashboard_repro.php'?'active':'' ?>">Reprogramaciones</a>
       <a href="inscripciones.php" class="dash-nav-link <?= $cur==='inscripciones.php'?'active':'' ?>">Inscripciones</a>
       <a href="suplentes.php"    class="dash-nav-link <?= $cur==='suplentes.php'   ?'active':'' ?>">Suplentes</a>
       <a href="erp_financiero.php" class="dash-nav-link <?= $cur==='erp_financiero.php'?'active':'' ?>" style="color:var(--gold)">💰 ERP Financiero</a>
