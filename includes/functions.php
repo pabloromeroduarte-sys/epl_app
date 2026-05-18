@@ -308,28 +308,43 @@ function epl_recalcular_clasificacion(int $liga_id): void {
         $stats[$eid] = ['pj'=>0,'pg'=>0,'pp'=>0,'gf'=>0,'gc'=>0,'pts'=>0];
     }
 
-    // Leer partidos jugados
-    $partidos = $db->prepare("SELECT * FROM partidos WHERE liga_id = ? AND estado = 'jugado'");
+    // Obtener puntos configurados de la liga
+    $liga_cfg = $db->prepare("SELECT puntos_1, puntos_2 FROM ligas WHERE id = ?");
+    $liga_cfg->execute([$liga_id]);
+    $lcfg = $liga_cfg->fetch();
+    $pts_ganador = (int)($lcfg['puntos_1'] ?? 3);
+    $pts_perdedor = (int)($lcfg['puntos_2'] ?? 0);
+
+    // Leer partidos resueltos: jugado, walkover y no_presentado cuentan como PJ
+    $partidos = $db->prepare("
+        SELECT * FROM partidos
+        WHERE liga_id = ? AND estado IN ('jugado','walkover','no_presentado')
+    ");
     $partidos->execute([$liga_id]);
     foreach ($partidos->fetchAll() as $p) {
         $lo = $p['equipo_local_id'];
         $vi = $p['equipo_visitante_id'];
-        $gf = (int)($p['games_s1_local'] ?? 0) + (int)($p['games_s2_local'] ?? 0) + (int)($p['games_s3_local'] ?? 0);
-        $gc = (int)($p['games_s1_visitante'] ?? 0) + (int)($p['games_s2_visitante'] ?? 0) + (int)($p['games_s3_visitante'] ?? 0);
 
         if (!isset($stats[$lo])) $stats[$lo] = ['pj'=>0,'pg'=>0,'pp'=>0,'gf'=>0,'gc'=>0,'pts'=>0];
         if (!isset($stats[$vi])) $stats[$vi] = ['pj'=>0,'pg'=>0,'pp'=>0,'gf'=>0,'gc'=>0,'pts'=>0];
 
         $stats[$lo]['pj']++; $stats[$vi]['pj']++;
-        $stats[$lo]['gf'] += $gf; $stats[$lo]['gc'] += $gc;
-        $stats[$vi]['gf'] += $gc; $stats[$vi]['gc'] += $gf;
 
+        // Games solo para partidos jugados normalmente
+        if ($p['estado'] === 'jugado') {
+            $gf = (int)($p['games_s1_local'] ?? 0) + (int)($p['games_s2_local'] ?? 0) + (int)($p['games_s3_local'] ?? 0);
+            $gc = (int)($p['games_s1_visitante'] ?? 0) + (int)($p['games_s2_visitante'] ?? 0) + (int)($p['games_s3_visitante'] ?? 0);
+            $stats[$lo]['gf'] += $gf; $stats[$lo]['gc'] += $gc;
+            $stats[$vi]['gf'] += $gc; $stats[$vi]['gc'] += $gf;
+        }
+
+        // Puntos para el ganador (aplica a jugado, walkover y no_presentado)
         if ($p['ganador_id'] == $lo) {
-            $stats[$lo]['pg']++; $stats[$lo]['pts'] += 3;
-            $stats[$vi]['pp']++;
+            $stats[$lo]['pg']++; $stats[$lo]['pts'] += $pts_ganador;
+            $stats[$vi]['pp']++;  $stats[$vi]['pts'] += $pts_perdedor;
         } elseif ($p['ganador_id'] == $vi) {
-            $stats[$vi]['pg']++; $stats[$vi]['pts'] += 3;
-            $stats[$lo]['pp']++;
+            $stats[$vi]['pg']++; $stats[$vi]['pts'] += $pts_ganador;
+            $stats[$lo]['pp']++;  $stats[$lo]['pts'] += $pts_perdedor;
         }
     }
 
