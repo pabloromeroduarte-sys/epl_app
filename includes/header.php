@@ -40,27 +40,23 @@ $active  = $active_nav ?? '';
     }
 
     navigator.serviceWorker.register('/sw.js').then(function(reg) {
-      reg.pushManager.getSubscription().then(function(existing) {
-        if (existing) return; // ya suscrito
-        // Solo pedir permiso si el usuario está logueado
-        <?php $jj = epl_jugador_actual(); if ($jj): ?>
-        setTimeout(function() {
-          Notification.requestPermission().then(function(perm) {
-            if (perm !== 'granted') return;
-            reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC)
-            }).then(function(sub) {
-              fetch('/push_subscribe.php', {
-                method: 'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify(sub)
-              });
-            }).catch(function(){});
-          });
-        }, 3000);
-        <?php endif; ?>
-      });
+      // Si ya tiene permiso concedido, suscribir silenciosamente
+      if (Notification.permission === 'granted' && VAPID_PUBLIC) {
+        reg.pushManager.getSubscription().then(function(existing) {
+          if (existing) return;
+          reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC)
+          }).then(function(sub) {
+            fetch('/push_subscribe.php', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify(sub)
+            });
+          }).catch(function(){});
+        });
+      }
+      // Si no tiene permiso, el banner del dashboard lo pedirá con un botón (gesto del usuario)
     });
   })();
   </script>

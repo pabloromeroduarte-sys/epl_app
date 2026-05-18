@@ -66,6 +66,59 @@ if ($equipo) {
       <?php endif; ?>
     </div>
 
+    <!-- Banner activar notificaciones -->
+    <div id="bannerPush" style="display:none;background:linear-gradient(135deg,#1c2f48,#1a3a64);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.85rem;flex-wrap:wrap">
+      <span style="font-size:1.4rem;flex-shrink:0">🔔</span>
+      <div style="flex:1;min-width:160px">
+        <div style="font-weight:800;font-size:.88rem;color:#fff">Activá las notificaciones</div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:.15rem">Recibí alertas de partidos y resultados en tu celular.</div>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-shrink:0">
+        <button onclick="activarPush()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:.5rem 1rem;font-weight:800;font-size:.8rem;cursor:pointer">Activar</button>
+        <button onclick="document.getElementById('bannerPush').style.display='none';localStorage.setItem('push_dismissed','1')" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:.5rem .75rem;font-size:.8rem;cursor:pointer">Ahora no</button>
+      </div>
+    </div>
+    <script>
+    (function() {
+      if (localStorage.getItem('push_dismissed')) return;
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+      if (Notification.permission === 'granted') return; // ya tiene permiso
+      if (Notification.permission === 'denied') return;  // ya denegó
+      document.getElementById('bannerPush').style.display = 'flex';
+    })();
+
+    async function activarPush() {
+      const banner = document.getElementById('bannerPush');
+      const VAPID_PUBLIC = "<?= htmlspecialchars(epl_env('VAPID_PUBLIC_KEY'), ENT_QUOTES) ?>";
+      function urlB64(b64){const pad='='.repeat((4-b64.length%4)%4);const raw=atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
+
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        banner.innerHTML = '<span style="color:#fca5a5;font-size:.85rem;font-weight:700">❌ Permiso denegado. Habilitalo desde los ajustes del navegador.</span>';
+        return;
+      }
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub && VAPID_PUBLIC) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlB64(VAPID_PUBLIC)
+          });
+          await fetch('/push_subscribe.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(sub)
+          });
+        }
+        banner.innerHTML = '<span style="color:#86efac;font-size:.85rem;font-weight:700">✅ ¡Notificaciones activadas!</span>';
+        setTimeout(() => banner.style.display = 'none', 3000);
+      } catch(e) {
+        banner.innerHTML = '<span style="color:#fca5a5;font-size:.85rem;font-weight:700">❌ Error al suscribir: ' + e.message + '</span>';
+      }
+    }
+    </script>
+
     <!-- Bienvenida nuevo registro -->
     <?php if (isset($_GET['bienvenido'])): ?>
     <div class="alert alert-success" style="display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1.5rem">
