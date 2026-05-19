@@ -20,9 +20,90 @@ function epl_session_start(): void {
     }
 }
 
+// ── Remember-me helpers ──────────────────────────────────────────────────────
+
+function epl_remember_ensure_table(): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        epl_db()->exec("CREATE TABLE IF NOT EXISTS `epl_remember_tokens` (
+            `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `jugador_id` INT UNSIGNED NOT NULL,
+            `token_hash` VARCHAR(64)  NOT NULL,
+            `expires_at` DATETIME     NOT NULL,
+            `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uk_token` (`token_hash`),
+            KEY `idx_jugador` (`jugador_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    } catch (Throwable $e) {
+        error_log('epl_remember_ensure_table: ' . $e->getMessage());
+    }
+}
+
+function epl_remember_set(int $jugador_id): void {
+    epl_remember_ensure_table();
+    $token   = bin2hex(random_bytes(32));
+    $hash    = hash('sha256', $token);
+    $expires = date('Y-m-d H:i:s', time() + 30 * 24 * 3600); // 30 días
+    $db      = epl_db();
+    // Limpiar tokens expirados de este jugador
+    $db->prepare("DELETE FROM epl_remember_tokens WHERE jugador_id = ? AND expires_at < NOW()")->execute([$jugador_id]);
+    $db->prepare("INSERT INTO epl_remember_tokens (jugador_id, token_hash, expires_at) VALUES (?,?,?)")->execute([$jugador_id, $hash, $expires]);
+    $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+    setcookie('epl_remember', $token, [
+        'expires'  => time() + 30 * 24 * 3600,
+        'path'     => '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+        'secure'   => $secure,
+    ]);
+}
+
+function epl_remember_check(): ?array {
+    $cookie = $_COOKIE['epl_remember'] ?? '';
+    if (!$cookie) return null;
+    epl_remember_ensure_table();
+    $hash = hash('sha256', $cookie);
+    $db   = epl_db();
+    $st   = $db->prepare("SELECT rt.jugador_id FROM epl_remember_tokens rt WHERE rt.token_hash = ? AND rt.expires_at > NOW() LIMIT 1");
+    $st->execute([$hash]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    if (!$row) return null;
+    $jst = $db->prepare("SELECT * FROM jugadores WHERE id = ? AND estado = 'activo' LIMIT 1");
+    $jst->execute([$row['jugador_id']]);
+    $jrow = $jst->fetch(PDO::FETCH_ASSOC);
+    if (!$jrow) return null;
+    // Renovar token (rolling window)
+    $db->prepare("DELETE FROM epl_remember_tokens WHERE token_hash = ?")->execute([$hash]);
+    epl_session_start();
+    session_regenerate_id(true);
+    $_SESSION['jugador'] = epl_jugador_sesion_desde_fila($jrow);
+    epl_remember_set((int)$jrow['id']); // nuevo token
+    return $_SESSION['jugador'];
+}
+
+function epl_remember_delete(): void {
+    $cookie = $_COOKIE['epl_remember'] ?? '';
+    if (!$cookie) return;
+    try {
+        epl_remember_ensure_table();
+        $hash = hash('sha256', $cookie);
+        epl_db()->prepare("DELETE FROM epl_remember_tokens WHERE token_hash = ?")->execute([$hash]);
+    } catch (Throwable $e) {}
+    setcookie('epl_remember', '', ['expires' => time() - 3600, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax']);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function epl_jugador_actual(): ?array {
     epl_session_start();
-    return $_SESSION['jugador'] ?? null;
+    if (!empty($_SESSION['jugador'])) {
+        return $_SESSION['jugador'];
+    }
+    // Sin sesión activa → intentar auto-login desde cookie "Recordarme"
+    return epl_remember_check();
 }
 
 /** Orden para elegir la fila "principal" cuando hay duplicados por email. */
@@ -127,7 +208,7 @@ function epl_require_admin(): void {
     }
 }
 
-function epl_login(string $email, string $password): bool {
+function epl_login(string $email, string $password, bool $remember = false): bool {
     $db = epl_db();
     $email = strtolower(trim($email));
     $st = $db->prepare("SELECT * FROM jugadores WHERE email = ? AND estado = 'activo'");
@@ -154,11 +235,15 @@ function epl_login(string $email, string $password): bool {
     epl_session_start();
     session_regenerate_id(true);
     $_SESSION['jugador'] = epl_jugador_sesion_desde_fila($canon);
+    if ($remember) {
+        epl_remember_set((int)$canon['id']);
+    }
     return true;
 }
 
 function epl_logout(): void {
     epl_session_start();
+    epl_remember_delete(); // borrar token "Recordarme"
     session_destroy();
     setcookie(session_name(), '', [
         'expires'  => time() - 3600,

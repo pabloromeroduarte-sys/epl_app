@@ -91,6 +91,12 @@ $_ranking = $_rk->fetch();
         Mi perfil
       </a>
 
+      <a href="<?= epl_url('mi_perfil.php') ?>#app-notif" class="dash-nav-link <?= $_ptab==='app'?'active':'' ?>" id="sidebar-app-link">
+        <svg class="dash-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        <span style="flex:1">App &amp; Notificaciones</span>
+        <span id="sidebar-app-badge" style="display:none;font-size:9px;background:#C9A762;color:#1C2F48;font-weight:800;border-radius:999px;padding:2px 6px;letter-spacing:.04em">!</span>
+      </a>
+
       <?php if ($_j['rol'] === 'admin'): ?>
       <a href="<?= epl_url('admin/') ?>" class="dash-nav-link" style="color:var(--gold);border:1px solid rgba(201,167,98,.3);margin-top:.5rem">
         <svg class="dash-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -141,6 +147,11 @@ $_ranking = $_rk->fetch();
       <span>Guías</span>
     </a>
 
+    <a href="<?= epl_url('mi_perfil.php') ?>#app-notif" class="dash-bottom-link <?= $_ptab==='app'?'active':'' ?>" style="position:relative" id="bottom-app-link">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+      <span id="bottom-app-badge" style="display:none;position:absolute;top:4px;right:6px;background:#C9A762;color:#1C2F48;font-size:9px;font-weight:800;border-radius:999px;min-width:15px;height:15px;display:flex;align-items:center;justify-content:center;padding:0 3px">!</span>
+      <span>App</span>
+    </a>
     <a href="<?= epl_url('mi_perfil.php') ?>" class="dash-bottom-link <?= $_ptab==='perfil'?'active':'' ?>">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
       <span>Perfil</span>
@@ -153,3 +164,31 @@ $_ranking = $_rk->fetch();
     <?php endif; ?>
   </div>
 </nav>
+
+<script>
+(function(){
+  // Muestra badge "!" en App si notificaciones no están activadas o la app no está instalada
+  function checkAppBadge() {
+    var needsBadge = false;
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    var notifPerm = (typeof Notification !== 'undefined') ? Notification.permission : 'granted';
+    // Badge si notificaciones no otorgadas
+    if (notifPerm !== 'granted') needsBadge = true;
+    // Badge si no está instalada como app (solo en móvil)
+    var isMobile = /iphone|ipad|android/i.test(navigator.userAgent);
+    if (isMobile && !isStandalone) needsBadge = true;
+
+    if (needsBadge) {
+      var sb = document.getElementById('sidebar-app-badge');
+      var bb = document.getElementById('bottom-app-badge');
+      if (sb) sb.style.display = 'inline-flex';
+      if (bb) bb.style.display = 'flex';
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkAppBadge);
+  } else {
+    checkAppBadge();
+  }
+})();
+</script>

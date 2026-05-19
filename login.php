@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$email || !$password) {
         $error = 'Completa todos los campos.';
-    } elseif (epl_login($email, $password)) {
+    } elseif (epl_login($email, $password, !empty($_POST['remember']))) {
         $jugador = epl_jugador_actual();
         // Redirigir al destino original (back debe ser path absoluto con /)
         $dest = (str_starts_with($back, '/') && !str_contains($back, '//') && !str_contains($back, '..'))
@@ -127,7 +127,13 @@ function togglePass() {
 }
 </script>
 
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">
+        <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;margin-bottom:.25rem;user-select:none">
+          <input type="checkbox" name="remember" value="1"
+                 style="width:17px;height:17px;accent-color:var(--gold);cursor:pointer;flex-shrink:0">
+          <span style="font-size:.84rem;color:var(--gray-400);font-family:'Montserrat',sans-serif">Mantener sesión iniciada</span>
+        </label>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.75rem">
           Ingresar
         </button>
 

@@ -341,7 +341,7 @@ $profesiones = [
   </div>
 
   <!-- ── App & Notificaciones ─────────────────────────── -->
-  <div class="card" style="margin-top:1.5rem">
+  <div class="card" id="app-notif" style="margin-top:1.5rem;scroll-margin-top:5rem">
     <div class="card-header">
       <h3 class="card-title">📱 App &amp; Notificaciones</h3>
     </div>
