@@ -2,23 +2,25 @@
 <style>
 /* ── Botón flotante ── */
 #epl-chat-btn {
-  position: fixed;
-  right: 20px;
-  bottom: 88px; /* sobre bottom-nav en móvil */
-  width: 52px; height: 52px;
-  border-radius: 50%;
-  background: linear-gradient(135deg,#1c2f48,#1a3a64);
-  color: #C9A762;
-  border: 2px solid #C9A762;
-  box-shadow: 0 4px 18px rgba(0,0,0,.35);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  z-index: 1100;
+  position: fixed !important;
+  right: 20px !important;
+  bottom: 88px !important; /* sobre bottom-nav en móvil */
+  width: 52px !important; height: 52px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg,#1c2f48,#1a3a64) !important;
+  color: #C9A762 !important;
+  border: 2px solid #C9A762 !important;
+  box-shadow: 0 4px 18px rgba(0,0,0,.35) !important;
+  cursor: pointer !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  z-index: 9990 !important;
   transition: transform .2s, box-shadow .2s;
-  padding: 0;
+  padding: 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 #epl-chat-btn:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(0,0,0,.45); }
-#epl-chat-btn svg   { width: 24px; height: 24px; }
+#epl-chat-btn svg   { width: 24px !important; height: 24px !important; }
 
 /* Contador de mensajes no leídos */
 #epl-chat-badge {
@@ -33,7 +35,7 @@
 }
 
 @media (min-width: 993px) {
-  #epl-chat-btn { bottom: 28px; right: 28px; }
+  #epl-chat-btn { bottom: 28px !important; right: 28px !important; }
 }
 
 /* ── Panel de chat ── */
@@ -247,6 +249,7 @@
 <script>
 (function () {
   'use strict';
+  console.log('[EPL Asistente] widget cargado');
 
   const btn      = document.getElementById('epl-chat-btn');
   const panel    = document.getElementById('epl-chat-panel');

@@ -173,7 +173,7 @@
     });
 </script>
 
-<?php if (isset($player_tab) && function_exists('epl_jugador_actual') && epl_jugador_actual()): ?>
+<?php if (isset($player_tab)): ?>
 <?php require_once __DIR__ . '/chat_asistente.php'; ?>
 <?php endif; ?>
 </body>
