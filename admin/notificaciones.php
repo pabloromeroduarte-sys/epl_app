@@ -75,7 +75,7 @@ $jugadores = $db->query("
 $total_suscritos   = count(array_filter($jugadores, fn($j) => $j['dispositivos'] > 0));
 $total_jugadores   = count($jugadores);
 ?>
-<?php require_once '../includes/admin_header.php'; ?>
+<?php require_once '../includes/header.php'; ?>
 
 <style>
 .pn-card   { background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:1.5rem;margin-bottom:1.25rem; }
@@ -242,4 +242,4 @@ document.getElementById('formPush').addEventListener('submit', function () {
 });
 </script>
 
-<?php require_once '../includes/admin_footer.php'; ?>
+<?php require_once '../includes/footer.php'; ?>
