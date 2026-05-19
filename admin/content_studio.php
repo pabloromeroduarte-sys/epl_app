@@ -126,6 +126,27 @@ require_once '../includes/header.php';
           <p id="record-status" style="text-align:center;font-size:.78rem;color:#dc2626;font-weight:700;margin:.5rem 0 0">⏺ Grabando...</p>
         </div>
 
+        <!-- Panel de descarga (aparece al terminar) -->
+        <div id="download-panel" style="display:none;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:14px;padding:1.1rem 1.25rem;margin-top:.5rem">
+          <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.85rem">
+            <span style="font-size:1.4rem">✅</span>
+            <div>
+              <div style="font-weight:800;font-size:.88rem;color:#166534">¡Video listo!</div>
+              <div id="download-info" style="font-size:.72rem;color:#15803d;margin-top:.1rem"></div>
+            </div>
+          </div>
+          <video id="download-preview" controls style="width:100%;border-radius:10px;margin-bottom:.85rem;max-height:200px;background:#000;display:none"></video>
+          <a id="download-link" href="#" download
+             style="display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;box-sizing:border-box;padding:.8rem;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:10px;font-weight:800;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;transition:filter .15s">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Descargar Video (.webm)
+          </a>
+          <button onclick="document.getElementById('download-panel').style.display='none'"
+                  style="width:100%;margin-top:.5rem;padding:.45rem;background:none;border:none;font-size:.72rem;color:#15803d;cursor:pointer;font-weight:600">
+            Cerrar
+          </button>
+        </div>
+
       </div>
     </div><!-- /cs-preview-panel -->
 
@@ -972,14 +993,27 @@ btnRecord.addEventListener('click', async () => {
     // Detener audio si sigue
     if (recAudioSrc) { try { recAudioSrc.stop(); } catch(e){} }
 
-    const blob = new Blob(recordChunks, { type: mimeType });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    const nm   = (inpEvent.value.trim() || 'EPL').replace(/[\s\/\\:*?"<>|]+/g,'_');
-    a.download = `EPL_${nm}.webm`;
-    a.href     = url;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 8000);
+    const blob  = new Blob(recordChunks, { type: mimeType });
+    const url   = URL.createObjectURL(blob);
+    const nm    = (inpEvent.value.trim() || 'EPL').replace(/[\s\/\\:*?"<>|]+/g,'_');
+    const fname = `EPL_${nm}.webm`;
+
+    // Mostrar panel de descarga con preview y botón claro
+    const panel      = document.getElementById('download-panel');
+    const dlLink     = document.getElementById('download-link');
+    const dlPreview  = document.getElementById('download-preview');
+    const dlInfo     = document.getElementById('download-info');
+
+    dlLink.href         = url;
+    dlLink.download     = fname;
+    dlPreview.src       = url;
+    dlPreview.style.display = 'block';
+    dlInfo.textContent  = `${fname} · ${(blob.size / 1024 / 1024).toFixed(1)} MB · ${Math.round(totalSec)}s`;
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Liberar URL cuando se descargue o se cierre
+    dlLink.onclick = () => setTimeout(() => URL.revokeObjectURL(url), 10000);
 
     // Reset UI
     isRecording = false;
