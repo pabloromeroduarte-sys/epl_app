@@ -109,9 +109,22 @@ foreach ($ventanas as [$horas, $tolerancia, $etiqueta]) {
             ]);
 
             // ── Email con tabla visual ──
-            epl_mail_recordatorio_partido(
-                (int)$jid, $titulo_email, $local, $visitante,
-                $dia, $hora, $cancha, $liga, $jornada, $etiqueta
+            $filas_rec = array_values(array_filter([
+                ['icon' => '📅', 'label' => 'Fecha',    'valor' => $dia],
+                ['icon' => '🕐', 'label' => 'Hora',     'valor' => $hora . ' hrs'],
+                ['icon' => '🏟️', 'label' => 'Cancha',   'valor' => $cancha],
+                ['icon' => '🏆', 'label' => $jornada ? 'Liga / Jornada' : 'Liga',
+                                 'valor' => $liga . ($jornada ? " · {$jornada}" : '')],
+            ]));
+            epl_mail_partido_visual(
+                (int)$jid,
+                $titulo_email,
+                $local,
+                $visitante,
+                $filas_rec,
+                "Tu próximo partido es en <strong>{$etiqueta}</strong>.",
+                '💡 Recuerda llegar 10 minutos antes. Si no puedes jugar, reprograma con tiempo en la plataforma.',
+                epl_url('dashboard.php')
             );
 
             // ── Push web ──
@@ -127,72 +140,3 @@ echo "[" . date('Y-m-d H:i:s') . "] Fin. Push enviados: {$enviados_total}\n";
 exit(0);
 
 
-// ─────────────────────────────────────────────────────────────
-// Email bonito con tabla de datos del partido
-// ─────────────────────────────────────────────────────────────
-function epl_mail_recordatorio_partido(
-    int $jugador_id,
-    string $asunto,
-    string $local,
-    string $visitante,
-    string $dia,
-    string $hora,
-    string $cancha,
-    string $liga,
-    string $jornada,
-    string $etiqueta
-): void {
-    if (!epl_smtp_habilitado()) return;
-
-    $db = epl_db();
-    $j  = $db->prepare('SELECT email, nombre, apellido FROM jugadores WHERE id = ?');
-    $j->execute([$jugador_id]);
-    $jug = $j->fetch(PDO::FETCH_ASSOC);
-    if (!$jug || empty($jug['email'])) return;
-
-    $nombre = htmlspecialchars(trim($jug['nombre'] . ' ' . $jug['apellido']), ENT_QUOTES, 'UTF-8');
-    $link   = epl_url('dashboard.php');
-
-    $fila = fn(string $icon, string $label, string $valor) =>
-        '<tr>
-          <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;width:36px;font-size:18px;text-align:center">' . $icon . '</td>
-          <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">' . $label . '</td>
-          <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:700;color:#1c2f48">' . htmlspecialchars($valor, ENT_QUOTES, 'UTF-8') . '</td>
-        </tr>';
-
-    $jornadaFila = $jornada ? $fila('🏆', 'Liga / Jornada', $liga . ($jornada ? " · {$jornada}" : '')) : $fila('🏆', 'Liga', $liga);
-
-    $body = '
-    <p style="margin:0 0 1.25rem;font-size:15px;color:#334155">Hola <strong>' . $nombre . '</strong>,</p>
-    <p style="margin:0 0 1rem;font-size:14px;color:#64748b">Tu próximo partido es en <strong style="color:#1c2f48">' . htmlspecialchars($etiqueta, ENT_QUOTES) . '</strong>. Aquí están todos los detalles:</p>
-
-    <!-- VS Header -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#1c2f48,#1a3a64);border-radius:12px;margin-bottom:1.25rem">
-      <tr>
-        <td style="padding:20px;text-align:center;width:45%;color:#fff;font-size:15px;font-weight:800;line-height:1.3">' . htmlspecialchars($local, ENT_QUOTES) . '</td>
-        <td style="padding:20px;text-align:center;width:10%">
-          <span style="background:#C9A762;color:#1c2f48;font-weight:900;font-size:13px;padding:4px 10px;border-radius:6px">VS</span>
-        </td>
-        <td style="padding:20px;text-align:center;width:45%;color:#fff;font-size:15px;font-weight:800;line-height:1.3">' . htmlspecialchars($visitante, ENT_QUOTES) . '</td>
-      </tr>
-    </table>
-
-    <!-- Datos del partido -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:1.5rem">
-      ' . $fila('📅', 'Fecha', $dia) . '
-      ' . $fila('🕐', 'Hora', $hora . ' hrs') . '
-      ' . $fila('🏟️', 'Cancha', $cancha) . '
-      ' . $jornadaFila . '
-    </table>
-
-    <p style="margin:0 0 1.5rem;font-size:13px;color:#64748b;background:#f8fafc;border-radius:8px;padding:.75rem 1rem;border-left:3px solid #C9A762">
-      💡 Recuerda llegar 10 minutos antes. Si no puedes jugar, reprograma con tiempo en la plataforma.
-    </p>
-
-    <p style="margin:0;text-align:center">
-      <a href="' . $link . '" style="display:inline-block;background:#C9A762;color:#1c2f48;font-weight:900;font-size:13px;text-decoration:none;padding:.75rem 2rem;border-radius:8px;text-transform:uppercase;letter-spacing:.05em">Ver mis partidos</a>
-    </p>';
-
-    $html = epl_mail_plantilla($asunto, $body);
-    epl_mail_enviar($jug['email'], $asunto . ' — Elite Padel League', $html, trim($jug['nombre'] . ' ' . $jug['apellido']));
-}

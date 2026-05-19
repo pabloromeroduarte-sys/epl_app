@@ -565,7 +565,7 @@ function epl_vincular_partner_por_token_capitan(string $token_capitan, int $juga
 // Notificaciones
 // -------------------------------------------------------
 
-function epl_notif_crear(int $jugador_id, string $tipo, string $titulo, string $mensaje, string $url = ''): void {
+function epl_notif_crear(int $jugador_id, string $tipo, string $titulo, string $mensaje, string $url = '', bool $skip_email = false): void {
     try {
         epl_ensure_inscripciones_schema();
         $db = epl_db();
@@ -586,20 +586,22 @@ function epl_notif_crear(int $jugador_id, string $tipo, string $titulo, string $
         error_log('epl_notif_crear push: ' . $e->getMessage());
     }
 
-    try {
-        if (!function_exists('epl_mail_notificacion_jugador')) {
-            require_once __DIR__ . '/mail.php';
+    if (!$skip_email) {
+        try {
+            if (!function_exists('epl_mail_notificacion_jugador')) {
+                require_once __DIR__ . '/mail.php';
+            }
+            epl_mail_notificacion_jugador($jugador_id, $titulo, $mensaje, $url);
+        } catch (Throwable $e) {
+            error_log('epl_notif_crear mail: ' . $e->getMessage());
         }
-        epl_mail_notificacion_jugador($jugador_id, $titulo, $mensaje, $url);
-    } catch (Throwable $e) {
-        error_log('epl_notif_crear mail: ' . $e->getMessage());
     }
 }
 
 /**
  * Notifica a todos los jugadores de un partido (ambos equipos) y opcionalmente a los admins.
  */
-function epl_notif_partido(int $partido_id, string $tipo, string $titulo, string $mensaje, string $url = '', bool $incluir_admins = false, array $excluir_ids = []): void {
+function epl_notif_partido(int $partido_id, string $tipo, string $titulo, string $mensaje, string $url = '', bool $incluir_admins = false, array $excluir_ids = [], bool $skip_email = false): void {
     $db = epl_db();
 
     // Jugadores de los dos equipos
@@ -613,7 +615,7 @@ function epl_notif_partido(int $partido_id, string $tipo, string $titulo, string
     ");
     $st->execute([$partido_id]);
     foreach ($st->fetchAll() as $row) {
-        epl_notif_crear((int)$row['id'], $tipo, $titulo, $mensaje, $url);
+        epl_notif_crear((int)$row['id'], $tipo, $titulo, $mensaje, $url, $skip_email);
     }
 
     // Admins (opconal)
@@ -621,7 +623,7 @@ function epl_notif_partido(int $partido_id, string $tipo, string $titulo, string
         $stA = $db->query("SELECT id FROM jugadores WHERE rol='admin' AND estado='activo'");
         foreach ($stA->fetchAll() as $row) {
             if (!in_array((int)$row['id'], $excluir_ids)) {
-                epl_notif_crear((int)$row['id'], $tipo, $titulo, $mensaje, $url);
+                epl_notif_crear((int)$row['id'], $tipo, $titulo, $mensaje, $url, $skip_email);
             }
         }
     }

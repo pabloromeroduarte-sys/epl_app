@@ -3,6 +3,7 @@ $page_title = 'Ingresar Resultado';
 $player_tab = 'resultado';
 require_once 'includes/auth.php';
 require_once 'includes/functions.php';
+require_once 'includes/mail.php';
 epl_require_login();
 
 $jugador = epl_jugador_actual();
@@ -92,14 +93,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             $gano = $ganador_id == $equipo['id'];
 
             // Notificar a jugadores del equipo rival
+            $asunto_res      = "Resultado cargado: {$mi_nombre} vs {$rival_nombre}";
+            $ganador_nombre  = $gano ? $mi_nombre : $rival_nombre;
+            $resultado_sets  = implode(' / ', array_map(fn($s) => "{$s['local']}-{$s['visitante']}", $sets));
             $rivales = $db->prepare("SELECT jugador_id FROM liga_equipos WHERE equipo_id = ? AND liga_id = ?");
             $rivales->execute([$rival_id, $liga['id']]);
             foreach ($rivales->fetchAll() as $r) {
                 epl_notif_crear(
                     (int)$r['jugador_id'],
                     'resultado',
-                    "Resultado cargado: {$mi_nombre} vs {$rival_nombre}",
+                    $asunto_res,
                     ($gano ? "{$mi_nombre} ganó" : "{$rival_nombre} ganó") . " {$resultado}. Verificá el resultado en tus partidos.",
+                    epl_url('mis_torneos.php'),
+                    true // skip_email: enviamos visual por separado
+                );
+                epl_mail_partido_visual(
+                    (int)$r['jugador_id'],
+                    $asunto_res,
+                    $mi_nombre,
+                    $rival_nombre,
+                    [
+                        ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
+                        ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
+                    ],
+                    ($gano ? "{$mi_nombre} ganó" : "{$rival_nombre} ganó") . ' el partido.',
+                    '💡 Si el resultado es incorrecto, contacta al administrador para revisarlo.',
                     epl_url('mis_torneos.php')
                 );
             }

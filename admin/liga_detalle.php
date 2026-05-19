@@ -2,6 +2,7 @@
 $page_title = 'Admin — Detalle Liga';
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
+require_once '../includes/mail.php';
 epl_require_admin();
 
 $db  = epl_db();
@@ -216,12 +217,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $rid = (int)($_POST['bulk_recinto_id'] ?? 0) ?: null;
                 $db->prepare("UPDATE partidos SET recinto_id=? WHERE id IN ($ids_str)")->execute([$rid]);
                 // Notificar jugadores de cada partido afectado
+                // Cargar nombres de equipos para emails visuales
+                $ids_str_b = implode(',', array_map('intval', $partido_ids));
+                $stNomB = $db->query("
+                    SELECT p.id, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+                           r.nombre AS recinto_nuevo
+                    FROM partidos p
+                    JOIN equipos el ON el.id = p.equipo_local_id
+                    JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                    LEFT JOIN recintos r ON r.id = p.recinto_id
+                    WHERE p.id IN ($ids_str_b)
+                ");
+                $nom_map_b = [];
+                foreach ($stNomB->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $nom_map_b[$row['id']] = $row;
+                }
                 foreach ($partido_ids as $pid_b) {
                     epl_notif_partido((int)$pid_b, 'reprogramacion',
                         '📅 Nueva cancha asignada',
                         'La cancha de tu partido fue modificada por la organización. Revisá los detalles en Mis Partidos.',
-                        epl_url('mis_torneos.php')
+                        epl_url('mis_torneos.php'),
+                        false, [], true // skip_email
                     );
+                    // Email visual por jugador
+                    $pnb = $nom_map_b[$pid_b] ?? null;
+                    $filas_recinto = array_values(array_filter([
+                        $pnb && $pnb['recinto_nuevo'] ? ['icon' => '🏟️', 'label' => 'Nueva cancha', 'valor' => $pnb['recinto_nuevo']] : null,
+                    ]));
+                    $stJugB = $db->prepare("
+                        SELECT DISTINCT j.id FROM partidos p
+                        JOIN equipos el ON el.id = p.equipo_local_id
+                        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                        JOIN jugadores j ON j.id IN (el.jugador1_id,el.jugador2_id,ev.jugador1_id,ev.jugador2_id)
+                        WHERE p.id = ?
+                    ");
+                    $stJugB->execute([$pid_b]);
+                    foreach ($stJugB->fetchAll() as $jrow) {
+                        epl_mail_partido_visual(
+                            (int)$jrow['id'],
+                            '📅 Nueva cancha asignada',
+                            $pnb ? $pnb['local_nombre']     : null,
+                            $pnb ? $pnb['visitante_nombre'] : null,
+                            $filas_recinto ?: [['icon' => '🏟️', 'label' => 'Cancha', 'valor' => 'Actualizada por la organización']],
+                            'La cancha de tu partido fue modificada.',
+                            '💡 Revisá los detalles actualizados en Mis Partidos.',
+                            epl_url('mis_torneos.php')
+                        );
+                    }
                 }
                 $msg = 'Recintos actualizados.';
             } elseif ($bulk_action === 'cambiar_fecha') {
@@ -244,12 +286,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $db->prepare("UPDATE partidos SET fecha_programada=? WHERE id IN ($ids_str)")->execute([$fecha_db]);
                     $fecha_fmt = date('d/m/Y H:i', strtotime($fecha_db));
                     // Notificar jugadores de cada partido afectado
+                    $stNomF = $db->query("
+                        SELECT p.id, el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+                        FROM partidos p
+                        JOIN equipos el ON el.id = p.equipo_local_id
+                        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                        WHERE p.id IN ($ids_str)
+                    ");
+                    $nom_map_f = [];
+                    foreach ($stNomF->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                        $nom_map_f[$row['id']] = $row;
+                    }
                     foreach ($partido_ids as $pid_b) {
                         epl_notif_partido((int)$pid_b, 'reprogramacion',
                             '📅 Nueva fecha de partido',
                             "Tu partido fue reprogramado para el {$fecha_fmt}. Revisá los detalles en Mis Partidos.",
-                            epl_url('mis_torneos.php')
+                            epl_url('mis_torneos.php'),
+                            false, [], true // skip_email
                         );
+                        $pnf = $nom_map_f[$pid_b] ?? null;
+                        $stJugF = $db->prepare("
+                            SELECT DISTINCT j.id FROM partidos p
+                            JOIN equipos el ON el.id = p.equipo_local_id
+                            JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                            JOIN jugadores j ON j.id IN (el.jugador1_id,el.jugador2_id,ev.jugador1_id,ev.jugador2_id)
+                            WHERE p.id = ?
+                        ");
+                        $stJugF->execute([$pid_b]);
+                        foreach ($stJugF->fetchAll() as $jrow) {
+                            epl_mail_partido_visual(
+                                (int)$jrow['id'],
+                                '📅 Nueva fecha de partido',
+                                $pnf ? $pnf['local_nombre']     : null,
+                                $pnf ? $pnf['visitante_nombre'] : null,
+                                [['icon' => '📅', 'label' => 'Nueva fecha', 'valor' => $fecha_fmt]],
+                                'Tu partido fue reprogramado por la organización.',
+                                '💡 Coordiná con tu rival si necesitás confirmar asistencia.',
+                                epl_url('mis_torneos.php')
+                            );
+                        }
                     }
                     $msg = 'Fecha y hora de los partidos actualizada.';
                 }
@@ -376,8 +451,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             epl_notif_partido($pid, 'reprogramacion',
                 '📅 Cambio en tu partido',
                 $cambios_str . '. Revisá los detalles en Mis Partidos.',
-                epl_url('mis_torneos.php')
+                epl_url('mis_torneos.php'),
+                false, [], true // skip_email
             );
+            // Cargar nombres de equipos y enviar email visual
+            $stNomE = $db->prepare("
+                SELECT el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+                FROM partidos p
+                JOIN equipos el ON el.id = p.equipo_local_id
+                JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                WHERE p.id = ?
+            ");
+            $stNomE->execute([$pid]);
+            $pne = $stNomE->fetch(PDO::FETCH_ASSOC);
+            $filas_edit = array_values(array_filter([
+                $fecha_cambio   ? ['icon' => '📅', 'label' => 'Nueva fecha',  'valor' => date('d/m/Y H:i', strtotime($fecha_p))] : null,
+                $recinto_cambio ? ['icon' => '🏟️', 'label' => 'Nueva cancha', 'valor' => 'Actualizada por la organización']       : null,
+            ]));
+            $stJugE = $db->prepare("
+                SELECT DISTINCT j.id FROM partidos p
+                JOIN equipos el ON el.id = p.equipo_local_id
+                JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                JOIN jugadores j ON j.id IN (el.jugador1_id,el.jugador2_id,ev.jugador1_id,ev.jugador2_id)
+                WHERE p.id = ?
+            ");
+            $stJugE->execute([$pid]);
+            foreach ($stJugE->fetchAll() as $jrow) {
+                epl_mail_partido_visual(
+                    (int)$jrow['id'],
+                    '📅 Cambio en tu partido',
+                    $pne ? $pne['local_nombre']     : null,
+                    $pne ? $pne['visitante_nombre'] : null,
+                    $filas_edit,
+                    'El administrador realizó cambios en tu partido.',
+                    '💡 Revisá los detalles actualizados en Mis Partidos.',
+                    epl_url('mis_torneos.php')
+                );
+            }
         }
 
         ld_redirect($id, 'partidos', 'Partido actualizado.', '', ld_filtros_desde_post());

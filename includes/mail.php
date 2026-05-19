@@ -92,6 +92,91 @@ function epl_mail_plantilla(string $titulo, string $contenidoHtml): string {
         . 'Mensaje automático — no respondas a este correo.</td></tr></table></td></tr></table></body></html>';
 }
 
+/**
+ * Email visual para cualquier alerta de partido.
+ * Muestra VS header (si local y visitante no son null) + tabla de datos + botón CTA.
+ *
+ * @param array<int,array{icon:string,label:string,valor:string}> $filas
+ */
+function epl_mail_partido_visual(
+    int     $jugador_id,
+    string  $asunto,
+    ?string $local,
+    ?string $visitante,
+    array   $filas,
+    string  $subtitulo = '',
+    string  $tip       = '',
+    string  $url       = ''
+): void {
+    if (!epl_smtp_habilitado()) return;
+
+    $db = epl_db();
+    $j  = $db->prepare('SELECT email, nombre, apellido FROM jugadores WHERE id = ?');
+    $j->execute([$jugador_id]);
+    $jug = $j->fetch(PDO::FETCH_ASSOC);
+    if (!$jug || empty($jug['email'])) return;
+
+    $nombre = htmlspecialchars(trim($jug['nombre'] . ' ' . $jug['apellido']), ENT_QUOTES, 'UTF-8');
+    $link   = $url !== '' ? $url : epl_url('notificaciones.php');
+    if ($link !== '' && !str_starts_with($link, 'http')) {
+        $link = epl_url(ltrim($link, '/'));
+    }
+
+    $fila_fn = fn(string $icon, string $label, string $valor) =>
+        '<tr>
+          <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;width:36px;font-size:18px;text-align:center">' . $icon . '</td>
+          <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">' . $label . '</td>
+          <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:700;color:#1c2f48">' . htmlspecialchars($valor, ENT_QUOTES, 'UTF-8') . '</td>
+        </tr>';
+
+    // VS header (opcional)
+    $vs_html = '';
+    if ($local !== null && $visitante !== null) {
+        $vs_html = '
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#1c2f48,#1a3a64);border-radius:12px;margin-bottom:1.25rem">
+          <tr>
+            <td style="padding:20px;text-align:center;width:45%;color:#fff;font-size:15px;font-weight:800;line-height:1.3">' . htmlspecialchars($local,     ENT_QUOTES) . '</td>
+            <td style="padding:20px;text-align:center;width:10%">
+              <span style="background:#C9A762;color:#1c2f48;font-weight:900;font-size:13px;padding:4px 10px;border-radius:6px">VS</span>
+            </td>
+            <td style="padding:20px;text-align:center;width:45%;color:#fff;font-size:15px;font-weight:800;line-height:1.3">' . htmlspecialchars($visitante, ENT_QUOTES) . '</td>
+          </tr>
+        </table>';
+    }
+
+    // Tabla de datos
+    $filas_html = '';
+    foreach ($filas as $f) {
+        $filas_html .= $fila_fn($f['icon'], $f['label'], $f['valor']);
+    }
+    $tabla_html = $filas_html
+        ? '<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:1.5rem">' . $filas_html . '</table>'
+        : '';
+
+    $subtitulo_html = $subtitulo
+        ? '<p style="margin:0 0 1.25rem;font-size:14px;color:#64748b">' . nl2br(htmlspecialchars($subtitulo, ENT_QUOTES)) . '</p>'
+        : '';
+
+    $tip_html = $tip
+        ? '<p style="margin:0 0 1.5rem;font-size:13px;color:#64748b;background:#f8fafc;border-radius:8px;padding:.75rem 1rem;border-left:3px solid #C9A762">' . htmlspecialchars($tip, ENT_QUOTES) . '</p>'
+        : '';
+
+    $body = '
+    <p style="margin:0 0 1.25rem;font-size:15px;color:#334155">Hola <strong>' . $nombre . '</strong>,</p>
+    ' . $subtitulo_html . $vs_html . $tabla_html . $tip_html . '
+    <p style="margin:0;text-align:center">
+      <a href="' . htmlspecialchars($link, ENT_QUOTES) . '" style="display:inline-block;background:#C9A762;color:#1c2f48;font-weight:900;font-size:13px;text-decoration:none;padding:.75rem 2rem;border-radius:8px;text-transform:uppercase;letter-spacing:.05em">Ver mis partidos</a>
+    </p>';
+
+    $html = epl_mail_plantilla($asunto, $body);
+    epl_mail_enviar(
+        $jug['email'],
+        $asunto . ' — Elite Padel League',
+        $html,
+        trim($jug['nombre'] . ' ' . $jug['apellido'])
+    );
+}
+
 final class EplSmtpClient
 {
     /** @var array<string, string> */
