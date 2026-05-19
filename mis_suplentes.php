@@ -137,18 +137,26 @@ if ($equipo && $liga) {
 }
 
 $partidos_para_suplente = [];
+$partido_proximo_id     = null;   // ID del partido más cercano a hoy
 if ($equipo && $liga) {
     $stPP = $db->prepare("
-        SELECT p.id, el.nombre AS local_nombre, ev.nombre AS visitante_nombre, p.fecha_programada
+        SELECT p.id, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+               p.fecha_programada,
+               CASE WHEN DATE(p.fecha_programada) >= CURDATE() THEN 0 ELSE 1 END AS es_pasado
         FROM partidos p
         JOIN equipos el ON el.id=p.equipo_local_id
         JOIN equipos ev ON ev.id=p.equipo_visitante_id
         WHERE p.liga_id=? AND (p.equipo_local_id=? OR p.equipo_visitante_id=?)
-          AND p.estado IN ('pendiente','jugado')
-        ORDER BY p.fecha_programada DESC LIMIT 20
+          AND p.estado NOT IN ('cancelado')
+        ORDER BY es_pasado ASC, ABS(DATEDIFF(p.fecha_programada, CURDATE())) ASC
+        LIMIT 40
     ");
     $stPP->execute([$liga['id'], $equipo['id'], $equipo['id']]);
     $partidos_para_suplente = $stPP->fetchAll();
+    // Primer partido con fecha >= hoy = el próximo
+    foreach ($partidos_para_suplente as $p) {
+        if (!$p['es_pasado']) { $partido_proximo_id = $p['id']; break; }
+    }
 }
 ?>
 <?php require_once 'includes/header.php'; ?>
@@ -326,15 +334,35 @@ if ($equipo && $liga) {
         <input type="hidden" name="suplente_id" id="modalSupId">
         <div class="form-group" style="margin-bottom:1.25rem">
           <label class="form-label">Partido en que jugó</label>
-          <select name="partido_id" class="form-control" required>
+          <select name="partido_id" id="modalPartidoSelect" class="form-control" required>
             <option value="">— Selecciona el partido —</option>
-            <?php foreach ($partidos_para_suplente as $p): ?>
-              <option value="<?= $p['id'] ?>">
-                <?= epl_h($p['local_nombre'].' vs '.$p['visitante_nombre']) ?>
-                <?= $p['fecha_programada'] ? ' — '.date('d/m/Y', strtotime($p['fecha_programada'])) : '' ?>
+            <?php
+              $printed_pasados = false;
+              foreach ($partidos_para_suplente as $p):
+                $es_proximo  = ($p['id'] == $partido_proximo_id);
+                $es_hoy      = ($p['fecha_programada'] && date('Y-m-d', strtotime($p['fecha_programada'])) === date('Y-m-d'));
+                $es_pasado   = (bool)$p['es_pasado'];
+                if ($es_pasado && !$printed_pasados) {
+                    $printed_pasados = true;
+                    echo '<option value="" disabled>─── Partidos anteriores ───</option>';
+                }
+                $label = epl_h($p['local_nombre'].' vs '.$p['visitante_nombre']);
+                $fecha = $p['fecha_programada'] ? ' — '.date('d/m/Y', strtotime($p['fecha_programada'])) : '';
+                $prefix = '';
+                if ($es_hoy)    $prefix = '📅 HOY · ';
+                elseif ($es_proximo) $prefix = '⭐ PRÓXIMO · ';
+            ?>
+              <option value="<?= $p['id'] ?>"
+                <?= $es_proximo ? 'selected' : '' ?>>
+                <?= $prefix.$label.$fecha ?>
               </option>
             <?php endforeach; ?>
           </select>
+          <?php if ($partido_proximo_id): ?>
+          <p style="font-size:.72rem;color:#16a34a;margin-top:.4rem;font-weight:700">
+            ⭐ El partido más cercano ya está seleccionado — cambialo si el suplente jugó en otro.
+          </p>
+          <?php endif; ?>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Confirmar</button>
       </form>
