@@ -109,7 +109,13 @@ require_once '../includes/header.php';
           </button>
         </div>
 
-        <p class="cs-export-note">El video se guarda como <strong>.webm</strong> — compatible con Instagram para subir manualmente.</p>
+        <!-- Estado del audio -->
+        <div id="audio-status" class="cs-audio-status loading">
+          <span class="cs-audio-dot"></span>
+          <span id="audio-status-txt">⏳ Cargando música...</span>
+        </div>
+
+        <p class="cs-export-note">El video incluye la música de fondo. Se guarda como <strong>.webm</strong>.</p>
 
         <!-- Barra de progreso de grabación -->
         <div id="record-progress" style="display:none">
@@ -266,6 +272,23 @@ require_once '../includes/header.php';
 
 .cs-record-bar-wrap { height: 8px; background: var(--gray-100); border-radius: 4px; overflow: hidden; }
 .cs-record-bar { height: 100%; background: #dc2626; width: 0%; transition: width .3s linear; border-radius: 4px; }
+
+/* Audio status */
+.cs-audio-status {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .5rem .85rem; border-radius: 8px; margin-bottom: .5rem;
+  font-size: .75rem; font-weight: 700;
+}
+.cs-audio-status.loading { background: #f8fafc; color: var(--gray-400); }
+.cs-audio-status.ready   { background: #f0fdf4; color: #166534; }
+.cs-audio-status.error   { background: #fef2f2; color: #991b1b; }
+.cs-audio-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: currentColor; animation: cs-pulse 1.5s ease infinite;
+}
+.cs-audio-status.ready .cs-audio-dot { animation: none; }
+.cs-audio-status.error .cs-audio-dot { animation: none; }
+@keyframes cs-pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
 </style>
 
 <!-- ══════════════════════════════════════════════════════ JAVASCRIPT -->
@@ -293,6 +316,57 @@ const progressBar = document.getElementById('progress-bar');
 const slideCounter= document.getElementById('slide-counter');
 const recordProg  = document.getElementById('record-progress');
 const recordBar   = document.getElementById('record-bar');
+const audioStatus = document.getElementById('audio-status');
+const audioStatusTxt = document.getElementById('audio-status-txt');
+
+// ── Audio ─────────────────────────────────────────────────
+let audioCtx    = null;
+let audioBuffer = null;
+let previewSrc  = null;   // fuente de audio activa en preview
+let previewGain = null;
+let audioReady  = false;
+const AUDIO_URL = '../assets/audio/Match_Point_Morning.mp3';
+
+async function initAudio() {
+  try {
+    const resp = await fetch(AUDIO_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const ab = await resp.arrayBuffer();
+    // Crear contexto DESPUÉS de interacción del usuario (política autoplay)
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioBuffer = await audioCtx.decodeAudioData(ab);
+    audioReady = true;
+    audioStatus.className = 'cs-audio-status ready';
+    audioStatusTxt.textContent = '🎵 Match Point Morning — lista';
+  } catch(e) {
+    audioStatus.className = 'cs-audio-status error';
+    audioStatusTxt.textContent = '⚠️ No se pudo cargar la música';
+    console.warn('Audio error:', e);
+  }
+}
+
+function startPreviewAudio(offsetSec) {
+  if (!audioReady || !audioBuffer) return;
+  stopPreviewAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const src  = audioCtx.createBufferSource();
+  src.buffer = audioBuffer;
+  src.loop   = true;
+  const gain = audioCtx.createGain();
+  gain.gain.value = 0.55;
+  src.connect(gain);
+  gain.connect(audioCtx.destination);
+  src.start(0, offsetSec % audioBuffer.duration);
+  previewSrc  = src;
+  previewGain = gain;
+}
+
+function stopPreviewAudio() {
+  if (previewSrc) {
+    try { previewSrc.stop(); } catch(e){}
+    previewSrc = null;
+  }
+}
 
 // ── Estado ────────────────────────────────────────────────
 let photos        = [];
@@ -578,12 +652,17 @@ function startAnimation() {
   animStartTime = null;
   btnPlay.textContent = '⏸ Pausa';
   animFrame = requestAnimationFrame(tick);
+  // Audio preview
+  const offsetSec = animOffset / 1000;
+  startPreviewAudio(offsetSec);
 }
 
-function pauseAnimation(ts) {
+function pauseAnimation() {
+  if (isPlaying) animOffset += performance.now() - (animStartTime || performance.now());
   isPlaying = false;
   cancelAnimationFrame(animFrame);
   btnPlay.textContent = '▶ Play';
+  stopPreviewAudio();
 }
 
 // ── Render estático inicial (frame intro) ─────────────────
@@ -666,8 +745,9 @@ fileInput.addEventListener('change', () => { handleFiles(fileInput.files); fileI
 
 // ── Play / Pause ──────────────────────────────────────────
 btnPlay.addEventListener('click', () => {
+  // Inicializar audio en primer clic (requiere gesto del usuario)
+  if (!audioCtx) initAudio();
   if (isPlaying) {
-    animOffset += (performance.now() - (animStartTime || performance.now()));
     pauseAnimation();
   } else {
     startAnimation();
@@ -718,42 +798,88 @@ btnPng.addEventListener('click', () => {
   if (!isPlaying) renderStatic(animOffset);
 });
 
-// ── Grabar video ──────────────────────────────────────────
+// ── Grabar video (con audio mezclado) ─────────────────────
 btnRecord.addEventListener('click', async () => {
   if (!photos.length || isRecording) return;
 
-  const totalMs = getTotalDur();
-  isRecording   = true;
+  // Asegurar audio inicializado
+  if (!audioCtx) await initAudio();
+  else if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+  // Parar preview
+  pauseAnimation();
+  stopPreviewAudio();
+  animOffset = 0; animStartTime = null;
+
+  const totalMs  = getTotalDur();
+  const totalSec = totalMs / 1000;
+  isRecording    = true;
   btnRecord.disabled = true;
   btnRecord.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#dc2626"><circle cx="12" cy="12" r="8"/></svg> Grabando...';
   btnPlay.disabled = true;
   recordProg.style.display = 'block';
-
-  // Parar animación previa
-  pauseAnimation();
-  animOffset = 0; animStartTime = null;
-
   recordChunks = [];
 
-  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-    ? 'video/webm;codecs=vp9'
-    : (MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4');
+  // ── Configurar audio para grabación ───────────────────
+  let recAudioSrc = null;
+  let combinedStream;
 
-  const stream = canvas.captureStream(30);
-  recorder     = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+  if (audioReady && audioBuffer) {
+    recAudioSrc = audioCtx.createBufferSource();
+    recAudioSrc.buffer = audioBuffer;
+    recAudioSrc.loop   = true;
 
+    const recGain = audioCtx.createGain();
+    recGain.gain.setValueAtTime(0.75, audioCtx.currentTime);
+    // Fade out en los últimos 2.5 segundos
+    if (totalSec > 3) {
+      recGain.gain.setValueAtTime(0.75, audioCtx.currentTime + totalSec - 2.5);
+      recGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + totalSec);
+    }
+    recAudioSrc.connect(recGain);
+
+    // MediaStreamDestination para captura + speakers para monitoreo
+    const recDest = audioCtx.createMediaStreamDestination();
+    recGain.connect(recDest);
+    recGain.connect(audioCtx.destination); // también suena mientras graba
+
+    recAudioSrc.start(0);
+    recAudioSrc.stop(audioCtx.currentTime + totalSec);
+
+    // Combinar video canvas + audio
+    const canvasStream = canvas.captureStream(30);
+    combinedStream = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...recDest.stream.getAudioTracks()
+    ]);
+  } else {
+    // Sin audio: solo video
+    combinedStream = canvas.captureStream(30);
+  }
+
+  // ── MediaRecorder ─────────────────────────────────────
+  const preferredTypes = [
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+  ];
+  const mimeType = preferredTypes.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+
+  recorder = new MediaRecorder(combinedStream, { mimeType, videoBitsPerSecond: 8_000_000 });
   recorder.ondataavailable = e => { if (e.data.size > 0) recordChunks.push(e.data); };
 
   recorder.onstop = () => {
-    const ext  = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    // Detener audio si sigue
+    if (recAudioSrc) { try { recAudioSrc.stop(); } catch(e){} }
+
     const blob = new Blob(recordChunks, { type: mimeType });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    const nm   = (inpEvent.value.trim() || 'EPL').replace(/\s+/g,'_');
-    a.download = `EPL_${nm}.${ext}`;
+    const nm   = (inpEvent.value.trim() || 'EPL').replace(/[\s\/\\:*?"<>|]+/g,'_');
+    a.download = `EPL_${nm}.webm`;
     a.href     = url;
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
 
     // Reset UI
     isRecording = false;
@@ -767,10 +893,8 @@ btnRecord.addEventListener('click', async () => {
 
   recorder.start(100);
 
-  // Animar exactamente totalMs
+  // ── Loop de render para grabación ────────────────────
   const recStart = performance.now();
-  let lastPct    = 0;
-
   function recTick(now) {
     const elapsed = now - recStart;
     if (elapsed >= totalMs) {
@@ -779,9 +903,8 @@ btnRecord.addEventListener('click', async () => {
       return;
     }
     render(elapsed);
-    const pct = (elapsed / totalMs) * 100;
-    recordBar.style.width = pct + '%';
-    progressBar.style.width = pct + '%';
+    recordBar.style.width  = (elapsed / totalMs * 100) + '%';
+    progressBar.style.width= (elapsed / totalMs * 100) + '%';
     requestAnimationFrame(recTick);
   }
   requestAnimationFrame(recTick);
@@ -794,6 +917,39 @@ document.fonts.ready.then(() => {
   canvas.height = H;
   drawIntro(W, H, 1);
 });
+
+// Pre-cargar audio (decodificar buffer, sin reproducir aún)
+// Usamos fetch directo para no necesitar gesto del usuario en la decodificación
+(async function preloadAudio() {
+  try {
+    const resp = await fetch(AUDIO_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const ab = await resp.arrayBuffer();
+    // Guardamos el ArrayBuffer para decodificar al primer clic (requiere gesto)
+    window._eplAudioAB = ab;
+    audioStatus.className = 'cs-audio-status ready';
+    audioStatusTxt.textContent = '🎵 Match Point Morning — lista';
+    audioReady = true; // marcamos como listo para usarse al primer clic
+  } catch(e) {
+    audioStatus.className = 'cs-audio-status error';
+    audioStatusTxt.textContent = '⚠️ No se pudo cargar la música';
+  }
+})();
+
+// Sobreescribir initAudio para usar el buffer pre-cargado
+initAudio = async function() {
+  if (audioCtx && audioBuffer) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ab = window._eplAudioAB;
+    if (!ab) throw new Error('Buffer no disponible');
+    audioBuffer = await audioCtx.decodeAudioData(ab.slice(0)); // slice para reusar
+    audioReady  = true;
+  } catch(e) {
+    console.warn('initAudio error:', e);
+    audioReady = false;
+  }
+};
 
 })();
 </script>
