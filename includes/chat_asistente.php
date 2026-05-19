@@ -282,9 +282,12 @@
   btn.addEventListener('click', () => isOpen ? close() : open());
   closeBtn.addEventListener('click', close);
 
-  // Cerrar al click fuera
+  // Cerrar al click fuera — usa composedPath para no fallar si el elemento
+  // fue removido del DOM antes de que el listener evalúe (ej: chips de sugerencias)
   document.addEventListener('click', e => {
-    if (isOpen && !panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+    if (!isOpen) return;
+    const path = e.composedPath ? e.composedPath() : [];
+    if (!path.includes(panel) && !path.includes(btn)) {
       close();
     }
   });
