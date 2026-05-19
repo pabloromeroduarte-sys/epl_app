@@ -492,51 +492,59 @@ function drawPhoto(img, progress, kbIdx, alpha) {
 
 // ── Canvas: gradiente overlay + branding ─────────────────
 function drawBranding(W, H) {
+  const mx = W * 0.06;   // margen horizontal (~65px en 1080)
+  const my = H * 0.038;  // margen vertical desde arriba (~73px en 1920)
+
   // Gradiente superior
-  const gTop = ctx.createLinearGradient(0, 0, 0, H * 0.32);
-  gTop.addColorStop(0, 'rgba(10,20,33,.75)');
+  const gTop = ctx.createLinearGradient(0, 0, 0, H * 0.30);
+  gTop.addColorStop(0, 'rgba(10,20,33,.80)');
   gTop.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = gTop;
-  ctx.fillRect(0, 0, W, H * 0.32);
+  ctx.fillRect(0, 0, W, H * 0.30);
 
-  // Gradiente inferior
-  const gBot = ctx.createLinearGradient(0, H * 0.55, 0, H);
+  // Gradiente inferior — más alto para que el texto respire
+  const gBot = ctx.createLinearGradient(0, H * 0.58, 0, H);
   gBot.addColorStop(0, 'rgba(0,0,0,0)');
-  gBot.addColorStop(1, 'rgba(10,20,33,.9)');
+  gBot.addColorStop(1, 'rgba(10,20,33,.95)');
   ctx.fillStyle = gBot;
-  ctx.fillRect(0, H * 0.55, W, H * 0.45);
+  ctx.fillRect(0, H * 0.58, W, H * 0.42);
 
-  // Logo (filtro blanco)
+  // Logo (filtro blanco) — tamaño y posición 100% relativa al canvas
   if (logoImg.complete && logoImg.naturalWidth) {
-    const lw = W * 0.30;
+    const lw = W * 0.28;
     const lh = lw * (logoImg.naturalHeight / logoImg.naturalWidth);
     ctx.filter = 'brightness(0) invert(1)';
     ctx.globalAlpha = 0.88;
-    ctx.drawImage(logoImg, 65, 58, lw, lh);
+    ctx.drawImage(logoImg, mx, my, lw, lh);
     ctx.filter = 'none';
     ctx.globalAlpha = 1;
   }
 
+  // Bloque de texto: posición relativa al alto para todos los formatos
+  // 9:16 → ~79%H | 4:5 → ~79%H | 1:1 → ~79%H  (siempre proporcional)
+  const textTop = H * 0.79;
+  const fs1     = W * 0.058;   // fuente título
+  const fs2     = W * 0.030;   // fuente subtítulo
+  const lineH   = fs1 * 1.15;  // interlineado
+
   // Línea dorada
-  const bottomY = curFormat === '916' ? H - 240 : H - 200;
   ctx.fillStyle = '#C9A762';
-  ctx.fillRect(65, bottomY, 90, 3);
+  ctx.fillRect(mx, textTop, W * 0.085, Math.max(2, H * 0.0018));
 
   // Nombre del evento
   const evtName = inpEvent.value.trim() || 'Fecha EPL';
-  const fs1 = W * 0.061;
   ctx.save();
-  ctx.font = `900 ${fs1}px "Anton", "Arial Black", sans-serif`;
+  ctx.font = `900 ${fs1}px "Anton","Arial Black",sans-serif`;
   ctx.fillStyle = '#C9A762';
-  ctx.fillText(evtName.toUpperCase(), 65, bottomY + fs1 + 12);
+  ctx.fillText(evtName.toUpperCase(), mx, textTop + fs1 + H * 0.007);
   ctx.restore();
 
   // Subtítulo
   const sub = inpSubtitle.value.trim() || 'Elite Padel League';
   ctx.save();
-  ctx.font = `700 ${W * 0.034}px "Montserrat", Arial, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,.68)';
-  ctx.fillText(sub, 65, bottomY + fs1 + 12 + W * 0.052);
+  ctx.font = `700 ${fs2}px "Montserrat",Arial,sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,.70)';
+  ctx.fillText(sub, mx, textTop + fs1 + H * 0.007 + lineH);
   ctx.restore();
 }
 
@@ -573,10 +581,10 @@ function drawIntro(W, H, fadeAlpha) {
   ctx.globalAlpha = fadeAlpha;
   ctx.font = `900 ${W * 0.068}px "Anton","Arial Black",sans-serif`;
   ctx.fillStyle = '#C9A762';
-  ctx.fillText(name.toUpperCase(), W/2, H * 0.73);
-  ctx.font = `700 ${W * 0.036}px "Montserrat",Arial,sans-serif`;
+  ctx.fillText(name.toUpperCase(), W/2, H * 0.70);
+  ctx.font = `700 ${W * 0.034}px "Montserrat",Arial,sans-serif`;
   ctx.fillStyle = 'rgba(255,255,255,.6)';
-  ctx.fillText(sub, W/2, H * 0.79);
+  ctx.fillText(sub, W/2, H * 0.70 + W * 0.068 * 1.3);
   ctx.globalAlpha = 1;
   ctx.restore();
 }
