@@ -174,6 +174,7 @@
 </script>
 
 <?php if (isset($player_tab)): ?>
+<?php require_once __DIR__ . '/pwa_prompts.php'; ?>
 <?php require_once __DIR__ . '/chat_asistente.php'; ?>
 <?php endif; ?>
 </body>
