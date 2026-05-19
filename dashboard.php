@@ -32,6 +32,33 @@ usort($proximos, fn($a, $b) => strtotime($a['fecha_programada'] ?? '9999-12-31')
 $proximos  = array_values($proximos); // todos, el JS limita a 3 visibles
 $recientes = array_slice(array_values($jugados), 0, 5);
 
+// ── Partidos como Galleta (suplente) ────────────────────────────────────────
+$partidos_galleta = [];
+if ($liga) {
+    try {
+        $stG = $db->prepare("
+            SELECT p.id, p.fecha_programada, p.fecha_jugado, p.estado,
+                   p.sets_local, p.sets_visitante,
+                   p.games_s1_local, p.games_s1_visitante,
+                   p.games_s2_local, p.games_s2_visitante,
+                   p.games_s3_local, p.games_s3_visitante,
+                   p.ganador_id, p.jornada,
+                   el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+                   eq.nombre AS equipo_sup_nombre, eq.id AS equipo_sup_id
+            FROM suplente_partidos sp
+            JOIN suplentes s  ON s.id  = sp.suplente_id
+            JOIN partidos p   ON p.id  = sp.partido_id
+            JOIN equipos el   ON el.id = p.equipo_local_id
+            JOIN equipos ev   ON ev.id = p.equipo_visitante_id
+            JOIN equipos eq   ON eq.id = s.equipo_id
+            WHERE s.jugador_id = ? AND s.liga_id = ?
+            ORDER BY p.fecha_programada DESC
+        ");
+        $stG->execute([$jugador['id'], $liga['id']]);
+        $partidos_galleta = $stG->fetchAll();
+    } catch (Throwable $e) { /* tabla puede no existir aún */ }
+}
+
 // Alerta de atrasos: partidos con fecha pasada sin resultado, o en estado reprogramado
 $atrasados = [];
 if ($equipo) {
@@ -275,6 +302,88 @@ if ($equipo) {
 
     <?php if (!$equipo): ?>
     <div class="alert alert-info">No estás inscrito en ningún equipo de la liga activa.</div>
+    <?php endif; ?>
+
+    <!-- ── Partidos como Galleta ──────────────────────────────────────────── -->
+    <?php if (!empty($partidos_galleta)): ?>
+    <?php
+        $galleta_proximos = array_values(array_filter($partidos_galleta, fn($p) =>
+            in_array($p['estado'], ['pendiente','reprogramado'], true)));
+        $galleta_jugados  = array_values(array_filter($partidos_galleta, fn($p) =>
+            $p['estado'] === 'jugado'));
+    ?>
+    <div class="card mb-4" style="border-top:4px solid var(--gold)">
+      <div class="card-head" style="background:linear-gradient(135deg,#fefce8,#fff)">
+        <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy);display:flex;align-items:center;gap:.5rem">
+          <span style="font-size:1.3rem">🥐</span> Partidos como Galleta
+        </h3>
+        <span style="font-size:.72rem;background:var(--gold);color:var(--navy);font-weight:800;padding:.2rem .65rem;border-radius:20px;text-transform:uppercase;letter-spacing:.05em">
+          <?= count($partidos_galleta) ?> partido<?= count($partidos_galleta)!=1?'s':'' ?>
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="partidos-list">
+
+          <?php foreach ($partidos_galleta as $p):
+            $pendiente = in_array($p['estado'], ['pendiente','reprogramado'], true);
+            $gane = !$pendiente && ($p['ganador_id'] == $p['equipo_sup_id']);
+            $border = $pendiente ? 'var(--gold)' : ($gane ? 'var(--green)' : 'var(--red)');
+          ?>
+          <div class="partido-card-v2" style="padding:1rem;border-left:4px solid <?= $border ?>">
+
+            <!-- Info fecha + equipo -->
+            <div class="partido-col-info" style="border:none">
+              <span class="fecha-label" style="font-size:.6rem">Fecha <?= $p['jornada'] ?? '' ?></span>
+              <div class="partido-date" style="font-size:.7rem">
+                🗓 <?= $p['fecha_programada'] ? date('d/m', strtotime($p['fecha_programada'])) : 'TBD' ?>
+              </div>
+              <div style="margin-top:.25rem;font-size:.6rem;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.05em">
+                🥐 <?= epl_h($p['equipo_sup_nombre']) ?>
+              </div>
+            </div>
+
+            <!-- Equipos + marcador -->
+            <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex:1">
+              <div style="text-align:right;flex:1">
+                <span class="equipo-nombre-card" style="font-size:.75rem"><?= epl_h($p['local_nombre']) ?></span>
+              </div>
+              <?php if ($pendiente): ?>
+                <div class="marcador-box" style="font-size:1rem;padding:.4rem .8rem;min-width:60px">VS</div>
+              <?php else: ?>
+                <div style="display:flex;flex-direction:column;align-items:center">
+                  <div class="marcador-box" style="font-size:1.1rem;padding:.4rem .8rem;min-width:60px">
+                    <?= $p['sets_local'] ?>-<?= $p['sets_visitante'] ?>
+                  </div>
+                  <?php
+                    $sets=[];
+                    for($s=1;$s<=3;$s++){$gl=$p["games_s{$s}_local"];$gv=$p["games_s{$s}_visitante"];if($gl!==null)$sets[]="$gl-$gv";}
+                    if($sets): ?>
+                    <div class="set-details" style="font-size:.6rem"><?= implode(' <span style="opacity:.4;margin:0 2px">/</span> ', $sets) ?></div>
+                  <?php endif; ?>
+                </div>
+              <?php endif; ?>
+              <div style="text-align:left;flex:1">
+                <span class="equipo-nombre-card" style="font-size:.75rem"><?= epl_h($p['visitante_nombre']) ?></span>
+              </div>
+            </div>
+
+            <!-- Badge resultado -->
+            <div class="partido-col-meta" style="border:none;padding-left:0">
+              <?php if ($pendiente): ?>
+                <span class="badge badge-pendiente" style="font-size:.6rem">Próximo</span>
+              <?php else: ?>
+                <span class="badge <?= $gane?'badge-jugado':'badge-walkover' ?>" style="font-size:.6rem">
+                  <?= $gane?'Victoria':'Derrota' ?>
+                </span>
+              <?php endif; ?>
+            </div>
+
+          </div>
+          <?php endforeach; ?>
+
+        </div>
+      </div>
+    </div>
     <?php endif; ?>
 
 </main>
