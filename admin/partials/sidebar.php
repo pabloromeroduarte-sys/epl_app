@@ -26,6 +26,7 @@ try {
       <a href="suplentes.php"    class="dash-nav-link <?= $cur==='suplentes.php'   ?'active':'' ?>">Suplentes</a>
       <a href="erp_financiero.php" class="dash-nav-link <?= $cur==='erp_financiero.php'?'active':'' ?>" style="color:var(--gold)">💰 ERP Financiero</a>
       <a href="automatizaciones.php" class="dash-nav-link <?= $cur==='automatizaciones.php'?'active':'' ?>">✉ Automatizaciones</a>
+      <a href="content_studio.php" class="dash-nav-link <?= $cur==='content_studio.php'?'active':'' ?>" style="color:var(--gold)">🎬 Content Studio</a>
       <a href="disputas.php" class="dash-nav-link <?= $cur==='disputas.php'?'active':'' ?>" style="display:flex;align-items:center;justify-content:space-between">
         <span>⚠️ Disputas</span>
         <?php if ($_disp_count > 0): ?>
