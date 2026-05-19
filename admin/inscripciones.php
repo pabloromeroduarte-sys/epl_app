@@ -4,9 +4,10 @@ require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 epl_require_admin();
 
-$db  = epl_db();
-$ok  = '';
-$err = '';
+$db     = epl_db();
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -36,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 epl_url('inscribirse.php')
             );
 
-            $ok = 'Inscripción aprobada.';
+            epl_redirect_ok('Inscripción aprobada.');
         }
     } elseif ($id && $action === 'rechazar') {
         $stI = $db->prepare("SELECT i.*, l.nombre AS liga_nombre FROM inscripciones i JOIN ligas l ON l.id=i.liga_id WHERE i.id=?");
@@ -53,13 +54,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
         }
 
-        $ok = 'Inscripción rechazada.';
+        epl_redirect_ok('Inscripción rechazada.');
     } elseif ($id && $action === 'marcar_pagado') {
         $db->prepare("UPDATE inscripciones SET pago_estado='pagado' WHERE id=?")->execute([$id]);
-        $ok = 'Pago registrado.';
+        epl_redirect_ok('Pago registrado.');
     } elseif ($id && $action === 'marcar_exento') {
         $db->prepare("UPDATE inscripciones SET pago_estado='exento' WHERE id=?")->execute([$id]);
-        $ok = 'Exención registrada.';
+        epl_redirect_ok('Exención registrada.');
     }
 }
 

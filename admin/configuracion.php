@@ -5,9 +5,10 @@ require_once '../includes/functions.php';
 require_once '../includes/mail.php';
 epl_require_admin();
 
-$db  = epl_db();
-$ok  = '';
-$err = '';
+$db     = epl_db();
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 $tab = $_GET['tab'] ?? 'integraciones';
 if (!in_array($tab, ['integraciones', 'general'], true)) {
     $tab = 'integraciones';
@@ -39,14 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $digitsEsc = preg_replace('/\D+/', '', trim((string) ($_POST['mp_redondeo_escalon_clp'] ?? '')));
         $mpEsc     = ($digitsEsc === '') ? 10000 : max(1, min(1000000, (int) $digitsEsc));
         epl_config_set('mp_redondeo_escalon_clp', (string) $mpEsc);
-        $ok  = 'Integración Mercado Pago guardada.';
-        $tab = 'integraciones';
+        epl_redirect_ok('Integración Mercado Pago guardada.', '?tab=integraciones');
     }
 
     if ($action === 'pausar_mail') {
         $nuevo = epl_config_get('mail_pausado', '0') === '1' ? '0' : '1';
         epl_config_set('mail_pausado', $nuevo);
-        $ok = $nuevo === '1' ? '⏸ Correos pausados. No se enviará nada hasta que lo reactives.' : '▶ Correos reactivados.';
+        epl_redirect_ok($nuevo === '1' ? '⏸ Correos pausados. No se enviará nada hasta que lo reactives.' : '▶ Correos reactivados.', '?tab=general');
     }
 
     if ($action === 'guardar_smtp' || $action === 'probar_smtp') {
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tab = 'general';
 
         if ($action === 'guardar_smtp') {
-            $ok = 'Configuración SMTP guardada.';
+            epl_redirect_ok('Configuración SMTP guardada.', '?tab=general');
         }
 
         if ($action === 'probar_smtp') {
@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
                 $res = epl_mail_enviar($destino, 'Prueba SMTP — Elite Padel League', $body);
                 if ($res['ok']) {
-                    $ok = 'Configuración aplicada. Correo de prueba enviado a ' . $destino . '.';
+                    epl_redirect_ok('Configuración aplicada. Correo de prueba enviado a ' . $destino . '.', '?tab=general');
                 } else {
                     $err = $res['error'] ?? 'No se pudo enviar el correo de prueba.';
                 }

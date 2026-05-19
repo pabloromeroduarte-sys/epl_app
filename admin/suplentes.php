@@ -25,8 +25,9 @@ try {
 $filtro_liga = (int)($_GET['liga_id'] ?? ($liga['id'] ?? 0));
 $ligas = $db->query("SELECT id, nombre, temporada FROM ligas ORDER BY id DESC")->fetchAll();
 
-$ok  = '';
-$err = '';
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'agregar_suplente') {
     $liga_id    = (int)($_POST['liga_id']    ?? 0);
@@ -50,8 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'agreg
             } else {
                 $db->prepare("INSERT INTO suplentes (liga_id, equipo_id, jugador_id, registrado_por) VALUES (?,?,?,?)")
                    ->execute([$liga_id, $equipo_id, $jugador_id, epl_jugador_actual()['id'] ?? null]);
-                $ok = 'Galleta agregada correctamente.';
                 $filtro_liga = $liga_id;
+                epl_redirect_ok('Galleta agregada correctamente.', '?liga_id=' . $filtro_liga);
             }
         }
     }
@@ -81,8 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'guard
         foreach ($eliminar as $j) {
             $db->prepare("DELETE FROM suplente_partidos WHERE suplente_id=? AND jornada=?")->execute([$sid, $j]);
         }
-        $ok = 'Jornadas actualizadas.';
         $filtro_liga = (int)($_POST['liga_id'] ?? 0);
+        epl_redirect_ok('Jornadas actualizadas.', '?liga_id=' . $filtro_liga);
     }
 }
 
@@ -90,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'elimi
     $sid = (int)($_POST['suplente_id'] ?? 0);
     if ($sid) {
         $db->prepare("UPDATE suplentes SET estado='inactivo' WHERE id=?")->execute([$sid]);
-        $ok = 'Galleta eliminada.';
+        epl_redirect_ok('Galleta eliminada.', '?liga_id=' . (int)($_POST['liga_id'] ?? 0));
     }
 }
 

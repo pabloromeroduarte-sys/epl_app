@@ -5,9 +5,10 @@ require_once '../includes/functions.php';
 require_once '../includes/web_push.php';
 epl_require_admin();
 
-$db  = epl_db();
-$ok  = '';
-$err = '';
+$db     = epl_db();
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 $resultado_envio = null;
 
 // ── POST: enviar notificación ──────────────────────────────────
@@ -31,8 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $r = epl_push_jugador((int)$jid, $titulo, $mensaje, $url);
                 if ($r > 0) $enviados++; else $fallidos++;
             }
-            $ok = "Notificación enviada a {$enviados} jugador(es) suscritos.";
-            if ($fallidos) $ok .= " ({$fallidos} sin entregas exitosas)";
+            $msg_ok = "Notificación enviada a {$enviados} jugador(es) suscritos.";
+            if ($fallidos) $msg_ok .= " ({$fallidos} sin entregas exitosas)";
+            epl_redirect_ok($msg_ok);
         } else {
             // Jugador específico
             $jSt = $db->prepare("SELECT nombre, apellido FROM jugadores WHERE id=?");
@@ -51,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $enviados = epl_push_jugador($jugador_id, $titulo, $mensaje, $url);
                     if ($enviados > 0) {
-                        $ok = "✅ Enviada a {$nombre_jug} en {$enviados} dispositivo(s).";
+                        epl_redirect_ok("Enviada a {$nombre_jug} en {$enviados} dispositivo(s).");
                     } else {
                         $err = "❌ No se pudo entregar a ningún dispositivo de {$nombre_jug}. Puede que la suscripción haya expirado.";
                     }

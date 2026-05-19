@@ -21,8 +21,9 @@ $jugador_id = (int)$jugador['id'];
 
 $_epl_debug = false; // cambiar a true para ver diagnóstico
 
-$ok    = '';
-$error = '';
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok')    ? $_flash['msg'] : '';
+$error  = ($_flash && $_flash['tipo']==='error') ? $_flash['msg'] : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -81,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['jugador']['apellido'] = $apellido;
                 $_SESSION['jugador']['foto']     = $foto;
                 $jugador = epl_jugador_por_email($jugador['email']) ?? $jugador;
-                $ok = 'Perfil actualizado correctamente.';
+                epl_redirect_ok('Perfil actualizado correctamente.');
             }
         }
 
@@ -100,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $db->prepare("UPDATE jugadores SET password=? WHERE id=?")
                ->execute([epl_hash_password($nuevo), $jugador_id]);
-            $ok = 'Contraseña actualizada.';
+            epl_redirect_ok('Contraseña actualizada.');
         }
     }
 }

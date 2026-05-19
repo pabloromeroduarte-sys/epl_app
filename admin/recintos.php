@@ -4,9 +4,10 @@ require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 epl_require_admin();
 
-$db  = epl_db();
-$ok  = '';
-$err = '';
+$db     = epl_db();
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 
 // ── POST actions ──────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -21,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         else {
             $db->prepare("INSERT INTO recintos (nombre,superior_id,direccion,url_maps) VALUES (?,?,?,?)")
                ->execute([$nombre, $sup, $dir, $maps]);
-            $ok = 'Recinto <strong>'.htmlspecialchars($nombre).'</strong> creado.';
+            epl_redirect_ok('Recinto '.htmlspecialchars($nombre).' creado.');
         }
 
     } elseif ($action === 'editar') {
@@ -35,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         else {
             $db->prepare("UPDATE recintos SET nombre=?,superior_id=?,direccion=?,url_maps=? WHERE id=?")
                ->execute([$nombre, $sup, $dir, $maps, $id]);
-            $ok = 'Recinto actualizado.';
+            epl_redirect_ok('Recinto actualizado.');
         }
 
     } elseif ($action === 'eliminar') {
@@ -44,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db->prepare("UPDATE partidos  SET recinto_id=NULL  WHERE recinto_id=?")->execute([$id]);
         $db->prepare("UPDATE recintos  SET superior_id=NULL WHERE superior_id=?")->execute([$id]);
         $db->prepare("DELETE FROM recintos WHERE id=?")->execute([$id]);
-        $ok = 'Recinto eliminado.';
+        epl_redirect_ok('Recinto eliminado.');
     }
 }
 

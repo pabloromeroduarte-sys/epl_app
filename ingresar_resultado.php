@@ -11,8 +11,9 @@ $db      = epl_db();
 $liga    = epl_liga_activa();
 $equipo  = $liga ? epl_equipo_del_jugador($jugador['id'], $liga['id']) : null;
 
-$ok    = false;
-$error = '';
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok');
+$error  = ($_flash && $_flash['tipo']==='error') ? $_flash['msg'] : '';
 
 $partidos_pendientes = [];
 if ($equipo) {
@@ -127,9 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
                 );
             }
 
-            $ok = true;
-            $st->execute([$liga['id'], $equipo['id'], $equipo['id']]);
-            $partidos_pendientes = $st->fetchAll();
+            epl_redirect_ok('resultado_ok');
         }
     }
 }

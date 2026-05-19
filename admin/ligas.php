@@ -6,8 +6,9 @@ epl_require_admin();
 
 $db  = epl_db();
 epl_ensure_ligas_columnas_mp_precio();
-$ok  = '';
-$err = '';
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -49,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                ->execute([$nombre,$tipo,$sexo,$formato,$cat?:null,$estado,$precio,$precio_neto_deseado,$mp_comision_pct_db,
                           $sede_txt ?: null,$url_maps?:null,$f_inicio,$f_fin,$i_inicio,$i_fin,
                           $p1,$p2,$p3,$p4,$pg,$recinto_id]);
-            $ok = 'Competición <strong>'.htmlspecialchars($nombre).'</strong> creada.';
+            epl_redirect_ok('Competición '.htmlspecialchars($nombre).' creada.');
         }
 
     } elseif ($action === 'cambiar_estado') {
@@ -57,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $est = $_POST['estado'] ?? '';
         if ($id && in_array($est,['proximamente','inscripcion','activa','finalizada'])) {
             $db->prepare("UPDATE ligas SET estado=? WHERE id=?")->execute([$est,$id]);
-            $ok = 'Estado actualizado.';
+            epl_redirect_ok('Estado actualizado.');
         }
 
     } elseif ($action === 'eliminar') {
@@ -72,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->prepare("DELETE FROM partidos            WHERE liga_id=?")->execute([$id]);
                 $db->prepare("DELETE FROM ligas               WHERE id=?")->execute([$id]);
                 $db->exec("SET FOREIGN_KEY_CHECKS=1");
-                $ok = 'Competición eliminada.';
+                epl_redirect_ok('Competición eliminada.');
             } catch (Throwable $e) {
                 $db->exec("SET FOREIGN_KEY_CHECKS=1");
                 $err = 'Error al eliminar: ' . $e->getMessage();

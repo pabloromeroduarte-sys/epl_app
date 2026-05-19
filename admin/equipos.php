@@ -4,9 +4,10 @@ require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 epl_require_admin();
 
-$db  = epl_db();
-$ok  = '';
-$err = '';
+$db     = epl_db();
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -25,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->prepare("INSERT IGNORE INTO liga_equipos (liga_id,equipo_id) VALUES (?,?)")->execute([$liga,$eid]);
                 $db->prepare("INSERT IGNORE INTO clasificacion (liga_id,equipo_id) VALUES (?,?)")->execute([$liga,$eid]);
             }
-            $ok = 'Equipo creado.';
+            epl_redirect_ok('Equipo creado.');
         }
     }
 }

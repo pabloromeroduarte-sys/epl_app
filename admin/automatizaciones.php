@@ -38,7 +38,9 @@ $dest_labels = [
     'ambos'   => ['icon'=>'🤝','label'=>'Jugador + Admins'],
 ];
 
-$ok = $err = '';
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 $editing = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -64,12 +66,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($action === 'crear') {
                 $db->prepare("INSERT INTO email_automatizaciones (nombre,trigger_tipo,destinatario,activo,asunto,cuerpo) VALUES (?,?,?,?,?,?)")
                    ->execute([$nombre,$tipo,$dest,$activo,$asunto,$cuerpo]);
-                $ok = 'Automatización creada.';
+                epl_redirect_ok('Automatización creada.', 'automatizaciones.php');
             } else {
                 $id = (int)($_POST['id'] ?? 0);
                 $db->prepare("UPDATE email_automatizaciones SET nombre=?,trigger_tipo=?,destinatario=?,activo=?,asunto=?,cuerpo=?,updated_at=NOW() WHERE id=?")
                    ->execute([$nombre,$tipo,$dest,$activo,$asunto,$cuerpo,$id]);
-                $ok = 'Guardado.';
+                epl_redirect_ok('Guardado.', 'automatizaciones.php');
             }
         }
         if ($err && $action === 'actualizar') {

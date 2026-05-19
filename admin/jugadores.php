@@ -4,9 +4,10 @@ require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 epl_require_admin();
 
-$db  = epl_db();
-$ok  = '';
-$err = '';
+$db     = epl_db();
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 
 // Migración: columna must_change_password
 try { $db->exec("ALTER TABLE jugadores ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0"); } catch (Throwable $e) {}
@@ -51,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $db->prepare("INSERT INTO jugadores (email,password,nombre,apellido,rol,telefono,nivel) VALUES (?,?,?,?,?,?,?)")
                    ->execute([$email, epl_hash_password($pass_raw), $nombre, $apellido, $rol, $telefono?:null, $nivel]);
-                $ok = "Jugador <strong>{$nombre} {$apellido}</strong> creado.";
+                epl_redirect_ok("Jugador {$nombre} {$apellido} creado.");
             } catch (PDOException $e) {
                 $err = $e->getCode() == 23000 ? 'Ese email ya existe.' : 'Error al crear.';
             }
@@ -62,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cur = $_POST['estado'] ?? 'activo';
         $new = $cur === 'activo' ? 'inactivo' : 'activo';
         $db->prepare("UPDATE jugadores SET estado=? WHERE id=?")->execute([$new, $id]);
-        $ok = 'Estado actualizado.';
+        epl_redirect_ok('Estado actualizado.');
 
     } elseif ($action === 'reset_pass') {
         $id  = (int)($_POST['id']       ?? 0);
@@ -70,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (strlen($new) < 6) { $err = 'Contraseña mínimo 6 caracteres.'; }
         else {
             $db->prepare("UPDATE jugadores SET password=? WHERE id=?")->execute([epl_hash_password($new), $id]);
-            $ok = 'Contraseña actualizada.';
+            epl_redirect_ok('Contraseña actualizada.');
         }
 
     } elseif ($action === 'clave_temporal') {
@@ -81,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $jj = $st->fetch(PDO::FETCH_ASSOC);
         $db->prepare("UPDATE jugadores SET password=?, must_change_password=1 WHERE id=?")
            ->execute([epl_hash_password('123456'), $id]);
-        $ok = 'Clave temporal <strong>123456</strong> asignada a ' . epl_h(($jj['nombre']??'').' '.($jj['apellido']??'')) . '. Se pedirá cambio al ingresar.';
+        epl_redirect_ok('Clave temporal 123456 asignada a ' . (($jj['nombre']??'').' '.($jj['apellido']??'')) . '. Se pedirá cambio al ingresar.');
 
     } elseif ($action === 'clave_temporal_masivo') {
         $ids = array_map('intval', $_POST['jugador_ids'] ?? []);
@@ -91,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $params_upd = array_merge([epl_hash_password('123456')], $ids);
             $db->prepare("UPDATE jugadores SET password=?, must_change_password=1 WHERE id IN ($ph)")
                ->execute($params_upd);
-            $ok = 'Clave temporal <strong>123456</strong> asignada a ' . count($ids) . ' jugador(es). Deberán cambiarla al ingresar.';
+            epl_redirect_ok('Clave temporal 123456 asignada a ' . count($ids) . ' jugador(es). Deberán cambiarla al ingresar.');
         }
 
     } elseif ($action === 'editar') {
@@ -126,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    $nivel,$lado,$pala?:null,$talla?:null,$frec,
                    $rol,$estado,$id
                ]);
-            $ok = 'Jugador actualizado.';
+            epl_redirect_ok('Jugador actualizado.');
         }
 
     } elseif ($action === 'mail_reset_masivo') {
@@ -154,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $res = epl_mail_enviar($j['email'], 'Cambio de contraseña — Elite Padel League', $html, $nombre);
                 $res['ok'] ? $enviados++ : $fallidos++;
             }
-            $ok = "Correos enviados: {$enviados}" . ($fallidos ? " | Fallidos: {$fallidos}" : '') . '.';
+            epl_redirect_ok("Correos enviados: {$enviados}" . ($fallidos ? " | Fallidos: {$fallidos}" : '') . '.');
         }
     }
 }

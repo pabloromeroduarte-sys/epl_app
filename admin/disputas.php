@@ -7,9 +7,10 @@ epl_require_admin();
 
 epl_ensure_disputas_schema();
 
-$db  = epl_db();
-$ok  = '';
-$err = '';
+$db     = epl_db();
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 
 // ── POST: resolver disputa ─────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -47,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 epl_url('dashboard.php')
             );
 
-            $ok = "Disputa #{$disputa_id} marcada como resuelta.";
+            epl_redirect_ok("Disputa #{$disputa_id} marcada como resuelta.");
         } else {
             $err = 'Disputa no encontrada o ya resuelta.';
         }

@@ -2,6 +2,34 @@
 declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 
+// ── Flash messages (PRG pattern) ─────────────────────────────────────────────
+/**
+ * Guarda un mensaje flash en sesión y redirige (Post → Redirect → Get).
+ * Usar siempre después de un POST exitoso.
+ */
+function epl_redirect_ok(string $msg, string $url = ''): void {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    $_SESSION['_epl_flash'] = ['tipo' => 'ok', 'msg' => $msg];
+    $dest = $url ?: strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+    header('Location: ' . $dest);
+    exit;
+}
+function epl_redirect_error(string $msg, string $url = ''): void {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    $_SESSION['_epl_flash'] = ['tipo' => 'error', 'msg' => $msg];
+    $dest = $url ?: strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+    header('Location: ' . $dest);
+    exit;
+}
+/** Recupera y borra el flash de sesión. Retorna ['tipo','msg'] o null. */
+function epl_flash_get(): ?array {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    $f = $_SESSION['_epl_flash'] ?? null;
+    unset($_SESSION['_epl_flash']);
+    return $f;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function epl_h(?string $s): string {
     return htmlspecialchars($s ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }

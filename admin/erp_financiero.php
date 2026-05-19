@@ -4,9 +4,10 @@ require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 epl_require_admin();
 
-$db  = epl_db();
-$ok  = '';
-$err = '';
+$db     = epl_db();
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
+$err    = '';
 $tab = $_GET['tab'] ?? 'ingresos';
 
 // =========================================================
@@ -21,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($pid) {
             $db->prepare("UPDATE pagos SET estado='completado', metodo='Transferencia / Efectivo', mp_payment_id='Forzado por admin' WHERE id=?")
                ->execute([$pid]);
-            $ok = 'Pago marcado como completado.';
+            epl_redirect_ok('Pago marcado como completado.', '?tab=ingresos');
         }
         $tab = 'ingresos';
     }
@@ -43,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'metodo'   => 'Manual',
                 'notas'    => $notas,
             ]);
-            $ok = 'Ingreso manual registrado.';
+            epl_redirect_ok('Ingreso manual registrado.', '?tab=ingresos');
         } else {
             $err = 'Concepto y monto son obligatorios.';
         }
@@ -55,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pid = (int)($_POST['pago_id'] ?? 0);
         if ($pid) {
             $db->prepare("DELETE FROM pagos WHERE id=?")->execute([$pid]);
-            $ok = 'Registro eliminado.';
+            epl_redirect_ok('Registro eliminado.', '?tab=ingresos');
         }
         $tab = 'ingresos';
     }
@@ -71,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($concepto && $monto > 0) {
             $db->prepare("INSERT INTO gastos (liga_id, concepto, categoria, monto, fecha, notas) VALUES (?,?,?,?,?,?)")
                ->execute([$liga_id, $concepto, $categoria ?: null, $monto, $fecha, $notas ?: null]);
-            $ok = 'Gasto registrado.';
+            epl_redirect_ok('Gasto registrado.', '?tab=gastos');
         } else {
             $err = 'Concepto y monto son obligatorios.';
         }
@@ -83,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $gid = (int)($_POST['gasto_id'] ?? 0);
         if ($gid) {
             $db->prepare("DELETE FROM gastos WHERE id=?")->execute([$gid]);
-            $ok = 'Gasto eliminado.';
+            epl_redirect_ok('Gasto eliminado.', '?tab=gastos');
         }
         $tab = 'gastos';
     }
@@ -99,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($club && $monto > 0) {
             $db->prepare("INSERT INTO saldos_clubes (liga_id, club, tipo, monto, fecha, notas) VALUES (?,?,?,?,?,?)")
                ->execute([$liga_id, $club, $tipo, $monto, $fecha, $notas ?: null]);
-            $ok = 'Movimiento registrado.';
+            epl_redirect_ok('Movimiento registrado.', '?tab=saldos');
         } else {
             $err = 'Club y monto son obligatorios.';
         }
@@ -111,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sid = (int)($_POST['saldo_id'] ?? 0);
         if ($sid) {
             $db->prepare("DELETE FROM saldos_clubes WHERE id=?")->execute([$sid]);
-            $ok = 'Movimiento eliminado.';
+            epl_redirect_ok('Movimiento eliminado.', '?tab=saldos');
         }
         $tab = 'saldos';
     }

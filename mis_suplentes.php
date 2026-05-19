@@ -10,8 +10,10 @@ $db      = epl_db();
 $liga    = epl_liga_activa();
 $equipo  = $liga ? epl_equipo_del_jugador($jugador['id'], $liga['id']) : null;
 
-$ok    = '';
-$error = '';
+// Recuperar flash del redirect anterior
+$_flash = epl_flash_get();
+$ok     = ($_flash && $_flash['tipo']==='ok')    ? $_flash['msg'] : '';
+$error  = ($_flash && $_flash['tipo']==='error') ? $_flash['msg'] : '';
 
 $suplentes = [];
 if ($equipo && $liga) {
@@ -75,13 +77,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
                             "El equipo {$equipo['nombre']} te registró como suplente en {$liga['nombre']}.",
                             epl_url('mis_torneos.php')
                         );
-                        $ok = 'Suplente registrado correctamente.';
-                        $stS->execute([$equipo['id'], $liga['id']]);
-                        $suplentes = $stS->fetchAll();
-                        $cupos_usados = count($suplentes);
-                        $cupos_restantes = max(0, 2 - $cupos_usados);
+                        epl_redirect_ok('Suplente registrado correctamente.');
                     } catch (PDOException $e) {
-                        $error = 'Ese jugador ya está registrado como suplente de tu equipo.';
+                        epl_redirect_error('Ese jugador ya está registrado como suplente de tu equipo.');
                     }
                 }
             }
@@ -102,22 +100,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
                 $db->prepare("INSERT INTO suplente_partidos (suplente_id, partido_id, registrado_por) VALUES (?,?,?)")
                    ->execute([$suplente_id, $partido_id, $jugador['id']]);
                 $db->prepare("UPDATE suplentes SET partidos_jugados = partidos_jugados + 1 WHERE id=?")->execute([$suplente_id]);
-                $ok = 'Partido de suplente registrado.';
-                $stPS->execute([$equipo['id'], $liga['id']]);
-                foreach ($stPS->fetchAll() as $r) $partidos_suplente[$r['suplente_id']] = $r['total'];
+                epl_redirect_ok('Partido de suplente registrado.');
             } catch (PDOException $e) {
-                $error = 'Ese partido ya fue registrado para este suplente.';
+                epl_redirect_error('Ese partido ya fue registrado para este suplente.');
             }
         }
 
     } elseif ($action === 'desactivar') {
         $suplente_id = (int)($_POST['suplente_id'] ?? 0);
         $db->prepare("UPDATE suplentes SET estado='inactivo' WHERE id=? AND equipo_id=?")->execute([$suplente_id, $equipo['id']]);
-        $ok = 'Suplente removido.';
-        $stS->execute([$equipo['id'], $liga['id']]);
-        $suplentes = $stS->fetchAll();
-        $cupos_usados = count($suplentes);
-        $cupos_restantes = max(0, 2 - $cupos_usados);
+        epl_redirect_ok('Suplente removido.');
     }
 }
 
