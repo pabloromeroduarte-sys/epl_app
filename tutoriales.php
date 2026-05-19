@@ -240,21 +240,23 @@ require_once 'includes/header.php';
           <div id="android-notif" class="tut-tab-panel active">
             <ul class="tut-steps">
               <li class="tut-step"><div class="step-num">1</div><div class="step-text">Abre la app e ingresa a tu cuenta.</div></li>
-              <li class="tut-step"><div class="step-num">2</div><div class="step-text">En el <strong>Dashboard</strong> verás un banner dorado <em>"Activar notificaciones"</em>.</div></li>
+              <li class="tut-step"><div class="step-num">2</div><div class="step-text">En el <strong>Inicio (Dashboard)</strong> verás un banner dorado <em>"Activar notificaciones"</em>.</div></li>
               <li class="tut-step"><div class="step-num">3</div><div class="step-text">Toca el botón. Android pedirá permiso — toca <strong>"Permitir"</strong>.</div></li>
               <li class="tut-step"><div class="step-num">4</div><div class="step-text">¡Listo! Recibirás alertas <strong>24h, 12h y 3h</strong> antes de cada partido.</div></li>
             </ul>
-            <div class="tut-tip"><span>💡</span><div>Si cerraste el banner sin activar, entra a <strong>Mi Perfil → Notificaciones</strong> y actívalas desde ahí.</div></div>
+            <div class="tut-tip"><span>💡</span><div>¿No salió la pregunta de permiso o cerraste el banner? Ve al <strong>Inicio de la app</strong> y toca la opción <em>"Activar notificaciones"</em> que aparece ahí. Si tampoco aparece, ve a <strong>Ajustes del teléfono → Apps → Elite Padel → Notificaciones → Activar</strong>.</div></div>
+            <a href="dashboard.php" class="tut-btn">Ir al Inicio →</a>
           </div>
 
           <div id="ios-notif" class="tut-tab-panel">
             <ul class="tut-steps">
               <li class="tut-step"><div class="step-num">1</div><div class="step-text"><strong>Primero instala la app</strong> desde Safari (ver tutorial "Instalar la app").</div></li>
               <li class="tut-step"><div class="step-num">2</div><div class="step-text">Abre la app <strong>tocando el ícono</strong> en tu pantalla — no desde Safari.</div></li>
-              <li class="tut-step"><div class="step-num">3</div><div class="step-text">En el Dashboard toca el banner dorado <em>"Activar notificaciones"</em>.</div></li>
+              <li class="tut-step"><div class="step-num">3</div><div class="step-text">Ve al <strong>Inicio (Dashboard)</strong> y toca el banner dorado <em>"Activar notificaciones"</em>.</div></li>
               <li class="tut-step"><div class="step-num">4</div><div class="step-text">iPhone preguntará si permitir notificaciones — toca <strong>"Permitir"</strong>.</div></li>
             </ul>
-            <div class="tut-tip"><span>⚠️</span><div>¿No apareció la pregunta? Ve a <strong>Ajustes del iPhone → busca "Elite Padel" → Notificaciones → Activar</strong>. Requiere iOS 16.4 o superior.</div></div>
+            <div class="tut-tip"><span>⚠️</span><div>¿No apareció la pregunta ni el banner? Abre la app <strong>desde el ícono</strong>, ve al <strong>Inicio</strong> y busca la opción <em>"Activar notificaciones"</em>. Si aún no aparece, ve a <strong>Ajustes del iPhone → busca "Elite Padel" → Notificaciones → Activar</strong>. Requiere iOS 16.4 o superior.</div></div>
+            <a href="dashboard.php" class="tut-btn">Ir al Inicio →</a>
           </div>
         </div>
       </div>
