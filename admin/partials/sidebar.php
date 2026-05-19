@@ -10,7 +10,7 @@ try {
 } catch (Throwable $_e) {}
 
 // Detectar si la página actual está en el grupo Herramientas
-$_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notificaciones.php','configuracion.php']);
+$_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notificaciones.php','configuracion.php','erp_financiero.php']);
 ?>
 <aside class="dash-sidebar">
   <div style="padding:1.25rem 1rem 1rem;border-bottom:1px solid rgba(255,255,255,.08)">
@@ -30,7 +30,6 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
       <a href="dashboard_repro.php" class="dash-nav-link <?= $cur==='dashboard_repro.php'?'active':'' ?>">Reprogramaciones</a>
       <a href="inscripciones.php"   class="dash-nav-link <?= $cur==='inscripciones.php'?'active':'' ?>">Inscripciones</a>
       <a href="suplentes.php"       class="dash-nav-link <?= $cur==='suplentes.php'?'active':'' ?>">Suplentes</a>
-      <a href="erp_financiero.php"  class="dash-nav-link <?= $cur==='erp_financiero.php'?'active':'' ?>" style="color:var(--gold)">💰 ERP Financiero</a>
       <a href="disputas.php"        class="dash-nav-link <?= $cur==='disputas.php'?'active':'' ?>" style="display:flex;align-items:center;justify-content:space-between">
         <span>⚠️ Disputas</span>
         <?php if ($_disp_count > 0): ?>
@@ -48,6 +47,7 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
         </svg>
       </button>
       <div id="tools-menu" class="dash-tools-menu <?= $_in_tools ? 'open' : '' ?>">
+        <a href="erp_financiero.php"   class="dash-nav-link <?= $cur==='erp_financiero.php'?'active':'' ?>">💰 ERP Financiero</a>
         <a href="automatizaciones.php" class="dash-nav-link <?= $cur==='automatizaciones.php'?'active':'' ?>">✉ Automatizaciones</a>
         <a href="content_studio.php"   class="dash-nav-link <?= $cur==='content_studio.php'?'active':'' ?>">🎬 Content Studio</a>
         <a href="notificaciones.php"   class="dash-nav-link <?= $cur==='notificaciones.php'?'active':'' ?>">🔔 Notif. Push</a>
