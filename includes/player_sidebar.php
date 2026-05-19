@@ -153,3 +153,5 @@ $_ranking = $_rk->fetch();
     <?php endif; ?>
   </div>
 </nav>
+
+<?php require_once __DIR__ . '/chat_asistente.php'; ?>
