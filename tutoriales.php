@@ -66,6 +66,16 @@ require_once 'includes/header.php';
     font-size:.78rem; color:#92400e;
     margin-top:.85rem; display:flex; gap:.5rem; align-items:flex-start;
 }
+.tut-tabs { display:flex; gap:.4rem; margin:.75rem 0 .85rem; }
+.tut-tab  {
+    flex:1; padding:.45rem .5rem; border:1.5px solid #e2e8f0;
+    border-radius:8px; background:#fff; font-size:.75rem; font-weight:700;
+    color:#64748b; cursor:pointer; transition:all .15s;
+}
+.tut-tab.active  { background:#1c2f48; color:#C9A762; border-color:#1c2f48; }
+.tut-tab-panel   { display:none; }
+.tut-tab-panel.active { display:block; }
+
 .tut-btn {
     display:inline-flex; align-items:center; gap:.4rem;
     background:#C9A762; color:#1c2f48;
@@ -174,6 +184,81 @@ require_once 'includes/header.php';
         </div>
       </div>
 
+      <!-- ── 5. Instalar la app ── -->
+      <div class="tut-card" onclick="toggleTut(this)">
+        <div class="tut-card-head">
+          <div class="tut-icon" style="background:#ede9fe;">📲</div>
+          <div>
+            <h2>Instalar la app</h2>
+            <small>Android e iPhone</small>
+          </div>
+        </div>
+        <div class="tut-body">
+          <div class="tut-tabs">
+            <button class="tut-tab active" onclick="switchTab(event,'android-inst')">🤖 Android</button>
+            <button class="tut-tab"        onclick="switchTab(event,'ios-inst')">🍎 iPhone</button>
+          </div>
+
+          <div id="android-inst" class="tut-tab-panel active">
+            <ul class="tut-steps">
+              <li class="tut-step"><div class="step-num">1</div><div class="step-text">Abre <strong>Chrome</strong> en tu Android y entra a <strong>epleague.cl</strong>.</div></li>
+              <li class="tut-step"><div class="step-num">2</div><div class="step-text">Toca los <strong>3 puntos</strong> (menú arriba a la derecha).</div></li>
+              <li class="tut-step"><div class="step-num">3</div><div class="step-text">Selecciona <strong>"Añadir a pantalla de inicio"</strong> o <strong>"Instalar app"</strong>.</div></li>
+              <li class="tut-step"><div class="step-num">4</div><div class="step-text">Confirma. El ícono de <strong>Elite Padel League</strong> aparece en tu pantalla principal.</div></li>
+            </ul>
+            <div class="tut-tip"><span>💡</span><div>Desde ese ícono la app se abre en pantalla completa, sin barra del navegador.</div></div>
+          </div>
+
+          <div id="ios-inst" class="tut-tab-panel">
+            <ul class="tut-steps">
+              <li class="tut-step"><div class="step-num">1</div><div class="step-text">Abre <strong>Safari</strong> (no Chrome ni otro) y entra a <strong>epleague.cl</strong>.</div></li>
+              <li class="tut-step"><div class="step-num">2</div><div class="step-text">Toca el botón de <strong>compartir</strong> (cuadrado con flecha hacia arriba, barra inferior).</div></li>
+              <li class="tut-step"><div class="step-num">3</div><div class="step-text">Desplázate y toca <strong>"Añadir a pantalla de inicio"</strong>.</div></li>
+              <li class="tut-step"><div class="step-num">4</div><div class="step-text">Toca <strong>Añadir</strong> arriba a la derecha. El ícono queda en tu Home Screen.</div></li>
+              <li class="tut-step"><div class="step-num">5</div><div class="step-text">Abre la app <strong>tocando el ícono</strong> (no desde Safari).</div></li>
+            </ul>
+            <div class="tut-tip"><span>⚠️</span><div>En iPhone <strong>debe ser Safari</strong>. Chrome e otros navegadores no permiten instalarla ni recibir notificaciones.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 6. Activar notificaciones ── -->
+      <div class="tut-card" onclick="toggleTut(this)">
+        <div class="tut-card-head">
+          <div class="tut-icon" style="background:#fce7f3;">🔔</div>
+          <div>
+            <h2>Activar notificaciones</h2>
+            <small>Alertas de partidos</small>
+          </div>
+        </div>
+        <div class="tut-body">
+          <div class="tut-tabs">
+            <button class="tut-tab active" onclick="switchTab(event,'android-notif')">🤖 Android</button>
+            <button class="tut-tab"        onclick="switchTab(event,'ios-notif')">🍎 iPhone</button>
+          </div>
+
+          <div id="android-notif" class="tut-tab-panel active">
+            <ul class="tut-steps">
+              <li class="tut-step"><div class="step-num">1</div><div class="step-text">Abre la app e ingresa a tu cuenta.</div></li>
+              <li class="tut-step"><div class="step-num">2</div><div class="step-text">En el <strong>Dashboard</strong> verás un banner dorado <em>"Activar notificaciones"</em>.</div></li>
+              <li class="tut-step"><div class="step-num">3</div><div class="step-text">Toca el botón. Android pedirá permiso — toca <strong>"Permitir"</strong>.</div></li>
+              <li class="tut-step"><div class="step-num">4</div><div class="step-text">¡Listo! Recibirás alertas <strong>24h, 12h y 3h</strong> antes de cada partido.</div></li>
+            </ul>
+            <div class="tut-tip"><span>💡</span><div>Si cerraste el banner sin activar, entra a <strong>Mi Perfil → Notificaciones</strong> y actívalas desde ahí.</div></div>
+          </div>
+
+          <div id="ios-notif" class="tut-tab-panel">
+            <ul class="tut-steps">
+              <li class="tut-step"><div class="step-num">1</div><div class="step-text"><strong>Primero instala la app</strong> desde Safari (ver tutorial "Instalar la app").</div></li>
+              <li class="tut-step"><div class="step-num">2</div><div class="step-text">Abre la app <strong>tocando el ícono</strong> en tu pantalla — no desde Safari.</div></li>
+              <li class="tut-step"><div class="step-num">3</div><div class="step-text">En el Dashboard toca el banner dorado <em>"Activar notificaciones"</em>.</div></li>
+              <li class="tut-step"><div class="step-num">4</div><div class="step-text">iPhone preguntará si permitir notificaciones — toca <strong>"Permitir"</strong>.</div></li>
+            </ul>
+            <div class="tut-tip"><span>⚠️</span><div>¿No apareció la pregunta? Ve a <strong>Ajustes del iPhone → busca "Elite Padel" → Notificaciones → Activar</strong>. Requiere iOS 16.4 o superior.</div></div>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /tut-grid -->
 
   </main>
@@ -189,6 +274,15 @@ function toggleTut(card) {
     body.classList.add('open');
     card.classList.add('open');
   }
+}
+
+function switchTab(e, panelId) {
+  e.stopPropagation(); // no cierra el acordeón
+  const card = e.target.closest('.tut-body');
+  card.querySelectorAll('.tut-tab').forEach(t => t.classList.remove('active'));
+  card.querySelectorAll('.tut-tab-panel').forEach(p => p.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
 }
 </script>
 
