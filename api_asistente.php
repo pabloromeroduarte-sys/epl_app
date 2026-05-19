@@ -46,9 +46,22 @@ $intents = [
                        'sets','games','gane','perdi','ganamos','perdimos','cargue','cargar','score',
                        'puntos','partido jugado','finalizo','termino'],
         'peso'     => 2,
-        'resp'     => 'Para *registrar el resultado* de un partido:\n1. Ve a **Ingresar Resultado**\n2. Selecciona tu partido pendiente\n3. Completa el marcador set a set\n4. Guarda — tu rival recibirá una notificación automática',
+        'resp'     => 'Para *registrar el resultado* de un partido:\n1. Ve a **Ingresar Resultado**\n2. Selecciona tu partido pendiente\n3. Completa el marcador set a set\n4. Confirma — tu rival recibirá una notificación con 24 horas para reclamar si hay un error',
         'link'     => ['url' => '/ingresar_resultado.php', 'texto' => '🏆 Ingresar Resultado'],
-        'sug'      => ['¿Cuánto tiempo tengo para cargar?','¿Qué pasa si el rival disputa?'],
+        'sug'      => ['¿Cuánto tiempo tiene el rival para reclamar?','¿Qué pasa si el rival disputa?'],
+    ],
+
+    // ── RECLAMAR / DISPUTA ─────────────────────────────────────
+    [
+        'id'       => 'reclamar',
+        'kw'       => ['reclamar','reclamo','disputar','disputa','resultado mal','marcador mal',
+                       'marcador incorrecto','resultado incorrecto','resultado equivocado',
+                       'error en el resultado','score malo','sets malos','impugnar','objetar',
+                       'no es correcto','esta mal el marcador'],
+        'peso'     => 3,
+        'resp'     => 'Si el marcador está incorrecto, puedes *reclamarlo* en las **24 horas** siguientes a que fue ingresado:\n1. Abre el correo o notificación que recibiste\n2. Toca **"⚠️ Reclamar Resultado"**\n3. Describe el error con detalle\n4. El administrador será notificado y lo resolverá\n\n⏱️ Pasadas las 24 horas, el resultado queda confirmado.',
+        'link'     => ['url' => '/tutoriales.php', 'texto' => '⚠️ Ver Tutorial Reclamos'],
+        'sug'      => ['¿Cuánto tiempo tengo para reclamar?','¿Quién puede reclamar un resultado?','¿Cómo contacto al admin?'],
     ],
 
     // ── REPROGRAMAR ────────────────────────────────────────────

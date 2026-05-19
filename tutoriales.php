@@ -113,9 +113,9 @@ require_once 'includes/header.php';
             <li class="tut-step"><div class="step-num">1</div><div class="step-text">Ve a <strong>Ingresar resultado</strong> en el menú lateral.</div></li>
             <li class="tut-step"><div class="step-num">2</div><div class="step-text">Verás la lista de tus partidos pendientes de puntuar.</div></li>
             <li class="tut-step"><div class="step-num">3</div><div class="step-text">Selecciona el partido y completa el <strong>marcador set a set</strong>.</div></li>
-            <li class="tut-step"><div class="step-num">4</div><div class="step-text">Presiona <strong>Guardar resultado</strong>. El rival recibirá una notificación.</div></li>
+            <li class="tut-step"><div class="step-num">4</div><div class="step-text">Presiona <strong>Confirmar resultado</strong>. El rival recibirá una notificación con el marcador.</div></li>
           </ul>
-          <div class="tut-tip"><span>⚠️</span><div>Solo puedes registrar partidos ya jugados. Si el rival disputa el resultado, el administrador lo resolverá.</div></div>
+          <div class="tut-tip"><span>⚠️</span><div>El equipo rival tiene <strong>24 horas</strong> para reclamar si el marcador es incorrecto. Pasado ese plazo, el resultado queda confirmado.</div></div>
           <a href="ingresar_resultado.php" class="tut-btn">Ir a Resultados →</a>
         </div>
       </div>
@@ -141,7 +141,29 @@ require_once 'includes/header.php';
         </div>
       </div>
 
-      <!-- ── 3. Ver tus partidos ── -->
+      <!-- ── 3. Reclamar resultado ── -->
+      <div class="tut-card" onclick="toggleTut(this)">
+        <div class="tut-card-head">
+          <div class="tut-icon" style="background:#fee2e2;">⚠️</div>
+          <div>
+            <h2>Reclamar resultado</h2>
+            <small>Disputar marcador incorrecto</small>
+          </div>
+        </div>
+        <div class="tut-body">
+          <ul class="tut-steps">
+            <li class="tut-step"><div class="step-num">1</div><div class="step-text">Cuando el equipo rival suba un resultado, recibirás una <strong>notificación y un correo</strong> con el marcador.</div></li>
+            <li class="tut-step"><div class="step-num">2</div><div class="step-text">Si el marcador está <strong>incorrecto</strong>, toca el botón <em>"⚠️ Reclamar Resultado"</em> del correo o la notificación.</div></li>
+            <li class="tut-step"><div class="step-num">3</div><div class="step-text">Verás el marcador registrado y un <strong>contador de tiempo</strong>. Tienes <strong>24 horas</strong> desde que se subió el resultado.</div></li>
+            <li class="tut-step"><div class="step-num">4</div><div class="step-text">Describe el error con detalle: sets correctos, games, etc. Luego presiona <strong>Enviar Reclamo</strong>.</div></li>
+            <li class="tut-step"><div class="step-num">5</div><div class="step-text">Los <strong>administradores son notificados</strong> inmediatamente y resolverán el caso.</div></li>
+          </ul>
+          <div class="tut-tip"><span>⏱️</span><div>Solo tienes <strong>24 horas</strong> para reclamar. Pasado ese plazo el resultado queda confirmado y no podrás disputarlo.</div></div>
+          <div class="tut-tip" style="background:#fef3c7;border-color:#fde68a;color:#78350f;margin-top:.5rem"><span>💡</span><div>Solo puede reclamar el <strong>equipo rival</strong> — es decir, quien no ingresó el resultado. Si ingresaste el resultado tú y te equivocaste, contacta al administrador directamente.</div></div>
+        </div>
+      </div>
+
+      <!-- ── 4. Ver tus partidos ── -->
       <div class="tut-card" onclick="toggleTut(this)">
         <div class="tut-card-head">
           <div class="tut-icon" style="background:#fce7f3;">🎾</div>
