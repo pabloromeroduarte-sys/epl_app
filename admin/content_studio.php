@@ -32,6 +32,7 @@ require_once '../includes/header.php';
           <p class="cs-empty-photos">Sin fotos aún</p>
         </div>
         <div id="photo-count" class="cs-photo-count" style="display:none"></div>
+        <p id="sort-hint" class="cs-sort-hint" style="display:none">↕ Arrastrá las fotos para reordenarlas</p>
       </div>
 
       <!-- Configuración -->
@@ -179,11 +180,12 @@ require_once '../includes/header.php';
 .cs-empty-photos { color: var(--gray-400); font-size: .75rem; text-align: center; grid-column: 1/-1; margin: .5rem 0; }
 .cs-photo-thumb {
   position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden;
-  border: 2px solid transparent; cursor: pointer; transition: border-color .15s;
+  border: 2px solid transparent; cursor: grab; transition: border-color .15s, opacity .15s, transform .15s;
+  user-select: none;
 }
 .cs-photo-thumb:hover { border-color: var(--gold); }
 .cs-photo-thumb.active { border-color: var(--navy); }
-.cs-photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cs-photo-thumb img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
 .cs-photo-thumb-del {
   position: absolute; top: 2px; right: 2px;
   width: 18px; height: 18px; border-radius: 50%;
@@ -191,10 +193,38 @@ require_once '../includes/header.php';
   font-size: .6rem; font-weight: 900;
   display: flex; align-items: center; justify-content: center;
   opacity: 0; transition: opacity .15s; border: none; cursor: pointer;
-  line-height: 1;
+  line-height: 1; z-index: 2;
 }
 .cs-photo-thumb:hover .cs-photo-thumb-del { opacity: 1; }
+
+/* Número de orden */
+.cs-photo-thumb-num {
+  position: absolute; bottom: 3px; left: 3px;
+  background: rgba(0,0,0,.65); color: #fff;
+  font-size: .55rem; font-weight: 800; border-radius: 4px;
+  padding: 1px 5px; line-height: 1.5; pointer-events: none;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Estados drag-and-drop */
+.cs-photo-thumb.dragging {
+  opacity: .35; cursor: grabbing; transform: scale(.95);
+}
+.cs-photo-thumb.drag-over-left {
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
+}
+.cs-photo-thumb.drag-over-right {
+  border-right: 3px solid var(--gold);
+  border-radius: 8px;
+}
+
 .cs-photo-count { font-size: .72rem; color: var(--gray-400); text-align: right; margin-top: .35rem; }
+.cs-sort-hint {
+  font-size: .68rem; color: var(--gold); text-align: center;
+  margin: .3rem 0 0; font-weight: 700; letter-spacing: .02em;
+  opacity: .8;
+}
 
 /* Form */
 .cs-label { display: block; font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--gray-400); margin-bottom: .35rem; }
@@ -693,19 +723,23 @@ function handleFiles(files) {
 }
 
 function refreshPhotoGrid() {
+  const sortHint = document.getElementById('sort-hint');
   if (!photos.length) {
     photoGrid.innerHTML = '<p class="cs-empty-photos">Sin fotos aún</p>';
     photoCount.style.display = 'none';
+    if (sortHint) sortHint.style.display = 'none';
     return;
   }
   photoGrid.innerHTML = photos.map((p, i) => `
-    <div class="cs-photo-thumb" data-i="${i}" title="${p.name}">
-      <img src="${p.img.src}" alt="">
+    <div class="cs-photo-thumb" data-i="${i}" title="${p.name}" draggable="true">
+      <img src="${p.img.src}" alt="" draggable="false">
+      <div class="cs-photo-thumb-num">${i + 1}</div>
       <button class="cs-photo-thumb-del" onclick="removePhoto(${i})" type="button">✕</button>
     </div>
   `).join('');
   photoCount.style.display = 'block';
   photoCount.textContent = `${photos.length} foto${photos.length!==1?'s':''}`;
+  if (sortHint) sortHint.style.display = photos.length > 1 ? 'block' : 'none';
 }
 
 window.removePhoto = function(i) {
@@ -733,7 +767,7 @@ function disableButtons() {
   btnRecord.disabled = true;
 }
 
-// ── Drag & drop ───────────────────────────────────────────
+// ── Drag & drop para subir fotos ─────────────────────────
 dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
@@ -742,6 +776,72 @@ dropZone.addEventListener('drop', e => {
   handleFiles(e.dataTransfer.files);
 });
 fileInput.addEventListener('change', () => { handleFiles(fileInput.files); fileInput.value=''; });
+
+// ── Reordenar fotos con drag-and-drop ────────────────────
+let dragSrcIdx = null;
+
+function clearDragStyles() {
+  document.querySelectorAll('.cs-photo-thumb').forEach(el => {
+    el.classList.remove('dragging', 'drag-over-left', 'drag-over-right');
+  });
+}
+
+photoGrid.addEventListener('dragstart', e => {
+  const thumb = e.target.closest('.cs-photo-thumb[draggable]');
+  if (!thumb) return;
+  dragSrcIdx = parseInt(thumb.dataset.i);
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', String(dragSrcIdx));
+  // Pequeño delay para que el ghost se vea bien
+  requestAnimationFrame(() => thumb.classList.add('dragging'));
+});
+
+photoGrid.addEventListener('dragend', () => {
+  clearDragStyles();
+  dragSrcIdx = null;
+});
+
+photoGrid.addEventListener('dragover', e => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const thumb = e.target.closest('.cs-photo-thumb[draggable]');
+  // Limpiar estilos previos
+  document.querySelectorAll('.cs-photo-thumb').forEach(el => {
+    el.classList.remove('drag-over-left', 'drag-over-right');
+  });
+  if (!thumb || parseInt(thumb.dataset.i) === dragSrcIdx) return;
+  // Detectar si el cursor está en la mitad izquierda o derecha
+  const rect = thumb.getBoundingClientRect();
+  const side = e.clientX < rect.left + rect.width / 2 ? 'left' : 'right';
+  thumb.classList.add(side === 'left' ? 'drag-over-left' : 'drag-over-right');
+});
+
+photoGrid.addEventListener('dragleave', e => {
+  const thumb = e.target.closest('.cs-photo-thumb');
+  if (thumb) thumb.classList.remove('drag-over-left', 'drag-over-right');
+});
+
+photoGrid.addEventListener('drop', e => {
+  e.preventDefault();
+  const thumb = e.target.closest('.cs-photo-thumb[draggable]');
+  clearDragStyles();
+  if (!thumb || dragSrcIdx === null) return;
+  const dropIdx = parseInt(thumb.dataset.i);
+  if (dropIdx === dragSrcIdx) return;
+
+  // Determinar si insertar antes o después según dónde cayó
+  const rect = thumb.getBoundingClientRect();
+  const insertAfter = e.clientX >= rect.left + rect.width / 2;
+  let targetIdx = insertAfter ? dropIdx + 1 : dropIdx;
+
+  // Reordenar el array
+  const [moved] = photos.splice(dragSrcIdx, 1);
+  if (targetIdx > dragSrcIdx) targetIdx--;  // ajustar por el splice
+  photos.splice(targetIdx, 0, moved);
+
+  refreshPhotoGrid();
+  if (!isPlaying) renderStatic(0);
+});
 
 // ── Play / Pause ──────────────────────────────────────────
 btnPlay.addEventListener('click', () => {
