@@ -116,7 +116,7 @@ require_once '../includes/header.php';
           <span id="audio-status-txt">⏳ Cargando música...</span>
         </div>
 
-        <p class="cs-export-note">El video incluye la música de fondo. Se guarda como <strong>.webm</strong>.</p>
+        <p class="cs-export-note">El video incluye la música de fondo. Se guarda como <strong>.mp4</strong>.</p>
 
         <!-- Barra de progreso de grabación -->
         <div id="record-progress" style="display:none">
@@ -139,8 +139,15 @@ require_once '../includes/header.php';
           <a id="download-link" href="#" download
              style="display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;box-sizing:border-box;padding:.8rem;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:10px;font-weight:800;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;transition:filter .15s">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            Descargar Video (.webm)
+            <span id="download-link-txt">Descargar Video (.mp4)</span>
           </a>
+          <!-- Convirtiendo a MP4 (se muestra si el navegador grabó en WebM) -->
+          <div id="converting-panel" style="display:none;margin-top:.75rem;text-align:center">
+            <div style="font-size:.82rem;font-weight:700;color:#1d4ed8;margin-bottom:.4rem">⏳ <span id="converting-txt">Convirtiendo a MP4...</span></div>
+            <div style="height:6px;background:#dbeafe;border-radius:3px;overflow:hidden">
+              <div id="converting-bar" style="height:100%;background:#2563eb;width:0%;transition:width .3s;border-radius:3px"></div>
+            </div>
+          </div>
           <button onclick="document.getElementById('download-panel').style.display='none'"
                   style="width:100%;margin-top:.5rem;padding:.45rem;background:none;border:none;font-size:.72rem;color:#15803d;cursor:pointer;font-weight:600">
             Cerrar
@@ -978,50 +985,125 @@ btnRecord.addEventListener('click', async () => {
     combinedStream = canvas.captureStream(30);
   }
 
-  // ── MediaRecorder ─────────────────────────────────────
+  // ── MediaRecorder — intentar MP4 nativo primero (Chrome 130+ Windows) ──
   const preferredTypes = [
+    'video/mp4;codecs="avc1,mp4a.40.2"',
+    'video/mp4;codecs="avc1"',
+    'video/mp4',
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
     'video/webm',
   ];
-  const mimeType = preferredTypes.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+  const mimeType  = preferredTypes.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+  const nativeMP4 = mimeType.startsWith('video/mp4');
 
   recorder = new MediaRecorder(combinedStream, { mimeType, videoBitsPerSecond: 8_000_000 });
   recorder.ondataavailable = e => { if (e.data.size > 0) recordChunks.push(e.data); };
 
-  recorder.onstop = () => {
-    // Detener audio si sigue
+  recorder.onstop = async () => {
     if (recAudioSrc) { try { recAudioSrc.stop(); } catch(e){} }
 
-    const blob  = new Blob(recordChunks, { type: mimeType });
-    const url   = URL.createObjectURL(blob);
-    const nm    = (inpEvent.value.trim() || 'EPL').replace(/[\s\/\\:*?"<>|]+/g,'_');
-    const fname = `EPL_${nm}.webm`;
+    const rawBlob = new Blob(recordChunks, { type: mimeType });
+    const nm      = (inpEvent.value.trim() || 'EPL').replace(/[\s\/\\:*?"<>|]+/g,'_');
 
-    // Mostrar panel de descarga con preview y botón claro
-    const panel      = document.getElementById('download-panel');
-    const dlLink     = document.getElementById('download-link');
-    const dlPreview  = document.getElementById('download-preview');
-    const dlInfo     = document.getElementById('download-info');
-
-    dlLink.href         = url;
-    dlLink.download     = fname;
-    dlPreview.src       = url;
-    dlPreview.style.display = 'block';
-    dlInfo.textContent  = `${fname} · ${(blob.size / 1024 / 1024).toFixed(1)} MB · ${Math.round(totalSec)}s`;
-    panel.style.display = 'block';
-    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-    // Liberar URL cuando se descargue o se cierre
-    dlLink.onclick = () => setTimeout(() => URL.revokeObjectURL(url), 10000);
-
-    // Reset UI
+    // Reset UI de grabación
     isRecording = false;
     btnRecord.disabled = false;
     btnRecord.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg> Grabar Video';
     btnPlay.disabled = false;
     recordProg.style.display = 'none';
     recordBar.style.width = '0%';
+
+    const panel         = document.getElementById('download-panel');
+    const dlLink        = document.getElementById('download-link');
+    const dlLinkTxt     = document.getElementById('download-link-txt');
+    const dlPreview     = document.getElementById('download-preview');
+    const dlInfo        = document.getElementById('download-info');
+    const convPanel     = document.getElementById('converting-panel');
+    const convTxt       = document.getElementById('converting-txt');
+    const convBar       = document.getElementById('converting-bar');
+
+    function showDownload(blob, ext) {
+      const url   = URL.createObjectURL(blob);
+      const fname = `EPL_${nm}.${ext}`;
+      dlLink.href      = url;
+      dlLink.download  = fname;
+      dlLinkTxt.textContent = `Descargar Video (.${ext})`;
+      dlPreview.src    = url;
+      dlPreview.style.display = 'block';
+      dlInfo.textContent = `${fname} · ${(blob.size/1024/1024).toFixed(1)} MB · ${Math.round(totalSec)}s`;
+      convPanel.style.display = 'none';
+      panel.style.display = 'block';
+      panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+      dlLink.onclick = () => setTimeout(() => URL.revokeObjectURL(url), 15000);
+    }
+
+    if (nativeMP4) {
+      // ✅ MP4 nativo — directo
+      showDownload(rawBlob, 'mp4');
+      startAnimation();
+      return;
+    }
+
+    // WebM grabado → convertir a MP4 con FFmpeg.wasm
+    panel.style.display   = 'block';
+    convPanel.style.display = 'block';
+    dlLink.style.display  = 'none';
+    dlPreview.style.display = 'none';
+    dlInfo.textContent    = `Convirtiendo ${Math.round(totalSec)}s de video...`;
+    panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+    try {
+      convTxt.textContent = 'Cargando conversor MP4...';
+      convBar.style.width = '10%';
+
+      // Cargar FFmpeg.wasm (single-thread, no necesita COOP/COEP)
+      const { FFmpeg } = await import('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
+      const { fetchFile, toBlobURL } = await import('https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js');
+
+      const ffmpeg = new FFmpeg();
+      ffmpeg.on('progress', ({ progress }) => {
+        convBar.style.width = (10 + progress * 85) + '%';
+        convTxt.textContent = `Convirtiendo... ${Math.round(progress * 100)}%`;
+      });
+
+      convBar.style.width = '20%';
+      convTxt.textContent = 'Cargando motor de conversión...';
+
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`,   'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+
+      convBar.style.width = '30%';
+      convTxt.textContent = 'Procesando video...';
+
+      await ffmpeg.writeFile('input.webm', await fetchFile(rawBlob));
+      await ffmpeg.exec([
+        '-i', 'input.webm',
+        '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+        '-c:a', 'aac', '-b:a', '128k',
+        '-movflags', '+faststart',
+        'output.mp4'
+      ]);
+
+      const data    = await ffmpeg.readFile('output.mp4');
+      const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+
+      convBar.style.width = '100%';
+      dlLink.style.display = '';
+      showDownload(mp4Blob, 'mp4');
+
+    } catch(err) {
+      console.error('FFmpeg conversion error:', err);
+      // Fallback: descargar el WebM original
+      convPanel.style.display = 'none';
+      dlLink.style.display = '';
+      dlInfo.textContent = '⚠️ No se pudo convertir a MP4. Descargando como WebM.';
+      showDownload(rawBlob, 'webm');
+    }
+
     startAnimation();
   };
 
