@@ -1,6 +1,12 @@
 <?php
 // Admin sidebar — include desde admin/*.php
 $cur = basename($_SERVER['PHP_SELF']);
+// Badge de disputas pendientes
+$_disp_count = 0;
+try {
+    epl_ensure_disputas_schema();
+    $_disp_count = (int)epl_db()->query("SELECT COUNT(*) FROM partido_disputas WHERE estado='pendiente'")->fetchColumn();
+} catch (Throwable $_e) {}
 ?>
 <aside class="dash-sidebar">
   <div style="padding:1.25rem 1rem 1rem;border-bottom:1px solid rgba(255,255,255,.08)">
@@ -20,6 +26,12 @@ $cur = basename($_SERVER['PHP_SELF']);
       <a href="suplentes.php"    class="dash-nav-link <?= $cur==='suplentes.php'   ?'active':'' ?>">Suplentes</a>
       <a href="erp_financiero.php" class="dash-nav-link <?= $cur==='erp_financiero.php'?'active':'' ?>" style="color:var(--gold)">💰 ERP Financiero</a>
       <a href="automatizaciones.php" class="dash-nav-link <?= $cur==='automatizaciones.php'?'active':'' ?>">✉ Automatizaciones</a>
+      <a href="disputas.php" class="dash-nav-link <?= $cur==='disputas.php'?'active':'' ?>" style="display:flex;align-items:center;justify-content:space-between">
+        <span>⚠️ Disputas</span>
+        <?php if ($_disp_count > 0): ?>
+        <span style="background:#dc2626;color:#fff;border-radius:50px;padding:.1rem .45rem;font-size:.65rem;font-weight:800;line-height:1.4"><?= $_disp_count ?></span>
+        <?php endif; ?>
+      </a>
       <a href="notificaciones.php" class="dash-nav-link <?= $cur==='notificaciones.php'?'active':'' ?>">🔔 Notificaciones Push</a>
       <a href="configuracion.php" class="dash-nav-link <?= $cur==='configuracion.php'?'active':'' ?>">⚙ Configuración</a>
     </div>

@@ -658,6 +658,7 @@ function epl_notif_marcar_todas_leidas(int $jugador_id): void {
 function epl_notif_icono(string $tipo): string {
     $iconos = [
         'resultado'      => '⚽',
+        'disputa'        => '⚠️',
         'reprogramacion' => '📅',
         'suplente'       => '👥',
         'inscripcion'    => '✅',
@@ -910,6 +911,50 @@ function epl_ensure_inscripciones_schema(): void {
     } catch (Throwable $e) {
         error_log('epl_ensure_inscripciones_schema: ' . $e->getMessage());
     }
+}
+
+// -------------------------------------------------------
+// Esquema disputas de resultados
+// -------------------------------------------------------
+
+function epl_ensure_disputas_schema(): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        $db = epl_db();
+
+        // Tabla partido_disputas
+        $db->exec("CREATE TABLE IF NOT EXISTS `partido_disputas` (
+            `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `partido_id`  INT UNSIGNED NOT NULL,
+            `jugador_id`  INT UNSIGNED NOT NULL,
+            `motivo`      TEXT NOT NULL,
+            `estado`      ENUM('pendiente','resuelta') NOT NULL DEFAULT 'pendiente',
+            `notas_admin` TEXT DEFAULT NULL,
+            `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `expires_at`  DATETIME NOT NULL,
+            PRIMARY KEY (`id`),
+            KEY `idx_pd_partido` (`partido_id`),
+            KEY `idx_pd_jugador` (`jugador_id`),
+            KEY `idx_pd_estado`  (`estado`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Columna resultado_ingresado_at en partidos (marca cuándo se cargó el resultado)
+        $cols = array_column($db->query('SHOW COLUMNS FROM partidos')->fetchAll(), 'Field');
+        if (!in_array('resultado_ingresado_at', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `resultado_ingresado_at` DATETIME NULL AFTER `fecha_jugado`");
+        }
+    } catch (Throwable $e) {
+        error_log('epl_ensure_disputas_schema: ' . $e->getMessage());
+    }
+}
+
+/** Devuelve array de IDs de todos los administradores activos. */
+function epl_admins_ids(): array {
+    $db = epl_db();
+    $st = $db->query("SELECT id FROM jugadores WHERE rol='admin' AND estado='activo'");
+    return array_column($st->fetchAll(), 'id');
 }
 
 // -------------------------------------------------------

@@ -106,7 +106,8 @@ function epl_mail_partido_visual(
     array   $filas,
     string  $subtitulo = '',
     string  $tip       = '',
-    string  $url       = ''
+    string  $url       = '',
+    string  $btn_texto = 'Ver mis partidos'
 ): void {
     if (!epl_smtp_habilitado()) return;
 
@@ -165,7 +166,7 @@ function epl_mail_partido_visual(
     <p style="margin:0 0 1.25rem;font-size:15px;color:#334155">Hola <strong>' . $nombre . '</strong>,</p>
     ' . $subtitulo_html . $vs_html . $tabla_html . $tip_html . '
     <p style="margin:0;text-align:center">
-      <a href="' . htmlspecialchars($link, ENT_QUOTES) . '" style="display:inline-block;background:#C9A762;color:#1c2f48;font-weight:900;font-size:13px;text-decoration:none;padding:.75rem 2rem;border-radius:8px;text-transform:uppercase;letter-spacing:.05em">Ver mis partidos</a>
+      <a href="' . htmlspecialchars($link, ENT_QUOTES) . '" style="display:inline-block;background:#C9A762;color:#1c2f48;font-weight:900;font-size:13px;text-decoration:none;padding:.75rem 2rem;border-radius:8px;text-transform:uppercase;letter-spacing:.05em">' . htmlspecialchars($btn_texto, ENT_QUOTES) . '</a>
     </p>';
 
     $html = epl_mail_plantilla($asunto, $body);

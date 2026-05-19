@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
     $partido_id   = (int)($_POST['partido_id'] ?? 0);
     $fecha_jugado = trim($_POST['fecha_jugado'] ?? '');
 
+    epl_ensure_disputas_schema();
     $stP = $db->prepare("SELECT * FROM partidos WHERE id=? AND (equipo_local_id=? OR equipo_visitante_id=?) AND estado='pendiente'");
     $stP->execute([$partido_id, $equipo['id'], $equipo['id']]);
     $partido = $stP->fetch();
@@ -61,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             }
             $ganador_id = $sets_local > $sets_vis ? $partido['equipo_local_id'] : $partido['equipo_visitante_id'];
 
+            $ahora = date('Y-m-d H:i:s');
             $db->prepare("
                 UPDATE partidos SET
                   estado='jugado', fecha_jugado=?,
@@ -68,15 +70,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
                   games_s1_local=?, games_s1_visitante=?,
                   games_s2_local=?, games_s2_visitante=?,
                   games_s3_local=?, games_s3_visitante=?,
-                  ganador_id=?, ingresado_por=?
+                  ganador_id=?, ingresado_por=?,
+                  resultado_ingresado_at=?
                 WHERE id=?
             ")->execute([
-                $fecha_jugado ?: date('Y-m-d H:i:s'),
+                $fecha_jugado ?: $ahora,
                 $sets_local, $sets_vis,
                 $sets[0]['local'] ?? null, $sets[0]['visitante'] ?? null,
                 $sets[1]['local'] ?? null, $sets[1]['visitante'] ?? null,
                 $sets[2]['local'] ?? null, $sets[2]['visitante'] ?? null,
-                $ganador_id, $jugador['id'], $partido_id
+                $ganador_id, $jugador['id'], $ahora, $partido_id
             ]);
 
             epl_recalcular_clasificacion($liga['id']);
@@ -96,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             $asunto_res      = "Resultado cargado: {$mi_nombre} vs {$rival_nombre}";
             $ganador_nombre  = $gano ? $mi_nombre : $rival_nombre;
             $resultado_sets  = implode(' / ', array_map(fn($s) => "{$s['local']}-{$s['visitante']}", $sets));
+            $url_reclamar    = epl_url("reclamar_resultado.php?partido_id={$partido_id}");
             $rivales = $db->prepare("SELECT jugador_id FROM liga_equipos WHERE equipo_id = ? AND liga_id = ?");
             $rivales->execute([$rival_id, $liga['id']]);
             foreach ($rivales->fetchAll() as $r) {
@@ -103,8 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
                     (int)$r['jugador_id'],
                     'resultado',
                     $asunto_res,
-                    ($gano ? "{$mi_nombre} ganó" : "{$rival_nombre} ganó") . " {$resultado}. Verificá el resultado en tus partidos.",
-                    epl_url('mis_torneos.php'),
+                    ($gano ? "{$mi_nombre} ganó" : "{$rival_nombre} ganó") . " {$resultado}. Tienes 24 horas para reclamar si hay un error.",
+                    $url_reclamar,
                     true // skip_email: enviamos visual por separado
                 );
                 epl_mail_partido_visual(
@@ -117,8 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
                         ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
                     ],
                     ($gano ? "{$mi_nombre} ganó" : "{$rival_nombre} ganó") . ' el partido.',
-                    '💡 Si el resultado es incorrecto, contacta al administrador para revisarlo.',
-                    epl_url('mis_torneos.php')
+                    '⚠️ Tienes 24 horas para reclamar si el marcador es incorrecto. Pasado ese plazo, el resultado queda confirmado.',
+                    $url_reclamar,
+                    '⚠️ Reclamar Resultado'
                 );
             }
 
