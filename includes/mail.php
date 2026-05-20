@@ -229,20 +229,24 @@ final class EplSmtpClient
         $this->cmd('RCPT TO:<' . $to . '>', [250, 251]);
         $this->cmd('DATA', [354]);
 
+        // Codificar body en quoted-printable para garantizar líneas ≤ 76 chars
+        // y evitar el error "lines too long for transport" de ciertos MTA.
+        $encodedBody = quoted_printable_encode($bodyHtml);
+
         $headers = [
             'From: ' . $fromHeader,
             'To: ' . $toHeader,
             'Subject: ' . $this->encodeHeader($subject),
             'MIME-Version: 1.0',
             'Content-Type: text/html; charset=UTF-8',
-            'Content-Transfer-Encoding: 8bit',
+            'Content-Transfer-Encoding: quoted-printable',
             'Date: ' . date('r'),
         ];
         $replyTo = trim($this->cfg['reply_to'] ?? '');
         if ($replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
             $headers[] = 'Reply-To: ' . $replyTo;
         }
-        $message = implode("\r\n", $headers) . "\r\n\r\n" . $bodyHtml . "\r\n.";
+        $message = implode("\r\n", $headers) . "\r\n\r\n" . $encodedBody . "\r\n.";
         fwrite($this->socket, $message . "\r\n");
         $this->expect($this->read(), [250]);
         $this->cmd('QUIT', [221]);
