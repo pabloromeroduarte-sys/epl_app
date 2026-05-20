@@ -119,7 +119,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $puede_reclamar) {
         if ($partido['games_s3_local'] !== null) $sets_txt[] = $partido['games_s3_local'] . '-' . $partido['games_s3_visitante'];
         $resultado_sets = implode(' / ', $sets_txt) ?: "{$partido['sets_local']}-{$partido['sets_visitante']}";
 
-        $asunto_admin = "⚠️ Reclamo de resultado: {$partido['local_nombre']} vs {$partido['visitante_nombre']}";
+        $asunto_admin = epl_mail_asunto(
+            '⚠️ Reclamo de resultado',
+            $partido['local_nombre'],
+            $partido['visitante_nombre'],
+            $partido['jornada'] ?? null
+        );
         $url_admin    = epl_url("admin/disputas.php");
 
         // Notificar a todos los administradores

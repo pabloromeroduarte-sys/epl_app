@@ -220,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Cargar nombres de equipos para emails visuales
                 $ids_str_b = implode(',', array_map('intval', $partido_ids));
                 $stNomB = $db->query("
-                    SELECT p.id, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+                    SELECT p.id, p.jornada, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
                            r.nombre AS recinto_nuevo
                     FROM partidos p
                     JOIN equipos el ON el.id = p.equipo_local_id
@@ -255,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     foreach ($stJugB->fetchAll() as $jrow) {
                         epl_mail_partido_visual(
                             (int)$jrow['id'],
-                            '📅 Nueva cancha asignada',
+                            epl_mail_asunto('📅 Nueva cancha asignada', $pnb['local_nombre'] ?? null, $pnb['visitante_nombre'] ?? null, $pnb['jornada'] ?? null),
                             $pnb ? $pnb['local_nombre']     : null,
                             $pnb ? $pnb['visitante_nombre'] : null,
                             $filas_recinto ?: [['icon' => '🏟️', 'label' => 'Cancha', 'valor' => 'Actualizada por la organización']],
@@ -287,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $fecha_fmt = date('d/m/Y H:i', strtotime($fecha_db));
                     // Notificar jugadores de cada partido afectado
                     $stNomF = $db->query("
-                        SELECT p.id, el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+                        SELECT p.id, p.jornada, el.nombre AS local_nombre, ev.nombre AS visitante_nombre
                         FROM partidos p
                         JOIN equipos el ON el.id = p.equipo_local_id
                         JOIN equipos ev ON ev.id = p.equipo_visitante_id
@@ -316,7 +316,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         foreach ($stJugF->fetchAll() as $jrow) {
                             epl_mail_partido_visual(
                                 (int)$jrow['id'],
-                                '📅 Nueva fecha de partido',
+                                epl_mail_asunto('📅 Nueva fecha de partido', $pnf['local_nombre'] ?? null, $pnf['visitante_nombre'] ?? null, $pnf['jornada'] ?? null),
                                 $pnf ? $pnf['local_nombre']     : null,
                                 $pnf ? $pnf['visitante_nombre'] : null,
                                 [['icon' => '📅', 'label' => 'Nueva fecha', 'valor' => $fecha_fmt]],
@@ -456,7 +456,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             // Cargar nombres de equipos y enviar email visual
             $stNomE = $db->prepare("
-                SELECT el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+                SELECT p.jornada, el.nombre AS local_nombre, ev.nombre AS visitante_nombre
                 FROM partidos p
                 JOIN equipos el ON el.id = p.equipo_local_id
                 JOIN equipos ev ON ev.id = p.equipo_visitante_id
@@ -479,7 +479,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($stJugE->fetchAll() as $jrow) {
                 epl_mail_partido_visual(
                     (int)$jrow['id'],
-                    '📅 Cambio en tu partido',
+                    epl_mail_asunto('📅 Cambio en tu partido', $pne['local_nombre'] ?? null, $pne['visitante_nombre'] ?? null, $pne['jornada'] ?? null),
                     $pne ? $pne['local_nombre']     : null,
                     $pne ? $pne['visitante_nombre'] : null,
                     $filas_edit,

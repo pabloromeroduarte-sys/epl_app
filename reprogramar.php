@@ -160,7 +160,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             ['icon' => '🏟️', 'label' => 'Recinto',          'valor' => $recinto_txt],
             $motivo ? ['icon' => '💬', 'label' => 'Motivo', 'valor' => $motivo] : null,
         ]));
-        $asunto_repr = "📅 Solicitud de reprogramación: {$partido_str}";
+        $asunto_repr = epl_mail_asunto(
+            '📅 Solicitud de reprogramación',
+            $partido['local_nombre'],
+            $partido['visitante_nombre'],
+            $partido['jornada'] ?? null
+        );
 
         $st_jug_repr = $db->prepare("
             SELECT DISTINCT j.id

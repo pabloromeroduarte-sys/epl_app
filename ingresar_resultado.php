@@ -97,7 +97,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             $gano = $ganador_id == $equipo['id'];
 
             // Notificar a jugadores del equipo rival
-            $asunto_res      = "Resultado cargado: {$mi_nombre} vs {$rival_nombre}";
+            $asunto_res = epl_mail_asunto(
+                '⚽ Resultado ingresado',
+                $partido['local_nombre'],
+                $partido['visitante_nombre'],
+                $partido['jornada'] ?? null
+            );
             $ganador_nombre  = $gano ? $mi_nombre : $rival_nombre;
             $resultado_sets  = implode(' / ', array_map(fn($s) => "{$s['local']}-{$s['visitante']}", $sets));
             $url_reclamar    = epl_url("reclamar_resultado.php?partido_id={$partido_id}");

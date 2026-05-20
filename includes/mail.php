@@ -3,6 +3,28 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/functions.php';
 
+/**
+ * Construye un asunto de mail estandarizado.
+ * Formato: "Acción | J{n} · Local vs Visitante"
+ * Ejemplo: "⚽ Resultado ingresado | J5 · Romero-Merino vs Sfeir-Amigo"
+ *
+ * @param string      $accion     Texto de la acción con emoji (ej: "⚽ Resultado ingresado")
+ * @param string|null $local      Nombre equipo local
+ * @param string|null $visitante  Nombre equipo visitante
+ * @param int|string|null $jornada Número de jornada
+ */
+function epl_mail_asunto(string $accion, ?string $local = null, ?string $visitante = null, $jornada = null): string {
+    $s = $accion;
+    $j = (string)($jornada ?? '');
+    if ($j !== '' && $j !== '0') {
+        $s .= ' | J' . $j;
+    }
+    if ($local !== null && $local !== '' && $visitante !== null && $visitante !== '') {
+        $s .= ' · ' . $local . ' vs ' . $visitante;
+    }
+    return $s;
+}
+
 function epl_smtp_habilitado(): bool {
     if (epl_config_get('mail_pausado', '0') === '1') {
         return false; // Modo mantenimiento: silencioso, no envía nada

@@ -52,7 +52,7 @@ if ($accion === 'aprobar') {
 
     // Cargar nombres de equipos para el email visual
     $stPN = $db->prepare("
-        SELECT el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+        SELECT el.nombre AS local_nombre, ev.nombre AS visitante_nombre, p.jornada
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
@@ -73,7 +73,7 @@ if ($accion === 'aprobar') {
         epl_notif_crear((int)$j['id'], 'reprogramacion', '📅 Partido reprogramado', $msg, epl_url('mis_partidos.php'), true);
         epl_mail_partido_visual(
             (int)$j['id'],
-            '📅 Partido reprogramado',
+            epl_mail_asunto('📅 Partido reprogramado', $pnombres['local_nombre'] ?? null, $pnombres['visitante_nombre'] ?? null, $pnombres['jornada'] ?? null),
             $pnombres ? $pnombres['local_nombre']     : null,
             $pnombres ? $pnombres['visitante_nombre'] : null,
             $filas_aprob,

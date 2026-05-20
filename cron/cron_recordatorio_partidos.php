@@ -71,7 +71,7 @@ foreach ($ventanas as [$horas, $tolerancia, $etiqueta]) {
         $visitante = trim($p['visitante_nombre']);
 
         $titulo_notif  = "⏰ Tu partido es en {$etiqueta}";
-        $titulo_email  = "Recordatorio: tu partido es en {$etiqueta}";
+        $titulo_email  = epl_mail_asunto("⏰ Recordatorio: partido en {$etiqueta}", $local, $visitante, $p['jornada'] ?? null);
         $push_body     = "{$local} vs {$visitante} — {$dia} {$hora}h · {$cancha}";
 
         $jugador_ids = array_unique(array_filter([
