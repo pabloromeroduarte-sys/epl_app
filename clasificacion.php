@@ -9,6 +9,31 @@ $liga_id = isset($_GET['liga']) ? (int)$_GET['liga'] : ($ligas[0]['id'] ?? 0);
 $liga_sel = null;
 foreach ($ligas as $l) { if ($l['id'] == $liga_id) { $liga_sel = $l; break; } }
 $clasificacion = $liga_id ? epl_clasificacion($liga_id) : [];
+
+// Cargar todos los partidos jugados de la liga para el popup
+$partidos_liga = [];
+if ($liga_id) {
+    $stP = $db->prepare("
+        SELECT p.id, p.jornada, p.fecha_jugado, p.fecha_programada,
+               p.sets_local, p.sets_visitante,
+               p.games_s1_local, p.games_s1_visitante,
+               p.games_s2_local, p.games_s2_visitante,
+               p.games_s3_local, p.games_s3_visitante,
+               p.ganador_id,
+               p.equipo_local_id, p.equipo_visitante_id,
+               el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+        FROM partidos p
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        WHERE p.liga_id = ? AND p.estado = 'jugado'
+        ORDER BY p.fecha_jugado DESC, p.jornada DESC
+    ");
+    $stP->execute([$liga_id]);
+    foreach ($stP->fetchAll() as $partido) {
+        $partidos_liga[$partido['equipo_local_id']][]    = $partido;
+        $partidos_liga[$partido['equipo_visitante_id']][] = $partido;
+    }
+}
 ?>
 <?php require_once 'includes/header.php'; ?>
 
@@ -56,7 +81,11 @@ $clasificacion = $liga_id ? epl_clasificacion($liga_id) : [];
         </thead>
         <tbody>
           <?php foreach ($clasificacion as $i => $row): ?>
-          <tr>
+          <?php
+            $eq_partidos = $partidos_liga[$row['equipo_id']] ?? [];
+            $eq_json = htmlspecialchars(json_encode($eq_partidos, JSON_UNESCAPED_UNICODE), ENT_QUOTES);
+          ?>
+          <tr style="cursor:pointer" onclick="verPartidos(<?= $row['equipo_id'] ?>, '<?= epl_h($row['equipo_nombre']) ?>', this)" title="Ver partidos jugados">
             <td>
               <?php $posClass = match($i) { 0=>'pos-1', 1=>'pos-2', 2=>'pos-3', default=>'pos-n' }; ?>
               <span class="posicion-num <?= $posClass ?>"><?= $i+1 ?></span>
@@ -109,5 +138,101 @@ $clasificacion = $liga_id ? epl_clasificacion($liga_id) : [];
 
   </div>
 </section>
+
+<?php
+// Pasar todos los partidos al JS como mapa equipo_id → partidos[]
+$partidos_js = json_encode($partidos_liga, JSON_UNESCAPED_UNICODE);
+?>
+
+<!-- Modal historial de partidos -->
+<div id="modalHistorial" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto"
+     onclick="if(event.target===this)cerrarHistorial()">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:500px;margin:2rem auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <!-- Header -->
+    <div style="background:var(--navy);padding:1.1rem 1.4rem;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div id="modalEquipoNombre" style="font-family:var(--font-head);font-size:1.05rem;color:var(--gold);text-transform:uppercase;letter-spacing:.05em"></div>
+        <div id="modalEquipoSub" style="font-size:.75rem;color:rgba(255,255,255,.6);margin-top:.1rem"></div>
+      </div>
+      <button onclick="cerrarHistorial()" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:1.6rem;cursor:pointer;line-height:1;padding:0 .25rem">&times;</button>
+    </div>
+    <!-- Contenido -->
+    <div id="modalHistorialBody" style="padding:1rem 1.25rem;max-height:70vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<script>
+const _partidos = <?= $partidos_js ?>;
+
+function verPartidos(equipoId, nombre, rowEl) {
+  const partidos = _partidos[equipoId] || [];
+  const modal    = document.getElementById('modalHistorial');
+  const body     = document.getElementById('modalHistorialBody');
+
+  document.getElementById('modalEquipoNombre').textContent = nombre;
+  document.getElementById('modalEquipoSub').textContent =
+    partidos.length > 0 ? partidos.length + ' partido(s) jugado(s)' : 'Sin partidos jugados aún';
+
+  if (partidos.length === 0) {
+    body.innerHTML = '<p style="text-align:center;color:var(--gray-400);padding:2rem 0">Sin partidos jugados todavía.</p>';
+  } else {
+    body.innerHTML = partidos.map(p => {
+      const esLocal   = p.equipo_local_id == equipoId;
+      const miSets    = esLocal ? p.sets_local    : p.sets_visitante;
+      const rivalSets = esLocal ? p.sets_visitante : p.sets_local;
+      const gane      = p.ganador_id == equipoId;
+      const rival     = esLocal ? p.visitante_nombre : p.local_nombre;
+
+      // Construir sets detallados
+      const setsPares = [
+        [p.games_s1_local, p.games_s1_visitante],
+        [p.games_s2_local, p.games_s2_visitante],
+        [p.games_s3_local, p.games_s3_visitante],
+      ].filter(([a,b]) => a !== null && b !== null);
+
+      const setsStr = setsPares.map(([a,b]) => {
+        const miG    = esLocal ? a : b;
+        const rivalG = esLocal ? b : a;
+        return `<span style="font-size:.8rem;background:${miG>rivalG?'#dcfce7':'#fee2e2'};color:${miG>rivalG?'#166534':'#991b1b'};border-radius:4px;padding:1px 6px">${miG}-${rivalG}</span>`;
+      }).join(' ');
+
+      const fecha = p.fecha_jugado
+        ? new Date(p.fecha_jugado.replace(' ','T')).toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'})
+        : (p.jornada ? 'J' + p.jornada : '—');
+
+      const colorBorde = gane ? 'var(--green)' : 'var(--red)';
+      const resultado  = gane ? 'Victoria' : 'Derrota';
+      const emoji      = gane ? '✅' : '❌';
+
+      return `
+        <div style="display:flex;align-items:center;gap:1rem;padding:.75rem 0;border-bottom:1px solid var(--gray-100)">
+          <div style="width:4px;align-self:stretch;background:${colorBorde};border-radius:4px;flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.25rem">
+              <span style="font-size:.7rem;font-weight:700;color:${colorBorde};text-transform:uppercase">${emoji} ${resultado}</span>
+              <span style="font-size:.7rem;color:var(--gray-400)">${fecha}</span>
+            </div>
+            <div style="font-weight:700;font-size:.88rem;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">vs ${rival}</div>
+            <div style="margin-top:.3rem;display:flex;gap:.3rem;flex-wrap:wrap">${setsStr}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:1.4rem;font-weight:900;color:${colorBorde};line-height:1">${miSets}-${rivalSets}</div>
+            <div style="font-size:.65rem;color:var(--gray-400);text-transform:uppercase">Sets</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarHistorial() {
+  document.getElementById('modalHistorial').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarHistorial(); });
+</script>
 
 <?php require_once 'includes/footer.php'; ?>
