@@ -1,5 +1,9 @@
-<?php
-/**
+﻿<?php
+// Protección: solo admin logueado puede ejecutar este script de diagnóstico.
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/functions.php';
+epl_require_admin();
+// ─────────────────────────────────────────────────────────────────────────────/**
  * Script para corregir problemas de codificaciÃ³n (doble encode UTF-8)
  * en la base de datos epleague.
  */
@@ -59,3 +63,4 @@ foreach ($tables as $table => $cols) {
 }
 
 echo "\nÂ¡CodificaciÃ³n corregida!\n";
+

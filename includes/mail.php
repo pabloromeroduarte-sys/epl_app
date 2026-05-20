@@ -47,13 +47,55 @@ function epl_smtp_config(): array {
 }
 
 /**
+ * Encola un email para ser enviado por el cron (no bloquea la petición del usuario).
+ * Reemplaza el envío síncrono previo. El cron cron_mail_sender.php lo procesa en segundos.
+ *
  * @return array{ok: bool, error?: string}
  */
 function epl_mail_enviar(string $to, string $subject, string $bodyHtml, ?string $toName = null): array {
     if (!epl_smtp_habilitado()) {
-        return ['ok' => false, 'error' => 'SMTP está desactivado. Marcá «Activar envío de correos por SMTP» y pulsá Guardar SMTP o «Guardar y enviar correo de prueba».'];
+        return ['ok' => false, 'error' => 'SMTP desactivado.'];
     }
 
+    $to = trim($to);
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        return ['ok' => false, 'error' => 'Email destinatario inválido.'];
+    }
+
+    try {
+        $db = epl_db();
+        // Crear tabla si no existe (primera vez)
+        $db->exec("CREATE TABLE IF NOT EXISTS `mail_queue` (
+            `id`         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `to_email`   VARCHAR(255) NOT NULL,
+            `to_name`    VARCHAR(150) DEFAULT NULL,
+            `subject`    VARCHAR(250) NOT NULL,
+            `body_html`  MEDIUMTEXT  NOT NULL,
+            `estado`     ENUM('pendiente','enviando','enviado','error') NOT NULL DEFAULT 'pendiente',
+            `intentos`   TINYINT UNSIGNED NOT NULL DEFAULT 0,
+            `error_msg`  TEXT DEFAULT NULL,
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `sent_at`    DATETIME DEFAULT NULL,
+            INDEX idx_estado_created (`estado`, `created_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $db->prepare(
+            "INSERT INTO mail_queue (to_email, to_name, subject, body_html) VALUES (?,?,?,?)"
+        )->execute([$to, $toName, $subject, $bodyHtml]);
+
+        return ['ok' => true];
+    } catch (Throwable $e) {
+        return ['ok' => false, 'error' => $e->getMessage()];
+    }
+}
+
+/**
+ * Envío SMTP directo (sin cola). Solo para uso interno del cron_mail_sender.php.
+ * No llamar desde peticiones web — bloquea.
+ *
+ * @return array{ok: bool, error?: string}
+ */
+function epl_mail_enviar_directo(string $to, string $subject, string $bodyHtml, ?string $toName = null): array {
     $cfg = epl_smtp_config();
     if (!$cfg['host'] || !$cfg['from_email']) {
         return ['ok' => false, 'error' => 'Completa host y correo remitente en Configuración.'];

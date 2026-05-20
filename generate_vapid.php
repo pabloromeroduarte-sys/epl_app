@@ -1,5 +1,9 @@
-<?php
-/**
+﻿<?php
+// Protección: solo admin logueado puede ejecutar este script de diagnóstico.
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/functions.php';
+epl_require_admin();
+// ─────────────────────────────────────────────────────────────────────────────/**
  * Genera claves VAPID para Web Push.
  * Ejecutar UNA SOLA VEZ en el servidor:  php generate_vapid.php
  * Luego agregar las líneas al .env y ELIMINAR este archivo.
@@ -28,3 +32,4 @@ echo "VAPID_PRIVATE_KEY={$privB64}\n";
 echo "VAPID_PUBLIC_KEY={$pubB64u}\n";
 echo "VAPID_SUBJECT=mailto:admin@epleague.cl\n\n";
 echo "⚠️  Elimina este archivo después de copiar las claves.\n\n";
+

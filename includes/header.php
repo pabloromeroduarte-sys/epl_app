@@ -66,22 +66,16 @@ $active  = $active_nav ?? '';
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-      tailwind.config = {
-          theme: {
-              extend: {
-                  colors: {
-                      epl: { blue: '#1C2F48', gold: '#C9A762', dark: '#0A1421', light: '#F5F7F8' }
-                  },
-                  fontFamily: { primary: ['Anton', 'sans-serif'], secondary: ['Montserrat', 'sans-serif'] }
-              }
-          }
-      }
-  </script>
-
-  <!-- Estilos antiguos (se mantienen para las vistas que no son el index o que usan clases epl.css) -->
-  <link rel="stylesheet" href="<?= epl_url('assets/css/epl.css?v=' . time()) ?>">
+  <!-- Tailwind compilado (estático, se cachea perfectamente) -->
+  <?php
+  $tw_file  = dirname(__DIR__) . '/assets/css/tailwind.min.css';
+  $tw_ver   = file_exists($tw_file) ? filemtime($tw_file) : 1;
+  $css_file = dirname(__DIR__) . '/assets/css/epl.css';
+  $css_ver  = file_exists($css_file) ? filemtime($css_file) : 1;
+  ?>
+  <link rel="stylesheet" href="<?= epl_url("assets/css/tailwind.min.css?v={$tw_ver}") ?>">
+  <!-- Estilos propios del proyecto -->
+  <link rel="stylesheet" href="<?= epl_url("assets/css/epl.css?v={$css_ver}") ?>">
 
   <style>
       /* RESET Y CONTENEDOR (Header) */
