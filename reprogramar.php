@@ -95,15 +95,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
     } elseif (!$rival_no_resp && !$mutuo_acuerdo) {
         $error = 'Debes confirmar que coordinaste con el equipo rival.';
     } else {
-        $fecha_final = $rival_no_resp ? null : $fecha_propuesta;
+        $fecha_final    = $rival_no_resp ? null : $fecha_propuesta;
+        $auto_aprobada  = ($mutuo_acuerdo && !$rival_no_resp && $fecha_final) ? 1 : 0;
+        $estado_sol     = $auto_aprobada ? 'aprobada' : 'pendiente';
 
         $db->prepare("
             INSERT INTO solicitudes_reprogramacion
-              (partido_id, solicitante_id, motivo, fecha_propuesta, rival_no_responde, mutuo_acuerdo)
-            VALUES (?,?,?,?,?,?)
-        ")->execute([$partido_id, $jugador['id'], $motivo, $fecha_final, $rival_no_resp, $mutuo_acuerdo]);
+              (partido_id, solicitante_id, motivo, fecha_propuesta, rival_no_responde, mutuo_acuerdo,
+               estado, fecha_aprobada)
+            VALUES (?,?,?,?,?,?,?,?)
+        ")->execute([$partido_id, $jugador['id'], $motivo, $fecha_final, $rival_no_resp, $mutuo_acuerdo,
+                     $estado_sol, $auto_aprobada ? $fecha_final : null]);
 
-        $db->prepare("UPDATE partidos SET estado='reprogramado' WHERE id=?")->execute([$partido_id]);
+        if ($auto_aprobada) {
+            // Mutuo acuerdo → aplicar inmediatamente sin esperar al admin
+            $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=? WHERE id=?")
+               ->execute([$fecha_final, $partido_id]);
+        } else {
+            $db->prepare("UPDATE partidos SET estado='reprogramado' WHERE id=?")->execute([$partido_id]);
+        }
 
         // Notificar in-app + email (SMTP) a jugadores del partido rival y a los admins
         $solicitante_nombre = $jugador['nombre'] . ' ' . $jugador['apellido'];
@@ -140,62 +150,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
 
         $mensaje_notif = "{$solicitante_nombre} solicitó reprogramar el partido.\n\n" . implode("\n", $lineas);
 
-        epl_notif_partido(
-            $partido_id,
-            'reprogramacion',
-            "📅 Solicitud de reprogramación: {$partido_str}",
-            $mensaje_notif,
-            epl_url('mis_torneos.php'),
-            true,                       // incluir admins
-            [(int)$jugador['id']],      // excluir al solicitante
-            true                        // skip_email: enviamos visual por separado
-        );
-
-        // ── Email visual a jugadores del partido (excluye al solicitante) ──
+        // ── Notificaciones y emails ──────────────────────────────────────────
         $filas_repr = array_values(array_filter([
-            ['icon' => '🏆', 'label' => 'Liga',             'valor' => $liga['nombre']],
-            $jornada_txt ? ['icon' => '🗓️',  'label' => 'Jornada',         'valor' => $jornada_txt]       : null,
-            ['icon' => '📅', 'label' => 'Fecha original',   'valor' => $fecha_original_txt],
-            ['icon' => '🕐', 'label' => 'Fecha propuesta',  'valor' => $fecha_str],
-            ['icon' => '🏟️', 'label' => 'Recinto',          'valor' => $recinto_txt],
-            $motivo ? ['icon' => '💬', 'label' => 'Motivo', 'valor' => $motivo] : null,
+            ['icon' => '🏆', 'label' => 'Liga',            'valor' => $liga['nombre']],
+            $jornada_txt ? ['icon' => '🗓️', 'label' => 'Jornada',        'valor' => $jornada_txt]      : null,
+            ['icon' => '📅', 'label' => 'Fecha original',  'valor' => $fecha_original_txt],
+            ['icon' => '🕐', 'label' => $auto_aprobada ? 'Nueva fecha' : 'Fecha propuesta',
+                             'valor' => $fecha_str],
+            ['icon' => '🏟️', 'label' => 'Recinto',         'valor' => $recinto_txt],
+            $motivo ? ['icon' => '💬', 'label' => 'Motivo','valor' => $motivo] : null,
         ]));
-        $asunto_repr = epl_mail_asunto(
-            '📅 Solicitud de reprogramación',
-            $partido['local_nombre'],
-            $partido['visitante_nombre'],
-            $partido['jornada'] ?? null
-        );
 
-        $st_jug_repr = $db->prepare("
-            SELECT DISTINCT j.id
-            FROM partidos p
-            JOIN equipos el ON el.id = p.equipo_local_id
-            JOIN equipos ev ON ev.id = p.equipo_visitante_id
-            JOIN jugadores j ON j.id IN (el.jugador1_id, el.jugador2_id, ev.jugador1_id, ev.jugador2_id)
-            WHERE p.id = ? AND j.id != ?
-        ");
-        $st_jug_repr->execute([$partido_id, (int)$jugador['id']]);
-        // También admins
-        $admins_repr = $db->query("SELECT id FROM jugadores WHERE rol='admin' AND estado='activo'")->fetchAll();
-        $ids_repr    = array_unique(array_merge(
-            array_column($st_jug_repr->fetchAll(), 'id'),
-            array_filter(array_column($admins_repr, 'id'), fn($aid) => (int)$aid !== (int)$jugador['id'])
-        ));
-        foreach ($ids_repr as $jid_r) {
-            epl_mail_partido_visual(
-                (int)$jid_r,
-                $asunto_repr,
-                $partido['local_nombre'],
-                $partido['visitante_nombre'],
-                $filas_repr,
-                "{$solicitante_nombre} solicitó reprogramar el partido.",
-                '⏳ El administrador revisará la solicitud y confirmará la nueva fecha.',
-                epl_url('mis_torneos.php')
-            );
+        if ($auto_aprobada) {
+            // Auto-aprobado: notificar a TODOS los jugadores (incluido solicitante) + admins
+            $asunto_repr = epl_mail_asunto('📅 Partido reprogramado', $partido['local_nombre'], $partido['visitante_nombre'], $partido['jornada'] ?? null);
+            $titulo_notif = "📅 Partido reprogramado: {$partido_str}";
+            $msg_notif    = "El partido se reprogramó por mutuo acuerdo para el {$fecha_str}.";
+            $tip_email    = '✅ Ambos equipos confirmaron la nueva fecha. Recuerda llegar 10 minutos antes.';
+            $subtitulo    = 'El partido fue reprogramado por mutuo acuerdo.';
+
+            epl_notif_partido($partido_id, 'reprogramacion', $titulo_notif, $msg_notif,
+                epl_url('mis_torneos.php'), true, [], true);
+
+            $st_todos = $db->prepare("
+                SELECT DISTINCT j.id FROM partidos p
+                JOIN equipos el ON el.id = p.equipo_local_id
+                JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                JOIN jugadores j ON j.id IN (el.jugador1_id, el.jugador2_id, ev.jugador1_id, ev.jugador2_id)
+                WHERE p.id = ?
+            ");
+            $st_todos->execute([$partido_id]);
+            $admins_r = $db->query("SELECT id FROM jugadores WHERE rol='admin' AND estado='activo'")->fetchAll();
+            $ids_todos = array_unique(array_merge(
+                array_column($st_todos->fetchAll(), 'id'),
+                array_column($admins_r, 'id')
+            ));
+            foreach ($ids_todos as $jid_r) {
+                epl_mail_partido_visual((int)$jid_r, $asunto_repr,
+                    $partido['local_nombre'], $partido['visitante_nombre'],
+                    $filas_repr, $subtitulo, $tip_email, epl_url('mis_torneos.php'));
+            }
+
+            epl_redirect_ok('reprog_auto_ok');
+        } else {
+            // Sin mutuo acuerdo → flujo normal: admin debe aprobar
+            $asunto_repr = epl_mail_asunto('📅 Solicitud de reprogramación', $partido['local_nombre'], $partido['visitante_nombre'], $partido['jornada'] ?? null);
+
+            epl_notif_partido($partido_id, 'reprogramacion',
+                "📅 Solicitud de reprogramación: {$partido_str}", $mensaje_notif,
+                epl_url('mis_torneos.php'), true, [(int)$jugador['id']], true);
+
+            $st_jug_repr = $db->prepare("
+                SELECT DISTINCT j.id FROM partidos p
+                JOIN equipos el ON el.id = p.equipo_local_id
+                JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                JOIN jugadores j ON j.id IN (el.jugador1_id, el.jugador2_id, ev.jugador1_id, ev.jugador2_id)
+                WHERE p.id = ? AND j.id != ?
+            ");
+            $st_jug_repr->execute([$partido_id, (int)$jugador['id']]);
+            $admins_repr = $db->query("SELECT id FROM jugadores WHERE rol='admin' AND estado='activo'")->fetchAll();
+            $ids_repr    = array_unique(array_merge(
+                array_column($st_jug_repr->fetchAll(), 'id'),
+                array_filter(array_column($admins_repr, 'id'), fn($aid) => (int)$aid !== (int)$jugador['id'])
+            ));
+            foreach ($ids_repr as $jid_r) {
+                epl_mail_partido_visual((int)$jid_r, $asunto_repr,
+                    $partido['local_nombre'], $partido['visitante_nombre'],
+                    $filas_repr, "{$solicitante_nombre} solicitó reprogramar el partido.",
+                    '⏳ El administrador revisará la solicitud y confirmará la nueva fecha.',
+                    epl_url('mis_torneos.php'));
+            }
+
+            epl_redirect_ok('solicitud_ok');
         }
-
-        epl_redirect_ok('solicitud_ok');
     }
 }
 ?>

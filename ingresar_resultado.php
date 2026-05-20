@@ -252,17 +252,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
         <p class="ir-step-label" style="margin-bottom:1.25rem">Paso 2 — Ingresa el marcador por set</p>
 
         <?php for ($s = 1; $s <= 3; $s++): ?>
-        <div class="ir-set-row <?= $s===3?'ir-set-optional':'' ?>">
-          <div class="ir-set-label">
-            <span class="ir-set-num">Set <?= $s ?></span>
-            <?php if ($s===3): ?><span class="ir-set-opt-tag">opcional</span><?php endif; ?>
+        <div class="ir-set-block <?= $s===3?'ir-set-optional':'' ?>">
+          <div class="ir-set-row">
+            <div class="ir-set-label">
+              <span class="ir-set-num">Set <?= $s ?></span>
+              <?php if ($s===3): ?><span class="ir-set-opt-tag">opcional</span><?php endif; ?>
+            </div>
+            <div class="ir-score-group">
+              <input type="number" name="s<?= $s ?>_local" id="s<?= $s ?>_local" class="ir-score-input"
+                     min="0" max="7" placeholder="0" inputmode="numeric" <?= $s===3?'':'required' ?>
+                     oninput="clearChip(<?= $s ?>)">
+              <span class="ir-score-dash">—</span>
+              <input type="number" name="s<?= $s ?>_visitante" id="s<?= $s ?>_visitante" class="ir-score-input"
+                     min="0" max="7" placeholder="0" inputmode="numeric" <?= $s===3?'':'required' ?>
+                     oninput="clearChip(<?= $s ?>)">
+            </div>
           </div>
-          <div class="ir-score-group">
-            <input type="number" name="s<?= $s ?>_local" class="ir-score-input"
-                   min="0" max="7" placeholder="0" inputmode="numeric" <?= $s===3?'':'required' ?>>
-            <span class="ir-score-dash">—</span>
-            <input type="number" name="s<?= $s ?>_visitante" class="ir-score-input"
-                   min="0" max="7" placeholder="0" inputmode="numeric" <?= $s===3?'':'required' ?>>
+          <!-- Chips de marcadores rápidos -->
+          <div class="ir-chips-row" id="chips_s<?= $s ?>">
+            <span class="ir-chips-lbl" id="chipLbl<?= $s ?>_l">Local</span>
+            <?php foreach ([[6,0],[6,1],[6,2],[6,3],[6,4],[7,5],[7,6]] as [$a,$b]): ?>
+            <button type="button" class="ir-chip" onclick="setChip(<?= $s ?>,<?= $a ?>,<?= $b ?>,this)"><?= $a ?>-<?= $b ?></button>
+            <?php endforeach; ?>
+            <span class="ir-chips-sep">|</span>
+            <span class="ir-chips-lbl" id="chipLbl<?= $s ?>_v">Visit.</span>
+            <?php foreach ([[0,6],[1,6],[2,6],[3,6],[4,6],[5,7],[6,7]] as [$a,$b]): ?>
+            <button type="button" class="ir-chip" onclick="setChip(<?= $s ?>,<?= $a ?>,<?= $b ?>,this)"><?= $a ?>-<?= $b ?></button>
+            <?php endforeach; ?>
           </div>
         </div>
         <?php endfor; ?>
@@ -441,6 +457,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
   background: var(--gray-100); border-radius: 4px; padding: .1rem .4rem;
   text-transform: uppercase; letter-spacing: .06em;
 }
+/* Set block wrapper */
+.ir-set-block { border-bottom: 1px solid var(--gray-100); }
+.ir-set-block:last-child { border-bottom: none; }
+.ir-set-row { border-bottom: none; padding-bottom: .5rem; }
+
+/* Chips */
+.ir-chips-row {
+  display: flex; align-items: center; gap: .3rem;
+  flex-wrap: nowrap; overflow-x: auto; padding: .4rem 0 .75rem;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.ir-chips-row::-webkit-scrollbar { display: none; }
+.ir-chip {
+  flex-shrink: 0; padding: .28rem .6rem;
+  font-size: .72rem; font-weight: 700; font-family: var(--font-head);
+  background: var(--gray-100); color: var(--gray-500);
+  border: 1.5px solid transparent; border-radius: 20px;
+  cursor: pointer; transition: all .18s;
+  white-space: nowrap;
+}
+.ir-chip:hover { background: rgba(201,167,98,.15); color: var(--navy); border-color: var(--gold); }
+.ir-chip.active {
+  background: var(--navy); color: var(--gold);
+  border-color: var(--navy);
+  box-shadow: 0 2px 8px rgba(28,47,72,.25);
+}
+.ir-chips-lbl {
+  font-size: .58rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--gray-400); flex-shrink: 0; white-space: nowrap;
+}
+.ir-chips-sep { color: var(--gray-200); font-size: .9rem; flex-shrink: 0; }
+
 .ir-score-group { display: flex; align-items: center; gap: .75rem; }
 .ir-score-input {
   width: 68px; height: 68px;
@@ -493,11 +541,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
 <script>
 function seleccionarPartido(radio) {
   document.getElementById('hiddenPartidoId').value = radio.value;
-  document.getElementById('nombreLocal').textContent    = radio.dataset.local;
-  document.getElementById('nombreVisitante').textContent = radio.dataset.visitante;
+  const local     = radio.dataset.local;
+  const visitante = radio.dataset.visitante;
+  document.getElementById('nombreLocal').textContent     = local;
+  document.getElementById('nombreVisitante').textContent = visitante;
+
+  // Actualizar etiquetas de los chips con los nombres reales
+  const abrev = s => s.length > 10 ? s.substring(0,10)+'.' : s;
+  for (let i = 1; i <= 3; i++) {
+    const ll = document.getElementById('chipLbl'+i+'_l');
+    const lv = document.getElementById('chipLbl'+i+'_v');
+    if (ll) ll.textContent = abrev(local);
+    if (lv) lv.textContent = abrev(visitante);
+  }
+
+  // Limpiar chips activos
+  document.querySelectorAll('.ir-chip.active').forEach(c => c.classList.remove('active'));
+
   const sec = document.getElementById('seccionSets');
   sec.style.display = 'block';
   setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+}
+
+function setChip(setNum, local, visitante, btn) {
+  document.getElementById('s'+setNum+'_local').value     = local;
+  document.getElementById('s'+setNum+'_visitante').value = visitante;
+  // Deseleccionar otros chips del mismo set
+  document.querySelectorAll('#chips_s'+setNum+' .ir-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function clearChip(setNum) {
+  document.querySelectorAll('#chips_s'+setNum+' .ir-chip').forEach(c => c.classList.remove('active'));
 }
 // Auto-seleccionar el primer partido (más cercano / vencido)
 document.addEventListener('DOMContentLoaded', function() {
