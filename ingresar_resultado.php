@@ -20,14 +20,17 @@ if ($equipo) {
     $st = $db->prepare("
         SELECT p.*,
                el.nombre AS local_nombre,
-               ev.nombre AS visitante_nombre
+               ev.nombre AS visitante_nombre,
+               CASE WHEN p.fecha_programada < NOW() THEN 1 ELSE 0 END AS vencido
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
         WHERE p.liga_id = ?
           AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
-          AND p.estado = 'pendiente'
-        ORDER BY p.fecha_programada ASC
+          AND p.estado IN ('pendiente', 'reprogramado')
+        ORDER BY
+            ABS(DATEDIFF(p.fecha_programada, CURDATE())) ASC,
+            p.fecha_programada ASC
     ");
     $st->execute([$liga['id'], $equipo['id'], $equipo['id']]);
     $partidos_pendientes = $st->fetchAll();
@@ -38,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
     $fecha_jugado = trim($_POST['fecha_jugado'] ?? '');
 
     epl_ensure_disputas_schema();
-    $stP = $db->prepare("SELECT * FROM partidos WHERE id=? AND (equipo_local_id=? OR equipo_visitante_id=?) AND estado='pendiente'");
+    $stP = $db->prepare("SELECT * FROM partidos WHERE id=? AND (equipo_local_id=? OR equipo_visitante_id=?) AND estado IN ('pendiente','reprogramado')");
     $stP->execute([$partido_id, $equipo['id'], $equipo['id']]);
     $partido = $stP->fetch();
 
@@ -180,15 +183,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
   <div class="ir-selector-card">
     <p class="ir-step-label">Paso 1 — Selecciona el partido</p>
     <div class="ir-partidos-list" id="listaPartidos">
-      <?php foreach ($partidos_pendientes as $p): ?>
-      <label class="ir-partido-option" for="p<?= $p['id'] ?>">
+      <?php foreach ($partidos_pendientes as $i => $p):
+        $vencido = !empty($p['vencido']);
+        $reprog  = ($p['estado'] === 'reprogramado');
+        $primero = ($i === 0);
+      ?>
+      <label class="ir-partido-option<?= $vencido ? ' ir-vencido' : '' ?>" for="p<?= $p['id'] ?>">
         <input type="radio" name="_partido_pick" id="p<?= $p['id'] ?>" value="<?= $p['id'] ?>"
                data-local="<?= epl_h($p['local_nombre']) ?>"
                data-visitante="<?= epl_h($p['visitante_nombre']) ?>"
                data-fecha="<?= epl_h($p['fecha_programada'] ?? '') ?>"
+               <?= $primero ? 'checked' : '' ?>
                onchange="seleccionarPartido(this)">
         <div class="ir-partido-content">
-          <div class="ir-partido-fecha">
+          <div class="ir-partido-fecha<?= $vencido ? ' ir-fecha-vencida' : '' ?>">
             <?php if ($p['fecha_programada']): ?>
               <span class="ir-dia"><?= date('d', strtotime($p['fecha_programada'])) ?></span>
               <span class="ir-mes"><?= strtoupper(date('M', strtotime($p['fecha_programada']))) ?></span>
@@ -201,7 +209,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             <span class="ir-vs">VS</span>
             <span><?= epl_h($p['visitante_nombre']) ?></span>
           </div>
-          <div class="ir-partido-jornada">F.<?= $p['jornada'] ?? '—' ?></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;flex-shrink:0">
+            <div class="ir-partido-jornada">F.<?= $p['jornada'] ?? '—' ?></div>
+            <?php if ($vencido): ?>
+              <span style="font-size:.55rem;font-weight:800;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">Vencido</span>
+            <?php elseif ($reprog): ?>
+              <span style="font-size:.55rem;font-weight:800;color:#d97706;background:#fef3c7;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">Reprog.</span>
+            <?php endif; ?>
+            <?php if ($primero): ?>
+              <span style="font-size:.55rem;font-weight:800;color:#16a34a;background:#dcfce7;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">⭐ Próximo</span>
+            <?php endif; ?>
+          </div>
         </div>
         <div class="ir-partido-check">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -308,6 +326,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
   animation: ir-fade-up .35s ease both;
 }
 .ir-partidos-list { display: flex; flex-direction: column; gap: .5rem; margin-top: 1.1rem; }
+/* Partido vencido (sin resultado y fecha pasada) */
+.ir-vencido { border-color: rgba(220,38,38,.3) !important; background: rgba(220,38,38,.03) !important; }
+.ir-vencido:hover { border-color: #dc2626 !important; }
+.ir-fecha-vencida { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }
+.ir-fecha-vencida .ir-dia { color: #dc2626 !important; }
+.ir-fecha-vencida .ir-mes { color: #ef4444 !important; }
 .ir-partido-option {
   display: flex; align-items: center; gap: 1rem;
   border: 1.5px solid var(--gray-100); border-radius: 14px;
@@ -470,6 +494,14 @@ function seleccionarPartido(radio) {
   sec.style.display = 'block';
   setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 }
+// Auto-seleccionar el primer partido (más cercano / vencido)
+document.addEventListener('DOMContentLoaded', function() {
+  const first = document.querySelector('#listaPartidos input[type=radio]');
+  if (first) {
+    first.checked = true;
+    seleccionarPartido(first);
+  }
+});
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
