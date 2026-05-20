@@ -27,6 +27,24 @@ $solicitudes = $db->query("
     WHERE sr.estado = 'pendiente'
     ORDER BY sr.created_at DESC
 ")->fetchAll();
+
+// Árbol de recintos para el select del modal
+$_rec_raw = $db->query("SELECT id, nombre, superior_id FROM recintos ORDER BY nombre")->fetchAll();
+$_rec_roots = []; $_rec_children = [];
+foreach ($_rec_raw as $_r) {
+    if (!$_r['superior_id']) $_rec_roots[] = $_r;
+    else $_rec_children[$_r['superior_id']][] = $_r;
+}
+$recintos_select = [];
+function _flatRecSelect(array $nodes, array $children, int $depth, array &$out): void {
+    foreach ($nodes as $n) {
+        $pad   = str_repeat('　', $depth); // espacio ideográfico para indentar
+        $icon  = $depth === 0 ? '🏛 ' : ($depth === 1 ? '📍 ' : '🎾 ');
+        $out[] = ['id' => $n['id'], 'label' => $pad . $icon . $n['nombre'], 'depth' => $depth];
+        if (isset($children[$n['id']])) _flatRecSelect($children[$n['id']], $children, $depth + 1, $out);
+    }
+}
+_flatRecSelect($_rec_roots, $_rec_children, 0, $recintos_select);
 ?>
 <?php require_once '../includes/header.php'; ?>
 
@@ -197,7 +215,20 @@ $solicitudes = $db->query("
         </div>
         <div class="form-group">
           <label class="form-label">Cancha / Recinto</label>
-          <input type="text" name="cancha_aprobada" class="form-control" placeholder="Ej: Easycancha — Cancha 3">
+          <select name="cancha_aprobada" id="aprobarCancha" class="form-control"
+                  onchange="toggleOtraCancha(this.value)">
+            <option value="">— Sin cancha asignada —</option>
+            <?php foreach ($recintos_select as $rec): ?>
+            <option value="<?= epl_h($rec['label']) ?>"
+                    <?= $rec['depth'] === 0 ? 'style="font-weight:700"' : '' ?>>
+              <?= epl_h($rec['label']) ?>
+            </option>
+            <?php endforeach; ?>
+            <option value="__otro__">✏️ Escribir manualmente…</option>
+          </select>
+          <input type="text" id="otraCanchaInput" name="cancha_aprobada_manual"
+                 class="form-control" placeholder="Escribe el nombre de la cancha"
+                 style="display:none;margin-top:.5rem">
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Confirmar aprobación</button>
       </form>
@@ -211,7 +242,28 @@ function showAprobar(id, fechaPropuesta) {
   if (fechaPropuesta) {
     document.getElementById('aprobarFecha').value = fechaPropuesta.substring(0, 16);
   }
+  // Resetear cancha
+  document.getElementById('aprobarCancha').value = '';
+  document.getElementById('otraCanchaInput').style.display = 'none';
+  document.getElementById('otraCanchaInput').value = '';
   document.getElementById('modalAprobar').style.display = 'flex';
+}
+
+function toggleOtraCancha(val) {
+  const manualInput = document.getElementById('otraCanchaInput');
+  const selectEl    = document.getElementById('aprobarCancha');
+  if (val === '__otro__') {
+    manualInput.style.display = 'block';
+    manualInput.required = true;
+    selectEl.name = '_cancha_select_ignored'; // desactivar select del POST
+    manualInput.name = 'cancha_aprobada';
+    manualInput.focus();
+  } else {
+    manualInput.style.display = 'none';
+    manualInput.required = false;
+    selectEl.name = 'cancha_aprobada';
+    manualInput.name = 'cancha_aprobada_manual';
+  }
 }
 
 async function testPush() {
