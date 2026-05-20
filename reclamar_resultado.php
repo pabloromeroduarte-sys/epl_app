@@ -46,13 +46,14 @@ $disputa_previa = null;
 if ($partido) {
     // ¿El jugador pertenece a alguno de los dos equipos?
     $liga_id = (int)$partido['liga_id'];
+    // Buscar a qué equipo pertenece el jugador (jugador1_id o jugador2_id en equipos)
     $stEq = $db->prepare("
-        SELECT equipo_id FROM liga_equipos
-        WHERE liga_id = ? AND jugador_id = ?
-          AND equipo_id IN (?, ?)
+        SELECT id AS equipo_id FROM equipos
+        WHERE id IN (?, ?)
+          AND (jugador1_id = ? OR jugador2_id = ?)
         LIMIT 1
     ");
-    $stEq->execute([$liga_id, $jugador['id'], $partido['equipo_local_id'], $partido['equipo_visitante_id']]);
+    $stEq->execute([$partido['equipo_local_id'], $partido['equipo_visitante_id'], $jugador['id'], $jugador['id']]);
     $mi_equipo_row = $stEq->fetch();
 
     if (!$mi_equipo_row) {
@@ -62,8 +63,13 @@ if ($partido) {
 
         // ¿Soy del equipo que ingresó el resultado?
         $ingresado_por = (int)($partido['ingresado_por'] ?? 0);
-        $stIng = $db->prepare("SELECT equipo_id FROM liga_equipos WHERE liga_id=? AND jugador_id=? AND equipo_id IN (?,?) LIMIT 1");
-        $stIng->execute([$liga_id, $ingresado_por, $partido['equipo_local_id'], $partido['equipo_visitante_id']]);
+        $stIng = $db->prepare("
+            SELECT id AS equipo_id FROM equipos
+            WHERE id IN (?, ?)
+              AND (jugador1_id = ? OR jugador2_id = ?)
+            LIMIT 1
+        ");
+        $stIng->execute([$partido['equipo_local_id'], $partido['equipo_visitante_id'], $ingresado_por, $ingresado_por]);
         $equipo_ingreso = $stIng->fetch();
         $equipo_ingreso_id = $equipo_ingreso ? (int)$equipo_ingreso['equipo_id'] : 0;
 

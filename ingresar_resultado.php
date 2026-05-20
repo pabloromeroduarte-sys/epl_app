@@ -109,11 +109,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             $ganador_nombre  = $gano ? $mi_nombre : $rival_nombre;
             $resultado_sets  = implode(' / ', array_map(fn($s) => "{$s['local']}-{$s['visitante']}", $sets));
             $url_reclamar    = epl_url("reclamar_resultado.php?partido_id={$partido_id}");
-            $rivales = $db->prepare("SELECT jugador_id FROM liga_equipos WHERE equipo_id = ? AND liga_id = ?");
-            $rivales->execute([$rival_id, $liga['id']]);
-            foreach ($rivales->fetchAll() as $r) {
+            $re_st = $db->prepare("SELECT jugador1_id, jugador2_id FROM equipos WHERE id = ?");
+            $re_st->execute([$rival_id]);
+            $re = $re_st->fetch(PDO::FETCH_ASSOC);
+            $rivales_ids = array_values(array_filter([
+                (int)($re['jugador1_id'] ?? 0),
+                (int)($re['jugador2_id'] ?? 0),
+            ]));
+            foreach ($rivales_ids as $rival_jugador_id) {
                 epl_notif_crear(
-                    (int)$r['jugador_id'],
+                    $rival_jugador_id,
                     'resultado',
                     $asunto_res,
                     ($gano ? "{$mi_nombre} ganó" : "{$rival_nombre} ganó") . " {$resultado}. Tienes 24 horas para reclamar si hay un error.",
@@ -121,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
                     true // skip_email: enviamos visual por separado
                 );
                 epl_mail_partido_visual(
-                    (int)$r['jugador_id'],
+                    $rival_jugador_id,
                     $asunto_res,
                     $mi_nombre,
                     $rival_nombre,
