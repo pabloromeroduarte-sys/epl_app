@@ -61,6 +61,7 @@ if ($liga) {
 
 // Alerta de atrasos: partidos con fecha pasada sin resultado, o en estado reprogramado
 $atrasados = [];
+$partido_urgente = null; // el más cercano sin resultado (para el CTA grande)
 if ($equipo) {
     $hoy = date('Y-m-d H:i:s');
     $stA = $db->prepare("
@@ -71,13 +72,16 @@ if ($equipo) {
         LEFT JOIN recintos r ON r.id = p.recinto_id
         WHERE (p.equipo_local_id=? OR p.equipo_visitante_id=?)
           AND (
-            (p.estado='pendiente' AND p.fecha_programada IS NOT NULL AND p.fecha_programada < ?)
-            OR p.estado='reprogramado'
+            (p.estado IN ('pendiente','reprogramado') AND p.fecha_programada IS NOT NULL AND p.fecha_programada < ?)
           )
-        ORDER BY p.fecha_programada ASC, r.nombre ASC
+        ORDER BY p.fecha_programada DESC
     ");
     $stA->execute([$equipo['id'], $equipo['id'], $hoy]);
     $atrasados = $stA->fetchAll();
+    // El primero (más reciente) es el más urgente
+    if (!empty($atrasados)) {
+        $partido_urgente = $atrasados[0];
+    }
 }
 ?>
 <?php require_once 'includes/header.php'; ?>
@@ -102,6 +106,29 @@ if ($equipo) {
         $tiene_push = (bool)$st->fetchColumn();
     } catch (Throwable $e) { }
     ?>
+    <?php if ($partido_urgente): ?>
+    <?php
+      $pu = $partido_urgente;
+      $pu_fecha = $pu['fecha_programada'] ? date('d/m/Y', strtotime($pu['fecha_programada'])) : null;
+      $pu_hoy   = $pu['fecha_programada'] && date('Y-m-d', strtotime($pu['fecha_programada'])) === date('Y-m-d');
+      $pu_rival = $pu['equipo_local_id'] == $equipo['id'] ? $pu['visitante_nombre'] : $pu['local_nombre'];
+      $pu_dias  = $pu['fecha_programada'] ? (int)floor((time() - strtotime($pu['fecha_programada'])) / 86400) : 0;
+      $pu_label = $pu_hoy ? 'HOY' : ($pu_dias <= 1 ? 'AYER' : "HACE {$pu_dias} DÍAS");
+    ?>
+    <a href="<?= epl_url('ingresar_resultado.php') ?>" style="display:flex;align-items:center;gap:1rem;background:linear-gradient(135deg,#c9a762,#b8934f);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.25rem;text-decoration:none;box-shadow:0 4px 20px rgba(201,167,98,.35)">
+      <span style="font-size:2rem;flex-shrink:0">📝</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:900;font-size:.95rem;color:#1c2f48;text-transform:uppercase;letter-spacing:.03em">
+          Ingresar resultado — <?= epl_h($pu_rival) ?>
+        </div>
+        <div style="font-size:.78rem;color:rgba(28,47,72,.75);margin-top:.15rem">
+          Partido del <?= epl_h($pu_label) ?><?= $pu_fecha ? ' · ' . $pu_fecha : '' ?> · Pendiente de registro
+        </div>
+      </div>
+      <svg style="flex-shrink:0;color:#1c2f48" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+    </a>
+    <?php endif; ?>
+
     <?php if (!$tiene_push): ?>
     <div id="bannerPush" style="background:linear-gradient(135deg,#1c2f48,#1a3a64);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.85rem;flex-wrap:wrap">
       <span style="font-size:1.4rem;flex-shrink:0">🔔</span>
@@ -156,21 +183,22 @@ if ($equipo) {
     </div>
     <?php endif; ?>
 
-    <!-- Alerta de atrasos -->
-    <?php if ($atrasados): ?>
+    <!-- Alerta de atrasos (solo si hay MÁS de 1, el primero ya se muestra arriba) -->
+    <?php $atrasados_extra = count($atrasados) > 1 ? array_slice($atrasados, 1) : []; ?>
+    <?php if ($atrasados_extra): ?>
     <div class="alert alert-error" style="display:flex;align-items:flex-start;gap:.75rem;margin-bottom:1.5rem">
       <svg style="width:20px;height:20px;flex-shrink:0;margin-top:.1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       <div style="flex:1">
-        <div style="font-weight:700;margin-bottom:.25rem">Tienes <?= count($atrasados) ?> partido<?= count($atrasados)>1?'s':'' ?> con fecha vencida o pendiente<?= count($atrasados)>1?'s':'' ?>:</div>
+        <div style="font-weight:700;margin-bottom:.25rem">También tienes <?= count($atrasados_extra) ?> partido<?= count($atrasados_extra)>1?'s':'' ?> más sin resultado:</div>
         <ul style="margin:0 0 .75rem 0;padding:0;list-style:none;font-size:.85rem;opacity:.9">
-          <?php foreach($atrasados as $at): ?>
+          <?php foreach($atrasados_extra as $at): ?>
             <li style="margin-bottom:.2rem">
-              • <?= epl_h($at['local_nombre'] . ' vs ' . $at['visitante_nombre']) ?> 
+              • <?= epl_h($at['local_nombre'] . ' vs ' . $at['visitante_nombre']) ?>
               <span style="opacity:.7">(<?= $at['fecha_programada'] ? date('d/m/Y', strtotime($at['fecha_programada'])) : 'Sin fecha' ?>)</span>
             </li>
           <?php endforeach; ?>
         </ul>
-        <a href="<?= epl_url('regularizar.php') ?>" class="btn btn-sm" style="background:#fff;color:#b91c1c;font-weight:700;border:none">Regularizar ahora →</a>
+        <a href="<?= epl_url('ingresar_resultado.php') ?>" class="btn btn-sm" style="background:#fff;color:#b91c1c;font-weight:700;border:none">Ingresar resultados →</a>
       </div>
     </div>
     <?php endif; ?>

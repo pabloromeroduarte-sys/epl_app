@@ -43,13 +43,23 @@ function epl_foto_jugador(?string $foto, string $nombre = ''): string {
     if ($foto && file_exists(dirname(__DIR__) . '/uploads/jugadores/' . $foto)) {
         return epl_url('uploads/jugadores/' . $foto);
     }
+    // Iniciales (hasta 2 letras, soporte UTF-8)
     $iniciales = '';
-    foreach (explode(' ', $nombre) as $p) {
-        if ($p !== '') $iniciales .= strtoupper($p[0]);
-        if (strlen($iniciales) >= 2) break;
+    foreach (explode(' ', $nombre) as $parte) {
+        if ($parte !== '') $iniciales .= mb_strtoupper(mb_substr($parte, 0, 1, 'UTF-8'), 'UTF-8');
+        if (mb_strlen($iniciales, 'UTF-8') >= 2) break;
     }
-    // Devuelve URL de avatar con iniciales via DiceBear
-    return "https://api.dicebear.com/7.x/initials/svg?seed=" . urlencode($iniciales ?: 'EP') . "&backgroundColor=1C2F48&textColor=C9A762";
+    if ($iniciales === '') $iniciales = 'EP';
+
+    // SVG inline — sin dependencias externas, se cachea en el browser
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">'
+         . '<rect width="100" height="100" rx="50" fill="#1C2F48"/>'
+         . '<text x="50" y="50" dy=".36em" text-anchor="middle" '
+         . 'font-family="Arial,Helvetica,sans-serif" font-size="36" font-weight="700" fill="#C9A762">'
+         . htmlspecialchars($iniciales, ENT_XML1, 'UTF-8')
+         . '</text></svg>';
+
+    return 'data:image/svg+xml;base64,' . base64_encode($svg);
 }
 
 // -------------------------------------------------------
