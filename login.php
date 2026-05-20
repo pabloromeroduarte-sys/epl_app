@@ -128,7 +128,7 @@ function togglePass() {
 </script>
 
         <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;margin-bottom:.25rem;user-select:none">
-          <input type="checkbox" name="remember" value="1"
+          <input type="checkbox" name="remember" value="1" checked
                  style="width:17px;height:17px;accent-color:var(--gold);cursor:pointer;flex-shrink:0">
           <span style="font-size:.84rem;color:var(--gray-400);font-family:'Montserrat',sans-serif">Mantener sesión iniciada</span>
         </label>

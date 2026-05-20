@@ -248,6 +248,20 @@ require_once 'includes/header.php';
                 $estado_txt = $p['estado'] === 'reprogramado' ? 'Reprogramado' : 'Pendiente';
                 $estado_color = $p['estado'] === 'reprogramado' ? '#f59e0b' : 'var(--gray-400)';
               ?>
+              <?php
+                $r_n_wa = $p['recinto_nombre'] ?? '';
+                $r_s_wa = $p['recinto_superior_nombre'] ?? '';
+                $r_a_wa = $p['recinto_abuelo_nombre'] ?? '';
+                $c_wa   = $p['cancha'] ?? '';
+                $sede_wa = '';
+                if ($r_a_wa)      $sede_wa = $r_a_wa . ($r_s_wa ? ' · ' . $r_s_wa : '') . ($r_n_wa ? ' · ' . $r_n_wa : '');
+                elseif ($r_s_wa)  $sede_wa = $r_s_wa . ($r_n_wa ? ' · ' . $r_n_wa : '');
+                elseif ($r_n_wa)  $sede_wa = $r_n_wa;
+                if ($c_wa && !str_contains(strtolower($sede_wa), 'cancha')) $sede_wa .= ($sede_wa ? ' · C.' : 'C.') . $c_wa;
+                $fecha_wa  = $p['fecha_programada'] ? date('d/m/Y H:i', strtotime($p['fecha_programada'])) : 'fecha por confirmar';
+                $wa_prox   = "🎾 ¡Partido de pádel!\n\nvs {$rival}\n📅 {$fecha_wa}" . ($sede_wa ? "\n🏟️ {$sede_wa}" : '') . "\n\n#ElitePadelLeague";
+                $wa_prox_url = 'https://wa.me/?text=' . rawurlencode($wa_prox);
+              ?>
               <div class="mt-partido-row">
                 <div class="mt-partido-fecha">
                   <?php if ($p['fecha_programada']): ?>
@@ -276,7 +290,13 @@ require_once 'includes/header.php';
                     <?php if ($sede_txt): ?>· <?= epl_h($sede_txt) ?><?php endif; ?>
                   </div>
                 </div>
-                <span style="font-size:.65rem;font-weight:700;color:<?= $estado_color ?>;text-transform:uppercase;white-space:nowrap"><?= $estado_txt ?></span>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;flex-shrink:0">
+                  <span style="font-size:.65rem;font-weight:700;color:<?= $estado_color ?>;text-transform:uppercase;white-space:nowrap"><?= $estado_txt ?></span>
+                  <a href="<?= epl_h($wa_prox_url) ?>" target="_blank" rel="noopener" class="wa-share-btn" title="Compartir por WhatsApp">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    Compartir
+                  </a>
+                </div>
               </div>
               <?php endforeach; ?>
               <?php if (count($proximos) > 3): ?>
@@ -303,6 +323,12 @@ require_once 'includes/header.php';
               $sets_yo = $es_local ? $p['sets_local'] : $p['sets_visitante'];
               $sets_rival = $es_local ? $p['sets_visitante'] : $p['sets_local'];
             ?>
+            <?php
+              $emoji_wa  = $gane ? '🏆' : '🎾';
+              $fecha_j_wa = $p['fecha_jugado'] ? date('d/m/Y', strtotime($p['fecha_jugado'])) : '';
+              $wa_res    = $emoji_wa . ' ' . ($gane ? '¡Victoria en pádel!' : 'Partido jugado') . "\n\nvs {$rival}\nSets: {$sets_yo}-{$sets_rival}" . ($fecha_j_wa ? "\n📅 {$fecha_j_wa}" : '') . "\n\n#ElitePadelLeague";
+              $wa_res_url = 'https://wa.me/?text=' . rawurlencode($wa_res);
+            ?>
             <div class="mt-partido-row">
               <div class="mt-partido-fecha" style="background:<?= $gane ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)' ?>">
                 <span class="mt-dia" style="color:<?= $gane ? '#22c55e' : '#ef4444' ?>"><?= $sets_yo ?>-<?= $sets_rival ?></span>
@@ -315,6 +341,10 @@ require_once 'includes/header.php';
                   · Fecha <?= $p['jornada'] ?? '—' ?>
                 </div>
               </div>
+              <a href="<?= epl_h($wa_res_url) ?>" target="_blank" rel="noopener" class="wa-share-btn wa-share-btn--<?= $gane ? 'win' : 'loss' ?>" title="Compartir resultado por WhatsApp">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                <?= $gane ? '¡Compartir!' : 'Compartir' ?>
+              </a>
             </div>
             <?php endforeach; ?>
           </div>
@@ -500,6 +530,21 @@ require_once 'includes/header.php';
   .mt-hero-title { font-size:1.2rem; }
   .mt-tab { min-width:140px; padding:.7rem 1rem; }
 }
+
+/* ── WhatsApp share button ── */
+.wa-share-btn {
+  display:inline-flex; align-items:center; gap:.3rem;
+  font-size:.65rem; font-weight:700; letter-spacing:.03em;
+  color:#25D366; background:rgba(37,211,102,.08);
+  border:1px solid rgba(37,211,102,.3); border-radius:20px;
+  padding:.25rem .65rem; text-decoration:none; white-space:nowrap;
+  flex-shrink:0; transition:all .18s;
+}
+.wa-share-btn:hover { background:rgba(37,211,102,.18); border-color:#25D366; color:#128C7E; }
+.wa-share-btn--win { color:#16a34a; background:rgba(34,197,94,.1); border-color:rgba(34,197,94,.35); }
+.wa-share-btn--win:hover { background:rgba(34,197,94,.2); border-color:#16a34a; }
+.wa-share-btn--loss { color:#6b7280; background:rgba(107,114,128,.08); border-color:rgba(107,114,128,.25); }
+.wa-share-btn--loss:hover { background:rgba(37,211,102,.12); color:#25D366; border-color:#25D366; }
 </style>
 
 <?php require_once 'includes/footer.php'; ?>
