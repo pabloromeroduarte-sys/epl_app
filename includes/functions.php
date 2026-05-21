@@ -674,10 +674,15 @@ function epl_notif_no_leidas(int $jugador_id): int {
     return (int) $st->fetchColumn();
 }
 
-function epl_notif_listar(int $jugador_id, int $limit = 30): array {
+function epl_notif_listar(int $jugador_id, int $limit = 100, string $tipo = ''): array {
     $db = epl_db();
-    $st = $db->prepare("SELECT * FROM notificaciones WHERE jugador_id = ? ORDER BY created_at DESC LIMIT ?");
-    $st->execute([$jugador_id, $limit]);
+    if ($tipo) {
+        $st = $db->prepare("SELECT * FROM notificaciones WHERE jugador_id = ? AND tipo = ? ORDER BY created_at DESC LIMIT ?");
+        $st->execute([$jugador_id, $tipo, $limit]);
+    } else {
+        $st = $db->prepare("SELECT * FROM notificaciones WHERE jugador_id = ? ORDER BY created_at DESC LIMIT ?");
+        $st->execute([$jugador_id, $limit]);
+    }
     return $st->fetchAll();
 }
 
@@ -702,8 +707,27 @@ function epl_notif_icono(string $tipo): string {
         'inscripcion'    => '✅',
         'liga'           => '🏆',
         'admin'          => '📢',
+        'mensaje'        => '💬',
+        'recordatorio'   => '⏰',
+        'anuncio'        => '📣',
     ];
     return $iconos[$tipo] ?? '🔔';
+}
+
+function epl_notif_tipo_label(string $tipo): string {
+    $labels = [
+        'resultado'      => 'Resultado',
+        'disputa'        => 'Disputa',
+        'reprogramacion' => 'Reprogramación',
+        'inscripcion'    => 'Inscripción',
+        'liga'           => 'Liga',
+        'admin'          => 'Comunicado',
+        'mensaje'        => 'Mensaje',
+        'recordatorio'   => 'Recordatorio',
+        'anuncio'        => 'Anuncio',
+        'suplente'       => 'Equipo',
+    ];
+    return $labels[$tipo] ?? ucfirst($tipo);
 }
 
 // -------------------------------------------------------
