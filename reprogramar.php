@@ -15,8 +15,26 @@ $_flash = epl_flash_get();
 $ok     = ($_flash && $_flash['tipo']==='ok');
 $error  = ($_flash && $_flash['tipo']==='error') ? $_flash['msg'] : '';
 
-$partidos_pendientes = [];
+// ── Límite de reprogramaciones ────────────────────────────────────────────────
+$MAX_REPROGS = 2;
+$total_reprogramados = 0;
+$bloqueado_reprogs   = false;
+
 if ($equipo) {
+    $stCnt = $db->prepare("
+        SELECT COUNT(*) FROM partidos
+        WHERE liga_id = ?
+          AND (equipo_local_id = ? OR equipo_visitante_id = ?)
+          AND estado = 'reprogramado'
+    ");
+    $stCnt->execute([$liga['id'], $equipo['id'], $equipo['id']]);
+    $total_reprogramados = (int)$stCnt->fetchColumn();
+    $bloqueado_reprogs   = ($total_reprogramados >= $MAX_REPROGS);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+$partidos_pendientes = [];
+if ($equipo && !$bloqueado_reprogs) {
     $stP = $db->prepare("
         SELECT p.*, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
                jl1.nombre AS l1n, jl1.apellido AS l1a, jl1.telefono AS l1t,
@@ -58,7 +76,11 @@ if ($equipo) {
     $mis_solicitudes = $stS->fetchAll();
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $bloqueado_reprogs) {
+    $error = "Tu equipo ya tiene {$total_reprogramados} partidos reprogramados. Por bases del torneo no se permite más de {$MAX_REPROGS}.";
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
     $partido_id      = (int)($_POST['partido_id']       ?? 0);
     $fecha_propuesta = trim($_POST['fecha_propuesta']   ?? '');
     $motivo          = trim($_POST['motivo']             ?? '');
@@ -249,6 +271,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
 
   <?php if (!$equipo): ?>
     <div class="alert alert-info">No estás inscrito en ningún equipo activo en esta liga.</div>
+
+  <?php elseif ($bloqueado_reprogs): ?>
+  <!-- BLOQUEO: límite de reprogramaciones alcanzado -->
+  <div style="background:#fff;border-radius:16px;border:2px solid #fca5a5;padding:2rem 1.5rem;max-width:560px">
+    <div style="display:flex;gap:1rem;align-items:flex-start">
+      <div style="font-size:2.5rem;flex-shrink:0;line-height:1">🚫</div>
+      <div>
+        <h3 style="font-family:var(--font-head);font-size:1.1rem;text-transform:uppercase;color:#991b1b;margin:0 0 .6rem">Límite de reprogramaciones alcanzado</h3>
+        <p style="color:#7f1d1d;font-size:.9rem;line-height:1.55;margin:0 0 .75rem">
+          Tu equipo ya tiene <strong><?= $total_reprogramados ?> partido<?= $total_reprogramados > 1 ? 's' : '' ?> reprogramado<?= $total_reprogramados > 1 ? 's' : '' ?></strong>.
+          Según las bases del torneo, <strong>no está permitido reprogramar más de <?= $MAX_REPROGS ?> partidos por equipo</strong>.
+        </p>
+        <div style="background:#fee2e2;border-radius:10px;padding:.75rem 1rem;font-size:.82rem;color:#991b1b;font-weight:600">
+          📋 Si tienes algún inconveniente especial, contacta directamente al administrador del torneo.
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <a href="mis_torneos.php" class="btn btn-sm" style="background:var(--navy);color:#fff;text-decoration:none">← Volver a mis torneos</a>
+      <a href="dashboard.php"   class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600);text-decoration:none">Ir al dashboard</a>
+    </div>
+  </div>
+
   <?php elseif (empty($partidos_pendientes)): ?>
   <div class="rp-empty">
     <div style="font-size:2.5rem;margin-bottom:.75rem">📅</div>
