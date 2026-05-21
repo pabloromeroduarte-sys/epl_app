@@ -154,13 +154,32 @@ foreach ($historial as $h) {
 $historial_agrupado = array_values($historial_agrupado);
 
 // Datos para JS
-$conteos_js      = json_encode([
+$conteos_js        = json_encode([
     'todos'      => count($todos_ids),
     'pendientes' => count($pendientes_ids),
     'sin_push'   => count($sin_push_ids),
 ]);
-$reprogs_js      = json_encode($reprogs_mapa);          // {id: count, ...}
-$reprogs_umbral_js = json_encode($reprogs_por_umbral);  // {1:N, 2:N, ...}
+$reprogs_js        = json_encode($reprogs_mapa);
+$reprogs_umbral_js = json_encode($reprogs_por_umbral);
+
+// Mapa completo jugadores para el popup (id => {nombre, email, push, reprogs})
+$jugadores_map_js = json_encode(array_column(
+    array_map(fn($j) => [
+        'id'      => (int)$j['id'],
+        'nombre'  => $j['nombre'] . ' ' . $j['apellido'],
+        'email'   => !empty($j['email']),
+        'push'    => (int)$j['dispositivos'] > 0,
+        'reprogs' => $reprogs_mapa[(int)$j['id']] ?? 0,
+    ], $jugadores),
+    null, 'id'
+));
+
+// IDs por grupo para popup
+$grupos_ids_js = json_encode([
+    'todos'      => $todos_ids,
+    'pendientes' => $pendientes_ids,
+    'sin_push'   => $sin_push_ids,
+]);
 ?>
 <?php require_once '../includes/header.php'; ?>
 
@@ -388,6 +407,11 @@ $reprogs_umbral_js = json_encode($reprogs_por_umbral);  // {1:N, 2:N, ...}
             <span class="ms-preview-pill" id="pillDest">
               📤 <span id="pillCount"><?= $total_jugadores ?></span> destinatario(s)
             </span>
+            <button type="button" onclick="verDestinatarios()"
+                    style="font-size:.78rem;font-weight:700;color:#1c2f48;background:none;border:1.5px solid #e2e8f0;border-radius:8px;padding:.4rem .85rem;cursor:pointer;transition:all .15s"
+                    onmouseover="this.style.borderColor='#1c2f48'" onmouseout="this.style.borderColor='#e2e8f0'">
+              👁 Ver quiénes son
+            </button>
             <span style="font-size:.75rem;color:#64748b">✉️ Email + 🔔 Push + 📋 Historial</span>
           </div>
           <button type="submit" class="ms-btn ms-btn-gold" id="btnEnviar">
@@ -572,6 +596,98 @@ document.getElementById('formMsg').addEventListener('submit', function() {
   document.getElementById('btnEnviar').disabled = true;
   document.getElementById('btnEnviar').textContent = '⏳ Enviando…';
 });
+
+// ── Ver destinatarios popup ───────────────────────────────────────────────────
+const _jugadoresMap = <?= $jugadores_map_js ?>;
+const _gruposIds    = <?= $grupos_ids_js ?>;
+
+function verDestinatarios() {
+  const tipo   = document.getElementById('dest_tipo').value;
+  const umbral = parseInt(document.getElementById('reprogs_min')?.value || 1);
+
+  // Obtener lista de IDs según el tipo actual
+  let ids = [];
+  if (tipo === 'reprogramados') {
+    ids = Object.keys(_reprogsMapa)
+                .filter(id => _reprogsMapa[id] >= umbral)
+                .map(Number);
+  } else if (tipo === 'jugador') {
+    const sel = document.querySelector('[name="jugador_id"]');
+    if (sel?.value) ids = [parseInt(sel.value)];
+  } else if (_gruposIds[tipo]) {
+    ids = _gruposIds[tipo];
+  } else {
+    ids = Object.keys(_jugadoresMap).map(Number);
+  }
+
+  // Ordenar: reprogramados desc, luego nombre asc
+  const lista = ids
+    .map(id => _jugadoresMap[id])
+    .filter(Boolean)
+    .sort((a,b) => (b.reprogs - a.reprogs) || a.nombre.localeCompare(b.nombre));
+
+  // Títulos por tipo
+  const titulos = {
+    todos:          '📢 Todos los jugadores activos',
+    pendientes:     '⏳ Jugadores con partido pendiente',
+    reprogramados:  `🔄 Con ${umbral}+ reprogramaciones`,
+    sin_push:       '🔕 Sin push activo',
+    liga:           '🏆 Jugadores de la liga',
+    jugador:        '👤 Jugador seleccionado',
+  };
+
+  const modal   = document.getElementById('modalDest');
+  const titulo  = document.getElementById('modalDestTitulo');
+  const cuerpo  = document.getElementById('modalDestBody');
+
+  titulo.textContent = (titulos[tipo] || tipo) + ` — ${lista.length} jugador(es)`;
+
+  if (lista.length === 0) {
+    cuerpo.innerHTML = '<p style="text-align:center;padding:2rem;color:#94a3b8">Sin destinatarios para este filtro.</p>';
+  } else {
+    cuerpo.innerHTML = lista.map(j => `
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid #f1f5f9">
+        <div style="width:36px;height:36px;background:#1c2f48;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem;font-weight:800;color:#C9A762">
+          ${j.nombre.trim().split(' ').map(p=>p[0]).slice(0,2).join('')}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:.88rem;color:#1c2f48;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.nombre}</div>
+          <div style="display:flex;gap:.4rem;margin-top:.2rem;flex-wrap:wrap">
+            ${j.email ? '<span style="font-size:.65rem;background:#dbeafe;color:#1e40af;border-radius:4px;padding:.1rem .4rem;font-weight:700">✉️ Email</span>' : ''}
+            ${j.push  ? '<span style="font-size:.65rem;background:#dcfce7;color:#166534;border-radius:4px;padding:.1rem .4rem;font-weight:700">🔔 Push</span>' : ''}
+          </div>
+        </div>
+        ${j.reprogs > 0 ? `<span style="font-size:.72rem;background:#fef3c7;color:#92400e;border-radius:6px;padding:.2rem .55rem;font-weight:800;flex-shrink:0">${j.reprogs} reprog.</span>` : ''}
+      </div>`).join('');
+  }
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalDest() {
+  document.getElementById('modalDest').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModalDest(); });
 </script>
+
+<!-- Modal destinatarios -->
+<div id="modalDest" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto"
+     onclick="if(event.target===this)cerrarModalDest()">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:460px;margin:2rem auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <!-- Header -->
+    <div style="background:#1c2f48;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center">
+      <div id="modalDestTitulo" style="font-family:'Anton',sans-serif;font-size:.95rem;color:#C9A762;text-transform:uppercase;letter-spacing:.04em"></div>
+      <button onclick="cerrarModalDest()" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:1.5rem;cursor:pointer;line-height:1;padding:0 .2rem">&times;</button>
+    </div>
+    <!-- Cuerpo -->
+    <div id="modalDestBody" style="padding:.75rem 1.25rem;max-height:65vh;overflow-y:auto"></div>
+    <!-- Footer -->
+    <div style="padding:.85rem 1.25rem;border-top:1px solid #f1f5f9;text-align:right">
+      <button onclick="cerrarModalDest()" class="ms-btn" style="padding:.5rem 1.25rem;font-size:.8rem">Cerrar</button>
+    </div>
+  </div>
+</div>
 
 <?php require_once '../includes/footer.php'; ?>
