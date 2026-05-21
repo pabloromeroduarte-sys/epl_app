@@ -427,10 +427,15 @@ function filterByJornada(jor, btn) {
 }
 
 function filterPartidos() {
-    const q = document.getElementById('searchPartidos').value.toLowerCase();
-    document.querySelectorAll('.partido-card').forEach(card => {
-        const text = card.getAttribute('data-search');
-        card.style.display = text.includes(q) ? '' : 'none';
+    const q = document.getElementById('searchPartidos').value.toLowerCase().trim();
+    document.querySelectorAll('.partido-card-v2').forEach(card => {
+        const text = (card.getAttribute('data-search') || '').toLowerCase();
+        card.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+    // Ocultar grupos de jornada que quedaron sin partidos visibles
+    document.querySelectorAll('.jornada-group').forEach(group => {
+        const visible = group.querySelectorAll('.partido-card-v2:not([style*="display: none"])').length;
+        group.style.display = visible > 0 ? '' : 'none';
     });
 }
 </script>
