@@ -70,6 +70,18 @@ $sin_push_ids = array_column($db->query("
     HAVING COUNT(ps.id) = 0
 ")->fetchAll(PDO::FETCH_ASSOC), 'id');
 
+// Jugadores con partidos reprogramados SIN fecha asignada
+$sin_fecha_ids = array_column($db->query("
+    SELECT DISTINCT j.id
+    FROM partidos p
+    JOIN equipos el ON el.id = p.equipo_local_id
+    JOIN equipos ev ON ev.id = p.equipo_visitante_id
+    JOIN jugadores j ON j.id IN (el.jugador1_id, el.jugador2_id, ev.jugador1_id, ev.jugador2_id)
+    WHERE p.estado = 'reprogramado'
+      AND (p.fecha_programada IS NULL OR p.fecha_programada = '')
+      AND j.estado = 'activo'
+")->fetchAll(PDO::FETCH_ASSOC), 'id');
+
 // ── POST: enviar mensaje ───────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dest_tipo    = $_POST['dest_tipo']    ?? 'todos';
@@ -103,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'pendientes'   => $pendientes_ids,
             'reprogramados'=> array_keys(array_filter($reprogs_mapa, fn($c) => $c >= $reprogs_min)),
             'sin_push'     => $sin_push_ids,
+            'sin_fecha'    => $sin_fecha_ids,
             default        => $todos_ids,
         };
 
@@ -158,6 +171,7 @@ $conteos_js        = json_encode([
     'todos'      => count($todos_ids),
     'pendientes' => count($pendientes_ids),
     'sin_push'   => count($sin_push_ids),
+    'sin_fecha'  => count($sin_fecha_ids),
 ]);
 $reprogs_js        = json_encode($reprogs_mapa);
 $reprogs_umbral_js = json_encode($reprogs_por_umbral);
@@ -179,6 +193,7 @@ $grupos_ids_js = json_encode([
     'todos'      => $todos_ids,
     'pendientes' => $pendientes_ids,
     'sin_push'   => $sin_push_ids,
+    'sin_fecha'  => $sin_fecha_ids,
 ]);
 ?>
 <?php require_once '../includes/header.php'; ?>
@@ -314,6 +329,12 @@ $grupos_ids_js = json_encode([
               <span class="dest-count"><?= count($sin_push_ids) ?></span>
               <span>🔕 Sin push activo</span>
               <span class="dest-lbl">Solo recibirán email</span>
+            </button>
+            <!-- Reprogramados sin fecha -->
+            <button type="button" class="ms-dest-tab" data-tipo="sin_fecha" onclick="setDest('sin_fecha',this)">
+              <span class="dest-count" style="color:#dc2626"><?= count($sin_fecha_ids) ?></span>
+              <span>📭 Reprog. sin fecha</span>
+              <span class="dest-lbl">Aún sin nueva fecha</span>
             </button>
           </div>
 
@@ -510,12 +531,14 @@ function setDest(tipo, el) {
     pendientes:     _conteos.pendientes + ' jugadores con partido pendiente',
     reprogramados:  cntReprogs          + ' jugadores con ' + umbral + '+ reprogramaciones',
     sin_push:       _conteos.sin_push   + ' jugadores (solo email, sin push)',
+    sin_fecha:      _conteos.sin_fecha  + ' jugadores con reprogramación sin fecha',
     liga:           'Seleccioná una liga ↓',
     jugador:        '1 jugador recibirá este mensaje',
   };
   const cnt = {
     todos: _conteos.todos, pendientes: _conteos.pendientes,
     reprogramados: cntReprogs, sin_push: _conteos.sin_push,
+    sin_fecha: _conteos.sin_fecha,
     liga: '?', jugador: 1
   };
   document.getElementById('previewDest').textContent = textos[tipo] || '';
@@ -632,6 +655,7 @@ function verDestinatarios() {
     pendientes:     '⏳ Jugadores con partido pendiente',
     reprogramados:  `🔄 Con ${umbral}+ reprogramaciones`,
     sin_push:       '🔕 Sin push activo',
+    sin_fecha:      '📭 Reprogramados sin fecha asignada',
     liga:           '🏆 Jugadores de la liga',
     jugador:        '👤 Jugador seleccionado',
   };
