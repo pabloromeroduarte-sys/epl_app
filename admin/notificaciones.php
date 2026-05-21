@@ -39,17 +39,27 @@ $pendientes_ids = array_column($db->query("
     WHERE p.estado IN ('pendiente','reprogramado') AND j.estado = 'activo'
 ")->fetchAll(PDO::FETCH_ASSOC), 'id');
 
-// Jugadores con partidos atrasados (fecha pasada sin resultado)
-$atrasados_ids = array_column($db->query("
-    SELECT DISTINCT j.id
-    FROM partidos p
-    JOIN equipos el ON el.id = p.equipo_local_id
-    JOIN equipos ev ON ev.id = p.equipo_visitante_id
-    JOIN jugadores j ON j.id IN (el.jugador1_id, el.jugador2_id, ev.jugador1_id, ev.jugador2_id)
-    WHERE p.estado IN ('pendiente','reprogramado')
-      AND p.fecha_programada < NOW()
-      AND j.estado = 'activo'
-")->fetchAll(PDO::FETCH_ASSOC), 'id');
+// Jugadores con partidos reprogramados — mapa id → cantidad
+$reprogs_raw = $db->query("
+    SELECT j.id, j.nombre, j.apellido, COUNT(DISTINCT p.id) AS total
+    FROM jugadores j
+    JOIN equipos e  ON j.id = e.jugador1_id OR j.id = e.jugador2_id
+    JOIN partidos p ON p.equipo_local_id = e.id OR p.equipo_visitante_id = e.id
+    WHERE p.estado = 'reprogramado' AND j.estado = 'activo'
+    GROUP BY j.id
+    ORDER BY total DESC, j.nombre ASC
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// Mapa id → count (para JS) y sets por umbral
+$reprogs_mapa = [];   // id => total
+foreach ($reprogs_raw as $r) {
+    $reprogs_mapa[(int)$r['id']] = (int)$r['total'];
+}
+// Pre-calcular conteos por umbral 1..5
+$reprogs_por_umbral = [];
+for ($u = 1; $u <= 5; $u++) {
+    $reprogs_por_umbral[$u] = count(array_filter($reprogs_mapa, fn($c) => $c >= $u));
+}
 
 // Jugadores sin push activo
 $sin_push_ids = array_column($db->query("
@@ -62,22 +72,23 @@ $sin_push_ids = array_column($db->query("
 
 // ── POST: enviar mensaje ───────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $dest_tipo  = $_POST['dest_tipo']  ?? 'todos';
-    $jugador_id = (int)($_POST['jugador_id'] ?? 0);
-    $liga_dest  = (int)($_POST['liga_dest']  ?? 0);
-    $tipo       = in_array($_POST['tipo'] ?? '', ['admin','mensaje','anuncio','recordatorio','liga']) ? $_POST['tipo'] : 'admin';
-    $titulo     = trim($_POST['titulo']  ?? '');
-    $mensaje    = trim($_POST['mensaje'] ?? '');
-    $url_sel    = trim($_POST['url_sel'] ?? '');
-    $url_custom = trim($_POST['url_custom'] ?? '');
-    $url        = ($url_sel === 'custom' ? $url_custom : $url_sel) ?: epl_url('dashboard.php');
+    $dest_tipo    = $_POST['dest_tipo']    ?? 'todos';
+    $jugador_id   = (int)($_POST['jugador_id']   ?? 0);
+    $liga_dest    = (int)($_POST['liga_dest']    ?? 0);
+    $reprogs_min  = max(1, min(5, (int)($_POST['reprogs_min'] ?? 1)));
+    $tipo         = in_array($_POST['tipo'] ?? '', ['admin','mensaje','anuncio','recordatorio','liga']) ? $_POST['tipo'] : 'admin';
+    $titulo       = trim($_POST['titulo']  ?? '');
+    $mensaje      = trim($_POST['mensaje'] ?? '');
+    $url_sel      = trim($_POST['url_sel'] ?? '');
+    $url_custom   = trim($_POST['url_custom'] ?? '');
+    $url          = ($url_sel === 'custom' ? $url_custom : $url_sel) ?: epl_url('dashboard.php');
 
     if (!$titulo || !$mensaje) {
         $err = 'Completa título y mensaje.';
     } else {
         $destinatarios = match($dest_tipo) {
-            'jugador'    => $jugador_id > 0 ? [$jugador_id] : [],
-            'liga'       => (function() use ($db, $liga_dest) {
+            'jugador'      => $jugador_id > 0 ? [$jugador_id] : [],
+            'liga'         => (function() use ($db, $liga_dest) {
                 if (!$liga_dest) return [];
                 $st = $db->prepare("
                     SELECT DISTINCT j.id
@@ -89,10 +100,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $st->execute([$liga_dest]);
                 return array_column($st->fetchAll(PDO::FETCH_ASSOC), 'id');
             })(),
-            'pendientes' => $pendientes_ids,
-            'atrasados'  => $atrasados_ids,
-            'sin_push'   => $sin_push_ids,
-            default      => $todos_ids,  // 'todos'
+            'pendientes'   => $pendientes_ids,
+            'reprogramados'=> array_keys(array_filter($reprogs_mapa, fn($c) => $c >= $reprogs_min)),
+            'sin_push'     => $sin_push_ids,
+            default        => $todos_ids,
         };
 
         if (empty($destinatarios)) {
@@ -142,13 +153,14 @@ foreach ($historial as $h) {
 }
 $historial_agrupado = array_values($historial_agrupado);
 
-// Mapa de conteos para JS
-$conteos_js = json_encode([
+// Datos para JS
+$conteos_js      = json_encode([
     'todos'      => count($todos_ids),
     'pendientes' => count($pendientes_ids),
-    'atrasados'  => count($atrasados_ids),
     'sin_push'   => count($sin_push_ids),
 ]);
+$reprogs_js      = json_encode($reprogs_mapa);          // {id: count, ...}
+$reprogs_umbral_js = json_encode($reprogs_por_umbral);  // {1:N, 2:N, ...}
 ?>
 <?php require_once '../includes/header.php'; ?>
 
@@ -195,6 +207,15 @@ $conteos_js = json_encode([
 .ms-search-wrap svg { position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#94a3b8; }
 .ms-search-wrap input { padding-left:2.25rem; }
 
+/* Botones umbral reprogramaciones */
+.reprogs-btn {
+  padding:.35rem .75rem;border-radius:8px;border:1.5px solid #fcd34d;
+  font-size:.82rem;font-weight:800;cursor:pointer;background:#fff;color:#92400e;
+  transition:all .15s;font-family:inherit;
+}
+.reprogs-btn:hover { background:#fef3c7;border-color:#f59e0b; }
+.reprogs-btn.active { background:#f59e0b;border-color:#f59e0b;color:#fff; }
+
 /* Preview pill */
 .ms-preview-pill {
   display:inline-flex;align-items:center;gap:.5rem;
@@ -224,7 +245,7 @@ $conteos_js = json_encode([
       <div class="ms-stat"><div class="ms-stat-num"><?= $total_jugadores ?></div><div class="ms-stat-lbl">Jugadores activos</div></div>
       <div class="ms-stat"><div class="ms-stat-num" style="color:#166534"><?= $total_email ?></div><div class="ms-stat-lbl">Con email</div></div>
       <div class="ms-stat"><div class="ms-stat-num" style="color:#1e40af"><?= $total_push ?></div><div class="ms-stat-lbl">Con push activo</div></div>
-      <div class="ms-stat"><div class="ms-stat-num" style="color:#b45309"><?= count($atrasados_ids) ?></div><div class="ms-stat-lbl">Partidos atrasados</div></div>
+      <div class="ms-stat"><div class="ms-stat-num" style="color:#b45309"><?= count($reprogs_mapa) ?></div><div class="ms-stat-lbl">Con reprogramaciones</div></div>
     </div>
 
     <!-- Formulario -->
@@ -263,11 +284,11 @@ $conteos_js = json_encode([
               <span>⏳ Con partido pendiente</span>
               <span class="dest-lbl">Aún no jugaron</span>
             </button>
-            <!-- Partidos atrasados -->
-            <button type="button" class="ms-dest-tab" data-tipo="atrasados" onclick="setDest('atrasados',this)">
-              <span class="dest-count" style="color:#ef4444"><?= count($atrasados_ids) ?></span>
-              <span>🚨 Partidos atrasados</span>
-              <span class="dest-lbl">Fecha pasada sin resultado</span>
+            <!-- Reprogramados -->
+            <button type="button" class="ms-dest-tab" data-tipo="reprogramados" onclick="setDest('reprogramados',this)">
+              <span class="dest-count" id="cntReprog" style="color:#f59e0b"><?= $reprogs_por_umbral[1] ?? 0 ?></span>
+              <span>🔄 Reprogramados</span>
+              <span class="dest-lbl">Con partidos reprogramados</span>
             </button>
             <!-- Sin push -->
             <button type="button" class="ms-dest-tab" data-tipo="sin_push" onclick="setDest('sin_push',this)">
@@ -286,6 +307,25 @@ $conteos_js = json_encode([
               <?php endforeach; ?>
             </select>
           </div>
+          <!-- Selector umbral reprogramaciones -->
+          <div id="dest-reprogramados" style="display:none;margin-top:.75rem">
+            <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;padding:.85rem 1rem">
+              <div style="font-size:.75rem;font-weight:700;color:#92400e;margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.04em">¿Cuántas reprogramaciones mínimo?</div>
+              <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+                <?php for ($u = 1; $u <= 5; $u++): ?>
+                <button type="button"
+                        class="reprogs-btn <?= $u===1?'active':'' ?>"
+                        data-umbral="<?= $u ?>"
+                        onclick="setUmbral(<?= $u ?>, this)">
+                  <?= $u ?>+ <span style="font-size:.65rem;opacity:.7">(<?= $reprogs_por_umbral[$u] ?? 0 ?>)</span>
+                </button>
+                <?php endfor; ?>
+                <span style="font-size:.78rem;color:#92400e;margin-left:.5rem">→ <strong id="reprogs-preview"><?= $reprogs_por_umbral[1] ?? 0 ?></strong> jugador(es)</span>
+              </div>
+              <input type="hidden" name="reprogs_min" id="reprogs_min" value="1">
+            </div>
+          </div>
+
           <div id="dest-jugador" style="display:none;margin-top:.5rem">
             <select name="jugador_id" class="ms-input" onchange="document.getElementById('previewDest').textContent='1 jugador recibirá este mensaje'">
               <option value="">— Seleccionar jugador —</option>
@@ -425,32 +465,49 @@ $conteos_js = json_encode([
 </div>
 
 <script>
-const _conteos = <?= $conteos_js ?>;
+const _conteos        = <?= $conteos_js ?>;
+const _reprogsMapa    = <?= $reprogs_js ?>;
+const _regrogsUmbral  = <?= $reprogs_umbral_js ?>;
 
 // ── Destinatario tabs ─────────────────────────────────────────────────────────
 function setDest(tipo, el) {
   document.querySelectorAll('.ms-dest-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('dest_tipo').value = tipo;
-  document.getElementById('dest-liga').style.display    = tipo === 'liga'    ? '' : 'none';
-  document.getElementById('dest-jugador').style.display = tipo === 'jugador' ? '' : 'none';
+  document.getElementById('dest-liga').style.display          = tipo === 'liga'          ? '' : 'none';
+  document.getElementById('dest-jugador').style.display       = tipo === 'jugador'       ? '' : 'none';
+  document.getElementById('dest-reprogramados').style.display = tipo === 'reprogramados' ? '' : 'none';
 
-  // Actualizar preview
+  const umbral = parseInt(document.getElementById('reprogs_min')?.value || 1);
+  const cntReprogs = _regrogsUmbral[umbral] || 0;
+
   const textos = {
-    todos:      _conteos.todos      + ' jugadores recibirán este mensaje',
-    pendientes: _conteos.pendientes + ' jugadores con partido pendiente',
-    atrasados:  _conteos.atrasados  + ' jugadores con partido atrasado',
-    sin_push:   _conteos.sin_push   + ' jugadores (solo email, sin push)',
-    liga:       'Seleccioná una liga ↓',
-    jugador:    '1 jugador recibirá este mensaje',
+    todos:          _conteos.todos      + ' jugadores recibirán este mensaje',
+    pendientes:     _conteos.pendientes + ' jugadores con partido pendiente',
+    reprogramados:  cntReprogs          + ' jugadores con ' + umbral + '+ reprogramaciones',
+    sin_push:       _conteos.sin_push   + ' jugadores (solo email, sin push)',
+    liga:           'Seleccioná una liga ↓',
+    jugador:        '1 jugador recibirá este mensaje',
   };
   const cnt = {
     todos: _conteos.todos, pendientes: _conteos.pendientes,
-    atrasados: _conteos.atrasados, sin_push: _conteos.sin_push,
+    reprogramados: cntReprogs, sin_push: _conteos.sin_push,
     liga: '?', jugador: 1
   };
   document.getElementById('previewDest').textContent = textos[tipo] || '';
   document.getElementById('pillCount').textContent   = cnt[tipo] ?? '?';
+}
+
+// ── Umbral de reprogramaciones ────────────────────────────────────────────────
+function setUmbral(u, btn) {
+  document.querySelectorAll('.reprogs-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('reprogs_min').value = u;
+  const cnt = _regrogsUmbral[u] || 0;
+  document.getElementById('reprogs-preview').textContent = cnt;
+  document.getElementById('cntReprog').textContent       = cnt;
+  document.getElementById('previewDest').textContent     = cnt + ' jugadores con ' + u + '+ reprogramaciones';
+  document.getElementById('pillCount').textContent       = cnt;
 }
 
 function actualizarConteoLiga(sel) {
