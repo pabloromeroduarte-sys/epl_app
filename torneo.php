@@ -10,8 +10,24 @@ $stL->execute([$id]);
 $liga = $stL->fetch();
 if (!$liga) { header('Location: torneos.php'); exit; }
 
-$page_title = $liga['nombre'];
+$page_title = $liga['nombre'] . ' — Torneo';
 $active_nav = '';
+
+// ── SEO: meta tags específicos por torneo ────────────────────────────────────
+$_cat_label = $liga['categoria'] ? $liga['categoria'].'ª Categoría' : '';
+$_sex_label = !empty($liga['sexo']) ? ucfirst($liga['sexo']) : '';
+$_estado_lbl = match($liga['estado'] ?? '') {
+    'inscripcion'  => 'Inscripciones abiertas',
+    'activa'       => 'En juego',
+    'proximamente' => 'Próximamente',
+    'finalizada'   => 'Finalizado',
+    default        => 'Torneo',
+};
+$meta_description = trim("{$_estado_lbl}: ".$liga['nombre'].". "
+                  . ($_cat_label ? "$_cat_label · " : '')
+                  . ($_sex_label ? "$_sex_label · " : '')
+                  . "Torneo de pádel organizado por Elite Padel League en Santiago. Mirá clasificación, fixture y resultados en vivo.");
+$meta_keywords    = $liga['nombre'].", torneo padel santiago, ".strtolower($_cat_label).", padel ".strtolower($_sex_label).", EPL, liga padel chile";
 
 $clasificacion = epl_clasificacion($liga['id']);
 $partidos_jugados  = epl_partidos_liga($liga['id'], 'jugado');
@@ -34,6 +50,49 @@ $badge_estado = [
 $est = $badge_estado[$liga['estado']] ?? $badge_estado['activa'];
 ?>
 <?php require_once 'includes/header.php'; ?>
+
+<!-- Schema.org SportsEvent — Rich Results en Google -->
+<?php
+$_proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$_host  = $_SERVER['HTTP_HOST'] ?? 'epleague.cl';
+$_event_status = match($liga['estado'] ?? '') {
+    'finalizada' => 'https://schema.org/EventCompleted',
+    default      => 'https://schema.org/EventScheduled',
+};
+$_event_schema = [
+    '@context' => 'https://schema.org',
+    '@type'    => 'SportsEvent',
+    'name'     => $liga['nombre'],
+    'description' => $meta_description,
+    'sport'    => 'Padel',
+    'eventStatus' => $_event_status,
+    'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
+    'organizer' => [
+        '@type' => 'SportsOrganization',
+        'name'  => 'Elite Padel League',
+        'url'   => $_proto . '://' . $_host,
+    ],
+    'location' => [
+        '@type' => 'Place',
+        'name'  => 'Conecta Santa Blanca',
+        'address' => [
+            '@type' => 'PostalAddress',
+            'addressLocality' => 'Santiago',
+            'addressRegion'   => 'Región Metropolitana',
+            'addressCountry'  => 'CL',
+        ],
+    ],
+    'image' => $portada_hero_url,
+    'url'   => $_proto . '://' . $_host . '/torneo.php?id=' . (int)$liga['id'],
+];
+if (!empty($liga['fecha_inicio'])) {
+    $_event_schema['startDate'] = date('c', strtotime($liga['fecha_inicio']));
+}
+if (!empty($liga['fecha_fin'])) {
+    $_event_schema['endDate'] = date('c', strtotime($liga['fecha_fin']));
+}
+?>
+<script type="application/ld+json"><?= json_encode($_event_schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
 
 <!-- Hero Torneo -->
 <?php

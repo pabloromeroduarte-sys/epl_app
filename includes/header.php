@@ -8,15 +8,115 @@ $jugador_nav = epl_jugador_actual();
 if (!isset($jugador)) {
     $jugador = $jugador_nav;
 }
-$title   = isset($page_title) ? epl_h($page_title) . ' — Elite Padel League' : 'Elite Padel League';
+$title   = isset($page_title) ? epl_h($page_title) . ' — Elite Padel League' : 'Elite Padel League — Liga Premium de Pádel Amateur en Santiago';
 $active  = $active_nav ?? '';
+
+// ── SEO: variables que cada página puede sobrescribir ───────────────────────────
+$_seo_default_desc = 'Elite Padel League (EPL) es el circuito más competitivo de pádel amateur en Santiago. Temporadas premium, comunidad, ranking en vivo, Tercer Tiempo y experiencia deportiva de alto nivel. Inscríbete ahora.';
+$meta_description = $meta_description ?? $_seo_default_desc;
+$meta_keywords    = $meta_keywords    ?? 'pádel santiago, liga de pádel, torneos pádel chile, padel amateur, elite padel league, EPL, padel competitivo, ranking padel, conecta santa blanca';
+$og_image         = $og_image         ?? epl_url('assets/img/logo-epl-square.png');
+$og_type          = $og_type          ?? 'website';
+
+// Canonical auto
+$_proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$_host  = $_SERVER['HTTP_HOST'] ?? 'epleague.cl';
+$_uri   = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+$canonical_url = $canonical_url ?? ($_proto . '://' . $_host . $_uri);
+
+// Site URL absoluto para schema
+$site_url = $_proto . '://' . $_host;
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-CL">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= $title ?></title>
+
+  <!-- SEO básico -->
+  <meta name="description" content="<?= epl_h($meta_description) ?>">
+  <meta name="keywords"    content="<?= epl_h($meta_keywords) ?>">
+  <?php
+  // Páginas privadas no se indexan
+  $_is_private = isset($player_tab) || (isset($jugador_nav) && (strpos($_uri, '/admin/') !== false || in_array(basename($_uri), ['dashboard.php','mi_perfil.php','mis_torneos.php','notificaciones.php','inscripcion.php','reprogramar.php','ingresar_resultado.php','login.php','recuperar.php'])));
+  ?>
+  <meta name="robots"      content="<?= $_is_private ? 'noindex, nofollow' : 'index, follow, max-image-preview:large' ?>">
+  <meta name="author"      content="Elite Padel League">
+  <meta name="geo.region"  content="CL-RM">
+  <meta name="geo.placename" content="Santiago, Chile">
+  <link rel="canonical" href="<?= epl_h($canonical_url) ?>">
+
+  <!-- Open Graph (WhatsApp, Facebook) -->
+  <meta property="og:type"        content="<?= epl_h($og_type) ?>">
+  <meta property="og:site_name"   content="Elite Padel League">
+  <meta property="og:title"       content="<?= $title ?>">
+  <meta property="og:description" content="<?= epl_h($meta_description) ?>">
+  <meta property="og:url"         content="<?= epl_h($canonical_url) ?>">
+  <meta property="og:image"       content="<?= epl_h($og_image) ?>">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale"      content="es_CL">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="<?= $title ?>">
+  <meta name="twitter:description" content="<?= epl_h($meta_description) ?>">
+  <meta name="twitter:image"       content="<?= epl_h($og_image) ?>">
+
+  <!-- JSON-LD: SportsOrganization + LocalBusiness -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SportsOrganization",
+        "@id": "<?= $site_url ?>/#organization",
+        "name": "Elite Padel League",
+        "alternateName": "EPL",
+        "url": "<?= $site_url ?>",
+        "logo": "<?= $site_url ?>/assets/img/logo-epl-square.png",
+        "image": "<?= $site_url ?>/assets/img/logo-epl-square.png",
+        "description": "<?= epl_h($_seo_default_desc) ?>",
+        "sport": "Padel",
+        "areaServed": { "@type": "City", "name": "Santiago" },
+        "sameAs": [
+          "https://www.instagram.com/epleaguecl/"
+        ]
+      },
+      {
+        "@type": "LocalBusiness",
+        "@id": "<?= $site_url ?>/#localbusiness",
+        "name": "Elite Padel League — Conecta Santa Blanca",
+        "image": "<?= $site_url ?>/assets/img/logo-epl-square.png",
+        "url": "<?= $site_url ?>",
+        "telephone": "+56-9-0000-0000",
+        "priceRange": "$$",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Conecta Santa Blanca",
+          "addressLocality": "Santiago",
+          "addressRegion": "Región Metropolitana",
+          "addressCountry": "CL"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "<?= $site_url ?>/#website",
+        "url": "<?= $site_url ?>",
+        "name": "Elite Padel League",
+        "inLanguage": "es-CL",
+        "publisher": { "@id": "<?= $site_url ?>/#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "<?= $site_url ?>/jugadores.php?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
+
   <link rel="icon" href="<?= epl_url('assets/img/favicon.png') ?>" type="image/png">
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">

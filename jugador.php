@@ -11,8 +11,30 @@ $st->execute([$id]);
 $j = $st->fetch();
 if (!$j) { header('Location: jugadores.php'); exit; }
 
-$page_title = $j['nombre'].' '.$j['apellido'];
+$page_title = $j['nombre'].' '.$j['apellido'].' — Jugador';
 $active_nav = 'jugadores';
+
+// ── SEO: meta tags específicos por jugador ───────────────────────────────────
+$_nombre_completo  = $j['nombre'].' '.$j['apellido'];
+$meta_description  = "Perfil del jugador {$_nombre_completo} en Elite Padel League. "
+                   . "Ranking, historial de partidos, estadísticas y temporada actual.";
+$meta_keywords     = "{$_nombre_completo}, jugador padel, perfil padel, EPL, elite padel league, ranking";
+$og_image          = epl_foto_jugador($j['foto'] ?? null, $_nombre_completo);
+
+// JSON-LD adicional Person
+$_proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$_host  = $_SERVER['HTTP_HOST'] ?? 'epleague.cl';
+$_jugador_schema = json_encode([
+    '@context' => 'https://schema.org',
+    '@type'    => 'Person',
+    'name'     => $_nombre_completo,
+    'image'    => $og_image,
+    'memberOf' => [
+        '@type' => 'SportsOrganization',
+        'name'  => 'Elite Padel League',
+        'url'   => $_proto . '://' . $_host,
+    ],
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
 // Equipo del jugador en la liga activa
 $liga = epl_liga_activa();
@@ -55,6 +77,9 @@ if ($equipo) {
 }
 ?>
 <?php require_once 'includes/header.php'; ?>
+
+<!-- Schema.org Person -->
+<script type="application/ld+json"><?= $_jugador_schema ?></script>
 
 <!-- Hero jugador -->
 <section class="section-sm" style="background:var(--navy)">

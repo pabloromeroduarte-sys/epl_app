@@ -1,6 +1,8 @@
 <?php
-$page_title = 'Torneos';
-$active_nav = 'torneos';
+$page_title       = 'Torneos de Pádel';
+$active_nav       = 'torneos';
+$meta_description = 'Calendario de torneos de pádel Elite Padel League en Santiago: ligas activas, inscripciones abiertas, americanos y categorías por nivel. Inscribite ahora.';
+$meta_keywords    = 'torneos padel santiago, liga padel chile, inscripcion padel, ligas EPL, americano padel, categorias padel';
 require_once 'includes/functions.php';
 
 $db = epl_db();

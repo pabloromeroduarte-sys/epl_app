@@ -177,5 +177,31 @@
 <?php require_once __DIR__ . '/pwa_prompts.php'; ?>
 <?php require_once __DIR__ . '/chat_asistente.php'; ?>
 <?php endif; ?>
+
+<?php
+// ── Google Analytics 4 (opcional) ────────────────────────────────────────────
+// Para activarlo: agregá GA4_ID=G-XXXXXXXXXX en el .env
+$_ga4_id = trim(epl_env('GA4_ID', ''));
+if ($_ga4_id):
+?>
+<!-- Google tag (gtag.js) — GA4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=<?= epl_h($_ga4_id) ?>"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '<?= epl_h($_ga4_id) ?>', { anonymize_ip: true });
+</script>
+<?php endif; ?>
+
+<?php
+// ── Google Search Console (opcional) ─────────────────────────────────────────
+// Si activás GSC_VERIFY_TOKEN en .env, agrega meta tag de verificación
+$_gsc_token = trim(epl_env('GSC_VERIFY_TOKEN', ''));
+if ($_gsc_token):
+?>
+<meta name="google-site-verification" content="<?= epl_h($_gsc_token) ?>">
+<?php endif; ?>
+
 </body>
 </html>

@@ -1,6 +1,8 @@
 <?php
-$page_title  = 'Reglamento del Circuito';
-$active_nav  = 'reglamento';
+$page_title       = 'Reglamento del Circuito';
+$active_nav       = 'reglamento';
+$meta_description = 'Reglamento oficial Elite Padel League: sistema de juego, categorías, puntuación, reprogramaciones, fair play y normativa completa de torneos amateur.';
+$meta_keywords    = 'reglamento padel, normativa torneo padel, reglas EPL, categorias padel chile, sistema puntuacion padel';
 require_once 'includes/functions.php';
 require_once 'includes/header.php';
 ?>
