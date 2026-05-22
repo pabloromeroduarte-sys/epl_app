@@ -117,6 +117,13 @@ $site_url = $_proto . '://' . $_host;
   }
   </script>
 
+  <?php
+  // Google Search Console verification (debe estar dentro de <head>)
+  $_gsc_token = trim(epl_env('GSC_VERIFY_TOKEN', ''));
+  if ($_gsc_token): ?>
+  <meta name="google-site-verification" content="<?= epl_h($_gsc_token) ?>">
+  <?php endif; ?>
+
   <link rel="icon" href="<?= epl_url('assets/img/favicon.png') ?>" type="image/png">
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">

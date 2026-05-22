@@ -194,14 +194,5 @@ if ($_ga4_id):
 </script>
 <?php endif; ?>
 
-<?php
-// ── Google Search Console (opcional) ─────────────────────────────────────────
-// Si activás GSC_VERIFY_TOKEN en .env, agrega meta tag de verificación
-$_gsc_token = trim(epl_env('GSC_VERIFY_TOKEN', ''));
-if ($_gsc_token):
-?>
-<meta name="google-site-verification" content="<?= epl_h($_gsc_token) ?>">
-<?php endif; ?>
-
 </body>
 </html>
