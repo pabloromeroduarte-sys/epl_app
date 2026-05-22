@@ -90,11 +90,17 @@ if ($equipo) {
 <div class="dash-layout">
 <?php include __DIR__ . '/includes/player_sidebar.php'; ?>
 <main class="dash-main">
-    <div class="dash-header">
-      <h1 class="dash-title">Hola, <?= epl_h($jugador['nombre']) ?></h1>
-      <?php if ($liga): ?>
-        <p style="color:var(--gray-600);margin-top:.25rem"><?= epl_h($liga['nombre']) ?> — <?= epl_h($liga['temporada'] ?? '') ?></p>
-      <?php endif; ?>
+    <div class="dash-header" style="background:linear-gradient(135deg,#1c2f48 0%, #0f1e30 100%);border-radius:18px;padding:1.5rem 1.75rem;color:#fff;margin-bottom:1.5rem;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(28,47,72,.18)">
+      <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(201,167,98,.18) 0%,transparent 70%);pointer-events:none"></div>
+      <div style="position:relative;z-index:1">
+        <span style="font-size:.65rem;font-weight:900;letter-spacing:.25em;color:#C9A762;text-transform:uppercase">Tu panel</span>
+        <h1 class="dash-title" style="color:#fff;margin:.2rem 0 .15rem;font-size:clamp(1.6rem,4vw,2.2rem);font-family:'Anton',sans-serif;text-transform:uppercase;line-height:1">Hola, <span style="color:#C9A762"><?= epl_h($jugador['nombre']) ?></span></h1>
+        <?php if ($liga): ?>
+          <p style="color:rgba(255,255,255,.7);margin-top:.3rem;font-size:.85rem;font-weight:600"><?= epl_h($liga['nombre']) ?> · <?= epl_h($liga['temporada'] ?? 'Temporada en curso') ?></p>
+        <?php else: ?>
+          <p style="color:rgba(255,255,255,.6);margin-top:.3rem;font-size:.85rem">Listo para tu próxima temporada en EPL</p>
+        <?php endif; ?>
+      </div>
     </div>
 
     <?php

@@ -81,25 +81,31 @@ if ($equipo) {
 <!-- Schema.org Person -->
 <script type="application/ld+json"><?= $_jugador_schema ?></script>
 
-<!-- Hero jugador -->
-<section class="section-sm" style="background:var(--navy)">
-  <div class="container">
-    <div style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap">
+<!-- Hero jugador premium -->
+<section class="epl-hero" style="background-image: linear-gradient(135deg, rgba(28,47,72,.94) 0%, rgba(10,20,33,.96) 100%), url('<?= epl_url('assets/img/landing/accion-padel.jpg') ?>');padding:3rem 1.5rem 2.5rem;text-align:left">
+  <div class="epl-container" style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap">
+    <div style="position:relative">
       <img src="<?= epl_h(epl_foto_jugador($j['foto'], $j['nombre'].' '.$j['apellido'])) ?>"
            alt="<?= epl_h($j['nombre'].' '.$j['apellido']) ?>"
-           style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);flex-shrink:0">
-      <div>
-        <p class="section-eyebrow" style="color:var(--gold)">Jugador</p>
-        <h1 style="font-family:var(--font-head);font-size:clamp(1.8rem,4vw,2.8rem);text-transform:uppercase;color:var(--white);line-height:1.1">
-          <?= epl_h($j['nombre'].' '.$j['apellido']) ?>
-        </h1>
-        <?php if ($j['alias']): ?>
-          <p style="color:var(--gold);font-size:.9rem;font-weight:600;margin-top:.3rem">"<?= epl_h($j['alias']) ?>"</p>
-        <?php endif; ?>
-        <?php if ($equipo): ?>
-          <p style="color:rgba(255,255,255,.6);font-size:.85rem;margin-top:.4rem"><?= epl_h($equipo['nombre']) ?></p>
-        <?php endif; ?>
-      </div>
+           style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:4px solid var(--gold);flex-shrink:0;box-shadow:0 8px 30px rgba(201,167,98,.3)">
+      <?php if ($stats && ($stats['posicion'] ?? 0) > 0 && $stats['posicion'] <= 3): ?>
+        <span style="position:absolute;bottom:-4px;right:-4px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:1.1rem;background:<?= $stats['posicion']==1?'#fbbf24':($stats['posicion']==2?'#d1d5db':'#d97706') ?>;color:#1f2937;border:3px solid var(--navy);box-shadow:0 2px 8px rgba(0,0,0,.3)"><?= $stats['posicion'] ?>°</span>
+      <?php endif; ?>
+    </div>
+    <div style="flex:1;min-width:0">
+      <span class="epl-eyebrow">Perfil de jugador</span>
+      <h1 style="font-family:var(--font-head);font-size:clamp(1.8rem,4.5vw,3.2rem);text-transform:uppercase;color:var(--white);line-height:.95;margin:0">
+        <?= epl_h($j['nombre']) ?> <span style="color:var(--gold)"><?= epl_h($j['apellido']) ?></span>
+      </h1>
+      <?php if ($j['alias']): ?>
+        <p style="color:var(--gold);font-size:1rem;font-weight:700;margin-top:.4rem;font-style:italic">"<?= epl_h($j['alias']) ?>"</p>
+      <?php endif; ?>
+      <?php if ($equipo): ?>
+        <p style="color:rgba(255,255,255,.7);font-size:.85rem;margin-top:.5rem;display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.08);padding:.3rem .8rem;border-radius:999px;backdrop-filter:blur(8px)">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <?= epl_h($equipo['nombre']) ?>
+        </p>
+      <?php endif; ?>
     </div>
   </div>
 </section>

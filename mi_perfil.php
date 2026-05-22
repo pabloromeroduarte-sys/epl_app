@@ -121,8 +121,13 @@ $profesiones = [
 <div class="dash-layout">
 <?php include __DIR__ . '/includes/player_sidebar.php'; ?>
 <main class="dash-main">
-  <div class="dash-header">
-    <h1 class="dash-title">Mi Perfil</h1>
+  <div class="dash-header" style="background:linear-gradient(135deg,#1c2f48 0%, #0f1e30 100%);border-radius:18px;padding:1.5rem 1.75rem;color:#fff;margin-bottom:1.5rem;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(28,47,72,.18)">
+    <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(201,167,98,.18) 0%,transparent 70%);pointer-events:none"></div>
+    <div style="position:relative;z-index:1">
+      <span style="font-size:.65rem;font-weight:900;letter-spacing:.25em;color:#C9A762;text-transform:uppercase">Mi cuenta</span>
+      <h1 class="dash-title" style="color:#fff;margin:.2rem 0 .15rem;font-size:clamp(1.5rem,3.5vw,2rem);font-family:'Anton',sans-serif;text-transform:uppercase">Mi <span style="color:#C9A762">Perfil</span></h1>
+      <p style="color:rgba(255,255,255,.7);margin-top:.2rem;font-size:.82rem">Datos personales, foto, contacto y estadísticas de juego.</p>
+    </div>
   </div>
 
   <?php if ($ok):  ?><div class="alert alert-success"><?= epl_h($ok) ?></div><?php endif; ?>

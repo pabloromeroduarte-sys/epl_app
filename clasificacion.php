@@ -1,6 +1,8 @@
 <?php
-$page_title = 'Clasificación';
-$active_nav = 'clasificacion';
+$page_title       = 'Clasificación y Ranking';
+$active_nav       = 'clasificacion';
+$meta_description = 'Tabla de clasificación oficial Elite Padel League. Ranking actualizado en vivo de la liga activa con puntos, partidos jugados y rendimiento por equipo.';
+$meta_keywords    = 'clasificacion padel, ranking padel chile, tabla posiciones padel, EPL ranking, liga padel resultados';
 require_once 'includes/functions.php';
 
 $db   = epl_db();
@@ -37,12 +39,54 @@ if ($liga_id) {
 ?>
 <?php require_once 'includes/header.php'; ?>
 
-<section class="section-sm" style="background:var(--navy)">
-  <div class="container">
-    <p class="section-eyebrow" style="color:var(--gold)">Temporada <?= $liga_sel ? epl_h($liga_sel['temporada']) : '' ?></p>
-    <h1 class="section-title" style="color:var(--white)">Clasificación</h1>
+<!-- HERO premium -->
+<section class="epl-hero epl-hero-sm" style="background-image: linear-gradient(135deg, rgba(28,47,72,.95) 0%, rgba(10,20,33,.92) 100%), url('<?= epl_url('assets/img/landing/accion-padel.jpg') ?>')">
+  <div class="epl-container">
+    <span class="epl-eyebrow">Temporada <?= $liga_sel ? epl_h($liga_sel['temporada']) : '' ?></span>
+    <h1>Clasificación <span class="epl-hero-gold">en vivo</span></h1>
+    <p>Ranking oficial actualizado al instante. Tocá cualquier equipo para ver su historial de partidos.</p>
   </div>
 </section>
+
+<?php if ($clasificacion && count($clasificacion) >= 3): ?>
+<!-- PODIO TOP 3 (visual premium) -->
+<section class="epl-section-sm" style="background:#F5F7F8;padding-top:2.5rem;padding-bottom:1rem">
+  <div class="epl-container">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.85rem;max-width:780px;margin:0 auto;align-items:end">
+      <?php
+      // Orden visual: 2do, 1ro, 3ro (estilo podio)
+      $podio_order = [1, 0, 2]; // índices en $clasificacion
+      $podio_styles = [
+          0 => ['h'=>'170px','grad'=>'linear-gradient(180deg,#fbbf24 0%, #d97706 100%)','txt'=>'#7c2d12','rank'=>'1°','label'=>'CAMPEÓN'],
+          1 => ['h'=>'135px','grad'=>'linear-gradient(180deg,#e5e7eb 0%, #9ca3af 100%)','txt'=>'#1f2937','rank'=>'2°','label'=>'PLATA'],
+          2 => ['h'=>'110px','grad'=>'linear-gradient(180deg,#d97706 0%, #92400e 100%)','txt'=>'#fff','rank'=>'3°','label'=>'BRONCE'],
+      ];
+      foreach ($podio_order as $idx):
+          $row = $clasificacion[$idx] ?? null;
+          if (!$row) continue;
+          $s = $podio_styles[$idx];
+      ?>
+      <div style="text-align:center">
+        <div style="background:#fff;border-radius:14px;padding:.85rem .5rem;box-shadow:0 4px 14px rgba(0,0,0,.06);margin-bottom:.4rem;border:1px solid #f1f5f9">
+          <div style="display:flex;justify-content:center;margin-bottom:.4rem">
+            <div style="display:flex">
+              <img src="<?= epl_h(epl_foto_jugador($row['j1_foto'], $row['j1_nombre'].' '.$row['j1_apellido'])) ?>" alt="" style="width:38px;height:38px;border-radius:50%;border:2px solid #fff;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,.15)">
+              <img src="<?= epl_h(epl_foto_jugador($row['j2_foto'], $row['j2_nombre'].' '.$row['j2_apellido'])) ?>" alt="" style="width:38px;height:38px;border-radius:50%;border:2px solid #fff;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-left:-12px">
+            </div>
+          </div>
+          <div style="font-weight:800;font-size:.78rem;color:var(--navy);line-height:1.1;margin-bottom:.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= epl_h($row['equipo_nombre']) ?></div>
+          <div style="font-size:.68rem;color:#94a3b8;font-weight:600"><?= $row['puntos'] ?> pts · <?= $row['pg'] ?>G</div>
+        </div>
+        <div style="background:<?= $s['grad'] ?>;height:<?= $s['h'] ?>;border-radius:10px 10px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:<?= $s['txt'] ?>;font-family:var(--font-head);text-shadow:0 2px 4px rgba(0,0,0,.1)">
+          <div style="font-size:2.4rem;line-height:1"><?= $s['rank'] ?></div>
+          <div style="font-size:.62rem;font-weight:900;letter-spacing:.15em;margin-top:.2rem"><?= $s['label'] ?></div>
+        </div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
 
 <section class="section">
   <div class="container">

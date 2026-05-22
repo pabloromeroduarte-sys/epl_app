@@ -1,6 +1,8 @@
 <?php
-$page_title = 'Resultados';
-$active_nav = 'resultados';
+$page_title       = 'Resultados de Partidos';
+$active_nav       = 'resultados';
+$meta_description = 'Resultados oficiales Elite Padel League: partidos jugados, pendientes y reprogramados de cada liga, organizados por jornada. Actualizado al instante.';
+$meta_keywords    = 'resultados padel, partidos padel chile, EPL resultados, fixture padel santiago, jornadas padel';
 require_once 'includes/functions.php';
 
 $db    = epl_db();
@@ -22,10 +24,12 @@ krsort($por_jornada);
 ?>
 <?php require_once 'includes/header.php'; ?>
 
-<section class="section-sm" style="background:var(--navy)">
-  <div class="container">
-    <p class="section-eyebrow" style="color:var(--gold)">Liga activa</p>
-    <h1 class="section-title" style="color:var(--white)">Resultados</h1>
+<!-- HERO premium -->
+<section class="epl-hero epl-hero-sm" style="background-image: linear-gradient(135deg, rgba(28,47,72,.95) 0%, rgba(10,20,33,.92) 100%), url('<?= epl_url('assets/img/landing/accion-padel.jpg') ?>')">
+  <div class="epl-container">
+    <span class="epl-eyebrow">Fixture & resultados</span>
+    <h1>Partidos <span class="epl-hero-gold">de la liga</span></h1>
+    <p>Todos los resultados oficiales, organizados por jornada. Filtrá por estado para ver lo que te interesa.</p>
   </div>
 </section>
 

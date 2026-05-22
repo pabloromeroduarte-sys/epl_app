@@ -31,11 +31,20 @@ $ligas = $db->query("
     /* HERO SECTION */
     .hero-section {
         background-color: #0A1421;
-        background-image: linear-gradient(to bottom, rgba(10, 20, 33, 0.90) 0%, rgba(28, 47, 72, 0.75) 50%, rgba(10, 20, 33, 0.95) 100%), 
-                          url('https://respaldo.epleague.cl/wp-content/uploads/2026/03/tennis-paddles-balls-arrangement-scaled.jpg');
+        background-image: linear-gradient(to bottom, rgba(10, 20, 33, 0.90) 0%, rgba(28, 47, 72, 0.75) 50%, rgba(10, 20, 33, 0.95) 100%),
+                          url('<?= epl_url('assets/img/landing/accion-padel.jpg') ?>');
         background-size: cover; background-position: center center; width: 100%; display: block;
     }
     .giant-title { line-height: 0.9; letter-spacing: -0.02em; }
+
+    /* Cards con jerarquía visual mejorada */
+    .torneo-card { transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease; }
+    .torneo-card:hover { transform: translateY(-4px); }
+    .filter-chip { padding:.5rem 1.1rem;border-radius:999px;font-size:.72rem;font-weight:800;
+                    text-transform:uppercase;letter-spacing:.08em;border:1.5px solid #e2e8f0;
+                    background:#fff;color:#475569;cursor:pointer;transition:all .18s; }
+    .filter-chip.active { background:#1C2F48;color:#C9A762;border-color:#1C2F48; }
+    .filter-chip:hover:not(.active) { border-color:#1C2F48;color:#1C2F48; }
 
     /* CONTENEDORES BÁSICOS */
     .sidebar-card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.02); border-left: 6px solid #C9A762; margin-bottom: 1.5rem; }
@@ -69,14 +78,35 @@ $ligas = $db->query("
 
     <!-- ZONA 1: DIRECTORIO DE TORNEOS -->
     <section class="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-20">
-        <div class="mb-8 md:mb-12 border-b-4 border-epl-gold/20 pb-4">
-            <h2 class="text-4xl text-epl-blue font-primary uppercase tracking-tight">Directorio de <span class="text-epl-gold">Ligas</span></h2>
+        <div class="mb-8 md:mb-12 border-b-4 border-epl-gold/20 pb-4 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+                <span class="text-epl-gold font-black text-[10px] uppercase tracking-[0.2em] mb-2 block">Calendario</span>
+                <h2 class="text-4xl text-epl-blue font-primary uppercase tracking-tight">Directorio de <span class="text-epl-gold">Ligas</span></h2>
+            </div>
+            <p class="text-xs text-gray-500 font-medium"><?= count($ligas) ?> torneo<?= count($ligas)!==1?'s':'' ?> en el calendario</p>
         </div>
-        
-        <!-- SHORTCODE: MUESTRA LAS TARJETAS (PHP INYECTADO) -->
+
         <?php if (empty($ligas)): ?>
-          <p class="text-gray-500 font-medium">No hay torneos disponibles aún.</p>
-        <?php else: ?>
+          <div class="text-center py-16 bg-white rounded-3xl border border-gray-100">
+            <div class="text-6xl mb-4">🏆</div>
+            <p class="text-gray-500 font-medium">No hay torneos disponibles aún.</p>
+            <p class="text-xs text-gray-400 mt-2">Volvé pronto — estamos preparando la próxima temporada.</p>
+          </div>
+        <?php else:
+          // Conteos por estado para filtros
+          $cnt = ['activa'=>0, 'inscripcion'=>0, 'proximamente'=>0, 'finalizada'=>0];
+          foreach ($ligas as $l) { $cnt[$l['estado']] = ($cnt[$l['estado']] ?? 0) + 1; }
+        ?>
+          <!-- Filtros chips -->
+          <div class="flex flex-wrap gap-2 mb-8" id="torneoFilters">
+            <button class="filter-chip active" data-filter="todos" onclick="filtrarTorneos('todos',this)">Todos <?= count($ligas) ?></button>
+            <?php if ($cnt['activa']>0): ?><button class="filter-chip" data-filter="activa" onclick="filtrarTorneos('activa',this)">🟢 En juego <?= $cnt['activa'] ?></button><?php endif; ?>
+            <?php if ($cnt['inscripcion']>0): ?><button class="filter-chip" data-filter="inscripcion" onclick="filtrarTorneos('inscripcion',this)">📝 Inscripciones <?= $cnt['inscripcion'] ?></button><?php endif; ?>
+            <?php if ($cnt['proximamente']>0): ?><button class="filter-chip" data-filter="proximamente" onclick="filtrarTorneos('proximamente',this)">⏳ Próximos <?= $cnt['proximamente'] ?></button><?php endif; ?>
+            <?php if ($cnt['finalizada']>0): ?><button class="filter-chip" data-filter="finalizada" onclick="filtrarTorneos('finalizada',this)">🏁 Finalizados <?= $cnt['finalizada'] ?></button><?php endif; ?>
+          </div>
+        <?php endif; ?>
+        <?php if (!empty($ligas)): ?>
           <?php
           $badge = [
               'proximamente' => ['label'=>'PRÓXIMAMENTE',  'text'=>'text-gray-800','bg'=>'bg-gray-200', 'eyebrow'=>'PRÓXIMO TORNEO'],
@@ -85,7 +115,7 @@ $ligas = $db->query("
               'finalizada'   => ['label'=>'FINALIZADO',    'text'=>'text-gray-500','bg'=>'bg-gray-100',  'eyebrow'=>'TORNEO FINALIZADO'],
           ];
           ?>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="torneosGrid">
             <?php foreach ($ligas as $l):
               $b = $badge[$l['estado']] ?? $badge['activa'];
               
@@ -110,7 +140,7 @@ $ligas = $db->query("
               // Nombre corto para la miniatura
               $nombre_corto = $l['categoria'] ? $l['categoria'] . ' Categoría' : ($l['tipo'] === 'liga' ? 'Liga Padel' : 'Americano');
             ?>
-            <div class="bg-white rounded-[24px] overflow-hidden shadow-[0_5px_15px_rgba(0,0,0,0.05)] border border-gray-100 flex flex-col transition-all hover:shadow-[0_10px_25px_rgba(201,167,98,0.15)] hover:border-epl-gold group">
+            <div class="torneo-card bg-white rounded-[24px] overflow-hidden shadow-[0_5px_15px_rgba(0,0,0,0.05)] border border-gray-100 flex flex-col hover:shadow-[0_10px_25px_rgba(201,167,98,0.15)] hover:border-epl-gold group" data-estado="<?= epl_h($l['estado']) ?>">
               
               <!-- Portada de la Tarjeta -->
               <div class="relative h-[200px] bg-epl-blue shrink-0 overflow-hidden">
@@ -275,5 +305,16 @@ $ligas = $db->query("
         </div>
     </main>
 </div>
+
+<script>
+function filtrarTorneos(estado, btn) {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.torneo-card').forEach(card => {
+        const e = card.getAttribute('data-estado');
+        card.style.display = (estado === 'todos' || e === estado) ? '' : 'none';
+    });
+}
+</script>
 
 <?php require_once 'includes/footer.php'; ?>

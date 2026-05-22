@@ -206,7 +206,7 @@ if ($val['telefono']) {
 
   <!-- Izquierda — marca -->
   <div class="login-left">
-    <div class="login-left-bg" style="background-image:url('<?= epl_url('assets/img/hero-padel.jpg') ?>')"></div>
+    <div class="login-left-bg" style="background-image:url('<?= epl_url('assets/img/landing/hero-padel.jpg') ?>')"></div>
     <div class="login-left-content">
       <img src="<?= epl_url('assets/img/logo-epl.png') ?>" alt="Elite Padel League" class="login-left-logo">
       <h2 class="login-left-title">Elite<br><span>Padel</span><br>League</h2>

@@ -94,9 +94,13 @@ require_once 'includes/header.php';
   <?php include 'includes/player_sidebar.php'; ?>
 
   <main class="dash-main">
-    <div class="dash-header">
-      <h1 class="dash-title">Mis Torneos</h1>
-      <p style="color:var(--gray-400);font-size:.9rem">Tu actividad en ligas y torneos.</p>
+    <div class="dash-header" style="background:linear-gradient(135deg,#1c2f48 0%, #0f1e30 100%);border-radius:18px;padding:1.5rem 1.75rem;color:#fff;margin-bottom:1.5rem;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(28,47,72,.18)">
+      <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(201,167,98,.18) 0%,transparent 70%);pointer-events:none"></div>
+      <div style="position:relative;z-index:1">
+        <span style="font-size:.65rem;font-weight:900;letter-spacing:.25em;color:#C9A762;text-transform:uppercase">Tu actividad</span>
+        <h1 class="dash-title" style="color:#fff;margin:.2rem 0 .15rem;font-size:clamp(1.5rem,3.5vw,2rem);font-family:'Anton',sans-serif;text-transform:uppercase">Mis <span style="color:#C9A762">Torneos</span></h1>
+        <p style="color:rgba(255,255,255,.7);margin-top:.2rem;font-size:.82rem">Tu actividad completa en ligas y torneos del circuito EPL.</p>
+      </div>
     </div>
     <?php if ($flash_ok): ?>
       <div class="alert alert-success" style="margin-top:.75rem"><?= epl_h($flash_ok) ?></div>
