@@ -558,10 +558,14 @@ require_once '../includes/header.php';
               </td>
               <td style="padding:.6rem 1rem;font-weight:600;color:var(--navy);text-align:right"><?= epl_h($p['visitante_nombre']) ?></td>
               <td class="pf-col-cancha" style="padding:.6rem .75rem;text-align:center;font-size:.78rem">
-                <?php if ($p['recinto_nombre']): ?>
-                  <?= epl_h($p['recinto_nombre']) ?>
-                  <?php if ($p['recinto_superior_nombre']): ?>
-                    <span style="display:block;font-size:.65rem;color:var(--gray-400)"><?= epl_h($p['recinto_superior_nombre']) ?></span>
+                <?php if ($p['recinto_id'] && isset($map_recintos_full[$p['recinto_id']])):
+                  $_full_path = $map_recintos_full[$p['recinto_id']];
+                  $_parts = explode(' · ', $_full_path);
+                  $_leaf  = array_pop($_parts);
+                ?>
+                  <strong><?= epl_h($_leaf) ?></strong>
+                  <?php if (!empty($_parts)): ?>
+                    <span style="display:block;font-size:.62rem;color:var(--gray-400);margin-top:.1rem;line-height:1.3"><?= epl_h(implode(' · ', $_parts)) ?></span>
                   <?php endif; ?>
                 <?php else: ?>
                   <span style="color:var(--gray-300)">—</span>
@@ -637,8 +641,8 @@ require_once '../includes/header.php';
                   </div>
                   <div class="pf-equipo pf-equipo-vis"><?= epl_h($p['visitante_nombre']) ?></div>
                 </div>
-                <?php if ($p['recinto_nombre']): ?>
-                  <div class="pf-card-cancha">📍 <?= epl_h($p['recinto_nombre']) ?></div>
+                <?php if ($p['recinto_id'] && isset($map_recintos_full[$p['recinto_id']])): ?>
+                  <div class="pf-card-cancha">📍 <?= epl_h($map_recintos_full[$p['recinto_id']]) ?></div>
                 <?php endif; ?>
               </div>
               <button type="button" onclick="window.editarPartido(this)" data-partido="<?= epl_h(base64_encode((string)(json_encode($p, JSON_UNESCAPED_UNICODE) ?: '{}'))) ?>" class="pf-card-btn">Editar</button>
