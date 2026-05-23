@@ -42,7 +42,7 @@ $jugadores = $db->query("
 
     <div class="jugadores-grid" id="jugadoresGrid">
       <?php foreach ($jugadores as $j): ?>
-      <a href="jugador.php?id=<?= $j['id'] ?>" class="jugador-card" data-nombre="<?= strtolower(epl_h($j['nombre'].' '.$j['apellido'])) ?>" style="display:block;text-decoration:none">
+      <a href="jugador.php?id=<?= $j['id'] ?>" class="jugador-card" data-nombre="<?= strtolower(epl_h($j['nombre'].' '.$j['apellido'].' '.($j['alias'] ?? '').' '.($j['equipo_nombre'] ?? ''))) ?>" style="display:block;text-decoration:none">
         <img class="jugador-foto"
              src="<?= epl_h(epl_foto_jugador($j['foto'], $j['nombre'].' '.$j['apellido'])) ?>"
              alt="<?= epl_h($j['nombre'].' '.$j['apellido']) ?>"

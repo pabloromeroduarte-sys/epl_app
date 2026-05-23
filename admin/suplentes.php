@@ -308,14 +308,29 @@ if ($filtro_liga) {
 
 <script>
 function filtrarSelect(selectId, inputId) {
-  var q = document.getElementById(inputId).value.toLowerCase();
+  var q = document.getElementById(inputId).value.toLowerCase().trim();
   var sel = document.getElementById(selectId);
-  Array.from(sel.options).forEach(function(opt) {
-    if (!opt.value) return; // skip placeholder
-    opt.style.display = opt.text.toLowerCase().includes(q) ? '' : 'none';
+  // Firefox/Safari ignoran display:none en <option>. Hay que sacarlas del DOM.
+  if (!sel._allOptions) {
+    sel._allOptions = Array.from(sel.options).map(function(o) {
+      return { value: o.value, text: o.text, search: o.text.toLowerCase() };
+    });
+  }
+  var prevValue = sel.value;
+  sel.innerHTML = '';
+  sel._allOptions.forEach(function(o) {
+    if (!o.value || o.search.includes(q)) {
+      var opt = document.createElement('option');
+      opt.value = o.value;
+      opt.text  = o.text;
+      sel.appendChild(opt);
+    }
   });
-  // Deseleccionar si la opción activa quedó oculta
-  if (sel.selectedOptions[0] && sel.selectedOptions[0].style.display === 'none') sel.value = '';
+  if (Array.from(sel.options).some(function(o){return o.value === prevValue;})) {
+    sel.value = prevValue;
+  } else {
+    sel.value = '';
+  }
 }
 
 function abrirJornadas(supId, nombre, jugadas) {
