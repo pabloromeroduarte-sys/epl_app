@@ -607,6 +607,24 @@ function epl_notif_crear(int $jugador_id, string $tipo, string $titulo, string $
     try {
         epl_ensure_inscripciones_schema();
         $db = epl_db();
+
+        // ── Dedup: evitar notif idéntica al mismo jugador en los últimos 10 minutos ──
+        // Previene que múltiples ediciones consecutivas envíen N notificaciones iguales
+        $stDup = $db->prepare("
+            SELECT id FROM notificaciones
+            WHERE jugador_id = ?
+              AND tipo       = ?
+              AND titulo     = ?
+              AND mensaje    = ?
+              AND created_at >= (NOW() - INTERVAL 10 MINUTE)
+            LIMIT 1
+        ");
+        $stDup->execute([$jugador_id, $tipo, $titulo, $mensaje]);
+        if ($stDup->fetchColumn()) {
+            // Ya hay una notif idéntica reciente — no duplicar ni reenviar push/email
+            return;
+        }
+
         $st = $db->prepare("INSERT INTO notificaciones (jugador_id, tipo, titulo, mensaje, url) VALUES (?,?,?,?,?)");
         $st->execute([$jugador_id, $tipo, $titulo, $mensaje, $url ?: null]);
     } catch (Throwable $e) {
