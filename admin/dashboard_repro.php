@@ -48,11 +48,11 @@ $total_partidos = (int)$db->query("SELECT COUNT(*) FROM partidos")->fetchColumn(
 $pct_avance     = $total_partidos > 0 ? round(($total_jugados / $total_partidos) * 100) : 0;
 
 // ────────────────────────────────────────────────────────────────────────
-// SOLICITUDES DE REPROGRAMACIÓN PENDIENTES (para tab Solicitudes)
+// SOLICITUDES (para tab Solicitudes): pendientes + procesadas últimos 14 días
 // ────────────────────────────────────────────────────────────────────────
 $solicitudes_pendientes = $db->query("
     SELECT sr.id AS solicitud_id, sr.partido_id, sr.solicitante_id, sr.motivo,
-           sr.fecha_propuesta, sr.rival_no_responde, sr.mutuo_acuerdo, sr.created_at,
+           sr.fecha_propuesta, sr.rival_no_responde, sr.mutuo_acuerdo, sr.estado AS sol_estado, sr.created_at,
            p.jornada, p.fecha_programada,
            l.id AS liga_id, l.nombre AS liga_nombre,
            el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
@@ -68,6 +68,27 @@ $solicitudes_pendientes = $db->query("
     ORDER BY sr.created_at DESC
 ")->fetchAll();
 $n_solicitudes = count($solicitudes_pendientes);
+
+// Solicitudes procesadas recientes (aprobadas o rechazadas en últimos 14 días)
+$solicitudes_procesadas = $db->query("
+    SELECT sr.id AS solicitud_id, sr.partido_id, sr.solicitante_id, sr.motivo,
+           sr.fecha_propuesta, sr.fecha_aprobada, sr.cancha_aprobada, sr.estado AS sol_estado, sr.created_at,
+           p.jornada, p.estado AS partido_estado,
+           l.id AS liga_id, l.nombre AS liga_nombre,
+           el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+           j.nombre AS sol_nombre, j.apellido AS sol_apellido
+    FROM solicitudes_reprogramacion sr
+    JOIN partidos p   ON p.id = sr.partido_id
+    JOIN ligas l      ON l.id = p.liga_id
+    JOIN equipos el   ON el.id = p.equipo_local_id
+    JOIN equipos ev   ON ev.id = p.equipo_visitante_id
+    JOIN jugadores j  ON j.id = sr.solicitante_id
+    WHERE sr.estado IN ('aprobada','rechazada')
+      AND sr.created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+    ORDER BY sr.created_at DESC
+    LIMIT 20
+")->fetchAll();
+$n_procesadas = count($solicitudes_procesadas);
 
 // Top equipos con más reprogramaciones (para llamar la atención a los que cuelgan más)
 $por_equipo = [];
@@ -162,15 +183,27 @@ require_once '../includes/header.php';
 
     <!-- ═══════════════════ TAB SOLICITUDES ═══════════════════ -->
     <div id="tab-solicitudes" class="tab-content" style="display:<?= $tab_inicial==='solicitudes'?'block':'none' ?>">
-      <?php if (empty($solicitudes_pendientes)): ?>
+      <?php if (empty($solicitudes_pendientes) && empty($solicitudes_procesadas)): ?>
         <section class="sec-card">
           <div style="padding:3rem;text-align:center;color:var(--gray-400)">
             <div style="font-size:3rem">✅</div>
-            <p style="font-weight:700;margin-top:.5rem">No hay solicitudes pendientes</p>
+            <p style="font-weight:700;margin-top:.5rem">No hay solicitudes</p>
             <p style="font-size:.85rem">Cuando un jugador solicite reprogramar un partido, aparecerá acá.</p>
           </div>
         </section>
       <?php else: ?>
+
+      <?php if (empty($solicitudes_pendientes)): ?>
+        <section class="sec-card" style="border-left:5px solid #10b981">
+          <div style="padding:1.5rem;text-align:center;color:#15803d">
+            <div style="font-size:2rem">✅</div>
+            <p style="font-weight:700;margin-top:.3rem;font-size:.95rem">No hay solicitudes pendientes</p>
+            <p style="font-size:.82rem;color:#64748b">Más abajo podés ver las últimas procesadas.</p>
+          </div>
+        </section>
+      <?php endif; ?>
+
+      <?php if (!empty($solicitudes_pendientes)): ?>
         <section class="sec-card sec-urgente">
           <div class="sec-head">
             <div>
@@ -225,6 +258,65 @@ require_once '../includes/header.php';
             <?php endforeach; ?>
           </div>
         </section>
+      <?php endif; ?>
+
+      <!-- Solicitudes ya procesadas (aprobadas / rechazadas) -->
+      <?php if (!empty($solicitudes_procesadas)): ?>
+        <section class="sec-card" style="border-left:5px solid #94a3b8">
+          <div class="sec-head">
+            <div>
+              <h2 class="sec-title">🗂️ Procesadas recientemente</h2>
+              <p class="sec-sub">Últimos 14 días — aprobadas y rechazadas</p>
+            </div>
+            <div class="sec-count" style="background:#f1f5f9;color:#64748b"><?= $n_procesadas ?></div>
+          </div>
+          <div class="sec-body">
+            <?php foreach ($solicitudes_procesadas as $s):
+              $es_aprobada = $s['sol_estado'] === 'aprobada';
+              $estado_color = $es_aprobada ? '#15803d' : '#dc2626';
+              $estado_bg    = $es_aprobada ? '#dcfce7' : '#fee2e2';
+              $estado_label = $es_aprobada ? '✓ APROBADA' : '✗ RECHAZADA';
+              $fecha_pp = $s['fecha_aprobada']
+                  ? date('d/m/Y H:i', strtotime($s['fecha_aprobada']))
+                  : ($s['fecha_propuesta'] ? date('d/m/Y H:i', strtotime($s['fecha_propuesta'])) : 'Sin fecha');
+              $fecha_solicitud = date('d/m H:i', strtotime($s['created_at']));
+            ?>
+            <div class="partido-row" style="opacity:.92">
+              <div class="partido-row-main">
+                <div class="partido-meta">
+                  <span class="partido-tag" style="background:<?= $estado_bg ?>;color:<?= $estado_color ?>"><?= $estado_label ?></span>
+                  <span class="partido-liga"><?= epl_h($s['liga_nombre']) ?></span>
+                  <?php if ($s['jornada']): ?>
+                    <span class="partido-jornada">J<?= $s['jornada'] ?></span>
+                  <?php endif; ?>
+                </div>
+                <div class="partido-equipos">
+                  <strong><?= epl_h($s['local_nombre']) ?></strong>
+                  <span class="vs">vs</span>
+                  <strong><?= epl_h($s['visitante_nombre']) ?></strong>
+                </div>
+                <div class="partido-extra">
+                  <span class="extra-item">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Solicitó <strong><?= epl_h($s['sol_nombre'].' '.$s['sol_apellido']) ?></strong>
+                  </span>
+                  <?php if ($es_aprobada): ?>
+                    <span class="extra-item" style="color:#15803d;font-weight:700">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      Nueva fecha: <?= $fecha_pp ?>
+                      <?php if (!empty($s['cancha_aprobada'])): ?> · <?= epl_h(trim($s['cancha_aprobada'])) ?><?php endif; ?>
+                    </span>
+                  <?php endif; ?>
+                  <span class="extra-item" style="color:#94a3b8">solicitado <?= $fecha_solicitud ?></span>
+                </div>
+              </div>
+              <a href="liga_detalle.php?id=<?= $s['liga_id'] ?>&tab=partidos" class="btn-gestionar" style="background:#94a3b8;color:#fff">Ver</a>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        </section>
+      <?php endif; ?>
+
       <?php endif; ?>
     </div>
 
