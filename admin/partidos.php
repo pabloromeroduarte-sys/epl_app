@@ -337,40 +337,44 @@ require_once '../includes/header.php';
 
   <main class="dash-main">
 
-    <div class="dash-header" style="background:linear-gradient(135deg,#1c2f48 0%, #0f1e30 100%);border-radius:18px;padding:1.5rem 1.75rem;color:#fff;margin-bottom:1.5rem;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(28,47,72,.18)">
+    <div class="dash-header" style="background:linear-gradient(135deg,#1c2f48 0%, #0f1e30 100%);border-radius:18px;padding:1.1rem 1.25rem;color:#fff;margin-bottom:1rem;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(28,47,72,.18)">
       <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(201,167,98,.18) 0%,transparent 70%);pointer-events:none"></div>
-      <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
-        <div>
-          <span style="font-size:.65rem;font-weight:900;letter-spacing:.25em;color:#C9A762;text-transform:uppercase">Panel admin</span>
-          <h1 class="dash-title" style="color:#fff;margin:.2rem 0 .15rem;font-size:clamp(1.5rem,3.5vw,2rem);font-family:'Anton',sans-serif;text-transform:uppercase;line-height:1">Gestión de <span style="color:#C9A762">Partidos</span></h1>
-          <p style="color:rgba(255,255,255,.7);margin-top:.2rem;font-size:.82rem"><?= count($partidos) ?> partido<?= count($partidos)!==1?'s':'' ?> · <?= $liga_sel ? 'Liga: ' . epl_h($liga_sel['nombre']) : 'Todas las ligas' ?></p>
+      <div class="ld-header-row" style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <span style="font-size:.6rem;font-weight:900;letter-spacing:.22em;color:#C9A762;text-transform:uppercase">Panel admin</span>
+          <h1 class="dash-title" style="color:#fff;margin:.2rem 0 .15rem;font-size:clamp(1.3rem,5vw,1.9rem);font-family:'Anton',sans-serif;text-transform:uppercase;line-height:1">Gestión de <span style="color:#C9A762">Partidos</span></h1>
+          <p style="color:rgba(255,255,255,.7);margin-top:.15rem;font-size:.75rem;line-height:1.3"><?= count($partidos) ?> partido<?= count($partidos)!==1?'s':'' ?> · <?= $liga_sel ? epl_h($liga_sel['nombre']) : 'Todas las ligas' ?></p>
         </div>
-        <button onclick="document.getElementById('modalCrearPartido').style.display='flex'" class="btn btn-gold" style="background:var(--gold);color:var(--navy);font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:.7rem 1.4rem;border-radius:10px;border:none;font-size:.78rem;cursor:pointer">+ Nuevo partido</button>
+        <button onclick="document.getElementById('modalCrearPartido').style.display='flex'" class="btn-nuevo-partido" style="background:var(--gold);color:var(--navy);font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:.65rem 1rem;border-radius:10px;border:none;font-size:.72rem;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Nuevo</button>
       </div>
     </div>
 
     <?php if ($ok): ?><div class="alert alert-success" style="margin-bottom:1rem"><?= epl_h($ok) ?></div><?php endif; ?>
     <?php if ($err): ?><div class="alert alert-error" style="margin-bottom:1rem"><?= epl_h($err) ?></div><?php endif; ?>
 
-    <!-- ── FILTROS ────────────────────────────────── -->
-    <div class="card mb-3" style="padding:.85rem 1.25rem">
-      <form method="get" style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end">
-        <div style="flex:1;min-width:180px">
-          <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Liga / Torneo</label>
+    <!-- ── FILTROS (colapsables en móvil) ───────── -->
+    <details class="card mb-3 pf-filtros" open style="padding:0">
+      <summary class="pf-filtros-toggle" style="padding:.8rem 1rem;font-weight:800;color:var(--navy);text-transform:uppercase;font-size:.75rem;letter-spacing:.05em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;list-style:none">
+        <span>🔍 Filtros<?php if ($f_fecha || $f_est || $f_search || $f_desde || $f_hasta || $liga_id): ?> <span style="background:#C9A762;color:#1c2f48;font-size:.65rem;padding:.1rem .4rem;border-radius:4px;margin-left:.3rem">Activos</span><?php endif; ?></span>
+        <span class="pf-arrow" style="color:#C9A762;font-size:1rem">▾</span>
+      </summary>
+      <form method="get" class="pf-filtros-grid" style="padding:0 1rem 1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;align-items:end">
+        <div>
+          <label class="pf-label">Liga</label>
           <select name="liga" class="form-control" onchange="this.form.submit()">
-            <option value="">Todas las ligas</option>
+            <option value="">Todas</option>
             <?php foreach ($ligas as $l): ?>
               <option value="<?= $l['id'] ?>" <?= $l['id']==$liga_id?'selected':'' ?>><?= epl_h($l['nombre']) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
-        <div style="flex:1.5;min-width:200px">
-          <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Buscar Jugador / Equipo</label>
-          <input type="text" name="search" class="form-control" placeholder="Ej: Pérez Gómez" value="<?= epl_h($f_search) ?>">
+        <div style="grid-column:span 2">
+          <label class="pf-label">Buscar jugador / equipo</label>
+          <input type="text" name="search" class="form-control" placeholder="Apellido, equipo..." value="<?= epl_h($f_search) ?>">
         </div>
         <?php if ($liga_id && !empty($fechas_disponibles)): ?>
-        <div style="min-width:130px">
-          <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Jornada</label>
+        <div>
+          <label class="pf-label">Jornada</label>
           <select name="fecha" class="form-control">
             <option value="">Todas</option>
             <?php foreach ($fechas_disponibles as $fn): ?>
@@ -379,16 +383,16 @@ require_once '../includes/header.php';
           </select>
         </div>
         <?php endif; ?>
-        <div style="min-width:130px">
-          <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Desde</label>
+        <div>
+          <label class="pf-label">Desde</label>
           <input type="date" name="desde" class="form-control" value="<?= epl_h($f_desde) ?>">
         </div>
-        <div style="min-width:130px">
-          <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Hasta</label>
+        <div>
+          <label class="pf-label">Hasta</label>
           <input type="date" name="hasta" class="form-control" value="<?= epl_h($f_hasta) ?>">
         </div>
-        <div style="min-width:130px">
-          <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Estado</label>
+        <div>
+          <label class="pf-label">Estado</label>
           <select name="estado_p" class="form-control">
             <option value="">Todos</option>
             <option value="pendiente"     <?= $f_est==='pendiente'?'selected':'' ?>>Pendiente</option>
@@ -398,14 +402,14 @@ require_once '../includes/header.php';
             <option value="no_presentado" <?= $f_est==='no_presentado'?'selected':'' ?>>No presentado</option>
           </select>
         </div>
-        <div style="display:flex;gap:.4rem;align-items:flex-end">
-          <button type="submit" class="btn btn-navy btn-sm">Filtrar</button>
+        <div style="display:flex;gap:.4rem;grid-column:1/-1">
+          <button type="submit" class="btn btn-navy btn-sm" style="flex:1">Filtrar</button>
           <?php if ($f_fecha || $f_est || $f_search || $f_desde || $f_hasta || $liga_id): ?>
-            <a href="partidos.php" class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600)">✕ Limpiar</a>
+            <a href="partidos.php" class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600);flex:1;text-align:center">✕ Limpiar</a>
           <?php endif; ?>
         </div>
       </form>
-    </div>
+    </details>
 
     <!-- ── BARRA BULK STICKY ─────────────────── -->
     <div class="card mb-3" id="bulkBar" style="display:none;position:sticky;top:1rem;z-index:100;background:var(--navy);color:#fff;padding:.75rem 1.25rem;border-radius:.5rem;box-shadow:0 10px 25px rgba(0,0,0,.2)">
@@ -470,19 +474,18 @@ require_once '../includes/header.php';
       </form>
     </div>
 
-    <!-- ── TABLA PARTIDOS ──────────────────────── -->
-    <div class="card">
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.83rem">
-          <thead>
+    <!-- ── TABLA PARTIDOS (desktop) / CARDS (móvil) ──────────────────────── -->
+    <div class="card pf-tabla-wrap">
+      <table class="pf-tabla" style="width:100%;border-collapse:collapse;font-size:.83rem">
+          <thead class="pf-thead">
             <tr style="background:var(--navy);color:#fff">
               <th style="padding:.65rem .75rem;width:40px;text-align:center"><input type="checkbox" id="checkAllPartidos"></th>
               <th style="padding:.65rem .75rem;text-align:left;font-size:.7rem;text-transform:uppercase">Fecha / Estado</th>
-              <th style="padding:.65rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase" class="hide-mobile">Liga</th>
+              <th style="padding:.65rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase" class="pf-col-liga">Liga</th>
               <th style="padding:.65rem 1rem;text-align:left;font-size:.7rem;text-transform:uppercase">Local</th>
               <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase">Resultado</th>
               <th style="padding:.65rem 1rem;text-align:right;font-size:.7rem;text-transform:uppercase">Visitante</th>
-              <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase" class="hide-mobile">Cancha</th>
+              <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase" class="pf-col-cancha">Cancha</th>
               <th style="padding:.65rem .75rem;text-align:center;font-size:.7rem;text-transform:uppercase">Editar</th>
             </tr>
           </thead>
@@ -507,38 +510,39 @@ require_once '../includes/header.php';
               </td>
             </tr>
             <?php endif; ?>
-            <tr id="p<?= $p['id'] ?>" style="border-bottom:1px solid var(--gray-100)">
+            <?php
+              $_fp = $p['fecha_programada'];
+              $_es_placeholder = $_fp && date('Y-m-d', strtotime($_fp)) === '2026-12-31';
+              $_fecha_lbl = (!$_fp || $_es_placeholder) ? 'SIN FECHA' : date('d/m H:i', strtotime($_fp));
+              $_sin_fecha = !$_fp || $_es_placeholder;
+              $_bc = match($p['estado']) {
+                  'jugado' => 'badge-jugado',
+                  'walkover','no_presentado' => 'badge-walkover',
+                  'reprogramado' => 'badge-reprog',
+                  default => 'badge-pendiente',
+              };
+              $_lbl = match($p['estado']) {
+                  'jugado' => 'Jugado', 'walkover' => 'W/O', 'no_presentado' => 'No pres.',
+                  'reprogramado' => 'Reprog.', default => 'Pendiente',
+              };
+              $_data_json = epl_h(base64_encode((string)(json_encode($p, JSON_UNESCAPED_UNICODE) ?: '{}')));
+            ?>
+            <tr id="p<?= $p['id'] ?>" class="pf-row" style="border-bottom:1px solid var(--gray-100)">
               <td style="padding:.6rem .75rem;text-align:center">
                 <input type="checkbox" name="partido_ids[]" value="<?= $p['id'] ?>" class="partido-check" data-group="<?= epl_h($grouping) ?>" form="bulkForm">
               </td>
               <td style="padding:.6rem .75rem;font-size:.75rem">
-                <?php
-                  $_fp = $p['fecha_programada'];
-                  $_es_placeholder = $_fp && date('Y-m-d', strtotime($_fp)) === '2026-12-31';
-                  if (!$_fp || $_es_placeholder):
-                ?>
+                <?php if ($_sin_fecha): ?>
                   <span style="background:#fee2e2;color:#dc2626;padding:.1rem .4rem;border-radius:4px;font-size:.68rem;font-weight:700">Sin fecha</span>
                 <?php else: ?>
-                  <span style="color:var(--gray-700);font-weight:600"><?= date('d/m H:i', strtotime($_fp)) ?></span>
+                  <span style="color:var(--gray-700);font-weight:600"><?= $_fecha_lbl ?></span>
                 <?php endif; ?>
-                <?php
-                  $_bc = match($p['estado']) {
-                      'jugado' => 'badge-jugado',
-                      'walkover','no_presentado' => 'badge-walkover',
-                      'reprogramado' => 'badge-reprog',
-                      default => 'badge-pendiente',
-                  };
-                  $_lbl = match($p['estado']) {
-                      'jugado' => 'Jugado', 'walkover' => 'W/O', 'no_presentado' => 'No pres.',
-                      'reprogramado' => 'Reprog.', default => 'Pendiente',
-                  };
-                ?>
                 <div style="margin-top:.25rem"><span class="badge <?= $_bc ?>" style="font-size:.6rem;padding:.15rem .4rem"><?= $_lbl ?></span></div>
                 <?php if ($p['alerta_admin']): ?>
                   <div style="margin-top:.2rem"><span class="badge badge-walkover" style="font-size:.6rem;padding:.1rem .3rem"><?= epl_h($p['alerta_admin']) ?></span></div>
                 <?php endif; ?>
               </td>
-              <td class="hide-mobile" style="padding:.6rem 1rem;font-size:.75rem;color:var(--gray-600)"><?= epl_h($p['liga_nombre']) ?></td>
+              <td class="pf-col-liga" style="padding:.6rem 1rem;font-size:.75rem;color:var(--gray-600)"><?= epl_h($p['liga_nombre']) ?></td>
               <td style="padding:.6rem 1rem;font-weight:600;color:var(--navy)"><?= epl_h($p['local_nombre']) ?></td>
               <td style="padding:.6rem .75rem;text-align:center">
                 <?php if ($p['estado'] === 'jugado'): ?>
@@ -553,7 +557,7 @@ require_once '../includes/header.php';
                 <?php endif; ?>
               </td>
               <td style="padding:.6rem 1rem;font-weight:600;color:var(--navy);text-align:right"><?= epl_h($p['visitante_nombre']) ?></td>
-              <td class="hide-mobile" style="padding:.6rem .75rem;text-align:center;font-size:.78rem">
+              <td class="pf-col-cancha" style="padding:.6rem .75rem;text-align:center;font-size:.78rem">
                 <?php if ($p['recinto_nombre']): ?>
                   <?= epl_h($p['recinto_nombre']) ?>
                   <?php if ($p['recinto_superior_nombre']): ?>
@@ -564,7 +568,7 @@ require_once '../includes/header.php';
                 <?php endif; ?>
               </td>
               <td style="padding:.6rem .75rem;text-align:center">
-                <button type="button" onclick="window.editarPartido(this)" data-partido="<?= epl_h(base64_encode((string)(json_encode($p, JSON_UNESCAPED_UNICODE) ?: '{}'))) ?>" class="btn btn-sm" style="border:1px solid var(--gray-200);font-size:.7rem;padding:.3rem .6rem">Editar</button>
+                <button type="button" onclick="window.editarPartido(this)" data-partido="<?= $_data_json ?>" class="btn btn-sm" style="border:1px solid var(--gray-200);font-size:.7rem;padding:.3rem .6rem">Editar</button>
               </td>
             </tr>
             <?php endforeach; ?>
@@ -576,7 +580,77 @@ require_once '../includes/header.php';
             <?php endif; ?>
           </tbody>
         </table>
-      </div>
+
+        <!-- Vista CARDS móvil (mismo data, layout diferente) -->
+        <div class="pf-cards-mobile">
+          <?php
+          $current_grouping_m = null;
+          foreach ($partidos as $p):
+            $grouping_m = ($p['liga_nombre'] ?? '') . '|' . ($p['nombre_fecha'] ?? '');
+            $_fp_m = $p['fecha_programada'];
+            $_sf_m = !$_fp_m || date('Y-m-d', strtotime($_fp_m)) === '2026-12-31';
+            $_bc_m = match($p['estado']) {
+                'jugado' => 'badge-jugado',
+                'walkover','no_presentado' => 'badge-walkover',
+                'reprogramado' => 'badge-reprog',
+                default => 'badge-pendiente',
+            };
+            $_lbl_m = match($p['estado']) {
+                'jugado' => 'Jugado', 'walkover' => 'W/O', 'no_presentado' => 'No pres.',
+                'reprogramado' => 'Reprog.', default => 'Pendiente',
+            };
+            if ($grouping_m !== $current_grouping_m):
+              $current_grouping_m = $grouping_m;
+          ?>
+            <div class="pf-card-group-header">
+              <input type="checkbox" class="check-group-mobile" data-group="<?= epl_h($grouping_m) ?>">
+              <div>
+                <?php if (!$liga_id): ?>
+                  <div style="font-size:.65rem;color:#94a3b8;font-weight:700"><?= epl_h($p['liga_nombre']) ?></div>
+                <?php endif; ?>
+                <div style="font-weight:800;color:var(--navy);font-size:.78rem">📅 <?= epl_h($p['nombre_fecha'] ?? 'Sin fecha') ?><?php if ($p['jornada']): ?> · J<?= $p['jornada'] ?><?php endif; ?></div>
+              </div>
+            </div>
+          <?php endif; ?>
+            <div class="pf-card-partido">
+              <input type="checkbox" name="partido_ids[]" value="<?= $p['id'] ?>" class="partido-check pf-card-check" data-group="<?= epl_h($grouping_m) ?>" form="bulkForm">
+              <div class="pf-card-body">
+                <div class="pf-card-meta">
+                  <?php if ($_sf_m): ?>
+                    <span style="background:#fee2e2;color:#dc2626;padding:.1rem .4rem;border-radius:4px;font-size:.65rem;font-weight:700">Sin fecha</span>
+                  <?php else: ?>
+                    <span style="font-size:.7rem;font-weight:700;color:var(--navy)"><?= date('d/m H:i', strtotime($_fp_m)) ?></span>
+                  <?php endif; ?>
+                  <span class="badge <?= $_bc_m ?>" style="font-size:.6rem;padding:.1rem .35rem"><?= $_lbl_m ?></span>
+                  <?php if ($p['alerta_admin']): ?>
+                    <span class="badge badge-walkover" style="font-size:.55rem;padding:.1rem .3rem">⚠ <?= epl_h(mb_strimwidth($p['alerta_admin'],0,18,'…')) ?></span>
+                  <?php endif; ?>
+                </div>
+                <div class="pf-card-equipos">
+                  <div class="pf-equipo"><?= epl_h($p['local_nombre']) ?></div>
+                  <div class="pf-resultado">
+                    <?php if ($p['estado'] === 'jugado'): ?>
+                      <span style="font-family:var(--font-head);font-size:1.1rem;font-weight:700;color:var(--navy)"><?= $p['sets_local'] ?>–<?= $p['sets_visitante'] ?></span>
+                    <?php else: ?>
+                      <span style="color:#94a3b8;font-size:.7rem">vs</span>
+                    <?php endif; ?>
+                  </div>
+                  <div class="pf-equipo pf-equipo-vis"><?= epl_h($p['visitante_nombre']) ?></div>
+                </div>
+                <?php if ($p['recinto_nombre']): ?>
+                  <div class="pf-card-cancha">📍 <?= epl_h($p['recinto_nombre']) ?></div>
+                <?php endif; ?>
+              </div>
+              <button type="button" onclick="window.editarPartido(this)" data-partido="<?= epl_h(base64_encode((string)(json_encode($p, JSON_UNESCAPED_UNICODE) ?: '{}'))) ?>" class="pf-card-btn">Editar</button>
+            </div>
+          <?php endforeach; ?>
+          <?php if (empty($partidos)): ?>
+            <div style="padding:3rem;text-align:center;color:var(--gray-400)">
+              <div style="font-size:2rem">🎾</div>
+              <p style="font-weight:600;margin-top:.5rem">No hay partidos</p>
+            </div>
+          <?php endif; ?>
+        </div>
     </div>
 
   </main>
@@ -840,6 +914,88 @@ function toggleBulkExtra() {
     document.getElementById('bulkFechaProgInput').disabled = false;
   }
 }
+</script>
+
+<style>
+/* ────────────── Estilos partidos.php ────────────── */
+.pf-label { font-size:.65rem;font-weight:800;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem;letter-spacing:.04em; }
+.pf-filtros-toggle::-webkit-details-marker { display:none; }
+.pf-filtros[open] .pf-arrow { transform:rotate(180deg); }
+.pf-arrow { transition:transform .2s; }
+
+/* Tabla desktop */
+.pf-tabla-wrap { overflow:hidden; }
+.pf-tabla { display:table; }
+.pf-cards-mobile { display:none; }
+
+/* ─── MÓVIL: ocultar tabla, mostrar cards ─── */
+@media (max-width: 768px) {
+  .pf-tabla { display:none !important; }
+  .pf-cards-mobile { display:block; }
+
+  /* Header con título y botón en mismo row */
+  .ld-header-row { flex-wrap:nowrap !important; }
+  .btn-nuevo-partido { padding:.5rem .8rem !important; font-size:.68rem !important; }
+}
+
+/* Card de grupo (separador en cards) */
+.pf-card-group-header {
+  display:flex; align-items:center; gap:.6rem;
+  background:#f1f5f9; padding:.55rem .85rem;
+  font-size:.72rem;
+  border-bottom:1px solid #e2e8f0;
+}
+.pf-card-group-header input { flex-shrink:0; width:18px; height:18px; accent-color:var(--navy); }
+
+/* Card de partido */
+.pf-card-partido {
+  display:flex; align-items:center; gap:.6rem;
+  padding:.85rem 1rem;
+  border-bottom:1px solid #f1f5f9;
+}
+.pf-card-check { flex-shrink:0; width:18px; height:18px; accent-color:var(--navy); align-self:flex-start; margin-top:.1rem; }
+.pf-card-body { flex:1; min-width:0; }
+.pf-card-meta { display:flex; gap:.35rem; flex-wrap:wrap; align-items:center; margin-bottom:.4rem; }
+.pf-card-equipos { display:grid; grid-template-columns:1fr auto 1fr; gap:.5rem; align-items:center; }
+.pf-equipo { font-size:.85rem; font-weight:700; color:var(--navy); line-height:1.2;
+             overflow:hidden; text-overflow:ellipsis; }
+.pf-equipo-vis { text-align:right; }
+.pf-resultado { padding:0 .35rem; text-align:center; }
+.pf-card-cancha { font-size:.7rem; color:#64748b; margin-top:.3rem; }
+.pf-card-btn {
+  flex-shrink:0; align-self:center;
+  background:var(--navy); color:var(--gold);
+  border:none; border-radius:8px;
+  padding:.5rem .8rem; font-size:.68rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:.04em; cursor:pointer;
+  font-family:inherit;
+}
+.pf-card-btn:active { transform:scale(.95); }
+
+/* Cards desktop: forzar tabla */
+@media (min-width: 769px) {
+  .pf-cards-mobile { display:none !important; }
+}
+
+/* Padding bottom para que la bottom nav no tape contenido */
+@media (max-width: 992px) {
+  .dash-main { padding-bottom: 7rem !important; }
+}
+
+/* Ocultar columnas de liga/cancha solo en pantallas medianas */
+@media (max-width: 1100px) and (min-width: 769px) {
+  .pf-col-liga, .pf-col-cancha { display:none; }
+}
+</style>
+<script>
+// Selección de grupo en cards móvil
+document.querySelectorAll('.check-group-mobile').forEach(function(g){
+  g.addEventListener('change', function(){
+    var name = this.getAttribute('data-group');
+    document.querySelectorAll('.partido-check[data-group="' + name + '"]').forEach(function(c){ c.checked = g.checked; });
+    updateBulkBar();
+  });
+});
 </script>
 
 <?php require_once '../includes/footer.php'; ?>
