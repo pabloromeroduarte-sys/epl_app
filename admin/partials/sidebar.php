@@ -12,10 +12,13 @@ try {
 // Detectar si la página actual está en el grupo Herramientas
 $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notificaciones.php','configuracion.php','erp_financiero.php']);
 ?>
-<aside class="dash-sidebar">
-  <div style="padding:1.25rem 1rem 1rem;border-bottom:1px solid rgba(255,255,255,.08)">
-    <div style="color:var(--gold);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.15em">Administración</div>
-    <div style="color:rgba(255,255,255,.6);font-size:.78rem;margin-top:.25rem">Elite Padel League</div>
+<aside class="dash-sidebar dash-sidebar--admin">
+  <div style="padding:1.25rem 1rem 1rem;border-bottom:1px solid rgba(28,47,72,.18)">
+    <div style="color:var(--navy);font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.15em;display:flex;align-items:center;gap:.4rem">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      Modo Administrador
+    </div>
+    <div style="color:rgba(28,47,72,.65);font-size:.78rem;margin-top:.25rem;font-weight:600">Elite Padel League</div>
   </div>
   <nav style="padding:1rem 0">
 

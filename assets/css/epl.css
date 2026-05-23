@@ -570,6 +570,16 @@ button { cursor: pointer; font-family: inherit; border: none; }
 .dash-nav-link.active { background: var(--gold); color: var(--navy); }
 .dash-nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
 
+/* ── Sidebar ADMIN: colores invertidos (fondo dorado, texto navy) ────────── */
+.dash-sidebar--admin { background: linear-gradient(180deg, #d4b876 0%, var(--gold) 100%); }
+.dash-sidebar--admin .dash-nav-label { color: rgba(28,47,72,.55); }
+.dash-sidebar--admin .dash-nav-link { color: rgba(28,47,72,.85); font-weight: 700; }
+.dash-sidebar--admin .dash-nav-link:hover { background: rgba(28,47,72,.1); color: var(--navy); }
+.dash-sidebar--admin .dash-nav-link.active { background: var(--navy); color: var(--gold); box-shadow: 0 2px 8px rgba(28,47,72,.25); }
+.dash-sidebar--admin .dash-tools-toggle:hover { background: rgba(28,47,72,.08); }
+.dash-sidebar--admin .tools-arrow { stroke: rgba(28,47,72,.55); }
+.dash-sidebar--admin .dash-nav-link[style*="rgba(255,255,255,.65)"] { color: rgba(28,47,72,.6) !important; }
+
 .dash-main { padding: 2rem; background: var(--bg); }
 .dash-header { margin-bottom: 2rem; }
 .dash-title {

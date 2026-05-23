@@ -47,6 +47,28 @@ $total_jugados  = (int)$db->query("SELECT COUNT(*) FROM partidos WHERE estado IN
 $total_partidos = (int)$db->query("SELECT COUNT(*) FROM partidos")->fetchColumn();
 $pct_avance     = $total_partidos > 0 ? round(($total_jugados / $total_partidos) * 100) : 0;
 
+// ────────────────────────────────────────────────────────────────────────
+// SOLICITUDES DE REPROGRAMACIÓN PENDIENTES (para tab Solicitudes)
+// ────────────────────────────────────────────────────────────────────────
+$solicitudes_pendientes = $db->query("
+    SELECT sr.id AS solicitud_id, sr.partido_id, sr.solicitante_id, sr.motivo,
+           sr.fecha_propuesta, sr.rival_no_responde, sr.mutuo_acuerdo, sr.created_at,
+           p.jornada, p.fecha_programada,
+           l.id AS liga_id, l.nombre AS liga_nombre,
+           el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+           j.nombre AS sol_nombre, j.apellido AS sol_apellido
+    FROM solicitudes_reprogramacion sr
+    JOIN partidos p   ON p.id = sr.partido_id
+    JOIN ligas l      ON l.id = p.liga_id
+    JOIN equipos el   ON el.id = p.equipo_local_id
+    JOIN equipos ev   ON ev.id = p.equipo_visitante_id
+    JOIN jugadores j  ON j.id = sr.solicitante_id
+    WHERE sr.estado = 'pendiente'
+      AND p.estado NOT IN ('jugado','walkover','no_presentado')
+    ORDER BY sr.created_at DESC
+")->fetchAll();
+$n_solicitudes = count($solicitudes_pendientes);
+
 // Top equipos con más reprogramaciones (para llamar la atención a los que cuelgan más)
 $por_equipo = [];
 foreach ($partidos_open as $p) {
@@ -123,6 +145,91 @@ require_once '../includes/header.php';
         </div>
       </div>
     </div>
+
+    <!-- TABS: Solicitudes | Informe -->
+    <?php $tab_inicial = isset($_GET['tab']) && $_GET['tab'] === 'informe' ? 'informe' : ($n_solicitudes > 0 ? 'solicitudes' : 'informe'); ?>
+    <div class="tabs-bar">
+      <button class="tab-btn <?= $tab_inicial==='solicitudes'?'active':'' ?>" data-tab="solicitudes" onclick="cambiarTab('solicitudes')">
+        📨 Solicitudes
+        <?php if ($n_solicitudes > 0): ?>
+          <span class="tab-badge"><?= $n_solicitudes ?></span>
+        <?php endif; ?>
+      </button>
+      <button class="tab-btn <?= $tab_inicial==='informe'?'active':'' ?>" data-tab="informe" onclick="cambiarTab('informe')">
+        📊 Informe
+      </button>
+    </div>
+
+    <!-- ═══════════════════ TAB SOLICITUDES ═══════════════════ -->
+    <div id="tab-solicitudes" class="tab-content" style="display:<?= $tab_inicial==='solicitudes'?'block':'none' ?>">
+      <?php if (empty($solicitudes_pendientes)): ?>
+        <section class="sec-card">
+          <div style="padding:3rem;text-align:center;color:var(--gray-400)">
+            <div style="font-size:3rem">✅</div>
+            <p style="font-weight:700;margin-top:.5rem">No hay solicitudes pendientes</p>
+            <p style="font-size:.85rem">Cuando un jugador solicite reprogramar un partido, aparecerá acá.</p>
+          </div>
+        </section>
+      <?php else: ?>
+        <section class="sec-card sec-urgente">
+          <div class="sec-head">
+            <div>
+              <h2 class="sec-title">📨 Solicitudes de reprogramación pendientes</h2>
+              <p class="sec-sub">Revisa cada una, aprueba o rechaza desde la página del torneo</p>
+            </div>
+            <div class="sec-count danger"><?= $n_solicitudes ?></div>
+          </div>
+          <div class="sec-body">
+            <?php foreach ($solicitudes_pendientes as $s):
+              $fecha_pp = $s['fecha_propuesta']
+                  ? date('d/m/Y H:i', strtotime($s['fecha_propuesta']))
+                  : 'Sin fecha propuesta';
+              $fecha_solicitud = date('d/m H:i', strtotime($s['created_at']));
+            ?>
+            <div class="partido-row">
+              <div class="partido-row-main">
+                <div class="partido-meta">
+                  <span class="partido-liga"><?= epl_h($s['liga_nombre']) ?></span>
+                  <?php if ($s['jornada']): ?>
+                    <span class="partido-jornada">J<?= $s['jornada'] ?></span>
+                  <?php endif; ?>
+                  <?php if ($s['mutuo_acuerdo']): ?>
+                    <span class="partido-tag tag-acuerdo">🤝 Mutuo acuerdo</span>
+                  <?php endif; ?>
+                  <?php if ($s['rival_no_responde']): ?>
+                    <span class="partido-tag tag-norespon">⚠ Rival no responde</span>
+                  <?php endif; ?>
+                </div>
+                <div class="partido-equipos">
+                  <strong><?= epl_h($s['local_nombre']) ?></strong>
+                  <span class="vs">vs</span>
+                  <strong><?= epl_h($s['visitante_nombre']) ?></strong>
+                </div>
+                <div class="partido-extra">
+                  <span class="extra-item">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Solicita <strong><?= epl_h($s['sol_nombre'].' '.$s['sol_apellido']) ?></strong>
+                  </span>
+                  <span class="extra-item">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+                    Propone: <strong><?= $fecha_pp ?></strong>
+                  </span>
+                  <span class="extra-item" style="color:#94a3b8">hace <?= $fecha_solicitud ?></span>
+                  <?php if (!empty($s['motivo'])): ?>
+                    <span class="extra-item motivo">"<?= epl_h(mb_strimwidth($s['motivo'], 0, 80, '…')) ?>"</span>
+                  <?php endif; ?>
+                </div>
+              </div>
+              <a href="liga_detalle.php?id=<?= $s['liga_id'] ?>&tab=partidos" class="btn-gestionar">Revisar</a>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        </section>
+      <?php endif; ?>
+    </div>
+
+    <!-- ═══════════════════ TAB INFORME ═══════════════════ -->
+    <div id="tab-informe" class="tab-content" style="display:<?= $tab_inicial==='informe'?'block':'none' ?>">
 
     <!-- 4 KPI cards grandes y simples -->
     <div class="kpi-row">
@@ -279,6 +386,8 @@ require_once '../includes/header.php';
       <p style="font-size:.82rem">No hay partidos que coincidan con el filtro.</p>
     </div>
 
+    </div><!-- /tab-informe -->
+
   </main>
 </div>
 
@@ -402,9 +511,45 @@ require_once '../includes/header.php';
   .partido-row { flex-direction:column; align-items:flex-start; }
   .btn-gestionar { width:100%; text-align:center; }
 }
+
+/* ── Tabs ─────────────────────────────────────────────── */
+.tabs-bar {
+  display:flex; gap:.5rem; margin-bottom:1.5rem;
+  border-bottom:2px solid #e2e8f0;
+}
+.tab-btn {
+  background:none; border:none; padding:.85rem 1.5rem;
+  font-family:inherit; font-size:.85rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:.05em; color:#64748b;
+  cursor:pointer; border-bottom:3px solid transparent;
+  margin-bottom:-2px; display:inline-flex; align-items:center; gap:.5rem;
+  transition:all .15s;
+}
+.tab-btn:hover { color:var(--navy); }
+.tab-btn.active { color:var(--navy); border-bottom-color:var(--gold); }
+.tab-badge {
+  background:#dc2626; color:#fff; font-size:.65rem; font-weight:900;
+  border-radius:999px; padding:.1rem .5rem; min-width:20px; text-align:center;
+}
+.tab-content { animation: tabFadeIn .25s ease; }
+@keyframes tabFadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+
+/* Tag mutuo acuerdo */
+.tag-acuerdo { background:#dcfce7; color:#15803d; }
 </style>
 
 <script>
+function cambiarTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+  const el = document.getElementById('tab-' + tab);
+  if (el) el.style.display = 'block';
+  // Persistir tab activa en URL sin recargar
+  const url = new URL(window.location.href);
+  url.searchParams.set('tab', tab);
+  window.history.replaceState({}, '', url);
+}
+
 let filtroActual = null;
 
 function aplicarFiltros() {
