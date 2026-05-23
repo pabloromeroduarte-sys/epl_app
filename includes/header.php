@@ -244,6 +244,46 @@ $site_url = $_proto . '://' . $_host;
       /* Separador */
       .nav-divider { width: 1px; height: 30px; background-color: #e2e8f0; margin: 0 5px; }
 
+      /* ── NAVBAR ADMIN: fondo dorado, letras navy ─────────────────────── */
+      .nav-fixed--admin {
+          background-color: #C9A762 !important;
+          border-bottom: 4px solid #1C2F48 !important;
+          box-shadow: 0 6px 24px rgba(28,47,72,0.18) !important;
+      }
+      .nav-fixed--admin .nav-link-new { color: #1C2F48 !important; }
+      .nav-fixed--admin .nav-link-new:hover,
+      .nav-fixed--admin .nav-link-new.active { color: #fff !important; }
+      .nav-fixed--admin .nav-divider { background-color: rgba(28,47,72,.25) !important; }
+      .nav-fixed--admin .nav-btn-contacto {
+          background-color: #1C2F48 !important;
+          color: #C9A762 !important;
+      }
+      .nav-fixed--admin .nav-btn-contacto:hover { background-color: #fff !important; color: #1C2F48 !important; }
+      /* Texto del nombre del usuario en navy más fuerte */
+      .nav-fixed--admin .text-epl-blue { color: #1C2F48 !important; }
+      .nav-fixed--admin .group:hover .group-hover\:text-epl-gold { color: #fff !important; }
+      /* Botón Salir */
+      .nav-fixed--admin a[href*="logout"] { color: rgba(28,47,72,.55) !important; }
+      .nav-fixed--admin a[href*="logout"]:hover { color: #991b1b !important; }
+      /* Icono campana */
+      .nav-fixed--admin .text-epl-blue svg { color: #1C2F48 !important; }
+      /* Botón mobile */
+      .nav-fixed--admin #mobileBtn { color: #1C2F48 !important; }
+      /* Indicador visual extra: pequeño badge "ADMIN" cerca del logo */
+      .nav-fixed--admin .logo-wrapper::after {
+          content: "ADMIN";
+          background: #1C2F48;
+          color: #C9A762;
+          font-family: 'Anton', sans-serif;
+          font-size: .65rem;
+          letter-spacing: .15em;
+          padding: .15rem .5rem;
+          border-radius: 4px;
+          margin-left: .65rem;
+          align-self: center;
+          box-shadow: 0 2px 6px rgba(0,0,0,.15);
+      }
+
       /* MENÚ MÓVIL */
       .mobile-menu-overlay {
           position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0A1421; z-index: 100000;
@@ -255,8 +295,12 @@ $site_url = $_proto . '://' . $_host;
 </head>
 <body>
 
-<div class="epl-nav-container antialiased">
-    <nav class="nav-fixed">
+<?php
+// ¿El usuario está en una página de admin? (sirve para invertir colores del navbar)
+$_is_admin_page = strpos($_uri, '/admin/') !== false;
+?>
+<div class="epl-nav-container antialiased<?= $_is_admin_page ? ' is-admin' : '' ?>">
+    <nav class="nav-fixed<?= $_is_admin_page ? ' nav-fixed--admin' : '' ?>">
         <div class="w-full max-w-7xl mx-auto flex justify-between items-center h-full px-6 md:px-10">
             
             <!-- LOGO IZQUIERDA -->
