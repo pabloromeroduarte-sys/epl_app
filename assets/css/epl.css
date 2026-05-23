@@ -1332,6 +1332,18 @@ button { cursor: pointer; font-family: inherit; border: none; }
 .dash-bottom-link.active svg {
   color: var(--gold);
 }
+
+/* ── Bottom Nav ADMIN: fondo dorado + texto navy ─────────────── */
+.dash-bottom-nav--admin {
+  background: linear-gradient(180deg, var(--gold) 0%, #b8934f 100%) !important;
+  border-top: 2px solid var(--navy) !important;
+  box-shadow: 0 -6px 24px rgba(28,47,72,.25) !important;
+}
+.dash-bottom-nav--admin .dash-bottom-link { color: rgba(28,47,72,.75) !important; font-weight: 700 !important; }
+.dash-bottom-nav--admin .dash-bottom-link svg { color: rgba(28,47,72,.75) !important; }
+.dash-bottom-nav--admin .dash-bottom-link.active { background: var(--navy) !important; color: var(--gold) !important; }
+.dash-bottom-nav--admin .dash-bottom-link.active svg { color: var(--gold) !important; }
+.dash-bottom-nav--admin .dash-bottom-link.active::after { background: var(--navy) !important; }
 .dash-bottom-link.active::after {
   content: '';
   position: absolute;
