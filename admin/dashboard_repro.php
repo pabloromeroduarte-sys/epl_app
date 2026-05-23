@@ -1,15 +1,16 @@
 <?php
-$page_title = 'Admin — Reprogramaciones por Equipo';
+$page_title = 'Admin — Reprogramaciones';
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
 epl_require_admin();
 
 $db = epl_db();
 
-// Todos los reprogramados — fechas reales primero (ASC), sin fecha al final
-// El LEFT JOIN trae SOLO la solicitud más reciente no-rechazada por partido
-// (antes traía todas las solicitudes y duplicaba el partido en la lista)
-$reprogramados = $db->query("
+// ────────────────────────────────────────────────────────────────────────
+// QUERY UNIFICADA: todos los partidos NO jugados (pendiente + reprogramado)
+// con su solicitud de reprogramación más reciente NO rechazada
+// ────────────────────────────────────────────────────────────────────────
+$partidos_open = $db->query("
     SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada, p.estado, p.alerta_admin,
            l.id AS liga_id, l.nombre AS liga_nombre,
            el.id AS local_id, el.nombre AS local_nombre,
@@ -25,68 +26,82 @@ $reprogramados = $db->query("
         SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
         WHERE sr2.partido_id = p.id AND sr2.estado != 'rechazada'
     )
-    WHERE p.estado = 'reprogramado'
+    WHERE p.estado IN ('pendiente', 'reprogramado')
     ORDER BY
         (p.fecha_programada IS NULL OR DATE(p.fecha_programada)='2026-12-31') ASC,
         p.fecha_programada ASC
 ")->fetchAll();
 
-// Pendientes ordenados por fecha ASC (sin fecha al final)
-$pendientes = $db->query("
-    SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada,
-           l.id AS liga_id, l.nombre AS liga_nombre,
-           el.nombre AS local_nombre,
-           ev.nombre AS visitante_nombre,
-           r.nombre AS recinto_nombre
-    FROM partidos p
-    JOIN ligas l ON l.id = p.liga_id
-    JOIN equipos el ON el.id = p.equipo_local_id
-    JOIN equipos ev ON ev.id = p.equipo_visitante_id
-    LEFT JOIN recintos r ON r.id = p.recinto_id
-    WHERE p.estado = 'pendiente'
-    ORDER BY
-        (p.fecha_programada IS NULL) ASC,
-        p.fecha_programada ASC
-")->fetchAll();
-$n_pendientes = count($pendientes);
-
-// Helper: ¿es sin fecha? (NULL o placeholder 31/12/2026)
+// Helpers
+$hoy = new DateTime('today');
 $es_sin_fecha = fn($p) => !$p['fecha_programada'] || date('Y-m-d', strtotime($p['fecha_programada'])) === '2026-12-31';
+$es_vencido   = fn($p) => !$es_sin_fecha($p) && new DateTime($p['fecha_programada']) < $hoy;
 
-// Helper: ¿ya venció? (tiene fecha real, está en el pasado y sigue sin jugarse)
-$hoy = new DateTime();
-$es_vencida = fn($p) => !$es_sin_fecha($p) && new DateTime($p['fecha_programada']) < $hoy;
+// Segmentar
+$sin_fecha   = array_values(array_filter($partidos_open, $es_sin_fecha));
+$vencidos    = array_values(array_filter($partidos_open, $es_vencido));
+$con_fecha   = array_values(array_filter($partidos_open, fn($p) => !$es_sin_fecha($p) && !$es_vencido($p)));
+$reprogramados_solo = array_values(array_filter($partidos_open, fn($p) => $p['estado'] === 'reprogramado'));
 
-// KPI counts
-$n_sin_fecha = count(array_filter($reprogramados, $es_sin_fecha));
-$n_con_fecha = count($reprogramados) - $n_sin_fecha;
-$n_vencidas  = count(array_filter($reprogramados, $es_vencida));
-$n_proximas  = $n_con_fecha - $n_vencidas; // con fecha futura
-
-// Porcentaje de atraso = vencidas / total * 100
-$total = count($reprogramados);
-$pct_atraso = $total > 0 ? round(($n_vencidas / $total) * 100) : 0;
-
-// Avance general
+// Avance del torneo
 $total_jugados  = (int)$db->query("SELECT COUNT(*) FROM partidos WHERE estado IN ('jugado','walkover','no_presentado')")->fetchColumn();
 $total_partidos = (int)$db->query("SELECT COUNT(*) FROM partidos")->fetchColumn();
-$pct_avance = $total_partidos > 0 ? round(($total_jugados / $total_partidos) * 100) : 0;
+$pct_avance     = $total_partidos > 0 ? round(($total_jugados / $total_partidos) * 100) : 0;
 
-// Reprogramados por equipo, ordenados por cantidad DESC
+// Top equipos con más reprogramaciones (para llamar la atención a los que cuelgan más)
 $por_equipo = [];
-foreach ($reprogramados as $p) {
+foreach ($reprogramados_solo as $p) {
     foreach ([
         ['id' => (int)$p['local_id'],    'nombre' => $p['local_nombre']],
         ['id' => (int)$p['visitante_id'],'nombre' => $p['visitante_nombre']],
     ] as $eq) {
         if (!$eq['id']) continue;
         $por_equipo[$eq['id']]['nombre']    = $eq['nombre'];
-        $por_equipo[$eq['id']]['liga']      = $p['liga_nombre'];
         $por_equipo[$eq['id']]['liga_id']   = $p['liga_id'];
         $por_equipo[$eq['id']]['partidos'][] = $p;
     }
 }
 uasort($por_equipo, fn($a,$b) => count($b['partidos']) - count($a['partidos']));
+
+// Función de fila partido (reutilizable)
+function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
+    ob_start(); ?>
+    <div class="partido-row" data-sf="<?= $sin_fecha?'1':'0' ?>" data-venc="<?= $vencido?'1':'0' ?>" data-est="<?= epl_h($p['estado']) ?>" data-eq="<?= $p['local_id'] ?>,<?= $p['visitante_id'] ?>" data-search="<?= epl_h(strtolower($p['local_nombre'].' '.$p['visitante_nombre'].' '.$p['liga_nombre'])) ?>">
+      <div class="partido-row-main">
+        <div class="partido-meta">
+          <span class="partido-liga"><?= epl_h($p['liga_nombre']) ?></span>
+          <?php if ($p['jornada']): ?>
+            <span class="partido-jornada">J<?= $p['jornada'] ?></span>
+          <?php endif; ?>
+          <?php if ($p['estado'] === 'reprogramado'): ?>
+            <span class="partido-tag tag-reprog">🔄 Reprogramado</span>
+          <?php endif; ?>
+          <?php if ($p['rival_no_responde']): ?>
+            <span class="partido-tag tag-norespon">⚠ Rival no responde</span>
+          <?php endif; ?>
+        </div>
+        <div class="partido-equipos">
+          <strong><?= epl_h($p['local_nombre']) ?></strong>
+          <span class="vs">vs</span>
+          <strong><?= epl_h($p['visitante_nombre']) ?></strong>
+        </div>
+        <div class="partido-extra">
+          <?php if (!$sin_fecha): ?>
+            <span class="extra-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <?= date('d/m H:i', strtotime($p['fecha_programada'])) ?></span>
+          <?php endif; ?>
+          <?php if ($p['recinto_nombre']): ?>
+            <span class="extra-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> <?= epl_h($p['recinto_nombre']) ?></span>
+          <?php endif; ?>
+          <?php if (!empty($p['motivo'])): ?>
+            <span class="extra-item motivo">"<?= epl_h(mb_strimwidth($p['motivo'], 0, 70, '…')) ?>"</span>
+          <?php endif; ?>
+        </div>
+      </div>
+      <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn-gestionar">Gestionar</a>
+    </div>
+    <?php
+    return ob_get_clean();
+}
 
 require_once '../includes/header.php';
 ?>
@@ -95,390 +110,395 @@ require_once '../includes/header.php';
   <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
   <main class="dash-main">
-    <div class="dash-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.5rem">
-      <div>
-        <h1 class="dash-title">Reprogramaciones</h1>
-        <p style="color:var(--gray-600);margin-top:.25rem">Partidos que debían jugarse y fueron reprogramados.</p>
+
+    <!-- HEADER hero compacto -->
+    <div class="dash-header" style="background:linear-gradient(135deg,#1c2f48 0%, #0f1e30 100%);border-radius:18px;padding:1.5rem 1.75rem;color:#fff;margin-bottom:1.5rem;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(28,47,72,.18)">
+      <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(201,167,98,.18) 0%,transparent 70%);pointer-events:none"></div>
+      <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap">
+        <div>
+          <span style="font-size:.65rem;font-weight:900;letter-spacing:.25em;color:#C9A762;text-transform:uppercase">Panel admin</span>
+          <h1 style="color:#fff;margin:.2rem 0 .15rem;font-size:clamp(1.5rem,3.5vw,2rem);font-family:'Anton',sans-serif;text-transform:uppercase;line-height:1">Reprogramaciones <span style="color:#C9A762">& Pendientes</span></h1>
+          <p style="color:rgba(255,255,255,.7);margin-top:.2rem;font-size:.82rem">Todo lo que falta jugar — primero lo urgente, después lo que ya tiene fecha.</p>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.15em;font-weight:700">Avance del torneo</div>
+          <div style="font-family:'Anton',sans-serif;font-size:2.4rem;color:#C9A762;line-height:1"><?= $pct_avance ?>%</div>
+          <div style="font-size:.7rem;color:rgba(255,255,255,.6)"><?= $total_jugados ?>/<?= $total_partidos ?> partidos</div>
+        </div>
       </div>
-      <button id="btnLimpiarFiltro" onclick="limpiarFiltro()" style="display:none;align-items:center;gap:.4rem;background:#f3f4f6;border:1px solid #d1d5db;color:var(--navy);font-size:.75rem;font-weight:700;padding:.4rem .9rem;border-radius:99px;cursor:pointer">
-        ✕ Limpiar filtro
+    </div>
+
+    <!-- 4 KPI cards grandes y simples -->
+    <div class="kpi-row">
+      <button class="kpi" data-filter="all" onclick="filtrar('all', this)">
+        <div class="kpi-num kpi-blue"><?= count($partidos_open) ?></div>
+        <div class="kpi-label">Pendientes totales</div>
+        <div class="kpi-sub">Todos los que faltan jugar</div>
+      </button>
+      <button class="kpi kpi-danger" data-filter="sf" onclick="filtrar('sf', this)">
+        <div class="kpi-num kpi-red"><?= count($sin_fecha) ?></div>
+        <div class="kpi-label">⚠ Sin fecha</div>
+        <div class="kpi-sub">No están agendados</div>
+      </button>
+      <button class="kpi kpi-warn" data-filter="venc" onclick="filtrar('venc', this)">
+        <div class="kpi-num kpi-orange"><?= count($vencidos) ?></div>
+        <div class="kpi-label">🔴 Vencidos</div>
+        <div class="kpi-sub">Fecha pasó sin jugar</div>
+      </button>
+      <button class="kpi" data-filter="cf" onclick="filtrar('cf', this)">
+        <div class="kpi-num kpi-green"><?= count($con_fecha) ?></div>
+        <div class="kpi-label">📅 Con fecha futura</div>
+        <div class="kpi-sub">En agenda</div>
       </button>
     </div>
 
-    <!-- Filtro activo -->
-    <div id="filtroActivo" style="display:none;margin:.5rem 0 1rem;padding:.5rem .9rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:.78rem;color:#1d4ed8;font-weight:600"></div>
-
-    <!-- PANEL DE ATRASO -->
-    <div class="card mb-4" style="border:2px solid <?= $pct_atraso >= 50 ? '#dc2626' : ($pct_atraso >= 25 ? '#f59e0b' : '#10b981') ?>">
-      <div class="card-body" style="padding:1rem 1.25rem">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem">
-
-          <!-- Bloque principal atraso -->
-          <div style="flex:1;min-width:220px">
-            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);letter-spacing:.05em;margin-bottom:.4rem">Estado de Reprogramaciones</div>
-            <div style="display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap">
-              <span style="font-size:2.2rem;font-weight:900;color:<?= $pct_atraso >= 50 ? '#dc2626' : ($pct_atraso >= 25 ? '#b45309' : '#059669') ?>"><?= $pct_atraso ?>%</span>
-              <span style="font-size:.8rem;color:var(--gray-500);font-weight:600">de atraso</span>
-            </div>
-            <!-- Barra de atraso -->
-            <div style="margin-top:.6rem;height:8px;background:#f3f4f6;border-radius:99px;overflow:hidden">
-              <div style="height:100%;width:<?= $pct_atraso ?>%;background:<?= $pct_atraso >= 50 ? '#dc2626' : ($pct_atraso >= 25 ? '#f59e0b' : '#10b981') ?>;border-radius:99px;transition:width .4s"></div>
-            </div>
-            <div style="margin-top:.4rem;font-size:.72rem;color:var(--gray-500)">
-              <strong style="color:<?= $pct_atraso >= 50 ? '#dc2626' : ($pct_atraso >= 25 ? '#b45309' : '#059669') ?>"><?= $n_vencidas ?></strong> de <?= $total ?> reprogramados ya deberían haberse jugado
-            </div>
-          </div>
-
-          <!-- Desglose -->
-          <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center">
-            <div class="kpi-card" id="kpi-vencidas" onclick="filtrarKpi('vencidas')" style="text-align:center;cursor:pointer;padding:.5rem .75rem;border-radius:8px;transition:all .15s;min-width:80px">
-              <div style="font-size:1.6rem;font-weight:900;color:#dc2626"><?= $n_vencidas ?></div>
-              <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;color:#9ca3af">Vencidas 🔴</div>
-              <div style="font-size:.6rem;color:#9ca3af">fecha pasó</div>
-            </div>
-            <div class="kpi-card" id="kpi-proximas" onclick="filtrarKpi('proximas')" style="text-align:center;cursor:pointer;padding:.5rem .75rem;border-radius:8px;transition:all .15s;min-width:80px">
-              <div style="font-size:1.6rem;font-weight:900;color:#2563eb"><?= $n_proximas ?></div>
-              <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;color:#9ca3af">Próximas 📅</div>
-              <div style="font-size:.6rem;color:#9ca3af">fecha futura</div>
-            </div>
-            <div style="text-align:center;padding:.5rem .75rem;border-radius:8px;min-width:80px">
-              <div style="font-size:1.6rem;font-weight:900;color:#dc2626"><?= $n_sin_fecha ?></div>
-              <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;color:#9ca3af">Sin fecha ⚠</div>
-              <div style="font-size:.6rem;color:#9ca3af">sin agendar</div>
-            </div>
-          </div>
-
-          <!-- Avance general -->
-          <div style="flex:1;min-width:180px;border-left:1px solid var(--gray-100);padding-left:1.25rem">
-            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);letter-spacing:.05em;margin-bottom:.4rem">Avance General</div>
-            <div style="display:flex;align-items:baseline;gap:.5rem">
-              <span style="font-size:2.2rem;font-weight:900;color:var(--navy)"><?= $pct_avance ?>%</span>
-              <span style="font-size:.8rem;color:var(--gray-500);font-weight:600">jugados</span>
-            </div>
-            <div style="margin-top:.6rem;height:8px;background:#f3f4f6;border-radius:99px;overflow:hidden">
-              <div style="height:100%;width:<?= $pct_avance ?>%;background:var(--navy);border-radius:99px"></div>
-            </div>
-            <div style="margin-top:.4rem;font-size:.72rem;color:var(--gray-500)">
-              <strong><?= $total_jugados ?></strong> jugados · <strong><?= $n_pendientes ?></strong> pendientes · <strong><?= $total ?></strong> reprog. · <strong><?= $total_partidos ?></strong> total
-            </div>
-          </div>
-
-        </div>
+    <!-- Buscador y filtros activos -->
+    <div class="filtros-bar">
+      <div class="busqueda">
+        <svg width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" id="buscar" placeholder="Buscar partido, equipo o liga…" oninput="aplicarFiltros()">
       </div>
+      <div id="filtroActivoMsg" class="filtro-activo" style="display:none"></div>
+      <button id="btnLimpiar" class="btn-limpiar" onclick="limpiarFiltro()" style="display:none">✕ Limpiar</button>
     </div>
 
-    <!-- KPIs clickeables -->
-    <div class="grid-4 mb-4">
-      <div class="card kpi-card" id="kpi-sin-fecha" onclick="filtrarKpi('sin-fecha')" style="border-left:4px solid #ef4444;cursor:pointer;transition:box-shadow .15s,transform .15s">
-        <div class="card-body">
-          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Sin fecha ⚠</div>
-          <div style="font-size:2rem;font-weight:800;color:#dc2626"><?= $n_sin_fecha ?></div>
-          <div style="font-size:.68rem;color:#9ca3af;margin-top:.15rem">Clic para filtrar</div>
+    <!-- ═════════════════════ SECCIÓN 1: SIN FECHA (URGENTE) ═════════════════════ -->
+    <?php if (!empty($sin_fecha)): ?>
+    <section class="sec-card sec-urgente" data-section="sf">
+      <div class="sec-head">
+        <div>
+          <h2 class="sec-title">⚠ Sin fecha asignada</h2>
+          <p class="sec-sub">Resolvé estos primero — los equipos están esperando que se agende</p>
         </div>
+        <div class="sec-count danger"><?= count($sin_fecha) ?></div>
       </div>
-      <div class="card kpi-card" id="kpi-con-fecha" onclick="filtrarKpi('con-fecha')" style="border-left:4px solid #f59e0b;cursor:pointer;transition:box-shadow .15s,transform .15s">
-        <div class="card-body">
-          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Con fecha</div>
-          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= $n_con_fecha ?></div>
-          <div style="font-size:.68rem;color:#9ca3af;margin-top:.15rem">Clic para filtrar</div>
-        </div>
-      </div>
-      <div class="card" style="border-left:4px solid #3b82f6">
-        <div class="card-body">
-          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Equipos afectados</div>
-          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count($por_equipo) ?></div>
-        </div>
-      </div>
-      <div class="card kpi-card" id="kpi-total" onclick="filtrarKpi('total')" style="border-left:4px solid #10b981;cursor:pointer;transition:box-shadow .15s,transform .15s">
-        <div class="card-body">
-          <div style="font-size:.7rem;text-transform:uppercase;font-weight:700;color:var(--gray-400)">Total reprogramados</div>
-          <div style="font-size:2rem;font-weight:800;color:var(--navy)"><?= count($reprogramados) ?></div>
-          <div style="font-size:.68rem;color:#9ca3af;margin-top:.15rem">Clic para ver todos</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CHIPS DE EQUIPOS (ordenados por cantidad) -->
-    <?php if (!empty($por_equipo)): ?>
-    <div style="margin-bottom:1.25rem">
-      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--gray-400);margin-bottom:.6rem;letter-spacing:.05em">Filtrar por equipo</div>
-      <div style="display:flex;flex-wrap:wrap;gap:.4rem" id="equipoChips">
-        <?php foreach ($por_equipo as $eq_id => $eq): ?>
-        <?php $cnt = count($eq['partidos']); $color = $cnt >= 3 ? '#dc2626' : ($cnt === 2 ? '#b45309' : '#374151'); $bg = $cnt >= 3 ? '#fee2e2' : ($cnt === 2 ? '#fef3c7' : '#f3f4f6'); ?>
-        <button
-          class="equipo-chip"
-          data-eq-id="<?= $eq_id ?>"
-          onclick="filtrarEquipo(<?= $eq_id ?>, this)"
-          style="background:<?= $bg ?>;color:<?= $color ?>;border:1.5px solid transparent;padding:.3rem .75rem;border-radius:99px;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:.35rem"
-        >
-          <span><?= epl_h($eq['nombre']) ?></span>
-          <span style="background:<?= $color ?>;color:#fff;border-radius:99px;padding:.05rem .4rem;font-size:.65rem"><?= $cnt ?></span>
-        </button>
+      <div class="sec-body">
+        <?php foreach ($sin_fecha as $p): ?>
+          <?= repro_fila_partido($p, true, false) ?>
         <?php endforeach; ?>
       </div>
-    </div>
+    </section>
     <?php endif; ?>
 
-    <!-- TABLA REPROGRAMADOS -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:1rem 0 .75rem;flex-wrap:wrap;gap:.5rem">
-      <h2 style="font-family:var(--font-head);font-size:.9rem;text-transform:uppercase;color:var(--navy);display:flex;align-items:center;gap:.5rem;margin:0">
-        <span style="width:8px;height:8px;background:#f59e0b;border-radius:50%;display:inline-block"></span>
-        <span id="tablaTitle">Todos los Partidos Reprogramados (<?= count($reprogramados) ?>)</span>
-      </h2>
-    </div>
+    <!-- ═════════════════════ SECCIÓN 2: VENCIDOS ═════════════════════ -->
+    <?php if (!empty($vencidos)): ?>
+    <section class="sec-card sec-vencido" data-section="venc">
+      <div class="sec-head">
+        <div>
+          <h2 class="sec-title">🔴 Vencidos</h2>
+          <p class="sec-sub">La fecha ya pasó y todavía no se jugaron. Hay que reagendar o cargar el resultado.</p>
+        </div>
+        <div class="sec-count warn"><?= count($vencidos) ?></div>
+      </div>
+      <div class="sec-body">
+        <?php foreach ($vencidos as $p): ?>
+          <?= repro_fila_partido($p, false, true) ?>
+        <?php endforeach; ?>
+      </div>
+    </section>
+    <?php endif; ?>
 
-    <div class="card mb-4">
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
-          <thead>
-            <tr style="background:var(--navy);color:#fff">
-              <th style="padding:.6rem .75rem;text-align:left">Liga</th>
-              <th style="padding:.6rem .75rem;text-align:center">Jornada</th>
-              <th style="padding:.6rem .75rem;text-align:left">Nombre Fecha</th>
-              <th style="padding:.6rem .75rem;text-align:left">Partido</th>
-              <th style="padding:.6rem .75rem;text-align:left">Fecha Prog.</th>
-              <th style="padding:.6rem .75rem;text-align:left">Cancha</th>
-              <th style="padding:.6rem .75rem;text-align:left">Motivo</th>
-              <th style="padding:.6rem .75rem;text-align:center">Acción</th>
-            </tr>
-          </thead>
-          <tbody id="tablaBody">
-            <?php foreach ($reprogramados as $p): ?>
-            <?php $sin_fecha = $es_sin_fecha($p); $vencida = $es_vencida($p); ?>
-            <tr class="repro-row"
-                data-sf="<?= $sin_fecha ? '1' : '0' ?>"
-                data-vencida="<?= $vencida ? '1' : '0' ?>"
-                data-proxima="<?= (!$sin_fecha && !$vencida) ? '1' : '0' ?>"
-                data-eq="<?= $p['local_id'] ?>,<?= $p['visitante_id'] ?>"
-                style="border-bottom:1px solid var(--gray-100);<?= $sin_fecha ? 'background:#fff7f7' : ($vencida ? 'background:#fff0f0' : '') ?>">
-              <td style="padding:.65rem .75rem;font-weight:600;color:var(--navy)"><?= epl_h($p['liga_nombre']) ?></td>
-              <td style="padding:.65rem .75rem;text-align:center">
-                <?php if ($p['jornada']): ?>
-                  <span style="background:#e0e7ff;color:#3730a3;padding:.15rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700">J<?= $p['jornada'] ?></span>
-                <?php else: ?>—<?php endif; ?>
-              </td>
-              <td style="padding:.65rem .75rem;color:var(--gray-600);font-size:.78rem"><?= epl_h($p['nombre_fecha'] ?: '—') ?></td>
-              <td style="padding:.65rem .75rem;font-weight:600"><?= epl_h($p['local_nombre']) ?> <span style="color:var(--gray-400)">vs</span> <?= epl_h($p['visitante_nombre']) ?></td>
-              <td style="padding:.65rem .75rem">
-                <?php if ($sin_fecha): ?>
-                  <span style="background:#fee2e2;color:#dc2626;padding:.2rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700">⚠ Sin fecha</span>
-                <?php else: ?>
-                  <div style="font-weight:700;color:#b45309"><?= date('d/m/Y', strtotime($p['fecha_programada'])) ?></div>
-                  <div style="font-size:.72rem;color:var(--gray-400)"><?= date('H:i', strtotime($p['fecha_programada'])) ?></div>
-                <?php endif; ?>
-              </td>
-              <td style="padding:.65rem .75rem;font-size:.78rem;color:var(--gray-600)"><?= epl_h($p['recinto_nombre'] ?: '—') ?></td>
-              <td style="padding:.65rem .75rem;font-size:.75rem;color:var(--gray-500);max-width:160px">
-                <?php if ($p['rival_no_responde']): ?>
-                  <span style="background:#fee2e2;color:#dc2626;padding:.1rem .4rem;border-radius:4px;font-size:.68rem;font-weight:700;display:block;margin-bottom:.2rem">RIVAL NO RESPONDE</span>
-                <?php endif; ?>
-                <?= epl_h(mb_strimwidth($p['motivo'] ?? '', 0, 60, '…')) ?>
-              </td>
-              <td style="padding:.65rem .75rem;text-align:center">
-                <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn btn-sm btn-navy" style="font-size:.7rem;padding:.25rem .6rem">Gestionar</a>
-              </td>
-            </tr>
-            <?php endforeach; ?>
-            <?php if (empty($reprogramados)): ?>
-              <tr><td colspan="8" style="padding:2rem;text-align:center;color:var(--gray-400)">No hay partidos reprogramados.</td></tr>
-            <?php endif; ?>
-          </tbody>
-        </table>
-        <div id="sinResultados" style="display:none;padding:2rem;text-align:center;color:var(--gray-400);font-size:.85rem">
-          No hay partidos que coincidan con el filtro.
+    <!-- ═════════════════════ SECCIÓN 3: CON FECHA FUTURA (agrupado por día) ═════════════════════ -->
+    <?php if (!empty($con_fecha)): ?>
+    <?php
+      // Agrupar por fecha
+      $por_dia = [];
+      foreach ($con_fecha as $p) {
+          $dia = date('Y-m-d', strtotime($p['fecha_programada']));
+          $por_dia[$dia][] = $p;
+      }
+      ksort($por_dia);
+      $dias_es = ['Mon'=>'Lunes','Tue'=>'Martes','Wed'=>'Miércoles','Thu'=>'Jueves','Fri'=>'Viernes','Sat'=>'Sábado','Sun'=>'Domingo'];
+      $meses_es = ['01'=>'enero','02'=>'febrero','03'=>'marzo','04'=>'abril','05'=>'mayo','06'=>'junio','07'=>'julio','08'=>'agosto','09'=>'septiembre','10'=>'octubre','11'=>'noviembre','12'=>'diciembre'];
+    ?>
+    <section class="sec-card sec-futuro" data-section="cf">
+      <div class="sec-head">
+        <div>
+          <h2 class="sec-title">📅 Con fecha futura</h2>
+          <p class="sec-sub">Agendados — en orden cronológico, los más próximos arriba</p>
+        </div>
+        <div class="sec-count info"><?= count($con_fecha) ?></div>
+      </div>
+      <div class="sec-body">
+        <?php foreach ($por_dia as $dia => $ps):
+          $ts = strtotime($dia);
+          $dia_label = $dias_es[date('D', $ts)] . ' ' . date('d', $ts) . ' de ' . $meses_es[date('m', $ts)] . ' ' . date('Y', $ts);
+          $delta_dias = (int)floor(($ts - $hoy->getTimestamp()) / 86400);
+          $delta_label = $delta_dias === 0 ? 'HOY' : ($delta_dias === 1 ? 'mañana' : "en $delta_dias días");
+        ?>
+        <div class="dia-group">
+          <div class="dia-header">
+            <span class="dia-fecha"><?= $dia_label ?></span>
+            <span class="dia-delta"><?= $delta_label ?></span>
+            <span class="dia-count"><?= count($ps) ?> <?= count($ps)===1?'partido':'partidos' ?></span>
+          </div>
+          <?php foreach ($ps as $p): ?>
+            <?= repro_fila_partido($p, false, false) ?>
+          <?php endforeach; ?>
+        </div>
+        <?php endforeach; ?>
+      </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- ═════════════════════ SECCIÓN 4: TOP equipos con más reprogramaciones ═════════════════════ -->
+    <?php if (!empty($por_equipo)):
+      $top_equipos = array_slice($por_equipo, 0, 10, true);
+    ?>
+    <section class="sec-card sec-equipos">
+      <div class="sec-head">
+        <div>
+          <h2 class="sec-title">🏷️ Equipos con más partidos reprogramados</h2>
+          <p class="sec-sub">Los que más cuelgan — top 10. Click en un equipo para filtrar sus partidos.</p>
         </div>
       </div>
-    </div>
-
-    <!-- SECCIÓN PENDIENTES -->
-    <div style="margin-top:2.5rem">
-      <h2 style="font-family:var(--font-head);font-size:.9rem;text-transform:uppercase;color:var(--navy);margin:0 0 .75rem;display:flex;align-items:center;gap:.5rem">
-        <span style="width:8px;height:8px;background:#3b82f6;border-radius:50%;display:inline-block"></span>
-        Partidos Pendientes (<?= $n_pendientes ?>)
-        <span style="font-size:.7rem;font-weight:400;color:var(--gray-400);text-transform:none">— ordenados por fecha</span>
-      </h2>
-
-      <?php if (empty($pendientes)): ?>
-        <div class="card"><div class="card-body" style="text-align:center;color:var(--gray-400);padding:2rem">No hay partidos pendientes.</div></div>
-      <?php else: ?>
-      <div class="card">
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:.82rem">
-            <thead>
-              <tr style="background:var(--navy);color:#fff">
-                <th style="padding:.6rem .75rem;text-align:left">Liga</th>
-                <th style="padding:.6rem .75rem;text-align:center">Jornada</th>
-                <th style="padding:.6rem .75rem;text-align:left">Nombre Fecha</th>
-                <th style="padding:.6rem .75rem;text-align:left">Partido</th>
-                <th style="padding:.6rem .75rem;text-align:left">Fecha</th>
-                <th style="padding:.6rem .75rem;text-align:left">Cancha</th>
-                <th style="padding:.6rem .75rem;text-align:center">Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php
-                $ultima_fecha_p = null;
-                foreach ($pendientes as $p):
-                  $fecha_p = $p['fecha_programada'] ? date('Y-m-d', strtotime($p['fecha_programada'])) : null;
-                  $es_nueva_fecha = $fecha_p !== $ultima_fecha_p;
-                  $ultima_fecha_p = $fecha_p;
-              ?>
-              <?php if ($es_nueva_fecha && $fecha_p): ?>
-              <tr style="background:#f0f4ff">
-                <td colspan="7" style="padding:.35rem .75rem;font-size:.72rem;font-weight:800;color:#3730a3;letter-spacing:.04em">
-                  📅 <?= date('l d \d\e F Y', strtotime($p['fecha_programada'])) ?>
-                </td>
-              </tr>
-              <?php elseif ($es_nueva_fecha && !$fecha_p): ?>
-              <tr style="background:#fff7f7">
-                <td colspan="7" style="padding:.35rem .75rem;font-size:.72rem;font-weight:800;color:#dc2626;letter-spacing:.04em">
-                  ⚠ Sin fecha asignada
-                </td>
-              </tr>
-              <?php endif; ?>
-              <tr style="border-bottom:1px solid var(--gray-100)">
-                <td style="padding:.6rem .75rem;font-weight:600;color:var(--navy)"><?= epl_h($p['liga_nombre']) ?></td>
-                <td style="padding:.6rem .75rem;text-align:center">
-                  <?php if ($p['jornada']): ?>
-                    <span style="background:#e0e7ff;color:#3730a3;padding:.15rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700">J<?= $p['jornada'] ?></span>
-                  <?php else: ?>—<?php endif; ?>
-                </td>
-                <td style="padding:.6rem .75rem;color:var(--gray-600);font-size:.78rem"><?= epl_h($p['nombre_fecha'] ?: '—') ?></td>
-                <td style="padding:.6rem .75rem;font-weight:600">
-                  <?= epl_h($p['local_nombre']) ?> <span style="color:var(--gray-400)">vs</span> <?= epl_h($p['visitante_nombre']) ?>
-                </td>
-                <td style="padding:.6rem .75rem">
-                  <?php if ($p['fecha_programada']): ?>
-                    <div style="font-weight:700;color:var(--navy)"><?= date('d/m/Y', strtotime($p['fecha_programada'])) ?></div>
-                    <div style="font-size:.72rem;color:var(--gray-400)"><?= date('H:i', strtotime($p['fecha_programada'])) ?></div>
-                  <?php else: ?>
-                    <span style="background:#fee2e2;color:#dc2626;padding:.2rem .5rem;border-radius:99px;font-size:.7rem;font-weight:700">Sin fecha</span>
-                  <?php endif; ?>
-                </td>
-                <td style="padding:.6rem .75rem;font-size:.78rem;color:var(--gray-600)"><?= epl_h($p['recinto_nombre'] ?: '—') ?></td>
-                <td style="padding:.6rem .75rem;text-align:center">
-                  <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn btn-sm btn-navy" style="font-size:.7rem;padding:.25rem .6rem">Gestionar</a>
-                </td>
-              </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
+      <div class="sec-body equipos-grid">
+        <?php foreach ($top_equipos as $eq_id => $eq):
+          $cnt = count($eq['partidos']);
+          $sev = $cnt >= 3 ? 'critico' : ($cnt === 2 ? 'medio' : 'normal');
+        ?>
+          <button class="equipo-card equipo-<?= $sev ?>" data-filter="eq:<?= $eq_id ?>" onclick="filtrar('eq:<?= $eq_id ?>', this)">
+            <div class="equipo-cnt"><?= $cnt ?></div>
+            <div class="equipo-nombre"><?= epl_h($eq['nombre']) ?></div>
+            <div class="equipo-tag"><?= $cnt===1?'partido reprogramado':'partidos reprogramados' ?></div>
+          </button>
+        <?php endforeach; ?>
       </div>
-      <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
+    <?php if (empty($partidos_open)): ?>
+      <section class="sec-card">
+        <div style="padding:3rem;text-align:center;color:var(--gray-400)">
+          <div style="font-size:3rem">🎉</div>
+          <p style="font-weight:700;margin-top:.5rem">No hay partidos pendientes</p>
+          <p style="font-size:.85rem">Todo está al día.</p>
+        </div>
+      </section>
+    <?php endif; ?>
+
+    <div id="noResults" style="display:none;padding:2.5rem;text-align:center;background:#fff;border-radius:14px;border:1px solid #e2e8f0;color:#94a3b8;margin-top:1rem">
+      <div style="font-size:2.5rem">🔍</div>
+      <p style="font-weight:600;margin-top:.5rem">Sin resultados</p>
+      <p style="font-size:.82rem">No hay partidos que coincidan con el filtro.</p>
     </div>
 
   </main>
 </div>
 
 <style>
-.kpi-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.12); transform:translateY(-2px); }
-.kpi-card.activo { box-shadow:0 0 0 3px var(--navy); transform:translateY(-2px); }
-.equipo-chip:hover { box-shadow:0 2px 8px rgba(0,0,0,.12); transform:translateY(-1px); }
-.equipo-chip.activo { box-shadow:0 0 0 2.5px var(--navy) !important; border-color:var(--navy) !important; transform:translateY(-1px); }
+/* ── KPIs ─────────────────────────────────────────────── */
+.kpi-row {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+  gap:.85rem; margin-bottom:1.25rem;
+}
+.kpi {
+  background:#fff; border:1.5px solid #e2e8f0; border-radius:14px;
+  padding:1.1rem 1.25rem; text-align:left; cursor:pointer;
+  transition:all .18s ease; font-family:inherit;
+  display:flex; flex-direction:column; gap:.2rem;
+}
+.kpi:hover { border-color:var(--navy); transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.08); }
+.kpi.activo { border-color:var(--navy); box-shadow:0 0 0 3px rgba(28,47,72,.12); }
+.kpi-num { font-family:'Anton',sans-serif; font-size:2.4rem; line-height:1; }
+.kpi-blue   { color:var(--navy); }
+.kpi-red    { color:#dc2626; }
+.kpi-orange { color:#ea580c; }
+.kpi-green  { color:#059669; }
+.kpi-label { font-size:.82rem; font-weight:800; color:var(--navy); text-transform:uppercase; letter-spacing:.05em; margin-top:.25rem; }
+.kpi-sub   { font-size:.7rem; color:#94a3b8; }
+.kpi-danger { border-left:4px solid #dc2626; }
+.kpi-warn   { border-left:4px solid #ea580c; }
+
+/* ── Filtros bar ─────────────────────────────────────── */
+.filtros-bar { display:flex; align-items:center; gap:.85rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+.busqueda { position:relative; flex:1; min-width:240px; max-width:480px; }
+.busqueda svg { position:absolute; left:.85rem; top:50%; transform:translateY(-50%); }
+.busqueda input {
+  width:100%; padding:.7rem 1rem .7rem 2.5rem; border:1.5px solid #e2e8f0;
+  border-radius:10px; font-size:.88rem; font-family:'Montserrat',sans-serif;
+  background:#fff; transition:border-color .15s;
+}
+.busqueda input:focus { outline:none; border-color:var(--gold); }
+.filtro-activo { font-size:.78rem; font-weight:700; color:#1d4ed8; background:#eff6ff;
+                 border:1px solid #bfdbfe; border-radius:8px; padding:.5rem .85rem; }
+.btn-limpiar { background:#f1f5f9; border:1px solid #cbd5e1; color:var(--navy);
+               padding:.5rem .9rem; border-radius:8px; font-size:.75rem;
+               font-weight:700; cursor:pointer; font-family:inherit; }
+.btn-limpiar:hover { background:#e2e8f0; }
+
+/* ── Sección Card ────────────────────────────────────── */
+.sec-card { background:#fff; border-radius:18px; border:1px solid #e2e8f0;
+            box-shadow:0 4px 20px rgba(0,0,0,.03); margin-bottom:1.25rem; overflow:hidden; }
+.sec-urgente { border-left:5px solid #dc2626; }
+.sec-vencido { border-left:5px solid #ea580c; }
+.sec-futuro  { border-left:5px solid #2563eb; }
+.sec-equipos { border-left:5px solid #C9A762; }
+.sec-head { display:flex; justify-content:space-between; align-items:center; padding:1.15rem 1.5rem;
+            border-bottom:1px solid #f1f5f9; gap:1rem; flex-wrap:wrap; }
+.sec-title { font-family:'Anton',sans-serif; font-size:1.05rem; color:var(--navy); text-transform:uppercase;
+             margin:0; letter-spacing:.03em; }
+.sec-sub { font-size:.78rem; color:#64748b; margin:.25rem 0 0; font-weight:500; }
+.sec-count { font-family:'Anton',sans-serif; font-size:1.6rem; padding:.3rem .85rem; border-radius:10px; line-height:1; }
+.sec-count.danger { background:#fee2e2; color:#dc2626; }
+.sec-count.warn   { background:#fed7aa; color:#ea580c; }
+.sec-count.info   { background:#dbeafe; color:#2563eb; }
+.sec-body { padding:.5rem .5rem 1rem; }
+
+/* ── Día agrupado ────────────────────────────────────── */
+.dia-group { margin-bottom:.5rem; }
+.dia-header { display:flex; align-items:center; gap:.85rem; padding:.7rem 1rem .5rem;
+              font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+              color:#3730a3; }
+.dia-fecha { background:#e0e7ff; padding:.3rem .7rem; border-radius:8px; }
+.dia-delta { color:#64748b; font-weight:600; }
+.dia-count { margin-left:auto; color:#94a3b8; font-weight:600; }
+
+/* ── Partido row ──────────────────────────────────────── */
+.partido-row {
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  padding:.85rem 1rem; margin:.25rem .5rem; background:#fafbfc;
+  border-radius:10px; border:1px solid transparent; transition:all .15s ease;
+}
+.partido-row:hover { background:#fff; border-color:#e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,.05); }
+.partido-row-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:.3rem; }
+.partido-meta { display:flex; gap:.4rem; flex-wrap:wrap; align-items:center; }
+.partido-liga { font-size:.66rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.08em; }
+.partido-jornada { background:#e0e7ff; color:#3730a3; font-size:.62rem; font-weight:800;
+                    border-radius:5px; padding:.1rem .4rem; }
+.partido-tag { font-size:.62rem; font-weight:800; border-radius:5px; padding:.1rem .45rem; }
+.tag-reprog   { background:#fef3c7; color:#92400e; }
+.tag-norespon { background:#fee2e2; color:#991b1b; }
+.partido-equipos { font-size:.92rem; color:var(--navy); }
+.partido-equipos .vs { color:#94a3b8; margin:0 .35rem; font-weight:500; }
+.partido-extra { display:flex; gap:1rem; flex-wrap:wrap; font-size:.72rem; color:#64748b; margin-top:.2rem; }
+.extra-item { display:inline-flex; align-items:center; gap:.3rem; }
+.extra-item.motivo { color:#94a3b8; font-style:italic; max-width:260px; overflow:hidden;
+                     text-overflow:ellipsis; white-space:nowrap; }
+.btn-gestionar {
+  background:var(--navy); color:#C9A762; padding:.55rem 1.1rem;
+  border-radius:8px; font-size:.72rem; font-weight:900; text-decoration:none;
+  text-transform:uppercase; letter-spacing:.08em; flex-shrink:0;
+  transition:all .15s; white-space:nowrap;
+}
+.btn-gestionar:hover { background:#C9A762; color:var(--navy); transform:translateY(-1px); }
+
+/* ── Equipos grid ─────────────────────────────────────── */
+.equipos-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+                gap:.65rem; padding:1rem 1.25rem 1.25rem; }
+.equipo-card {
+  background:#fff; border:1.5px solid #e2e8f0; border-radius:12px;
+  padding:.85rem .9rem; cursor:pointer; transition:all .15s;
+  display:flex; flex-direction:column; gap:.1rem; text-align:left;
+  font-family:inherit;
+}
+.equipo-card:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.08); }
+.equipo-card.activo { border-color:var(--navy); box-shadow:0 0 0 3px rgba(28,47,72,.1); }
+.equipo-cnt { font-family:'Anton',sans-serif; font-size:1.6rem; line-height:1; }
+.equipo-normal  { border-left:4px solid #94a3b8; } .equipo-normal  .equipo-cnt { color:#475569; }
+.equipo-medio   { border-left:4px solid #f59e0b; } .equipo-medio   .equipo-cnt { color:#b45309; }
+.equipo-critico { border-left:4px solid #dc2626; } .equipo-critico .equipo-cnt { color:#dc2626; }
+.equipo-nombre { font-weight:700; font-size:.82rem; color:var(--navy); line-height:1.2; margin-top:.25rem;
+                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.equipo-tag { font-size:.65rem; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+
+@media (max-width:640px) {
+  .partido-row { flex-direction:column; align-items:flex-start; }
+  .btn-gestionar { width:100%; text-align:center; }
+}
 </style>
 
 <script>
-var filtroActual = null; // null=todos, 'sin-fecha', 'con-fecha', 'eq:ID'
+let filtroActual = null;
 
-function aplicarFiltro() {
-  var rows = document.querySelectorAll('.repro-row');
-  var visible = 0;
-  rows.forEach(function(row) {
-    var show = true;
-    if (filtroActual === 'sin-fecha') {
-      show = row.dataset.sf === '1';
-    } else if (filtroActual === 'con-fecha') {
-      show = row.dataset.sf === '0';
-    } else if (filtroActual === 'vencidas') {
-      show = row.dataset.vencida === '1';
-    } else if (filtroActual === 'proximas') {
-      show = row.dataset.proxima === '1';
-    } else if (filtroActual && filtroActual.startsWith('eq:')) {
-      var eqId = filtroActual.split(':')[1];
-      var eqs = row.dataset.eq.split(',');
-      show = eqs.indexOf(eqId) !== -1;
-    }
-    row.style.display = show ? '' : 'none';
-    if (show) visible++;
+function aplicarFiltros() {
+  const q = (document.getElementById('buscar').value || '').toLowerCase().trim();
+  const sections = document.querySelectorAll('section.sec-card[data-section]');
+  let totalVisibles = 0;
+
+  // Si hay filtro de sección o equipo, ocultar las demás secciones
+  sections.forEach(sec => {
+    const secType = sec.dataset.section;
+    let mostrarSec = true;
+    if (filtroActual === 'sf'   && secType !== 'sf')   mostrarSec = false;
+    if (filtroActual === 'venc' && secType !== 'venc') mostrarSec = false;
+    if (filtroActual === 'cf'   && secType !== 'cf')   mostrarSec = false;
+    sec.style.display = mostrarSec ? '' : 'none';
   });
 
-  var sinRes = document.getElementById('sinResultados');
-  sinRes.style.display = visible === 0 ? 'block' : 'none';
+  // Filtrar filas por búsqueda o equipo
+  document.querySelectorAll('.partido-row').forEach(row => {
+    let show = true;
+    if (q) {
+      show = (row.dataset.search || '').includes(q);
+    }
+    if (filtroActual && filtroActual.startsWith('eq:')) {
+      const eqId = filtroActual.split(':')[1];
+      const eqs = (row.dataset.eq || '').split(',');
+      if (eqs.indexOf(eqId) === -1) show = false;
+    }
+    row.style.display = show ? '' : 'none';
+    if (show) totalVisibles++;
+  });
 
-  var btn = document.getElementById('btnLimpiarFiltro');
-  btn.style.display = filtroActual ? 'flex' : 'none';
+  // Ocultar grupos de día vacíos
+  document.querySelectorAll('.dia-group').forEach(g => {
+    const visibles = g.querySelectorAll('.partido-row:not([style*="display: none"])').length;
+    g.style.display = visibles > 0 ? '' : 'none';
+  });
 
-  var fa = document.getElementById('filtroActivo');
-  var titulo = document.getElementById('tablaTitle');
-  if (filtroActual === 'sin-fecha') {
+  // Mensaje filtro activo
+  const fa = document.getElementById('filtroActivoMsg');
+  const btn = document.getElementById('btnLimpiar');
+  let msg = '';
+  if (filtroActual === 'sf')   msg = '⚠ Solo sin fecha';
+  else if (filtroActual === 'venc') msg = '🔴 Solo vencidos';
+  else if (filtroActual === 'cf')   msg = '📅 Solo con fecha';
+  else if (filtroActual && filtroActual.startsWith('eq:')) {
+    const card = document.querySelector('.equipo-card.activo .equipo-nombre');
+    msg = '🎾 ' + (card ? card.textContent : 'Equipo');
+  }
+  if (msg || q) {
     fa.style.display = 'block';
-    fa.innerHTML = '⚠ Mostrando solo partidos <strong>sin fecha programada</strong> (' + visible + ')';
-    titulo.textContent = 'Sin Fecha (' + visible + ')';
-  } else if (filtroActual === 'vencidas') {
-    fa.style.display = 'block';
-    fa.innerHTML = '🔴 Mostrando solo partidos <strong>vencidos</strong> — fecha ya pasó y siguen sin jugarse (' + visible + ')';
-    titulo.textContent = 'Vencidos (' + visible + ')';
-  } else if (filtroActual === 'proximas') {
-    fa.style.display = 'block';
-    fa.innerHTML = '📅 Mostrando solo partidos <strong>con fecha futura</strong> (' + visible + ')';
-    titulo.textContent = 'Próximos (' + visible + ')';
-  } else if (filtroActual === 'con-fecha') {
-    fa.style.display = 'block';
-    fa.innerHTML = '📅 Mostrando solo partidos <strong>con fecha programada</strong> (' + visible + ')';
-    titulo.textContent = 'Con Fecha (' + visible + ')';
-  } else if (filtroActual && filtroActual.startsWith('eq:')) {
-    var chip = document.querySelector('.equipo-chip.activo');
-    var nombre = chip ? chip.querySelector('span').textContent : '';
-    fa.style.display = 'block';
-    fa.innerHTML = '🎾 Mostrando partidos de <strong>' + nombre + '</strong> (' + visible + ')';
-    titulo.textContent = nombre + ' (' + visible + ')';
+    fa.textContent = (msg || 'Búsqueda activa') + ' · ' + totalVisibles + ' resultado' + (totalVisibles===1?'':'s');
+    btn.style.display = 'inline-flex';
   } else {
     fa.style.display = 'none';
-    titulo.textContent = 'Todos los Partidos Reprogramados (<?= count($reprogramados) ?>)';
+    btn.style.display = 'none';
   }
+
+  // No results global
+  const noRes = document.getElementById('noResults');
+  if (noRes) noRes.style.display = totalVisibles === 0 ? 'block' : 'none';
 }
 
-function filtrarKpi(tipo) {
-  // Limpiar chips
-  document.querySelectorAll('.equipo-chip').forEach(function(c){ c.classList.remove('activo'); });
-  // Limpiar KPIs
-  document.querySelectorAll('.kpi-card').forEach(function(c){ c.classList.remove('activo'); });
+function filtrar(tipo, btn) {
+  // Limpiar visual
+  document.querySelectorAll('.kpi').forEach(k => k.classList.remove('activo'));
+  document.querySelectorAll('.equipo-card').forEach(e => e.classList.remove('activo'));
 
-  if (filtroActual === tipo) {
+  if (filtroActual === tipo || tipo === 'all') {
     filtroActual = null;
   } else {
     filtroActual = tipo;
-    var kpi = document.getElementById('kpi-' + tipo);
-    if (kpi) kpi.classList.add('activo');
+    if (btn) btn.classList.add('activo');
   }
-  aplicarFiltro();
-  // Scroll suave a la tabla
-  if (filtroActual) document.querySelector('.card.mb-4').scrollIntoView({behavior:'smooth', block:'start'});
-}
-
-function filtrarEquipo(eqId, el) {
-  // Limpiar KPIs
-  document.querySelectorAll('.kpi-card').forEach(function(c){ c.classList.remove('activo'); });
-
-  var clave = 'eq:' + eqId;
-  if (filtroActual === clave) {
-    filtroActual = null;
-    el.classList.remove('activo');
-  } else {
-    filtroActual = clave;
-    document.querySelectorAll('.equipo-chip').forEach(function(c){ c.classList.remove('activo'); });
-    el.classList.add('activo');
+  aplicarFiltros();
+  // Scroll suave si filtro aplicado
+  if (filtroActual && filtroActual !== 'all') {
+    const target = filtroActual.startsWith('eq:')
+      ? document.querySelector('.sec-urgente, .sec-vencido, .sec-futuro')
+      : document.querySelector('section[data-section]:not([style*="display: none"])');
+    if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
   }
-  aplicarFiltro();
-  if (filtroActual) document.querySelector('.card.mb-4').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function limpiarFiltro() {
+  document.getElementById('buscar').value = '';
   filtroActual = null;
-  document.querySelectorAll('.kpi-card').forEach(function(c){ c.classList.remove('activo'); });
-  document.querySelectorAll('.equipo-chip').forEach(function(c){ c.classList.remove('activo'); });
-  aplicarFiltro();
+  document.querySelectorAll('.kpi').forEach(k => k.classList.remove('activo'));
+  document.querySelectorAll('.equipo-card').forEach(e => e.classList.remove('activo'));
+  aplicarFiltros();
 }
 </script>
 
