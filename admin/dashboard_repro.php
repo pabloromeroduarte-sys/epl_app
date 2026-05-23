@@ -7,8 +7,8 @@ epl_require_admin();
 $db = epl_db();
 
 // ────────────────────────────────────────────────────────────────────────
-// QUERY UNIFICADA: todos los partidos NO jugados (pendiente + reprogramado)
-// con su solicitud de reprogramación más reciente NO rechazada
+// QUERY: SOLO partidos REPROGRAMADOS (los pendientes con fecha futura
+// son del calendario normal del torneo, no son problema del admin acá)
 // ────────────────────────────────────────────────────────────────────────
 $partidos_open = $db->query("
     SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada, p.estado, p.alerta_admin,
@@ -26,7 +26,7 @@ $partidos_open = $db->query("
         SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
         WHERE sr2.partido_id = p.id AND sr2.estado != 'rechazada'
     )
-    WHERE p.estado IN ('pendiente', 'reprogramado')
+    WHERE p.estado = 'reprogramado'
     ORDER BY
         (p.fecha_programada IS NULL OR DATE(p.fecha_programada)='2026-12-31') ASC,
         p.fecha_programada ASC
@@ -38,10 +38,9 @@ $es_sin_fecha = fn($p) => !$p['fecha_programada'] || date('Y-m-d', strtotime($p[
 $es_vencido   = fn($p) => !$es_sin_fecha($p) && new DateTime($p['fecha_programada']) < $hoy;
 
 // Segmentar
-$sin_fecha   = array_values(array_filter($partidos_open, $es_sin_fecha));
-$vencidos    = array_values(array_filter($partidos_open, $es_vencido));
-$con_fecha   = array_values(array_filter($partidos_open, fn($p) => !$es_sin_fecha($p) && !$es_vencido($p)));
-$reprogramados_solo = array_values(array_filter($partidos_open, fn($p) => $p['estado'] === 'reprogramado'));
+$sin_fecha = array_values(array_filter($partidos_open, $es_sin_fecha));
+$vencidos  = array_values(array_filter($partidos_open, $es_vencido));
+$con_fecha = array_values(array_filter($partidos_open, fn($p) => !$es_sin_fecha($p) && !$es_vencido($p)));
 
 // Avance del torneo
 $total_jugados  = (int)$db->query("SELECT COUNT(*) FROM partidos WHERE estado IN ('jugado','walkover','no_presentado')")->fetchColumn();
@@ -50,7 +49,7 @@ $pct_avance     = $total_partidos > 0 ? round(($total_jugados / $total_partidos)
 
 // Top equipos con más reprogramaciones (para llamar la atención a los que cuelgan más)
 $por_equipo = [];
-foreach ($reprogramados_solo as $p) {
+foreach ($partidos_open as $p) {
     foreach ([
         ['id' => (int)$p['local_id'],    'nombre' => $p['local_nombre']],
         ['id' => (int)$p['visitante_id'],'nombre' => $p['visitante_nombre']],
@@ -72,9 +71,6 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           <span class="partido-liga"><?= epl_h($p['liga_nombre']) ?></span>
           <?php if ($p['jornada']): ?>
             <span class="partido-jornada">J<?= $p['jornada'] ?></span>
-          <?php endif; ?>
-          <?php if ($p['estado'] === 'reprogramado'): ?>
-            <span class="partido-tag tag-reprog">🔄 Reprogramado</span>
           <?php endif; ?>
           <?php if ($p['rival_no_responde']): ?>
             <span class="partido-tag tag-norespon">⚠ Rival no responde</span>
@@ -117,8 +113,8 @@ require_once '../includes/header.php';
       <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap">
         <div>
           <span style="font-size:.65rem;font-weight:900;letter-spacing:.25em;color:#C9A762;text-transform:uppercase">Panel admin</span>
-          <h1 style="color:#fff;margin:.2rem 0 .15rem;font-size:clamp(1.5rem,3.5vw,2rem);font-family:'Anton',sans-serif;text-transform:uppercase;line-height:1">Reprogramaciones <span style="color:#C9A762">& Pendientes</span></h1>
-          <p style="color:rgba(255,255,255,.7);margin-top:.2rem;font-size:.82rem">Todo lo que falta jugar — primero lo urgente, después lo que ya tiene fecha.</p>
+          <h1 style="color:#fff;margin:.2rem 0 .15rem;font-size:clamp(1.5rem,3.5vw,2rem);font-family:'Anton',sans-serif;text-transform:uppercase;line-height:1">Re<span style="color:#C9A762">programaciones</span></h1>
+          <p style="color:rgba(255,255,255,.7);margin-top:.2rem;font-size:.82rem">Solo partidos reprogramados — primero los urgentes, después los agendados.</p>
         </div>
         <div style="text-align:right">
           <div style="font-size:.65rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.15em;font-weight:700">Avance del torneo</div>
@@ -132,7 +128,7 @@ require_once '../includes/header.php';
     <div class="kpi-row">
       <button class="kpi" data-filter="all" onclick="filtrar('all', this)">
         <div class="kpi-num kpi-blue"><?= count($partidos_open) ?></div>
-        <div class="kpi-label">Pendientes totales</div>
+        <div class="kpi-label">Reprogramados totales</div>
         <div class="kpi-sub">Todos los que faltan jugar</div>
       </button>
       <button class="kpi kpi-danger" data-filter="sf" onclick="filtrar('sf', this)">
@@ -271,8 +267,8 @@ require_once '../includes/header.php';
       <section class="sec-card">
         <div style="padding:3rem;text-align:center;color:var(--gray-400)">
           <div style="font-size:3rem">🎉</div>
-          <p style="font-weight:700;margin-top:.5rem">No hay partidos pendientes</p>
-          <p style="font-size:.85rem">Todo está al día.</p>
+          <p style="font-weight:700;margin-top:.5rem">No hay partidos reprogramados</p>
+          <p style="font-size:.85rem">Todo el calendario está al día.</p>
         </div>
       </section>
     <?php endif; ?>
