@@ -19,16 +19,23 @@ $error  = ($_flash && $_flash['tipo']==='error') ? $_flash['msg'] : '';
 $MAX_REPROGS = 2;
 $total_reprogramados = 0;
 $bloqueado_reprogs   = false;
+$partidos_reprogramados_actuales = []; // Para mostrar al usuario cuáles bloquean
 
 if ($equipo) {
     $stCnt = $db->prepare("
-        SELECT COUNT(*) FROM partidos
-        WHERE liga_id = ?
-          AND (equipo_local_id = ? OR equipo_visitante_id = ?)
-          AND estado = 'reprogramado'
+        SELECT p.id, p.jornada, p.fecha_programada,
+               el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+        FROM partidos p
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        WHERE p.liga_id = ?
+          AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
+          AND p.estado = 'reprogramado'
+        ORDER BY p.jornada ASC
     ");
     $stCnt->execute([$liga['id'], $equipo['id'], $equipo['id']]);
-    $total_reprogramados = (int)$stCnt->fetchColumn();
+    $partidos_reprogramados_actuales = $stCnt->fetchAll();
+    $total_reprogramados = count($partidos_reprogramados_actuales);
     $bloqueado_reprogs   = ($total_reprogramados >= $MAX_REPROGS);
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -63,13 +70,20 @@ if ($equipo && !$bloqueado_reprogs) {
 
 $mis_solicitudes = [];
 if ($equipo) {
+    // Solo trae la solicitud MÁS RECIENTE por partido (no duplica si hubo rechazada + aprobada)
+    // y excluye solicitudes de partidos que ya se jugaron (ruido)
     $stS = $db->prepare("
-        SELECT sr.*, el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+        SELECT sr.*, el.nombre AS local_nombre, ev.nombre AS visitante_nombre, p.estado AS partido_estado
         FROM solicitudes_reprogramacion sr
         JOIN partidos p  ON p.id = sr.partido_id
         JOIN equipos el  ON el.id = p.equipo_local_id
         JOIN equipos ev  ON ev.id = p.equipo_visitante_id
-        WHERE sr.solicitante_id=?
+        WHERE sr.solicitante_id = ?
+          AND sr.id = (
+              SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
+              WHERE sr2.partido_id = sr.partido_id AND sr2.solicitante_id = sr.solicitante_id
+          )
+          AND p.estado NOT IN ('jugado', 'walkover', 'no_presentado')
         ORDER BY sr.created_at DESC LIMIT 10
     ");
     $stS->execute([$jugador['id']]);
@@ -283,9 +297,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
           Tu equipo ya tiene <strong><?= $total_reprogramados ?> partido<?= $total_reprogramados > 1 ? 's' : '' ?> reprogramado<?= $total_reprogramados > 1 ? 's' : '' ?></strong>.
           Según las bases del torneo, <strong>no está permitido reprogramar más de <?= $MAX_REPROGS ?> partidos por equipo</strong>.
         </p>
-        <div style="background:#fee2e2;border-radius:10px;padding:.75rem 1rem;font-size:.82rem;color:#991b1b;font-weight:600">
+        <div style="background:#fee2e2;border-radius:10px;padding:.75rem 1rem;font-size:.82rem;color:#991b1b;font-weight:600;margin-bottom:1rem">
           📋 Si tienes algún inconveniente especial, contacta directamente al administrador del torneo.
         </div>
+
+        <?php if (!empty($partidos_reprogramados_actuales)): ?>
+        <!-- Mostrar al jugador CUÁLES son los partidos que lo bloquean -->
+        <div style="background:#fef9f9;border:1px solid #fecaca;border-radius:10px;padding:.85rem 1rem;margin-top:.5rem">
+          <div style="font-size:.7rem;font-weight:800;color:#991b1b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">
+            ⚠ Tus reprogramaciones activas
+          </div>
+          <?php foreach ($partidos_reprogramados_actuales as $pr):
+            $rival = ($pr['local_nombre'] === $equipo['nombre']) ? $pr['visitante_nombre'] : $pr['local_nombre'];
+            $fecha_lbl = $pr['fecha_programada'] && date('Y-m-d', strtotime($pr['fecha_programada'])) !== '2026-12-31'
+                ? date('d/m H:i', strtotime($pr['fecha_programada']))
+                : 'Sin fecha';
+          ?>
+          <div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-top:1px solid #fee2e2;font-size:.82rem;color:#7f1d1d">
+            <span style="background:#fee2e2;color:#991b1b;font-weight:800;font-size:.65rem;border-radius:4px;padding:.1rem .4rem">J<?= $pr['jornada'] ?: '?' ?></span>
+            <span style="flex:1">vs <strong><?= epl_h($rival) ?></strong></span>
+            <span style="font-size:.75rem;color:#9f1239;font-weight:600"><?= $fecha_lbl ?></span>
+          </div>
+          <?php endforeach; ?>
+          <p style="font-size:.72rem;color:#7f1d1d;margin-top:.6rem;font-weight:600;line-height:1.4">
+            💡 Cuando alguno de estos partidos se juegue, podrás reprogramar otro.
+          </p>
+        </div>
+        <?php endif; ?>
       </div>
     </div>
     <div style="margin-top:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap">
