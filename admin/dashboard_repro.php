@@ -7,6 +7,8 @@ epl_require_admin();
 $db = epl_db();
 
 // Todos los reprogramados — fechas reales primero (ASC), sin fecha al final
+// El LEFT JOIN trae SOLO la solicitud más reciente no-rechazada por partido
+// (antes traía todas las solicitudes y duplicaba el partido en la lista)
 $reprogramados = $db->query("
     SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada, p.estado, p.alerta_admin,
            l.id AS liga_id, l.nombre AS liga_nombre,
@@ -19,7 +21,10 @@ $reprogramados = $db->query("
     JOIN equipos el ON el.id = p.equipo_local_id
     JOIN equipos ev ON ev.id = p.equipo_visitante_id
     LEFT JOIN recintos r ON r.id = p.recinto_id
-    LEFT JOIN solicitudes_reprogramacion sr ON sr.partido_id = p.id
+    LEFT JOIN solicitudes_reprogramacion sr ON sr.id = (
+        SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
+        WHERE sr2.partido_id = p.id AND sr2.estado != 'rechazada'
+    )
     WHERE p.estado = 'reprogramado'
     ORDER BY
         (p.fecha_programada IS NULL OR DATE(p.fecha_programada)='2026-12-31') ASC,

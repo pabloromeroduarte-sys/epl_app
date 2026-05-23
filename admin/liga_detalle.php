@@ -144,7 +144,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     JOIN equipos el ON el.id = p.equipo_local_id
                     JOIN equipos ev ON ev.id = p.equipo_visitante_id
                     LEFT JOIN recintos r ON r.id = p.recinto_id
-                    LEFT JOIN solicitudes_reprogramacion sr ON sr.partido_id = p.id
+                    LEFT JOIN solicitudes_reprogramacion sr ON sr.id = (
+                        SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
+                        WHERE sr2.partido_id = p.id AND sr2.estado != 'rechazada'
+                    )
                     WHERE p.id IN ($ids_str)
                     ORDER BY p.fecha_programada IS NULL ASC, p.fecha_programada ASC
                 ")->fetchAll();
