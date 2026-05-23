@@ -8,7 +8,19 @@ epl_require_admin();
 $db  = epl_db();
 epl_ensure_ligas_columnas_mp_precio();
 $id  = (int)($_GET['id'] ?? 0);
-$tab = in_array($_GET['tab'] ?? '', ['equipos','partidos']) ? $_GET['tab'] : 'equipos';
+
+// ── Redirigir tab=partidos al panel centralizado /admin/partidos.php?liga=ID ─
+if (($_GET['tab'] ?? '') === 'partidos' && $id) {
+    // Pasar filtros si vienen en URL
+    $forward = ['liga' => $id];
+    foreach (['fecha','estado_p','search','desde','hasta'] as $k) {
+        if (!empty($_GET[$k])) $forward[$k] = $_GET[$k];
+    }
+    header('Location: partidos.php?' . http_build_query($forward));
+    exit;
+}
+
+$tab = in_array($_GET['tab'] ?? '', ['equipos']) ? $_GET['tab'] : 'equipos';
 
 // Flash messages (PRG pattern)
 epl_session_start();
@@ -727,9 +739,11 @@ $total_equipos  = count($equipos_liga);
          style="padding:.65rem 1.5rem;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;border-bottom:3px solid <?= $tab==='equipos'?'var(--gold)':'transparent' ?>;color:<?= $tab==='equipos'?'var(--navy)':'var(--gray-400)' ?>;margin-bottom:-2px">
         Equipos <span style="font-size:.75rem;font-weight:400">(<?= $total_equipos ?>)</span>
       </a>
-      <a href="liga_detalle.php?id=<?= $id ?>&tab=partidos"
-         style="padding:.65rem 1.5rem;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;border-bottom:3px solid <?= $tab==='partidos'?'var(--gold)':'transparent' ?>;color:<?= $tab==='partidos'?'var(--navy)':'var(--gray-400)' ?>;margin-bottom:-2px">
+      <a href="partidos.php?liga=<?= $id ?>"
+         style="padding:.65rem 1.5rem;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;border-bottom:3px solid transparent;color:var(--gray-400);margin-bottom:-2px"
+         title="Gestionar partidos de esta liga">
         Partidos <span style="font-size:.75rem;font-weight:400">(<?= count($db->query("SELECT id FROM partidos WHERE liga_id=$id")->fetchAll()) ?>)</span>
+        <span style="font-size:.6rem;background:#C9A762;color:#1c2f48;padding:.1rem .4rem;border-radius:4px;margin-left:.3rem;font-weight:800">↗</span>
       </a>
     </div>
 
