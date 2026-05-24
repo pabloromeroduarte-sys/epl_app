@@ -266,14 +266,17 @@ function toggleTools() {
 .bn-item svg { width: 22px; height: 22px; }
 .bn-item.active {
   color: var(--gold);
+  background: var(--navy);
+  border-radius: 0 0 12px 12px;
 }
+.bn-item.active svg { color: var(--gold); }
 .bn-item.active::before {
   content: '';
   position: absolute;
   top: 0; left: 50%; transform: translateX(-50%);
-  width: 28px; height: 3px;
-  background: var(--navy);
-  border-radius: 0 0 3px 3px;
+  width: 36px; height: 4px;
+  background: var(--gold);
+  border-radius: 0 0 4px 4px;
 }
 .bn-badge {
   position: absolute;
