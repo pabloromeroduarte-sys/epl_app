@@ -62,6 +62,7 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
     <div id="tools-menu" class="adm-tools-menu <?= $_in_tools ? 'open' : '' ?>">
       <?php adm_link('erp_financiero.php',   $cur, 'erp_financiero.php',   '💰', 'ERP Financiero'); ?>
       <?php adm_link('notificaciones.php',   $cur, 'notificaciones.php',   '✉️', 'Mensajería'); ?>
+      <?php adm_link('diagnostico_push.php', $cur, 'diagnostico_push.php', '🔔', 'Diagnóstico Push'); ?>
       <?php adm_link('automatizaciones.php', $cur, 'automatizaciones.php', '⚡', 'Automatizaciones'); ?>
       <?php adm_link('content_studio.php',   $cur, 'content_studio.php',   '🎬', 'Content Studio'); ?>
       <?php adm_link('recintos.php',         $cur, 'recintos.php',         '📍', 'Recintos'); ?>
