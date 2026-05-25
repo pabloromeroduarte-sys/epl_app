@@ -79,16 +79,36 @@ if ($partido) {
             foreach ($canchas as $c) {
                 $sid = (int)($c['superior_id'] ?? 0);
                 $nom = $sup_names[$sid] ?? ($raiz_nombre ?: 'Sin sede');
-                if (!isset($grupos[$sid])) $grupos[$sid] = ['sede'=>$nom, 'sede_id'=>$sid, 'canchas'=>[]];
+                if (!isset($grupos[$sid])) $grupos[$sid] = ['sede'=>$nom, 'sede_id'=>$sid, 'canchas'=>[], 'uso'=>0];
                 $grupos[$sid]['canchas'][] = $c;
             }
-            // Ordenar canchas dentro de cada sede por nombre
+            // Calcular uso histórico: cantidad de partidos jugados/programados por sede
+            $cancha_ids = array_map(fn($c) => (int)$c['id'], $canchas);
+            if ($cancha_ids) {
+                $ph2 = implode(',', array_fill(0, count($cancha_ids), '?'));
+                $qu = $db->prepare("
+                    SELECT r.superior_id AS sede_id, COUNT(p.id) AS uso
+                    FROM recintos r
+                    LEFT JOIN partidos p ON p.recinto_id = r.id
+                    WHERE r.id IN ($ph2)
+                    GROUP BY r.superior_id
+                ");
+                $qu->execute($cancha_ids);
+                foreach ($qu->fetchAll(PDO::FETCH_ASSOC) as $u) {
+                    $sid = (int)$u['sede_id'];
+                    if (isset($grupos[$sid])) $grupos[$sid]['uso'] = (int)$u['uso'];
+                }
+            }
+            // Ordenar canchas dentro de cada sede por nombre natural
             foreach ($grupos as &$g) {
                 usort($g['canchas'], fn($a,$b) => strnatcasecmp($a['nombre'], $b['nombre']));
             }
             unset($g);
-            // Ordenar grupos por nombre de sede
-            usort($grupos, fn($a,$b) => strnatcasecmp($a['sede'], $b['sede']));
+            // Ordenar grupos por USO descendente (más usados primero), desempate alfabético
+            usort($grupos, function($a, $b) {
+                if ($a['uso'] !== $b['uso']) return $b['uso'] <=> $a['uso'];
+                return strnatcasecmp($a['sede'], $b['sede']);
+            });
             $canchas_grupos = $grupos;
         }
     }
