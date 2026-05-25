@@ -82,8 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fecha_o = trim($_POST['fecha_original'] ?? '');
         $rec_o   = (int)($_POST['recinto_original_id'] ?? 0) ?: null;
         if ($fecha_o) {
-            $fecha_db = str_replace('T', ' ', $fecha_o) . ':00';
-            $db->prepare("UPDATE partidos SET fecha_original=? WHERE id=?")->execute([$fecha_db, $id]);
+            // Acepta tanto 'Y-m-d H:i' (flatpickr) como 'Y-m-dTH:i' (datetime-local legacy)
+            $ts = strtotime(str_replace('T', ' ', $fecha_o));
+            $fecha_db = $ts ? date('Y-m-d H:i:s', $ts) : null;
+            if ($fecha_db) $db->prepare("UPDATE partidos SET fecha_original=? WHERE id=?")->execute([$fecha_db, $id]);
         } else {
             $db->prepare("UPDATE partidos SET fecha_original=NULL WHERE id=?")->execute([$id]);
         }
@@ -472,8 +474,10 @@ require_once '../includes/header.php';
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.6rem;margin-bottom:.7rem">
               <div>
                 <label style="font-size:.7rem;color:#92400e;font-weight:700;display:block;margin-bottom:.25rem">Fecha original</label>
-                <input type="datetime-local" name="fecha_original" class="form-control"
-                       value="<?= $p['fecha_original'] ? date('Y-m-d\TH:i', strtotime($p['fecha_original'])) : '' ?>">
+                <input type="text" name="fecha_original" id="fpFechaOriginal" class="form-control"
+                       placeholder="Día y hora (opcional)" autocomplete="off" readonly
+                       style="cursor:pointer;background:#fff"
+                       value="<?= $p['fecha_original'] ? date('Y-m-d H:i', strtotime($p['fecha_original'])) : '' ?>">
               </div>
               <div>
                 <label style="font-size:.7rem;color:#92400e;font-weight:700;display:block;margin-bottom:.25rem">Cancha original</label>
@@ -790,5 +794,51 @@ require_once '../includes/header.php';
 
   </main>
 </div>
+
+<!-- ── Flatpickr: calendario moderno ── -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/themes/material_blue.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/es.js"></script>
+<style>
+  .flatpickr-calendar { border-radius:14px !important; box-shadow:0 12px 40px rgba(28,47,72,.18) !important; font-family:'Montserrat',sans-serif !important; border:1px solid #e2e8f0 !important; }
+  .flatpickr-calendar.open { z-index:9999 !important; }
+  .flatpickr-months, .flatpickr-months .flatpickr-month { background:linear-gradient(135deg,#1c2f48,#0f1e30) !important; color:#C9A762 !important; border-radius:14px 14px 0 0; overflow:hidden; }
+  .flatpickr-current-month, .flatpickr-monthDropdown-months, .flatpickr-current-month input.cur-year { color:#C9A762 !important; font-weight:800 !important; }
+  .flatpickr-monthDropdown-months option { background:#1c2f48; color:#fff; }
+  .flatpickr-weekday { color:#1c2f48 !important; font-weight:800 !important; font-size:.78rem !important; }
+  .flatpickr-day { font-weight:600; border-radius:10px !important; }
+  .flatpickr-day.today { border-color:#C9A762; color:#C9A762; }
+  .flatpickr-day.selected, .flatpickr-day.selected:hover { background:#1c2f48 !important; border-color:#1c2f48 !important; color:#C9A762 !important; }
+  .flatpickr-day:hover { background:#fef9ec; color:#1c2f48; }
+  .flatpickr-time { border-top:1px solid #e2e8f0 !important; background:#f8fafc; border-radius:0 0 14px 14px; }
+  .flatpickr-time input { color:#1c2f48 !important; font-weight:800 !important; font-size:1.1rem !important; }
+  .flatpickr-time .flatpickr-time-separator, .flatpickr-time .flatpickr-am-pm { color:#1c2f48 !important; font-weight:800 !important; }
+  .flatpickr-prev-month svg, .flatpickr-next-month svg { fill:#C9A762 !important; }
+  .arrowUp:after { border-bottom-color:#C9A762 !important; }
+  .arrowDown:after { border-top-color:#C9A762 !important; }
+  #fpFechaOriginal { padding:.7rem .9rem !important; border:1.5px solid #fbbf24 !important; border-radius:10px !important; font-size:.9rem !important; font-weight:700 !important; color:#92400e !important; }
+  #fpFechaOriginal:focus { border-color:#92400e !important; outline:none !important; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById('fpFechaOriginal');
+  if (!el || typeof flatpickr === 'undefined') return;
+  flatpickr(el, {
+    locale: 'es',
+    enableTime: true,
+    time_24hr: true,
+    dateFormat: 'Y-m-d H:i',
+    altInput: true,
+    altFormat: 'l j \\d\\e F · H:i',
+    allowInput: false,
+    minuteIncrement: 15,
+    defaultHour: 21,
+    defaultMinute: 0,
+    disableMobile: false,
+    position: 'auto center'
+  });
+});
+</script>
 
 <?php require_once '../includes/footer.php'; ?>

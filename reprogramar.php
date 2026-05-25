@@ -457,9 +457,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
           <div class="rp-card-sub">Mínimo 48 horas desde ahora.</div>
         </div>
       </div>
-      <input type="datetime-local" name="fecha_propuesta" class="form-control"
-             min="<?= date('Y-m-d\TH:i', strtotime('+48 hours')) ?>"
-             style="margin-top:1rem;max-width:280px">
+      <input type="text" name="fecha_propuesta" id="fpFechaPropuesta" class="form-control"
+             placeholder="Seleccioná día y hora"
+             data-min="<?= date('Y-m-d H:i', strtotime('+48 hours')) ?>"
+             autocomplete="off" readonly
+             style="margin-top:1rem;max-width:320px;cursor:pointer;background:#fff">
 
       <label class="rp-acuerdo-row">
         <input type="checkbox" name="mutuo_acuerdo" id="chkMutuo" required>
@@ -731,6 +733,84 @@ document.addEventListener('DOMContentLoaded', () => {
       checked.closest('.rp-partido-option')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 200);
   }
+});
+</script>
+
+<!-- ── Flatpickr: calendario moderno ── -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/themes/material_blue.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/es.js"></script>
+<style>
+  /* Estilos EPL para Flatpickr */
+  .flatpickr-calendar {
+    border-radius:14px !important;
+    box-shadow:0 12px 40px rgba(28,47,72,.18) !important;
+    font-family:'Montserrat',sans-serif !important;
+    border:1px solid #e2e8f0 !important;
+  }
+  .flatpickr-calendar.open { z-index:9999 !important; }
+  .flatpickr-months,
+  .flatpickr-months .flatpickr-month {
+    background:linear-gradient(135deg,#1c2f48,#0f1e30) !important;
+    color:#C9A762 !important;
+    border-radius:14px 14px 0 0;
+    overflow:hidden;
+  }
+  .flatpickr-current-month,
+  .flatpickr-monthDropdown-months,
+  .flatpickr-current-month input.cur-year { color:#C9A762 !important; font-weight:800 !important; }
+  .flatpickr-monthDropdown-months option { background:#1c2f48; color:#fff; }
+  .flatpickr-weekday { color:#1c2f48 !important; font-weight:800 !important; font-size:.78rem !important; }
+  .flatpickr-day { font-weight:600; border-radius:10px !important; }
+  .flatpickr-day.today { border-color:#C9A762; color:#C9A762; }
+  .flatpickr-day.selected,
+  .flatpickr-day.selected:hover {
+    background:#1c2f48 !important; border-color:#1c2f48 !important; color:#C9A762 !important;
+    box-shadow:0 4px 12px rgba(28,47,72,.35);
+  }
+  .flatpickr-day:hover { background:#fef9ec; color:#1c2f48; }
+  .flatpickr-time { border-top:1px solid #e2e8f0 !important; background:#f8fafc; border-radius:0 0 14px 14px; }
+  .flatpickr-time input { color:#1c2f48 !important; font-weight:800 !important; font-size:1.1rem !important; }
+  .flatpickr-time .flatpickr-time-separator,
+  .flatpickr-time .flatpickr-am-pm { color:#1c2f48 !important; font-weight:800 !important; }
+  .flatpickr-prev-month svg, .flatpickr-next-month svg { fill:#C9A762 !important; }
+  .numInputWrapper:hover { background:#fef9ec !important; }
+  .arrowUp:after { border-bottom-color:#C9A762 !important; }
+  .arrowDown:after { border-top-color:#C9A762 !important; }
+
+  /* Input visual */
+  #fpFechaPropuesta {
+    padding:.85rem 1rem !important;
+    border:1.5px solid #cbd5e1 !important;
+    border-radius:12px !important;
+    font-size:.95rem !important;
+    font-weight:700 !important;
+    color:#1c2f48 !important;
+    transition:all .15s;
+  }
+  #fpFechaPropuesta:focus { border-color:#1d4ed8 !important; box-shadow:0 0 0 3px rgba(29,78,216,.15) !important; outline:none !important; }
+  #fpFechaPropuesta::placeholder { color:#94a3b8; font-weight:500; }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById('fpFechaPropuesta');
+  if (!el || typeof flatpickr === 'undefined') return;
+  const minAttr = el.getAttribute('data-min') || '';
+  flatpickr(el, {
+    locale: 'es',
+    enableTime: true,
+    time_24hr: true,
+    dateFormat: 'Y-m-d H:i',
+    altInput: true,
+    altFormat: 'l j \\d\\e F · H:i',
+    minDate: minAttr || 'today',
+    minuteIncrement: 15,
+    defaultHour: 21,
+    defaultMinute: 0,
+    disableMobile: false,
+    position: 'auto center'
+  });
 });
 </script>
 
