@@ -73,7 +73,7 @@ $partidos_open = $db->query("
            ro.contacto2_nombre, ro.contacto2_telefono,
            ro.contacto3_nombre, ro.contacto3_telefono,
            sr.motivo, sr.rival_no_responde, sr.created_at AS fecha_solicitud,
-           sr.estado AS sol_estado, sr.mutuo_acuerdo AS sol_mutuo
+           sr.estado AS sol_estado, sr.mutuo_acuerdo AS sol_mutuo, sr.fecha_propuesta
     FROM partidos p
     JOIN ligas l ON l.id = p.liga_id
     JOIN equipos el ON el.id = p.equipo_local_id
@@ -241,8 +241,17 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           <strong><?= epl_h($p['visitante_nombre']) ?></strong>
         </div>
         <div class="partido-extra">
-          <?php if (!$sin_fecha): ?>
-            <span class="extra-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <?= date('d/m H:i', strtotime($p['fecha_programada'])) ?></span>
+          <?php
+            // Determinar qué fecha mostrar en el encabezado
+            $_fecha_mostrar = $p['fecha_programada'];
+            // Si es pre-aprobado (no hay fecha_original en DB) y hay una fecha propuesta en la solicitud, mostramos la propuesta
+            if (empty($p['fecha_original']) && !empty($p['fecha_propuesta'])) {
+                $_fecha_mostrar = $p['fecha_propuesta'];
+            }
+            $_sf_mostrar = !$_fecha_mostrar || date('Y-m-d', strtotime($_fecha_mostrar)) === '2026-12-31';
+          ?>
+          <?php if (!$_sf_mostrar): ?>
+            <span class="extra-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <?= date('d/m H:i', strtotime($_fecha_mostrar)) ?></span>
           <?php endif; ?>
           <?php if ($p['recinto_nombre']): ?>
             <span class="extra-item" style="color:#15803d;font-weight:600">✅ <?= epl_h($p['recinto_nombre']) ?></span>
@@ -253,20 +262,22 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
         </div>
         <?php
           // ── Datos del partido ───────────────────────────────────────
-          $_fo             = $p['fecha_original'] ?: null;         // fecha a DAR DE BAJA
-          $_fo_lbl         = $_fo ? date('d/m/Y H:i', strtotime($_fo)) : null;
-          $_rec_orig       = $p['recinto_original_nombre'] ?? null; // cancha a dar de baja
-          $_rec_orig_sup   = $p['recinto_original_sup'] ?? null;    // sede de la cancha a dar de baja
+          $_es_post        = !empty($p['fecha_original']);
+          $_fo             = $_es_post ? $p['fecha_original'] : $p['fecha_programada'];
+          $_fo_lbl         = ($_fo && date('Y-m-d', strtotime($_fo)) !== '2026-12-31') ? date('d/m/Y H:i', strtotime($_fo)) : null;
+          $_rec_orig       = $_es_post ? ($p['recinto_original_nombre'] ?? null) : ($p['recinto_nombre'] ?? null);
+          $_rec_orig_sup   = $_es_post ? ($p['recinto_original_sup'] ?? null) : ($p['recinto_sup'] ?? null);
           // "Cancha 12 (Santa Blanca)"
           $_rec_orig_full  = $_rec_orig ? $_rec_orig . ($_rec_orig_sup ? " ($_rec_orig_sup)" : '') : null;
-          $_rec_actual_full = $p['recinto_nombre']
+          $_rec_actual_full = $_es_post ? ($p['recinto_nombre']
               ? $p['recinto_nombre'] . (!empty($p['recinto_sup']) ? ' (' . $p['recinto_sup'] . ')' : '')
-              : null;
+              : null) : null;
           $_tiene_original = $_fo_lbl || $_rec_orig;
 
-          $_sf_nueva    = !$p['fecha_programada'] || date('Y-m-d', strtotime($p['fecha_programada'])) === '2026-12-31';
-          $_fecha_nueva = !$_sf_nueva ? date('d/m/Y H:i', strtotime($p['fecha_programada'])) : null;
-          $_necesita_cancha = $_fecha_nueva && empty($p['recinto_nombre']); // nueva fecha pero sin cancha
+          $_fecha_nueva_raw = $_es_post ? $p['fecha_programada'] : ($p['fecha_propuesta'] ?? null);
+          $_sf_nueva    = !$_fecha_nueva_raw || date('Y-m-d', strtotime($_fecha_nueva_raw)) === '2026-12-31';
+          $_fecha_nueva = !$_sf_nueva ? date('d/m/Y H:i', strtotime($_fecha_nueva_raw)) : null;
+          $_necesita_cancha = $_fecha_nueva && ($_es_post ? empty($p['recinto_nombre']) : true);
 
           $_confirmada  = !empty($p['baja_confirmada_at']);
           $_solicitada  = !empty($p['baja_solicitada_at']);
