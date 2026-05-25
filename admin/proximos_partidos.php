@@ -10,7 +10,7 @@ $db = epl_db();
 // ────────────────────────────────────────────────────────────────────────
 // Helper redirect que preserva filtros
 // ────────────────────────────────────────────────────────────────────────
-function prox_prox_partidos_redirect(string $msg = '', string $err = '', array $extra = []): void {
+function prox_partidos_redirect(string $msg = '', string $err = '', array $extra = []): void {
     if ($msg || $err) {
         if (session_status() === PHP_SESSION_NONE) session_start();
         if ($msg) $_SESSION['_epl_flash'] = ['tipo'=>'ok', 'msg'=>$msg];
@@ -476,11 +476,6 @@ require_once '../includes/header.php';
               </td>
             </tr>
             <?php endif; ?>
-                📅 <?= epl_h($p['nombre_fecha'] ?? 'Sin fecha asignada') ?>
-                <?php if ($p['jornada']): ?><span style="font-weight:400;color:var(--gray-400);margin-left:.5rem">— Jornada <?= $p['jornada'] ?></span><?php endif; ?>
-              </td>
-            </tr>
-            <?php endif; ?>
             <?php
               $_fp = $p['fecha_programada'];
               $_es_placeholder = $_fp && date('Y-m-d', strtotime($_fp)) === '2026-12-31';
@@ -499,9 +494,6 @@ require_once '../includes/header.php';
               $_data_json = epl_h(base64_encode((string)(json_encode($p, JSON_UNESCAPED_UNICODE) ?: '{}')));
             ?>
             <tr id="p<?= $p['id'] ?>" class="pf-row" style="border-bottom:1px solid var(--gray-100)">
-              <td style="padding:.6rem .75rem;text-align:center">
-                " class="partido-check" data-group="<?= epl_h($grouping) ?>" form="bulkForm">
-              </td>
               <td style="padding:.6rem .75rem;font-size:.75rem">
                 <?php if ($_sin_fecha): ?>
                   <span style="background:#fee2e2;color:#dc2626;padding:.1rem .4rem;border-radius:4px;font-size:.68rem;font-weight:700">Sin fecha</span>
@@ -584,7 +576,6 @@ require_once '../includes/header.php';
                 <div style="font-weight:900;font-size:.85rem">📅 <?= epl_h($lbl_dia) ?></div>
             </div>
           <?php endif; ?><div class="pf-card-partido" id="pm<?= $p['id'] ?>" data-pid="<?= $p['id'] ?>">
-              " class="partido-check pf-card-check" data-group="<?= epl_h($grouping_m) ?>" form="bulkForm">
               <div class="pf-card-body">
                 <div class="pf-card-meta">
                   <?php if ($_sf_m): ?>
@@ -809,46 +800,6 @@ window.editarPartido = function (btn) {
 
   modal.style.display = 'flex';
 };
-
-// ─── Bulk selection ───
-function updateBulkBar() {
-  var selected = document.querySelectorAll('.partido-check:checked');
-  var bar = document.getElementById('bulkBar');
-  document.getElementById('bulkCount').textContent = selected.length;
-  bar.style.display = selected.length > 0 ? 'flex' : 'none';
-}
-document.querySelectorAll('.partido-check').forEach(function(c){ c.addEventListener('change', updateBulkBar); });
-var checkAll = document.getElementById('checkAllPartidos');
-if (checkAll) {
-  checkAll.addEventListener('change', function(){
-    document.querySelectorAll('.partido-check').forEach(function(c){ c.checked = checkAll.checked; });
-    updateBulkBar();
-  });
-}
-document.querySelectorAll('.check-group').forEach(function(g){
-  g.addEventListener('change', function(){
-    var name = this.getAttribute('data-group');
-    document.querySelectorAll('.partido-check[data-group="' + name + '"]').forEach(function(c){ c.checked = g.checked; });
-    updateBulkBar();
-  });
-});
-function deselectAllPartidos() {
-  document.querySelectorAll('.partido-check, .check-group').forEach(function(c){ c.checked = false; });
-  if (checkAll) checkAll.checked = false;
-  updateBulkBar();
-}
-function toggleBulkExtra() {
-  var action = document.getElementById('bulkAction').value;
-  document.getElementById('bulkExtraEstado').style.display     = action === 'cambiar_estado' ? 'block' : 'none';
-  document.getElementById('bulkExtraRecinto').style.display    = action === 'cambiar_recinto' ? 'block' : 'none';
-  document.getElementById('bulkExtraFecha').style.display      = action === 'cambiar_fecha' ? 'flex' : 'none';
-  document.getElementById('bulkExtraFechaProg').style.display  = action === 'cambiar_fecha_programada' ? 'flex' : 'none';
-  document.getElementById('bulkExtraAlerta').style.display     = action === 'poner_alerta' ? 'block' : 'none';
-  if (action !== 'cambiar_fecha_programada') {
-    document.getElementById('bulkSinFecha').checked = false;
-    document.getElementById('bulkFechaProgInput').disabled = false;
-  }
-}
 </script>
 
 <style>
@@ -922,16 +873,6 @@ function toggleBulkExtra() {
   .pf-col-liga, .pf-col-cancha { display:none; }
 }
 </style>
-<script>
-// Selección de grupo en cards móvil
-document.querySelectorAll('.check-group-mobile').forEach(function(g){
-  g.addEventListener('change', function(){
-    var name = this.getAttribute('data-group');
-    document.querySelectorAll('.partido-check[data-group="' + name + '"]').forEach(function(c){ c.checked = g.checked; });
-    updateBulkBar();
-  });
-});
-</script>
 
 <script>
 // Si llegamos con hash #p123, scrollear y destacar ese partido (y abrir su modal de edición)
