@@ -17,13 +17,18 @@ if (!preg_match('/^[a-f0-9]{32}$/i', $token)) {
                el.nombre AS local_nombre,  ev.nombre AS visitante_nombre,
                r.nombre  AS recinto_nuevo,  ro.nombre AS recinto_original,
                el.jugador1_id AS jl1_id, el.jugador2_id AS jl2_id,
-               ev.jugador1_id AS jv1_id, ev.jugador2_id AS jv2_id
+               ev.jugador1_id AS jv1_id, ev.jugador2_id AS jv2_id,
+               sr.fecha_propuesta
         FROM partidos p
         JOIN ligas l    ON l.id = p.liga_id
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
         LEFT JOIN recintos r  ON r.id  = p.recinto_id
         LEFT JOIN recintos ro ON ro.id = p.recinto_original_id
+        LEFT JOIN solicitudes_reprogramacion sr ON sr.id = (
+            SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
+            WHERE sr2.partido_id = p.id AND sr2.estado != 'rechazada'
+        )
         WHERE p.baja_token = ?
         LIMIT 1
     ");
@@ -41,9 +46,13 @@ $raiz_id         = null;
 $raiz_nombre     = null;
 
 if ($partido) {
-    $_sf = !$partido['fecha_programada']
-        || date('Y-m-d', strtotime($partido['fecha_programada'])) === '2026-12-31';
-    $nueva_fecha_lbl = !$_sf ? date('d/m/Y H:i', strtotime($partido['fecha_programada'])) : null;
+    // ── Lógica de pre-aprobado vs post-aprobado ──
+    $es_post_aprobado = !empty($partido['fecha_original']);
+    $fecha_baja_real = $es_post_aprobado ? $partido['fecha_original'] : $partido['fecha_programada'];
+    $fecha_nueva_real = $es_post_aprobado ? $partido['fecha_programada'] : ($partido['fecha_propuesta'] ?? null);
+
+    $_sf = !$fecha_nueva_real || date('Y-m-d', strtotime($fecha_nueva_real)) === '2026-12-31';
+    $nueva_fecha_lbl = !$_sf ? date('d/m/Y H:i', strtotime($fecha_nueva_real)) : null;
 
     // Necesita cancha: hay nueva fecha y el club todavía no confirmó qué cancha asignan
     $necesita_cancha = $nueva_fecha_lbl && empty($partido['cancha_confirmada_at']);
@@ -170,9 +179,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['baja_confirm
 }
 
 // ── Fecha original (reserva a dar de baja) ──
-$baja_fecha_lbl   = $partido && $partido['fecha_original']
-    ? date('d/m/Y H:i', strtotime($partido['fecha_original'])) : null;
-$baja_recinto_nom = $partido['recinto_original'] ?? null;
+$baja_fecha_lbl   = $partido && $fecha_baja_real && date('Y-m-d', strtotime($fecha_baja_real)) !== '2026-12-31'
+    ? date('d/m/Y H:i', strtotime($fecha_baja_real)) : null;
+$baja_recinto_nom = $es_post_aprobado ? ($partido['recinto_original'] ?? null) : ($partido['recinto_nuevo'] ?? null);
 
 // Calcular si "ya todo confirmado" (baja + cancha si aplica)
 $todo_confirmado = $partido
