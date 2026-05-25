@@ -376,6 +376,16 @@ require_once '../includes/header.php';
     <?php if ($ok): ?><div class="alert alert-success" style="margin-bottom:1rem"><?= epl_h($ok) ?></div><?php endif; ?>
     <?php if ($err): ?><div class="alert alert-error" style="margin-bottom:1rem"><?= epl_h($err) ?></div><?php endif; ?>
 
+    <!-- PESTAÑAS DE NAVEGACIÓN -->
+    <div style="display:flex;gap:.35rem;margin-bottom:1rem;background:#f1f5f9;padding:.3rem;border-radius:10px;width:max-content;max-width:100%">
+      <a href="partidos.php" style="text-decoration:none;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:.5rem .9rem;border-radius:7px;transition:all .15s;display:inline-flex;align-items:center;gap:.35rem;<?= $cur==='partidos.php'?'background:#1c2f48;color:#fff;box-shadow:0 2px 6px rgba(28,47,72,.15)':'color:#64748b' ?>">
+        🎾 Todos los Partidos
+      </a>
+      <a href="proximos_partidos.php" style="text-decoration:none;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:.5rem .9rem;border-radius:7px;transition:all .15s;display:inline-flex;align-items:center;gap:.35rem;<?= $cur==='proximos_partidos.php'?'background:#1c2f48;color:#fff;box-shadow:0 2px 6px rgba(28,47,72,.15)':'color:#64748b' ?>">
+        🔜 Próximos Partidos
+      </a>
+    </div>
+
     <!-- ── FILTROS (colapsables en móvil) ───────── -->
     <details class="card mb-3 pf-filtros" open style="padding:0">
       <summary class="pf-filtros-toggle" style="padding:.8rem 1rem;font-weight:800;color:var(--navy);text-transform:uppercase;font-size:.75rem;letter-spacing:.05em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;list-style:none">
