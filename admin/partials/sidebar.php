@@ -44,6 +44,7 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
     <div class="adm-group-label">Diario</div>
     <?php adm_link('index.php',           $cur, 'index.php',                            '🏠', 'Inicio'); ?>
     <?php adm_link('partidos.php',        $cur, 'partidos.php',                         '🎾', 'Partidos'); ?>
+    <?php adm_link('proximos_partidos.php',$cur, 'proximos_partidos.php',               '🔜', 'Próximos Partidos'); ?>
     <?php adm_link('dashboard_repro.php', $cur, 'dashboard_repro.php',                  '📅', 'Reprogramaciones', $_repro_count, '#ea580c'); ?>
     <?php adm_link('inscripciones.php',   $cur, 'inscripciones.php',                    '📋', 'Inscripciones', $_insc_count, '#2563eb'); ?>
     <?php adm_link('disputas.php',        $cur, 'disputas.php',                         '⚠️', 'Disputas', $_disp_count); ?>
@@ -165,6 +166,10 @@ function toggleTools() {
     <a href="partidos.php" class="bn-item <?= $cur==='partidos.php'?'active':'' ?>">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
       <span>Partidos</span>
+    </a>
+    <a href="proximos_partidos.php" class="bn-item <?= $cur==='proximos_partidos.php'?'active':'' ?>">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>Próximos</span>
     </a>
     <a href="dashboard_repro.php" class="bn-item <?= $cur==='dashboard_repro.php'?'active':'' ?>" style="position:relative">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
