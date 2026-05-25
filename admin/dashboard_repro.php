@@ -7,6 +7,53 @@ epl_require_admin();
 $db = epl_db();
 epl_ensure_partidos_columnas_originales();
 
+// ── POST: borrar reprogramación (solo demo) ──────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+
+    if ($action === 'reset_reprog') {
+        $pid = (int)($_POST['partido_id'] ?? 0);
+        if ($pid) {
+            // Restaurar fecha_programada desde fecha_original si existe
+            $row = $db->prepare("SELECT fecha_original, recinto_original_id FROM partidos WHERE id=?");
+            $row->execute([$pid]);
+            $orig = $row->fetch(PDO::FETCH_ASSOC);
+
+            $sets  = "estado='pendiente', fecha_original=NULL, recinto_original_id=NULL,
+                       baja_solicitada_at=NULL, baja_confirmada_at=NULL, baja_confirmada_por=NULL, baja_token=NULL,
+                       cancha_token=NULL, cancha_solicitada_at=NULL, cancha_confirmada_at=NULL, cancha_confirmada_por=NULL";
+            // Si había fecha original guardada, restaurarla como fecha_programada
+            if (!empty($orig['fecha_original'])) {
+                $sets .= ", fecha_programada=" . $db->quote($orig['fecha_original']);
+            }
+            // Si había recinto original, restaurarlo
+            if (!empty($orig['recinto_original_id'])) {
+                $sets .= ", recinto_id=" . (int)$orig['recinto_original_id'];
+            }
+            $db->exec("UPDATE partidos SET $sets WHERE id=$pid");
+
+            // Rechazar solicitudes pendientes
+            $db->prepare("UPDATE solicitudes_reprogramacion SET estado='rechazada' WHERE partido_id=? AND estado='pendiente'")
+               ->execute([$pid]);
+
+            if (session_status() === PHP_SESSION_NONE) session_start();
+            $_SESSION['_epl_flash'] = ['tipo' => 'ok', 'msg' => 'Reprogramación eliminada. Partido vuelto a Pendiente.'];
+        }
+        header('Location: dashboard_repro.php?tab=informe'); exit;
+    }
+
+    if ($action === 'rechazar_solicitud') {
+        $sid = (int)($_POST['solicitud_id'] ?? 0);
+        if ($sid) {
+            $db->prepare("UPDATE solicitudes_reprogramacion SET estado='rechazada' WHERE id=?")
+               ->execute([$sid]);
+            if (session_status() === PHP_SESSION_NONE) session_start();
+            $_SESSION['_epl_flash'] = ['tipo' => 'ok', 'msg' => 'Solicitud rechazada.'];
+        }
+        header('Location: dashboard_repro.php?tab=solicitudes'); exit;
+    }
+}
+
 // ────────────────────────────────────────────────────────────────────────
 // QUERY: SOLO partidos REPROGRAMADOS (los pendientes con fecha futura
 // son del calendario normal del torneo, no son problema del admin acá)
@@ -226,7 +273,19 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           </div>
         <?php endif; ?>
       </div>
-      <a href="partidos.php?liga=<?= $p['liga_id'] ?>#p<?= $p['id'] ?>" class="btn-gestionar">Gestionar</a>
+      <div style="display:flex;flex-direction:column;gap:.35rem;align-items:stretch">
+        <a href="partido_detalle.php?id=<?= $p['id'] ?>" class="btn-gestionar">Gestionar</a>
+        <form method="post" style="margin:0">
+          <input type="hidden" name="action" value="reset_reprog">
+          <input type="hidden" name="partido_id" value="<?= $p['id'] ?>">
+          <button type="submit" class="btn-gestionar"
+                  style="width:100%;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:.65rem;padding:.35rem .6rem"
+                  data-confirm="¿Borrar la reprogramación de <?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?>? El partido vuelve a Pendiente con la fecha original."
+                  data-confirm-ok="Sí, borrar">
+            🗑 Borrar reprog.
+          </button>
+        </form>
+      </div>
     </div>
     <?php
     return ob_get_clean();
@@ -239,6 +298,10 @@ require_once '../includes/header.php';
   <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
   <main class="dash-main">
+
+    <?php $_flash = epl_flash_get(); if ($_flash): ?>
+      <div class="alert alert-<?= $_flash['tipo'] === 'ok' ? 'success' : 'error' ?>" style="margin-bottom:1rem"><?= epl_h($_flash['msg']) ?></div>
+    <?php endif; ?>
 
     <!-- HEADER hero compacto -->
     <div class="dash-header" style="background:linear-gradient(135deg,#1c2f48 0%, #0f1e30 100%);border-radius:18px;padding:1.5rem 1.75rem;color:#fff;margin-bottom:1.5rem;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(28,47,72,.18)">
@@ -343,7 +406,19 @@ require_once '../includes/header.php';
                   <?php endif; ?>
                 </div>
               </div>
-              <a href="partidos.php?liga=<?= $s['liga_id'] ?>#p<?= $s['partido_id'] ?>" class="btn-gestionar">Revisar</a>
+              <div style="display:flex;flex-direction:column;gap:.35rem;align-items:stretch">
+                <a href="partido_detalle.php?id=<?= $s['partido_id'] ?>" class="btn-gestionar">Revisar</a>
+                <form method="post" style="margin:0">
+                  <input type="hidden" name="action" value="rechazar_solicitud">
+                  <input type="hidden" name="solicitud_id" value="<?= $s['solicitud_id'] ?>">
+                  <button type="submit" class="btn-gestionar"
+                          style="width:100%;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:.65rem;padding:.35rem .6rem"
+                          data-confirm="¿Rechazar la solicitud de <?= epl_h($s['local_nombre']) ?> vs <?= epl_h($s['visitante_nombre']) ?>?"
+                          data-confirm-ok="Sí, rechazar">
+                    🗑 Rechazar
+                  </button>
+                </form>
+              </div>
             </div>
             <?php endforeach; ?>
           </div>
@@ -400,7 +475,7 @@ require_once '../includes/header.php';
                   <span class="extra-item" style="color:#94a3b8">solicitado <?= $fecha_solicitud ?></span>
                 </div>
               </div>
-              <a href="partidos.php?liga=<?= $s['liga_id'] ?>#p<?= $s['partido_id'] ?>" class="btn-gestionar" style="background:#94a3b8;color:#fff">Ver</a>
+              <a href="partido_detalle.php?id=<?= $s['partido_id'] ?>" class="btn-gestionar" style="background:#94a3b8;color:#fff">Ver</a>
             </div>
             <?php endforeach; ?>
           </div>

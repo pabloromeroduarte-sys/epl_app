@@ -1061,6 +1061,19 @@ function epl_ensure_partidos_columnas_originales(): void {
         if (!in_array('baja_token', $cols, true)) {
             $db->exec("ALTER TABLE partidos ADD COLUMN `baja_token` VARCHAR(40) NULL UNIQUE AFTER `baja_confirmada_por`");
         }
+        // Flujo de confirmación de cancha por el club vía WhatsApp
+        if (!in_array('cancha_token', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `cancha_token` VARCHAR(40) NULL UNIQUE AFTER `baja_token`");
+        }
+        if (!in_array('cancha_solicitada_at', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `cancha_solicitada_at` DATETIME NULL AFTER `cancha_token`");
+        }
+        if (!in_array('cancha_confirmada_at', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `cancha_confirmada_at` DATETIME NULL AFTER `cancha_solicitada_at`");
+        }
+        if (!in_array('cancha_confirmada_por', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `cancha_confirmada_por` VARCHAR(120) NULL AFTER `cancha_confirmada_at`");
+        }
     } catch (Throwable $e) {
         error_log('epl_ensure_partidos_columnas_originales: ' . $e->getMessage());
     }
@@ -1090,6 +1103,49 @@ function epl_ensure_recintos_contactos(): void {
 }
 
 /**
+ * Devuelve los contactos (nombre + teléfono) de un recinto.
+ * Si el recinto en cuestión no tiene contactos cargados, sube por la jerarquía
+ * (superior, abuelo, etc.) hasta encontrar uno que tenga.
+ * Devuelve además el ID del recinto cuyos contactos se usaron, por si hay que mostrarlo.
+ *
+ * Retorno: [
+ *   'recinto_id'   => int,        // de qué nivel jerárquico se sacaron
+ *   'recinto_nombre' => string,
+ *   'contactos'    => [ ['nombre'=>'..', 'telefono'=>'..'], ... ]
+ * ]
+ */
+function epl_recinto_contactos_jerarquico(int $recinto_id): array {
+    epl_ensure_recintos_contactos();
+    $db = epl_db();
+    $visitados = [];
+    $current   = $recinto_id;
+    $out = ['recinto_id' => null, 'recinto_nombre' => null, 'contactos' => []];
+
+    while ($current && !isset($visitados[$current])) {
+        $visitados[$current] = true;
+        $st = $db->prepare("SELECT id, nombre, superior_id, contacto1_nombre, contacto1_telefono, contacto2_nombre, contacto2_telefono, contacto3_nombre, contacto3_telefono FROM recintos WHERE id = ?");
+        $st->execute([$current]);
+        $r = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$r) break;
+
+        $contactos = [];
+        for ($i = 1; $i <= 3; $i++) {
+            if (!empty($r["contacto{$i}_telefono"])) {
+                $contactos[] = ['nombre' => $r["contacto{$i}_nombre"] ?? '', 'telefono' => $r["contacto{$i}_telefono"]];
+            }
+        }
+        if (!empty($contactos)) {
+            $out['recinto_id']     = (int)$r['id'];
+            $out['recinto_nombre'] = $r['nombre'];
+            $out['contactos']      = $contactos;
+            return $out;
+        }
+        $current = $r['superior_id'] ? (int)$r['superior_id'] : null;
+    }
+    return $out;
+}
+
+/**
  * Genera (o devuelve si ya existe) un token único para confirmar la baja de cancha
  * de un partido específico. El link de confirmación se incluye en el mensaje de WhatsApp.
  */
@@ -1103,6 +1159,79 @@ function epl_partido_baja_token(int $partido_id): string {
     $tok = bin2hex(random_bytes(16)); // 32 chars hex
     $db->prepare("UPDATE partidos SET baja_token=?, baja_solicitada_at=NOW() WHERE id=?")->execute([$tok, $partido_id]);
     return $tok;
+}
+
+/**
+ * Genera (o devuelve si ya existe) un token único para que el club confirme
+ * qué cancha asigna al partido reprogramado sin necesidad de login.
+ */
+function epl_partido_cancha_token(int $partido_id): string {
+    epl_ensure_partidos_columnas_originales();
+    $db = epl_db();
+    $st = $db->prepare("SELECT cancha_token FROM partidos WHERE id=?");
+    $st->execute([$partido_id]);
+    $tok = $st->fetchColumn();
+    if ($tok) return (string)$tok;
+    $tok = bin2hex(random_bytes(16));
+    $db->prepare("UPDATE partidos SET cancha_token=?, cancha_solicitada_at=NOW() WHERE id=?")->execute([$tok, $partido_id]);
+    return $tok;
+}
+
+/**
+ * Sube por la jerarquía de recintos hasta encontrar el nodo raíz (sin superior_id).
+ * Devuelve el ID del recinto raíz.
+ */
+function epl_recinto_raiz(int $recinto_id): int {
+    $db = epl_db();
+    $visitados = [];
+    $current = $recinto_id;
+    while ($current && !isset($visitados[$current])) {
+        $visitados[$current] = true;
+        $st = $db->prepare("SELECT id, superior_id FROM recintos WHERE id=?");
+        $st->execute([$current]);
+        $r = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$r || !$r['superior_id']) return $current;
+        $current = (int)$r['superior_id'];
+    }
+    return $recinto_id;
+}
+
+/**
+ * Devuelve todos los recintos "hoja" (sin hijos) descendientes de un recinto raíz.
+ * Esos son las canchas concretas que puede elegir el club.
+ */
+function epl_recintos_canchas_de_club(int $raiz_id): array {
+    $db = epl_db();
+    // Traer todo el árbol bajo raiz_id (incluido el propio)
+    $todos = $db->query("SELECT id, nombre, superior_id FROM recintos")->fetchAll(PDO::FETCH_ASSOC);
+    // Construir árbol
+    $hijos = [];
+    foreach ($todos as $r) {
+        if ($r['superior_id']) $hijos[$r['superior_id']][] = $r;
+    }
+    // BFS desde raíz
+    $descendientes = [];
+    $queue = [$raiz_id];
+    while ($queue) {
+        $nodo = array_shift($queue);
+        if (isset($hijos[$nodo])) {
+            foreach ($hijos[$nodo] as $h) {
+                $descendientes[] = $h;
+                $queue[] = (int)$h['id'];
+            }
+        }
+    }
+    // Filtrar sólo los que no tienen hijos (hojas = canchas reales)
+    $ids_con_hijos = array_keys($hijos);
+    $canchas = array_filter($descendientes, fn($r) => !in_array((int)$r['id'], $ids_con_hijos));
+    // Si no hay hojas (club sin subcanchas), devolver el propio raíz
+    if (empty($canchas)) {
+        $st = $db->prepare("SELECT id, nombre, superior_id FROM recintos WHERE id=?");
+        $st->execute([$raiz_id]);
+        $root = $st->fetch(PDO::FETCH_ASSOC);
+        return $root ? [$root] : [];
+    }
+    return array_values($canchas);
 }
 
 /**

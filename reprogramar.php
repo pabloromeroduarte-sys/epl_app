@@ -36,7 +36,9 @@ if ($equipo) {
     $stCnt->execute([$liga['id'], $equipo['id'], $equipo['id']]);
     $partidos_reprogramados_actuales = $stCnt->fetchAll();
     $total_reprogramados = count($partidos_reprogramados_actuales);
-    $bloqueado_reprogs   = ($total_reprogramados >= $MAX_REPROGS);
+    // Admins nunca quedan bloqueados (para demos y gestión)
+    $es_admin = ($jugador['rol'] ?? '') === 'admin';
+    $bloqueado_reprogs   = !$es_admin && ($total_reprogramados >= $MAX_REPROGS);
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
