@@ -226,7 +226,7 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           </div>
         <?php endif; ?>
       </div>
-      <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn-gestionar">Gestionar</a>
+      <a href="partidos.php?liga=<?= $p['liga_id'] ?>#p<?= $p['id'] ?>" class="btn-gestionar">Gestionar</a>
     </div>
     <?php
     return ob_get_clean();
@@ -343,7 +343,7 @@ require_once '../includes/header.php';
                   <?php endif; ?>
                 </div>
               </div>
-              <a href="liga_detalle.php?id=<?= $s['liga_id'] ?>&tab=partidos" class="btn-gestionar">Revisar</a>
+              <a href="partidos.php?liga=<?= $s['liga_id'] ?>#p<?= $s['partido_id'] ?>" class="btn-gestionar">Revisar</a>
             </div>
             <?php endforeach; ?>
           </div>
@@ -400,7 +400,7 @@ require_once '../includes/header.php';
                   <span class="extra-item" style="color:#94a3b8">solicitado <?= $fecha_solicitud ?></span>
                 </div>
               </div>
-              <a href="liga_detalle.php?id=<?= $s['liga_id'] ?>&tab=partidos" class="btn-gestionar" style="background:#94a3b8;color:#fff">Ver</a>
+              <a href="partidos.php?liga=<?= $s['liga_id'] ?>#p<?= $s['partido_id'] ?>" class="btn-gestionar" style="background:#94a3b8;color:#fff">Ver</a>
             </div>
             <?php endforeach; ?>
           </div>

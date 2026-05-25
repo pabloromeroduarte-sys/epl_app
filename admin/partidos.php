@@ -642,7 +642,7 @@ require_once '../includes/header.php';
               </div>
             </div>
           <?php endif; ?>
-            <div class="pf-card-partido">
+            <div class="pf-card-partido" id="pm<?= $p['id'] ?>" data-pid="<?= $p['id'] ?>">
               <input type="checkbox" name="partido_ids[]" value="<?= $p['id'] ?>" class="partido-check pf-card-check" data-group="<?= epl_h($grouping_m) ?>" form="bulkForm">
               <div class="pf-card-body">
                 <div class="pf-card-meta">
@@ -1063,6 +1063,43 @@ document.querySelectorAll('.check-group-mobile').forEach(function(g){
     updateBulkBar();
   });
 });
+</script>
+
+<script>
+// Si llegamos con hash #p123, scrollear y destacar ese partido (y abrir su modal de edición)
+(function(){
+  var hash = location.hash || '';
+  var m = hash.match(/^#p(\d+)$/);
+  if (!m) return;
+  var id = m[1];
+  // Buscar la fila (desktop) o card (móvil)
+  // En móvil la tabla está display:none, así que el tr con id="pN" existe pero no es visible.
+  // Preferimos la card móvil id="pmN" si es visible.
+  var card = document.getElementById('pm' + id);
+  var row  = document.getElementById('p' + id);
+  // Tomar el que esté visible
+  var visible = function(el) { return el && el.offsetParent !== null; };
+  var target  = visible(card) ? card : (visible(row) ? row : (card || row));
+  if (target) {
+    setTimeout(function(){
+      target.scrollIntoView({behavior:'smooth', block:'center'});
+      target.style.transition = 'background .3s, box-shadow .3s';
+      var prev = target.style.background;
+      target.style.background = 'rgba(201,167,98,.22)';
+      target.style.boxShadow = '0 0 0 3px rgba(201,167,98,.4)';
+      setTimeout(function(){
+        target.style.background = prev;
+        target.style.boxShadow = '';
+      }, 3500);
+    }, 150);
+
+    // Abrir modal de edición automáticamente (busca botón data-partido en cualquier vista)
+    var btnEditar = (card && card.querySelector('button[data-partido]')) || (row && row.querySelector('button[data-partido]'));
+    if (btnEditar && typeof window.editarPartido === 'function') {
+      setTimeout(function(){ window.editarPartido(btnEditar); }, 600);
+    }
+  }
+})();
 </script>
 
 <?php require_once '../includes/footer.php'; ?>
