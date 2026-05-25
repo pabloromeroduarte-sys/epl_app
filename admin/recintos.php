@@ -5,6 +5,7 @@ require_once '../includes/functions.php';
 epl_require_admin();
 
 $db     = epl_db();
+epl_ensure_recintos_contactos();
 $_flash = epl_flash_get();
 $ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
 $err    = '';
@@ -13,15 +14,24 @@ $err    = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
+    // Helper para limpiar teléfonos (solo dígitos y +)
+    $_clean_tel = function($t) { return preg_replace('/[^0-9+]/', '', trim($t ?? '')) ?: null; };
+
     if ($action === 'crear') {
         $nombre  = trim($_POST['nombre']      ?? '');
         $sup     = (int)($_POST['superior_id'] ?? 0) ?: null;
         $dir     = trim($_POST['direccion']   ?? '') ?: null;
         $maps    = trim($_POST['url_maps']    ?? '') ?: null;
+        $c1n = trim($_POST['contacto1_nombre'] ?? '') ?: null;
+        $c1t = $_clean_tel($_POST['contacto1_telefono'] ?? '');
+        $c2n = trim($_POST['contacto2_nombre'] ?? '') ?: null;
+        $c2t = $_clean_tel($_POST['contacto2_telefono'] ?? '');
+        $c3n = trim($_POST['contacto3_nombre'] ?? '') ?: null;
+        $c3t = $_clean_tel($_POST['contacto3_telefono'] ?? '');
         if (!$nombre) { $err = 'El nombre es obligatorio.'; }
         else {
-            $db->prepare("INSERT INTO recintos (nombre,superior_id,direccion,url_maps) VALUES (?,?,?,?)")
-               ->execute([$nombre, $sup, $dir, $maps]);
+            $db->prepare("INSERT INTO recintos (nombre,superior_id,direccion,url_maps,contacto1_nombre,contacto1_telefono,contacto2_nombre,contacto2_telefono,contacto3_nombre,contacto3_telefono) VALUES (?,?,?,?,?,?,?,?,?,?)")
+               ->execute([$nombre, $sup, $dir, $maps, $c1n, $c1t, $c2n, $c2t, $c3n, $c3t]);
             epl_redirect_ok('Recinto '.htmlspecialchars($nombre).' creado.');
         }
 
@@ -31,11 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sup    = (int)($_POST['superior_id']  ?? 0) ?: null;
         $dir    = trim($_POST['direccion']     ?? '') ?: null;
         $maps   = trim($_POST['url_maps']      ?? '') ?: null;
+        $c1n = trim($_POST['contacto1_nombre'] ?? '') ?: null;
+        $c1t = $_clean_tel($_POST['contacto1_telefono'] ?? '');
+        $c2n = trim($_POST['contacto2_nombre'] ?? '') ?: null;
+        $c2t = $_clean_tel($_POST['contacto2_telefono'] ?? '');
+        $c3n = trim($_POST['contacto3_nombre'] ?? '') ?: null;
+        $c3t = $_clean_tel($_POST['contacto3_telefono'] ?? '');
         if (!$nombre) { $err = 'El nombre es obligatorio.'; }
         elseif ($sup === $id) { $err = 'Un recinto no puede ser su propio superior.'; }
         else {
-            $db->prepare("UPDATE recintos SET nombre=?,superior_id=?,direccion=?,url_maps=? WHERE id=?")
-               ->execute([$nombre, $sup, $dir, $maps, $id]);
+            $db->prepare("UPDATE recintos SET nombre=?,superior_id=?,direccion=?,url_maps=?,contacto1_nombre=?,contacto1_telefono=?,contacto2_nombre=?,contacto2_telefono=?,contacto3_nombre=?,contacto3_telefono=? WHERE id=?")
+               ->execute([$nombre, $sup, $dir, $maps, $c1n, $c1t, $c2n, $c2t, $c3n, $c3t, $id]);
             epl_redirect_ok('Recinto actualizado.');
         }
 
@@ -234,6 +250,22 @@ _flatRecintos($_sr_roots, $_sr_children, 0, $todos_recintos);
           <label class="form-label">URL Google Maps</label>
           <input type="url" name="url_maps" class="form-control" placeholder="https://maps.google.com/...">
         </div>
+
+        <!-- Contactos WhatsApp del club (para gestionar bajas de cancha) -->
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9">
+          <p style="font-size:.72rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">📱 Contactos WhatsApp del club (opcional, hasta 3)</p>
+          <?php for ($i = 1; $i <= 3; $i++): ?>
+          <div class="grid-2" style="gap:.5rem">
+            <div class="form-group" style="margin-bottom:.5rem">
+              <input type="text" name="contacto<?= $i ?>_nombre" class="form-control" placeholder="Nombre / cargo <?= $i ?>">
+            </div>
+            <div class="form-group" style="margin-bottom:.5rem">
+              <input type="tel" name="contacto<?= $i ?>_telefono" class="form-control" placeholder="+56912345678">
+            </div>
+          </div>
+          <?php endfor; ?>
+        </div>
+
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Crear recinto</button>
       </form>
     </div>
@@ -272,6 +304,22 @@ _flatRecintos($_sr_roots, $_sr_children, 0, $todos_recintos);
           <label class="form-label">URL Google Maps</label>
           <input type="url" name="url_maps" id="editarMaps" class="form-control">
         </div>
+
+        <!-- Contactos WhatsApp -->
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9">
+          <p style="font-size:.72rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">📱 Contactos WhatsApp del club</p>
+          <?php for ($i = 1; $i <= 3; $i++): ?>
+          <div class="grid-2" style="gap:.5rem">
+            <div class="form-group" style="margin-bottom:.5rem">
+              <input type="text" name="contacto<?= $i ?>_nombre" id="editC<?= $i ?>n" class="form-control" placeholder="Nombre / cargo <?= $i ?>">
+            </div>
+            <div class="form-group" style="margin-bottom:.5rem">
+              <input type="tel" name="contacto<?= $i ?>_telefono" id="editC<?= $i ?>t" class="form-control" placeholder="+56912345678">
+            </div>
+          </div>
+          <?php endfor; ?>
+        </div>
+
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Guardar cambios</button>
       </form>
     </div>
@@ -285,6 +333,11 @@ function showEditar(r) {
   document.getElementById('editarNombre').value    = r.nombre    || '';
   document.getElementById('editarDireccion').value = r.direccion || '';
   document.getElementById('editarMaps').value      = r.url_maps  || '';
+  // Contactos
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById('editC'+i+'n').value = r['contacto'+i+'_nombre']   || '';
+    document.getElementById('editC'+i+'t').value = r['contacto'+i+'_telefono'] || '';
+  }
   // Seleccionar superior, excluyendo el propio recinto
   const sel = document.getElementById('editarSuperior');
   Array.from(sel.options).forEach(opt => {

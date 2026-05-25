@@ -1031,9 +1031,9 @@ function epl_ensure_disputas_schema(): void {
 }
 
 /**
- * Asegura columnas fecha_original y recinto_original_id en la tabla partidos.
- * Sirve para registrar la fecha/cancha PREVIA cuando un partido se reprograma,
- * y así el admin sepa qué reservas dar de baja.
+ * Asegura columnas fecha_original, recinto_original_id y flujo de baja de cancha
+ * en la tabla partidos. Sirve para registrar la fecha/cancha PREVIA cuando un
+ * partido se reprograma y trackear el estado de la baja de la reserva.
  */
 function epl_ensure_partidos_columnas_originales(): void {
     static $done = false;
@@ -1048,9 +1048,61 @@ function epl_ensure_partidos_columnas_originales(): void {
         if (!in_array('recinto_original_id', $cols, true)) {
             $db->exec("ALTER TABLE partidos ADD COLUMN `recinto_original_id` INT UNSIGNED NULL AFTER `recinto_id`");
         }
+        // Flujo de baja de cancha vía WhatsApp
+        if (!in_array('baja_solicitada_at', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `baja_solicitada_at` DATETIME NULL AFTER `recinto_original_id`");
+        }
+        if (!in_array('baja_confirmada_at', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `baja_confirmada_at` DATETIME NULL AFTER `baja_solicitada_at`");
+        }
+        if (!in_array('baja_confirmada_por', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `baja_confirmada_por` VARCHAR(120) NULL AFTER `baja_confirmada_at`");
+        }
+        if (!in_array('baja_token', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `baja_token` VARCHAR(40) NULL UNIQUE AFTER `baja_confirmada_por`");
+        }
     } catch (Throwable $e) {
         error_log('epl_ensure_partidos_columnas_originales: ' . $e->getMessage());
     }
+}
+
+/**
+ * Asegura columnas de contactos (3 teléfonos por club) en la tabla recintos.
+ */
+function epl_ensure_recintos_contactos(): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        $db = epl_db();
+        $cols = array_column($db->query('SHOW COLUMNS FROM recintos')->fetchAll(), 'Field');
+        for ($i = 1; $i <= 3; $i++) {
+            if (!in_array("contacto{$i}_nombre", $cols, true)) {
+                $db->exec("ALTER TABLE recintos ADD COLUMN `contacto{$i}_nombre` VARCHAR(80) NULL");
+            }
+            if (!in_array("contacto{$i}_telefono", $cols, true)) {
+                $db->exec("ALTER TABLE recintos ADD COLUMN `contacto{$i}_telefono` VARCHAR(30) NULL");
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('epl_ensure_recintos_contactos: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Genera (o devuelve si ya existe) un token único para confirmar la baja de cancha
+ * de un partido específico. El link de confirmación se incluye en el mensaje de WhatsApp.
+ */
+function epl_partido_baja_token(int $partido_id): string {
+    epl_ensure_partidos_columnas_originales();
+    $db = epl_db();
+    $st = $db->prepare("SELECT baja_token FROM partidos WHERE id=?");
+    $st->execute([$partido_id]);
+    $tok = $st->fetchColumn();
+    if ($tok) return (string)$tok;
+    $tok = bin2hex(random_bytes(16)); // 32 chars hex
+    $db->prepare("UPDATE partidos SET baja_token=?, baja_solicitada_at=NOW() WHERE id=?")->execute([$tok, $partido_id]);
+    return $tok;
 }
 
 /**
