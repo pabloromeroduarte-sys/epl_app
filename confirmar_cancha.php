@@ -34,6 +34,7 @@ if (!preg_match('/^[a-f0-9]{32}$/i', $token)) {
 
 // Cargar recintos disponibles (canchas del mismo club)
 $canchas = [];
+$canchas_grupos = [];
 $raiz_id = null;
 $raiz_nombre = null;
 if ($partido) {
@@ -51,6 +52,30 @@ if ($partido) {
         $ids_con_hijos = array_unique(array_column(array_filter($all, fn($r) => $r['superior_id'] !== null), 'superior_id'));
         $canchas = array_values(array_filter($all, fn($r) => !in_array((int)$r['id'], array_map('intval', $ids_con_hijos))));
         if (empty($canchas)) $canchas = $all; // fallback total
+    }
+    // Agrupar canchas por sede (recinto superior)
+    if (!empty($canchas)) {
+        $sup_ids = array_unique(array_filter(array_map(fn($c) => (int)($c['superior_id'] ?? 0), $canchas)));
+        $sup_names = [];
+        if ($sup_ids) {
+            $ph = implode(',', array_fill(0, count($sup_ids), '?'));
+            $qs = $db->prepare("SELECT id, nombre FROM recintos WHERE id IN ($ph)");
+            $qs->execute(array_values($sup_ids));
+            foreach ($qs->fetchAll(PDO::FETCH_ASSOC) as $r) $sup_names[(int)$r['id']] = $r['nombre'];
+        }
+        $grupos = [];
+        foreach ($canchas as $c) {
+            $sid = (int)($c['superior_id'] ?? 0);
+            $nom = $sup_names[$sid] ?? ($raiz_nombre ?: 'Sin sede');
+            if (!isset($grupos[$sid])) $grupos[$sid] = ['sede'=>$nom, 'canchas'=>[]];
+            $grupos[$sid]['canchas'][] = $c;
+        }
+        foreach ($grupos as &$g) {
+            usort($g['canchas'], fn($a,$b) => strnatcasecmp($a['nombre'], $b['nombre']));
+        }
+        unset($g);
+        usort($grupos, fn($a,$b) => strnatcasecmp($a['sede'], $b['sede']));
+        $canchas_grupos = $grupos;
     }
 }
 
@@ -138,8 +163,15 @@ $fecha_lbl = ($partido && $partido['fecha_programada'])
     input[type=text] { width:100%; padding:.8rem 1rem; border:1.5px solid #e2e8f0; border-radius:10px; font-size:.95rem; font-family:inherit; margin-bottom:1rem; }
     input[type=text]:focus { outline:none; border-color:#C9A762; }
 
+    /* Grupos por sede */
+    .sede-group { margin:.85rem 0 .4rem; padding:.65rem .75rem .6rem; background:#fafafa; border:1px solid #fef9ec; border-radius:12px; }
+    .sede-titulo { display:flex; align-items:center; gap:.45rem; margin-bottom:.55rem; padding-bottom:.45rem; border-bottom:1px dashed #e6dcc4; }
+    .sede-ico { font-size:1rem; }
+    .sede-nom { font-size:.85rem; font-weight:800; color:#1c2f48; flex:1; line-height:1.1; }
+    .sede-count { font-size:.65rem; color:#92400e; background:#fef9ec; padding:.15rem .5rem; border-radius:999px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; border:1px solid #fde68a; }
+
     /* Grid de canchas */
-    .canchas-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:.65rem; margin-bottom:1.2rem; }
+    .canchas-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:.65rem; margin-bottom:.5rem; }
     .cancha-btn { position:relative; }
     .cancha-btn input[type=radio] { position:absolute; opacity:0; width:0; height:0; }
     .cancha-btn label {
@@ -239,17 +271,26 @@ $fecha_lbl = ($partido && $partido['fecha_programada'])
       <?php if (empty($canchas)): ?>
         <div class="alert alert-warn">⚠️ No encontramos canchas registradas para este club. Avisale al admin.</div>
       <?php else: ?>
-        <div class="canchas-grid">
-          <?php foreach ($canchas as $c): ?>
-          <div class="cancha-btn">
-            <input type="radio" name="recinto_id" id="r<?= $c['id'] ?>" value="<?= $c['id'] ?>" required>
-            <label for="r<?= $c['id'] ?>" onclick="">
-              <span class="ico">🎾</span>
-              <span class="nom"><?= epl_h($c['nombre']) ?></span>
-            </label>
+        <?php foreach ($canchas_grupos as $grupo): ?>
+          <div class="sede-group">
+            <div class="sede-titulo">
+              <span class="sede-ico">📍</span>
+              <span class="sede-nom"><?= epl_h($grupo['sede']) ?></span>
+              <span class="sede-count"><?= count($grupo['canchas']) ?> cancha<?= count($grupo['canchas'])>1?'s':'' ?></span>
+            </div>
+            <div class="canchas-grid">
+              <?php foreach ($grupo['canchas'] as $c): ?>
+                <div class="cancha-btn">
+                  <input type="radio" name="recinto_id" id="r<?= $c['id'] ?>" value="<?= $c['id'] ?>" required>
+                  <label for="r<?= $c['id'] ?>">
+                    <span class="ico">🎾</span>
+                    <span class="nom"><?= epl_h($c['nombre']) ?></span>
+                  </label>
+                </div>
+              <?php endforeach; ?>
+            </div>
           </div>
-          <?php endforeach; ?>
-        </div>
+        <?php endforeach; ?>
       <?php endif; ?>
 
       <label>Tu nombre (opcional)</label>

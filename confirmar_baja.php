@@ -36,6 +36,7 @@ if (!preg_match('/^[a-f0-9]{32}$/i', $token)) {
 $nueva_fecha_lbl = null;
 $necesita_cancha = false;
 $canchas         = [];
+$canchas_grupos  = []; // [['sede'=>nombre, 'sede_id'=>id, 'canchas'=>[...]]]
 $raiz_id         = null;
 $raiz_nombre     = null;
 
@@ -62,6 +63,33 @@ if ($partido) {
             $ids_con_hijos = array_unique(array_filter(array_column($all, 'superior_id'), fn($v) => $v !== null));
             $canchas = array_values(array_filter($all, fn($r) => !in_array((int)$r['id'], array_map('intval', $ids_con_hijos))));
             if (empty($canchas)) $canchas = $all;
+        }
+
+        // ── Agrupar canchas por su recinto superior (sede) ──
+        if (!empty($canchas)) {
+            $sup_ids = array_unique(array_filter(array_map(fn($c) => (int)($c['superior_id'] ?? 0), $canchas)));
+            $sup_names = [];
+            if ($sup_ids) {
+                $ph = implode(',', array_fill(0, count($sup_ids), '?'));
+                $qs = $db->prepare("SELECT id, nombre FROM recintos WHERE id IN ($ph)");
+                $qs->execute(array_values($sup_ids));
+                foreach ($qs->fetchAll(PDO::FETCH_ASSOC) as $r) $sup_names[(int)$r['id']] = $r['nombre'];
+            }
+            $grupos = [];
+            foreach ($canchas as $c) {
+                $sid = (int)($c['superior_id'] ?? 0);
+                $nom = $sup_names[$sid] ?? ($raiz_nombre ?: 'Sin sede');
+                if (!isset($grupos[$sid])) $grupos[$sid] = ['sede'=>$nom, 'sede_id'=>$sid, 'canchas'=>[]];
+                $grupos[$sid]['canchas'][] = $c;
+            }
+            // Ordenar canchas dentro de cada sede por nombre
+            foreach ($grupos as &$g) {
+                usort($g['canchas'], fn($a,$b) => strnatcasecmp($a['nombre'], $b['nombre']));
+            }
+            unset($g);
+            // Ordenar grupos por nombre de sede
+            usort($grupos, fn($a,$b) => strnatcasecmp($a['sede'], $b['sede']));
+            $canchas_grupos = $grupos;
         }
     }
 }
@@ -165,8 +193,15 @@ $todo_confirmado = $partido
     .section-head.baja   { color:#991b1b; }
     .section-head.cancha { color:#1e40af; }
 
+    /* Grupos por sede */
+    .sede-group { margin:.85rem 0 .4rem; padding:.6rem .7rem .55rem; background:rgba(255,255,255,.55); border:1px solid #dbeafe; border-radius:12px; }
+    .sede-titulo { display:flex; align-items:center; gap:.45rem; margin-bottom:.5rem; padding-bottom:.4rem; border-bottom:1px dashed #cfe1ff; }
+    .sede-ico { font-size:1rem; }
+    .sede-nom { font-size:.85rem; font-weight:800; color:#1e3a8a; flex:1; line-height:1.1; }
+    .sede-count { font-size:.65rem; color:#1e40af; background:#dbeafe; padding:.15rem .5rem; border-radius:999px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+
     /* Canchas grid */
-    .canchas-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); gap:.55rem; margin:.6rem 0 .2rem; }
+    .canchas-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px,1fr)); gap:.55rem; margin:.4rem 0 .1rem; }
     .cancha-btn { position:relative; }
     .cancha-btn input[type=radio] { position:absolute; opacity:0; width:0; height:0; }
     .cancha-btn label {
@@ -296,17 +331,26 @@ $todo_confirmado = $partido
               ⚠️ No hay canchas registradas. Avisale al administrador.
             </div>
           <?php else: ?>
-            <div class="canchas-grid">
-              <?php foreach ($canchas as $c): ?>
-              <div class="cancha-btn">
-                <input type="radio" name="recinto_id" id="rc<?= $c['id'] ?>" value="<?= $c['id'] ?>">
-                <label for="rc<?= $c['id'] ?>">
-                  <span class="ico">🎾</span>
-                  <span class="nom"><?= epl_h($c['nombre']) ?></span>
-                </label>
+            <?php foreach ($canchas_grupos as $grupo): ?>
+              <div class="sede-group">
+                <div class="sede-titulo">
+                  <span class="sede-ico">📍</span>
+                  <span class="sede-nom"><?= epl_h($grupo['sede']) ?></span>
+                  <span class="sede-count"><?= count($grupo['canchas']) ?> cancha<?= count($grupo['canchas'])>1?'s':'' ?></span>
+                </div>
+                <div class="canchas-grid">
+                  <?php foreach ($grupo['canchas'] as $c): ?>
+                    <div class="cancha-btn">
+                      <input type="radio" name="recinto_id" id="rc<?= $c['id'] ?>" value="<?= $c['id'] ?>">
+                      <label for="rc<?= $c['id'] ?>">
+                        <span class="ico">🎾</span>
+                        <span class="nom"><?= epl_h($c['nombre']) ?></span>
+                      </label>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
               </div>
-              <?php endforeach; ?>
-            </div>
+            <?php endforeach; ?>
             <p style="font-size:.68rem;color:#64748b;margin-top:.4rem">
               Si aún no lo saben, podés confirmar solo la baja y responder después con la cancha.
             </p>
