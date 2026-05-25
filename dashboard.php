@@ -150,6 +150,13 @@ if ($equipo) {
     </div>
 
     <!-- Modal con instrucciones específicas -->
+    <style>
+    .puls { animation: bpPulse 1.4s ease-in-out infinite; transform-origin: center; }
+    @keyframes bpPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.65; transform: scale(1.15); }
+    }
+    </style>
     <div id="bpModal" style="display:none;position:fixed;inset:0;background:rgba(10,20,33,.78);backdrop-filter:blur(6px);z-index:99999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)bpCerrarModal()">
       <div style="background:#fff;border-radius:18px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
         <div style="background:linear-gradient(135deg,#1c2f48,#0f1e30);padding:1.1rem 1.4rem;color:#fff;display:flex;justify-content:space-between;align-items:center">
@@ -160,13 +167,7 @@ if ($equipo) {
           <button onclick="bpCerrarModal()" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:1.6rem;cursor:pointer;line-height:1;padding:0 .3rem">×</button>
         </div>
         <div id="bpInstrucciones" style="padding:1.25rem 1.4rem">
-          <!-- Inyectado por JS según browser -->
-        </div>
-        <div style="padding:0 1.4rem 1.25rem">
-          <button onclick="bpVerificar()" style="width:100%;background:var(--gold);color:var(--navy);border:none;padding:.85rem;border-radius:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:.78rem;cursor:pointer;font-family:inherit">
-            Ya las activé · Probar de nuevo
-          </button>
-          <p style="margin-top:.6rem;text-align:center;font-size:.7rem;color:#94a3b8">Después de activarlas, recargá la página.</p>
+          <!-- Inyectado por JS según browser, incluye nav anterior/siguiente y botón Listo final -->
         </div>
       </div>
     </div>
@@ -256,62 +257,191 @@ if ($equipo) {
         } catch(e) { console.warn('push:', e); }
       };
 
+      // Pasos visuales por browser
+      const PASOS = {
+        'samsung': [
+          {
+            txt: 'Tocá el <strong>candado 🔒</strong> a la izquierda de <code>epleague.cl</code> en la barra de arriba',
+            svg: `<svg viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="15" width="300" height="50" rx="25" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+              <circle cx="40" cy="40" r="15" fill="#fef3c7" stroke="#f59e0b" stroke-width="3" class="puls"/>
+              <path d="M35 38 v-4 a5 5 0 0 1 10 0 v4 M32 38 h16 v10 h-16 z" fill="none" stroke="#92400e" stroke-width="2"/>
+              <text x="75" y="46" font-family="monospace" font-size="14" fill="#475569">epleague.cl</text>
+              <path d="M65 25 L40 35" stroke="#dc2626" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+              <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#dc2626"/></marker></defs>
+            </svg>`
+          },
+          {
+            txt: 'Se abre un menú. Tocá <strong>"Permisos"</strong>',
+            svg: `<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="10" width="280" height="160" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+              <text x="40" y="40" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2f48">Información del sitio</text>
+              <line x1="20" y1="55" x2="300" y2="55" stroke="#e2e8f0"/>
+              <text x="40" y="80" font-family="sans-serif" font-size="13" fill="#64748b">🌐 Conexión segura</text>
+              <rect x="20" y="100" width="280" height="36" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" class="puls"/>
+              <text x="40" y="123" font-family="sans-serif" font-size="14" font-weight="800" fill="#92400e">🔐 Permisos</text>
+              <text x="280" y="123" font-family="sans-serif" font-size="14" fill="#92400e" text-anchor="end">›</text>
+              <text x="40" y="158" font-family="sans-serif" font-size="13" fill="#64748b">🍪 Cookies</text>
+            </svg>`
+          },
+          {
+            txt: 'Buscá <strong>"Notificaciones"</strong> y cambialo a <strong>Permitir</strong>',
+            svg: `<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="10" width="280" height="160" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+              <text x="40" y="35" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2f48">Permisos</text>
+              <line x1="20" y1="50" x2="300" y2="50" stroke="#e2e8f0"/>
+              <text x="40" y="75" font-family="sans-serif" font-size="13" fill="#64748b">📷 Cámara</text>
+              <text x="280" y="75" font-family="sans-serif" font-size="13" fill="#94a3b8" text-anchor="end">Bloqueado</text>
+              <rect x="20" y="92" width="280" height="40" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" class="puls"/>
+              <text x="40" y="118" font-family="sans-serif" font-size="14" font-weight="800" fill="#92400e">🔔 Notificaciones</text>
+              <rect x="225" y="103" width="55" height="22" rx="11" fill="#dc2626"/>
+              <circle cx="240" cy="114" r="9" fill="#fff"/>
+              <text x="280" y="118" font-family="sans-serif" font-size="11" fill="#fff" text-anchor="end">OFF</text>
+              <path d="M170 142 L260 132" stroke="#dc2626" stroke-width="2.5" fill="none" marker-end="url(#arr2)"/>
+              <defs><marker id="arr2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#dc2626"/></marker></defs>
+              <text x="40" y="160" font-family="sans-serif" font-size="13" fill="#64748b">📍 Ubicación</text>
+            </svg>`
+          },
+          {
+            txt: 'Activá el switch → queda <strong>verde</strong>. Volvé acá y tocá <strong>"Ya las activé"</strong>',
+            svg: `<svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="20" width="280" height="80" rx="12" fill="#dcfce7" stroke="#10b981" stroke-width="2"/>
+              <text x="40" y="55" font-family="sans-serif" font-size="14" font-weight="800" fill="#15803d">🔔 Notificaciones</text>
+              <rect x="225" y="40" width="55" height="22" rx="11" fill="#10b981"/>
+              <circle cx="265" cy="51" r="9" fill="#fff" class="puls"/>
+              <text x="280" y="55" font-family="sans-serif" font-size="11" fill="#fff" text-anchor="end">ON</text>
+              <text x="160" y="85" font-family="sans-serif" font-size="11" fill="#15803d" text-anchor="middle">✓ Activado correctamente</text>
+            </svg>`
+          },
+        ],
+        'chrome-android': [
+          {
+            txt: 'Tocá el <strong>candado 🔒</strong> al lado de la URL arriba',
+            svg: `<svg viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="15" width="300" height="50" rx="25" fill="#f1f5f9"/>
+              <circle cx="40" cy="40" r="15" fill="#fef3c7" stroke="#f59e0b" stroke-width="3" class="puls"/>
+              <path d="M35 38 v-4 a5 5 0 0 1 10 0 v4 M32 38 h16 v10 h-16 z" fill="none" stroke="#92400e" stroke-width="2"/>
+              <text x="75" y="46" font-family="monospace" font-size="14" fill="#475569">epleague.cl</text>
+            </svg>`
+          },
+          {
+            txt: 'Tocá <strong>"Permisos y privacidad"</strong>',
+            svg: `<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="10" width="280" height="120" rx="12" fill="#fff" stroke="#cbd5e1"/>
+              <text x="40" y="40" font-family="sans-serif" font-size="13" fill="#64748b">🛡️ Conexión segura</text>
+              <rect x="20" y="60" width="280" height="40" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" class="puls"/>
+              <text x="40" y="85" font-family="sans-serif" font-size="14" font-weight="800" fill="#92400e">🔐 Permisos y privacidad</text>
+              <text x="280" y="85" font-family="sans-serif" font-size="14" fill="#92400e" text-anchor="end">›</text>
+            </svg>`
+          },
+          {
+            txt: 'Activá <strong>"Notificaciones"</strong> → switch verde',
+            svg: `<svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="20" width="280" height="80" rx="12" fill="#dcfce7" stroke="#10b981" stroke-width="2"/>
+              <text x="40" y="55" font-family="sans-serif" font-size="14" font-weight="800" fill="#15803d">🔔 Notificaciones</text>
+              <rect x="225" y="40" width="55" height="22" rx="11" fill="#10b981"/>
+              <circle cx="265" cy="51" r="9" fill="#fff" class="puls"/>
+            </svg>`
+          },
+        ],
+        'ios': [
+          {
+            txt: '⚠️ <strong>Importante:</strong> en iPhone solo funciona si instalás la app primero',
+            svg: `<svg viewBox="0 0 320 60" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="10" width="280" height="40" rx="20" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+              <text x="160" y="35" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="800" fill="#991b1b">📱 Requiere instalar la PWA</text>
+            </svg>`
+          },
+          {
+            txt: 'En Safari, tocá el botón <strong>compartir ⬆</strong> abajo (cuadrado con flecha arriba)',
+            svg: `<svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg">
+              <rect x="60" y="10" width="200" height="80" rx="12" fill="#fff" stroke="#cbd5e1"/>
+              <rect x="80" y="60" width="160" height="25" rx="5" fill="#f1f5f9"/>
+              <g transform="translate(150,72)">
+                <rect x="-12" y="-10" width="24" height="20" fill="none" stroke="#1c2f48" stroke-width="2" rx="3" class="puls"/>
+                <path d="M0,-5 L0,-15 M-5,-10 L0,-15 L5,-10" stroke="#1c2f48" stroke-width="2" fill="none"/>
+              </g>
+              <text x="160" y="110" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#64748b">Botón compartir en Safari</text>
+            </svg>`
+          },
+          {
+            txt: 'Buscá y tocá <strong>"Añadir a pantalla de inicio"</strong>',
+            svg: `<svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="10" width="280" height="120" rx="12" fill="#fff" stroke="#cbd5e1"/>
+              <text x="40" y="40" font-family="sans-serif" font-size="13" fill="#64748b">📋 Copiar</text>
+              <text x="40" y="65" font-family="sans-serif" font-size="13" fill="#64748b">🔖 Marcadores</text>
+              <rect x="20" y="80" width="280" height="40" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" class="puls"/>
+              <text x="40" y="105" font-family="sans-serif" font-size="14" font-weight="800" fill="#92400e">➕ Añadir a inicio</text>
+            </svg>`
+          },
+          {
+            txt: 'Cerrá Safari y abrí EPL desde el <strong>icono nuevo</strong> en tu pantalla',
+            svg: `<svg viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg">
+              <rect x="120" y="10" width="80" height="80" rx="18" fill="#1c2f48" stroke="#C9A762" stroke-width="2" class="puls"/>
+              <text x="160" y="55" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#C9A762">🏆</text>
+              <text x="160" y="110" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#1c2f48">EPL</text>
+            </svg>`
+          },
+          {
+            txt: 'Cuando te pida permisos, tocá <strong>Permitir</strong>',
+            svg: `<svg viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg">
+              <rect x="60" y="10" width="200" height="80" rx="12" fill="#fff" stroke="#cbd5e1"/>
+              <text x="160" y="35" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1c2f48">¿Recibir notificaciones?</text>
+              <rect x="80" y="55" width="80" height="25" rx="6" fill="#e2e8f0"/>
+              <text x="120" y="72" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#64748b">No</text>
+              <rect x="170" y="55" width="80" height="25" rx="6" fill="#10b981" class="puls"/>
+              <text x="210" y="72" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#fff">Permitir</text>
+            </svg>`
+          },
+        ],
+        'chrome-desktop': [
+          { txt: 'Click en el <strong>🔒 candado</strong> al lado de la URL', svg: `<svg viewBox="0 0 320 80"><rect x="10" y="15" width="300" height="50" rx="5" fill="#f1f5f9"/><circle cx="40" cy="40" r="14" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" class="puls"/><text x="75" y="46" font-family="monospace" font-size="14" fill="#475569">epleague.cl</text></svg>` },
+          { txt: 'Buscá <strong>Notificaciones</strong> y elegí <strong>Permitir</strong>', svg: `<svg viewBox="0 0 320 120"><rect x="20" y="20" width="280" height="80" rx="12" fill="#dcfce7" stroke="#10b981" stroke-width="2"/><text x="40" y="55" font-family="sans-serif" font-size="14" font-weight="800" fill="#15803d">🔔 Notificaciones</text><text x="280" y="55" font-family="sans-serif" font-size="13" fill="#15803d" text-anchor="end">Permitir ✓</text></svg>` },
+        ],
+        'firefox': [
+          { txt: 'Click en el <strong>🔒 candado</strong> al lado de la URL', svg: `<svg viewBox="0 0 320 80"><rect x="10" y="15" width="300" height="50" rx="5" fill="#f1f5f9"/><circle cx="40" cy="40" r="14" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" class="puls"/></svg>` },
+          { txt: 'Click en la <strong>X</strong> al lado de "Bloqueado temporalmente" en Notificaciones', svg: `<svg viewBox="0 0 320 80"><rect x="20" y="10" width="280" height="60" rx="8" fill="#fff" stroke="#cbd5e1"/><text x="40" y="35" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2f48">🔔 Enviar notificaciones</text><text x="40" y="55" font-family="sans-serif" font-size="11" fill="#dc2626">Bloqueado temporalmente</text><circle cx="270" cy="40" r="14" fill="#fee2e2" stroke="#dc2626" stroke-width="2" class="puls"/><text x="270" y="46" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="800" fill="#dc2626">×</text></svg>` },
+        ],
+      };
+
+      let bpPasoActual = 0;
+      let bpPasosArr = [];
+
+      function bpRenderPaso() {
+        const cont = document.getElementById('bpInstrucciones');
+        const paso = bpPasosArr[bpPasoActual];
+        cont.innerHTML = `
+          <div style="text-align:center;margin-bottom:.85rem">
+            <span style="display:inline-flex;align-items:center;gap:.4rem;background:#fef3c7;color:#92400e;padding:.3rem .85rem;border-radius:999px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em">
+              Paso ${bpPasoActual+1} de ${bpPasosArr.length}
+            </span>
+          </div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:1rem .85rem;margin-bottom:1rem">
+            ${paso.svg}
+          </div>
+          <p style="font-size:.92rem;color:#1c2f48;line-height:1.5;text-align:center;margin:0">
+            ${paso.txt}
+          </p>
+          <div style="display:flex;gap:.5rem;margin-top:1.1rem">
+            <button onclick="bpPrev()" ${bpPasoActual===0?'disabled':''} style="flex:1;padding:.7rem;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;font-weight:700;font-size:.78rem;color:${bpPasoActual===0?'#cbd5e1':'#475569'};cursor:${bpPasoActual===0?'not-allowed':'pointer'};font-family:inherit">← Anterior</button>
+            <button onclick="bpNext()" style="flex:2;padding:.7rem;background:var(--navy);color:var(--gold);border:none;border-radius:8px;font-weight:800;font-size:.78rem;cursor:pointer;font-family:inherit">${bpPasoActual===bpPasosArr.length-1?'✓ Listo':'Siguiente →'}</button>
+          </div>
+        `;
+      }
+
+      window.bpNext = function() {
+        if (bpPasoActual < bpPasosArr.length - 1) { bpPasoActual++; bpRenderPaso(); }
+        else { bpVerificar(); }
+      };
+      window.bpPrev = function() {
+        if (bpPasoActual > 0) { bpPasoActual--; bpRenderPaso(); }
+      };
+
       window.bpAbrirModal = function() {
         const b = detectBrowser();
-        const cont = document.getElementById('bpInstrucciones');
-        const instrucciones = {
-          'samsung': `
-            <div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.82rem;color:#92400e">
-              Detectamos <strong>Samsung Internet</strong>. Seguí estos pasos:
-            </div>
-            <ol style="padding-left:1.3rem;line-height:1.8;color:#475569;font-size:.88rem">
-              <li>Tocá el <strong>icono 🔒 (candado)</strong> a la izquierda de la URL arriba</li>
-              <li>Tocá <strong>"Permisos"</strong></li>
-              <li>Tocá <strong>"Notificaciones"</strong> y cambialo a <strong>Permitir</strong></li>
-              <li>Volvé acá y tocá el botón <strong>"Ya las activé"</strong></li>
-            </ol>
-            <div style="margin-top:1rem;padding:.65rem;background:#f0f9ff;border-radius:8px;font-size:.78rem;color:#1e40af">
-              💡 <strong>Tip:</strong> Si no aparece, abrí <strong>Ajustes de Samsung Internet → Sitios y descargas → Notificaciones</strong> y buscá <strong>epleague.cl</strong>.
-            </div>`,
-          'chrome-android': `
-            <div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.82rem;color:#92400e">
-              Detectamos <strong>Chrome Android</strong>. Pasos:
-            </div>
-            <ol style="padding-left:1.3rem;line-height:1.8;color:#475569;font-size:.88rem">
-              <li>Tocá el <strong>icono 🔒</strong> al lado de la URL (arriba)</li>
-              <li>Tocá <strong>"Permisos y privacidad"</strong></li>
-              <li>Buscá <strong>"Notificaciones"</strong> y cambialo a <strong>Permitir</strong></li>
-              <li>Volvé y tocá <strong>"Ya las activé"</strong></li>
-            </ol>`,
-          'ios': `
-            <div style="background:#fee2e2;border-left:4px solid #dc2626;padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.82rem;color:#991b1b">
-              <strong>iPhone:</strong> el push de Safari requiere instalar la app primero.
-            </div>
-            <ol style="padding-left:1.3rem;line-height:1.8;color:#475569;font-size:.88rem">
-              <li>Abrí <strong>epleague.cl en Safari</strong></li>
-              <li>Tocá el botón <strong>compartir ⬆</strong> (cuadrado con flecha)</li>
-              <li>Tocá <strong>"Añadir a pantalla de inicio"</strong></li>
-              <li>Cerrá Safari y <strong>abrí la app desde el icono nuevo</strong></li>
-              <li>Cuando te pregunte por notificaciones, tocá <strong>Permitir</strong></li>
-            </ol>
-            <div style="margin-top:1rem;padding:.65rem;background:#f0f9ff;border-radius:8px;font-size:.78rem;color:#1e40af">
-              💡 Si ya la instalaste y bloqueaste: <strong>Ajustes iOS → Notificaciones → EPL → Permitir</strong>.
-            </div>`,
-          'chrome-desktop': `
-            <ol style="padding-left:1.3rem;line-height:1.8;color:#475569;font-size:.88rem">
-              <li>Click en el <strong>🔒 candado</strong> al lado de la URL</li>
-              <li>Buscá <strong>"Notificaciones"</strong> y elegí <strong>Permitir</strong></li>
-              <li>Recargá la página</li>
-            </ol>`,
-          'firefox': `
-            <ol style="padding-left:1.3rem;line-height:1.8;color:#475569;font-size:.88rem">
-              <li>Click en el <strong>🔒 candado</strong> al lado de la URL</li>
-              <li>Buscá <strong>"Enviar notificaciones"</strong></li>
-              <li>Click en la <strong>X</strong> al lado de "Bloqueado temporalmente"</li>
-              <li>Recargá la página</li>
-            </ol>`,
-        };
-        cont.innerHTML = instrucciones[b] || instrucciones['chrome-desktop'];
+        bpPasosArr   = PASOS[b] || PASOS['chrome-desktop'];
+        bpPasoActual = 0;
+        bpRenderPaso();
         document.getElementById('bpModal').style.display = 'flex';
       };
 
