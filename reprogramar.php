@@ -148,13 +148,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
         if ($auto_aprobada) {
             // Guardar snapshot original ANTES de cambiar la fecha
             epl_partido_snapshot_original($partido_id);
-            // Mutuo acuerdo → aplicar inmediatamente sin esperar al admin
-            $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=? WHERE id=?")
+            // Mutuo acuerdo → aplicar inmediatamente sin esperar al admin.
+            // Limpiar recinto_id y la confirmación de cancha: el club debe asignar cancha para la nueva fecha.
+            $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=?,
+                            recinto_id=NULL, cancha_token=NULL, cancha_solicitada_at=NULL,
+                            cancha_confirmada_at=NULL, cancha_confirmada_por=NULL,
+                            baja_token=NULL, baja_solicitada_at=NULL, baja_confirmada_at=NULL, baja_confirmada_por=NULL
+                          WHERE id=?")
                ->execute([$fecha_final, $partido_id]);
         } else {
-            // Guardar snapshot original al marcar como reprogramado
+            // Guardar snapshot original al marcar como reprogramado (sin fecha nueva todavía)
             epl_partido_snapshot_original($partido_id);
-            $db->prepare("UPDATE partidos SET estado='reprogramado' WHERE id=?")->execute([$partido_id]);
+            $db->prepare("UPDATE partidos SET estado='reprogramado',
+                            baja_token=NULL, baja_solicitada_at=NULL, baja_confirmada_at=NULL, baja_confirmada_por=NULL
+                          WHERE id=?")->execute([$partido_id]);
         }
 
         // Notificar in-app + email (SMTP) a jugadores del partido rival y a los admins

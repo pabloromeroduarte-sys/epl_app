@@ -259,18 +259,18 @@ $todo_confirmado = $partido
     <form method="post" id="frmGestionar">
       <input type="hidden" name="t" value="<?= epl_h($token) ?>">
 
-      <!-- Sección 1: BAJA (si hay fecha/cancha original) -->
+      <!-- Sección 1: FECHA ORIGINAL (dar de baja) -->
       <?php if ($baja_fecha_lbl || $baja_recinto_nom): ?>
       <div class="section-box baja">
-        <div class="section-head baja">🚫 Reserva a dar de baja</div>
+        <div class="section-head baja">🚫 Fecha original — DAR DE BAJA</div>
         <?php if ($baja_fecha_lbl): ?>
-          <div style="font-size:1rem;font-weight:800;color:#991b1b"><?= $baja_fecha_lbl ?></div>
+          <div style="font-size:1.05rem;font-weight:900;color:#991b1b"><?= $baja_fecha_lbl ?></div>
         <?php endif; ?>
         <?php if ($baja_recinto_nom): ?>
-          <div style="font-size:.85rem;color:#b91c1c;font-weight:600;margin-top:.15rem">🎾 <?= epl_h($baja_recinto_nom) ?></div>
+          <div style="font-size:.88rem;color:#b91c1c;font-weight:700;margin-top:.2rem">🎾 <?= epl_h($baja_recinto_nom) ?></div>
         <?php endif; ?>
-        <div style="font-size:.78rem;color:#7f1d1d;margin-top:.4rem">
-          Al confirmar, le avisamos al admin que la reserva fue cancelada.
+        <div style="font-size:.78rem;color:#7f1d1d;margin-top:.45rem">
+          Esta es la reserva que necesitamos cancelar.
         </div>
         <?php if (!empty($partido['baja_confirmada_at'])): ?>
           <span class="chip chip-ok" style="margin-top:.5rem;display:inline-block">✅ Baja ya confirmada</span>
@@ -278,11 +278,11 @@ $todo_confirmado = $partido
       </div>
       <?php endif; ?>
 
-      <!-- Sección 2: NUEVA FECHA + ASIGNAR CANCHA -->
+      <!-- Sección 2: FECHA PROPUESTA + ASIGNAR CANCHA -->
       <?php if ($nueva_fecha_lbl): ?>
       <div class="section-box cancha">
-        <div class="section-head cancha">📅 Nueva fecha del partido</div>
-        <div style="font-size:1rem;font-weight:800;color:#1e3a8a"><?= $nueva_fecha_lbl ?></div>
+        <div class="section-head cancha">✅ Fecha propuesta — NUEVA FECHA DEL PARTIDO</div>
+        <div style="font-size:1.05rem;font-weight:900;color:#1e3a8a"><?= $nueva_fecha_lbl ?></div>
 
         <?php if ($necesita_cancha && empty($partido['cancha_confirmada_at'])): ?>
           <div style="font-size:.78rem;color:#1e40af;margin-top:.4rem;margin-bottom:.5rem">

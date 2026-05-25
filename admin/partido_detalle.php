@@ -189,40 +189,45 @@ if (!$baja_confirmada) {
 }
 
 // ── Mensaje WhatsApp ──────────────────────────────────────────────────────────
-$_msg_wsp  = "Hola, te hablo de Elite Padel League.\n\n";
-// Sección baja (sólo si hay fecha original que cancelar)
-if ($_baja_fecha_lbl || $_baja_recinto_nom) {
-    $_msg_wsp .= "Necesitamos DAR DE BAJA la siguiente reserva:\n";
-    if ($_baja_fecha_lbl)        $_msg_wsp .= "📅 $_baja_fecha_lbl\n";
-    if ($_baja_recinto_nom)      $_msg_wsp .= "🎾 $_baja_recinto_nom\n";
-    $_msg_wsp .= "👥 " . $p['local_nombre'] . " vs " . $p['visitante_nombre'] . "\n";
-    // Si hay nueva fecha
-    if ($_tiene_fecha_nueva) {
-        $_msg_wsp .= "\nNueva fecha del partido: $_fecha_lbl\n";
-        if ($p['recinto_nombre'] && $p['recinto_nombre'] !== $_baja_recinto_nom) {
-            $_msg_wsp .= "Nueva cancha: " . $p['recinto_nombre'] . "\n";
-        }
-    }
+// Dos escenarios:
+// (A) Reprogramado SIN fecha propuesta → solo pedir baja de la reserva original
+// (B) Reprogramado CON fecha propuesta → pedir baja de la original + asignar cancha nueva
+$_partido_str = $p['local_nombre'] . " vs " . $p['visitante_nombre'];
+$_msg_wsp = "Hola, te hablo de Elite Padel League.\n\n";
+$_msg_wsp .= "👥 Partido: $_partido_str\n\n";
+
+if ($_tiene_fecha_nueva) {
+    // ── ESCENARIO B: hay fecha propuesta ──
+    $_msg_wsp .= "Tenemos una REPROGRAMACIÓN:\n\n";
+    $_msg_wsp .= "🚫 Fecha original (DAR DE BAJA):\n";
+    $_msg_wsp .= "   📅 " . ($_baja_fecha_lbl ?: '⚠ pendiente de registrar') . "\n";
+    if ($_baja_recinto_nom) $_msg_wsp .= "   🎾 $_baja_recinto_nom\n";
+    $_msg_wsp .= "\n";
+    $_msg_wsp .= "✅ Fecha propuesta (NUEVA):\n";
+    $_msg_wsp .= "   📅 $_fecha_lbl\n";
+    $_msg_wsp .= "   🎾 Necesitamos que nos asignen una cancha para esta fecha.\n";
 } else {
-    // Sin fecha original: sólo pedir que asignen cancha para nueva fecha
-    $_msg_wsp .= "Tenemos un partido reprogramado y necesitamos asignar cancha:\n";
-    $_msg_wsp .= "📅 $_fecha_lbl\n";
-    $_msg_wsp .= "👥 " . $p['local_nombre'] . " vs " . $p['visitante_nombre'] . "\n";
+    // ── ESCENARIO A: solo baja de la reserva original ──
+    $_msg_wsp .= "Necesitamos DAR DE BAJA esta reserva:\n";
+    $_msg_wsp .= "📅 " . ($_baja_fecha_lbl ?: '⚠ fecha pendiente de registrar') . "\n";
+    if ($_baja_recinto_nom) $_msg_wsp .= "🎾 $_baja_recinto_nom\n";
 }
+
 // Línea de acción con el link
 if ($_baja_link) {
-    if ($_necesita_cancha && ($_baja_fecha_lbl || $_baja_recinto_nom)) {
-        $_msg_wsp .= "\nDesde este link podés confirmar la baja Y elegir la cancha para la nueva fecha:\n$_baja_link\n(¡Solo toca la cancha y queda todo listo!)";
-    } elseif ($_necesita_cancha) {
-        $_msg_wsp .= "\nElegí la cancha para la nueva fecha desde acá:\n$_baja_link\n(¡Solo toca la cancha y queda confirmada!)";
+    if ($_tiene_fecha_nueva) {
+        $_msg_wsp .= "\nDesde este link podés confirmar la baja Y elegir la nueva cancha en un solo paso:\n$_baja_link";
     } else {
         $_msg_wsp .= "\nConfirmá la baja desde este link:\n$_baja_link";
     }
 }
 $_msg_wsp .= "\n\n¡Gracias!";
 
-// Mantenemos $_msg_cancha igual para compatibilidad (bloque "solo pedir cancha" sin baja)
-$_msg_cancha = $_msg_wsp; // mismo mensaje unificado
+// Compatibilidad con secciones legacy
+$_msg_cancha = $_msg_wsp;
+
+// ¿Está OK enviar el mensaje? Requiere fecha original registrada.
+$_msg_listo = !empty($_baja_fecha_lbl);
 
 require_once '../includes/header.php';
 ?>
@@ -344,26 +349,33 @@ require_once '../includes/header.php';
                 <a href="recintos.php" style="color:#1c2f48;font-weight:800;text-decoration:underline">Cargá los contactos del club acá →</a>
               </div>
             <?php else: ?>
-              <p style="font-size:.85rem;color:#475569;margin-bottom:.5rem;font-weight:600">
-                📱 Enviar aviso al club por WhatsApp
-                <?php if ($contactos_origen && $contactos_origen !== ($p['recinto_original_nombre'] ?: $p['recinto_nombre'])): ?>
-                  <span style="font-weight:500;color:#64748b;font-size:.78rem">(contactos de <?= epl_h($contactos_origen) ?>)</span>
-                <?php endif; ?>
-              </p>
-              <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
-                <?php foreach ($contactos_club as $c):
-                  $_tel = preg_replace('/[^0-9]/', '', $c['telefono']);
-                  if (!$_tel) continue;
-                  if (substr($_tel, 0, 2) !== '56') $_tel = '56' . $_tel;
-                  $_wsp = "https://wa.me/{$_tel}?text=" . rawurlencode($_msg_wsp);
-                ?>
-                <a href="<?= $_wsp ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;background:#25D366;color:#fff;padding:.65rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,.3)">
-                  <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17.6 6.32A7.85 7.85 0 0012.05 4a7.94 7.94 0 00-6.88 11.93L4 20l4.21-1.1a7.95 7.95 0 003.84.98h.01a7.94 7.94 0 005.54-13.56M12.05 18.5a6.62 6.62 0 01-3.36-.92l-.24-.14-2.5.66.67-2.44-.16-.25a6.59 6.59 0 0110.21-8.16 6.55 6.55 0 011.93 4.66 6.62 6.62 0 01-6.55 6.59"/></svg>
-                  <?= epl_h($c['nombre'] ?: 'Contacto') ?>
-                  <span style="font-size:.7rem;opacity:.85">· <?= epl_h($c['telefono']) ?></span>
-                </a>
-                <?php endforeach; ?>
-              </div>
+              <?php if (!$_msg_listo): ?>
+                <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:1rem;font-size:.88rem;color:#92400e;margin-bottom:1rem">
+                  <strong>⚠ Falta registrar la fecha original</strong><br>
+                  No podés enviar el mensaje sin saber qué reserva dar de baja. Usá el formulario <strong>"Registrar manualmente reserva original"</strong> abajo y volvé a entrar.
+                </div>
+              <?php else: ?>
+                <p style="font-size:.85rem;color:#475569;margin-bottom:.5rem;font-weight:600">
+                  📱 Enviar aviso al club por WhatsApp
+                  <?php if ($contactos_origen && $contactos_origen !== ($p['recinto_original_nombre'] ?: $p['recinto_nombre'])): ?>
+                    <span style="font-weight:500;color:#64748b;font-size:.78rem">(contactos de <?= epl_h($contactos_origen) ?>)</span>
+                  <?php endif; ?>
+                </p>
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+                  <?php foreach ($contactos_club as $c):
+                    $_tel = preg_replace('/[^0-9]/', '', $c['telefono']);
+                    if (!$_tel) continue;
+                    if (substr($_tel, 0, 2) !== '56') $_tel = '56' . $_tel;
+                    $_wsp = "https://wa.me/{$_tel}?text=" . rawurlencode($_msg_wsp);
+                  ?>
+                  <a href="<?= $_wsp ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;background:#25D366;color:#fff;padding:.65rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,.3)">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17.6 6.32A7.85 7.85 0 0012.05 4a7.94 7.94 0 00-6.88 11.93L4 20l4.21-1.1a7.95 7.95 0 003.84.98h.01a7.94 7.94 0 005.54-13.56M12.05 18.5a6.62 6.62 0 01-3.36-.92l-.24-.14-2.5.66.67-2.44-.16-.25a6.59 6.59 0 0110.21-8.16 6.55 6.55 0 011.93 4.66 6.62 6.62 0 01-6.55 6.59"/></svg>
+                    <?= epl_h($c['nombre'] ?: 'Contacto') ?>
+                    <span style="font-size:.7rem;opacity:.85">· <?= epl_h($c['telefono']) ?></span>
+                  </a>
+                  <?php endforeach; ?>
+                </div>
+              <?php endif; ?>
 
               <!-- Preview del mensaje -->
               <details style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:.75rem 1rem;margin-bottom:1rem">
