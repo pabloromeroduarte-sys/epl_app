@@ -52,7 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $res = epl_web_push_send($sub, 'EPL', 'ping', '/');
         $borrado = false;
-        if (in_array($res['status'], [404, 410])) {
+        // 404/410 = endpoint expirado · 403 = VAPID mismatch (suscripción con keys viejas)
+        if (in_array($res['status'], [403, 404, 410])) {
             $db->prepare("DELETE FROM push_subscriptions WHERE id=?")->execute([$sub['id']]);
             $borrado = true;
         }

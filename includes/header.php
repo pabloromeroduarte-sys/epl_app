@@ -146,24 +146,47 @@ $site_url = $_proto . '://' . $_host;
       return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
     }
 
-    navigator.serviceWorker.register('/sw.js').then(function(reg) {
-      // Si ya tiene permiso concedido, suscribir silenciosamente
-      if (Notification.permission === 'granted' && VAPID_PUBLIC) {
-        reg.pushManager.getSubscription().then(function(existing) {
-          if (existing) return;
-          reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC)
-          }).then(function(sub) {
-            fetch('/push_subscribe.php', {
-              method: 'POST',
-              headers: {'Content-Type':'application/json'},
-              body: JSON.stringify(sub)
-            });
-          }).catch(function(){});
+    // Convierte ArrayBuffer → base64url (para comparar applicationServerKey)
+    function bufToB64Url(buf) {
+      const bytes = new Uint8Array(buf);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    }
+
+    function subscribirYGuardar(reg) {
+      return reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC)
+      }).then(function(sub) {
+        return fetch('/push_subscribe.php', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(sub)
         });
-      }
-      // Si no tiene permiso, el banner del dashboard lo pedirá con un botón (gesto del usuario)
+      });
+    }
+
+    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+      if (Notification.permission !== 'granted' || !VAPID_PUBLIC) return;
+
+      reg.pushManager.getSubscription().then(function(existing) {
+        if (!existing) {
+          // Nuevo: suscribir directo
+          subscribirYGuardar(reg).catch(function(){});
+          return;
+        }
+        // Ya hay suscripción: verificar que use la VAPID key actual.
+        // Si no coincide (keys rotadas), desuscribir y volver a suscribir.
+        try {
+          const currentKey = existing.options && existing.options.applicationServerKey;
+          if (currentKey && bufToB64Url(currentKey) !== VAPID_PUBLIC) {
+            existing.unsubscribe().then(function() {
+              subscribirYGuardar(reg).catch(function(){});
+            });
+          }
+        } catch (e) { /* navegadores viejos no exponen options.applicationServerKey */ }
+      });
     });
   })();
   </script>

@@ -169,8 +169,8 @@ function epl_push_jugador(int $jugador_id, string $title, string $body, string $
     foreach ($rows as $sub) {
         $res = epl_web_push_send($sub, $title, $body, $url);
         if ($res['ok']) $sent++;
-        // Si el endpoint ya no existe, borrarlo
-        if (in_array($res['status'], [404, 410])) {
+        // 404/410 = endpoint expirado · 403 = VAPID mismatch (sub con keys viejas)
+        if (in_array($res['status'], [403, 404, 410])) {
             try {
                 $db->prepare("DELETE FROM push_subscriptions WHERE endpoint=?")->execute([$sub['endpoint']]);
             } catch (Throwable $e) {}
