@@ -198,6 +198,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $recinto_id = (int)($_POST['recinto_id'] ?? 0) ?: null;
         $fecha_p    = trim($_POST['fecha_programada'] ?? '') ?: null;
         $alerta_a   = trim($_POST['alerta_admin'] ?? '') ?: null;
+        $fecha_orig_in   = trim($_POST['fecha_original'] ?? '');
+        $recinto_orig_id = (int)($_POST['recinto_original_id'] ?? 0) ?: null;
 
         $sets_l = 0; $sets_v = 0; $sets = [];
         for ($s = 1; $s <= 3; $s++) {
@@ -225,6 +227,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $db->prepare("UPDATE partidos SET estado=?,fecha_programada=?,fecha_jugado=?,jornada=?,nombre_fecha=?,recinto_id=?,sets_local=?,sets_visitante=?,games_s1_local=?,games_s1_visitante=?,games_s2_local=?,games_s2_visitante=?,games_s3_local=?,games_s3_visitante=?,ganador_id=?,alerta_admin=? WHERE id=?")
            ->execute([$est, $fecha_p, $fecha_j ?: null, $jornada, $nombre_f, $recinto_id, $sets_l, $sets_v, $sets[1]['l'], $sets[1]['v'], $sets[2]['l'], $sets[2]['v'], $sets[3]['l'], $sets[3]['v'], $ganador_id, $alerta_a, $pid]);
+
+        // Permitir al admin editar manualmente la reserva original (sin pisar con NULL si dejó vacío y ya había valor)
+        if ($fecha_orig_in !== '') {
+            $fecha_orig_db = str_replace('T', ' ', $fecha_orig_in) . ':00';
+            $db->prepare("UPDATE partidos SET fecha_original=? WHERE id=?")->execute([$fecha_orig_db, $pid]);
+        }
+        if ($recinto_orig_id !== null) {
+            $db->prepare("UPDATE partidos SET recinto_original_id=? WHERE id=?")->execute([$recinto_orig_id, $pid]);
+        }
         epl_recalcular_clasificacion((int)$p2['liga_id']);
 
         // Notificar cambios
@@ -840,6 +851,27 @@ require_once '../includes/header.php';
           <input type="text" name="alerta_admin" id="editAlertaAdmin" class="form-control" placeholder="Ej: Falta confirmar cancha...">
         </div>
 
+        <!-- Reserva ORIGINAL (la que hay que dar de baja en el club) -->
+        <details style="margin-top:.85rem;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:.6rem .85rem">
+          <summary style="cursor:pointer;font-size:.75rem;font-weight:800;color:#92400e;list-style:none">🏟️ Reserva ORIGINAL a dar de baja (opcional)</summary>
+          <p style="font-size:.72rem;color:#92400e;margin:.5rem 0">Si fue reprogramado, anotá acá qué fecha/cancha tenía antes para saber qué reserva cancelar en el club.</p>
+          <div class="grid-2">
+            <div class="form-group" style="margin-bottom:.5rem">
+              <label class="form-label" style="font-size:.65rem">Fecha original</label>
+              <input type="datetime-local" name="fecha_original" id="editFechaOriginal" class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom:.5rem">
+              <label class="form-label" style="font-size:.65rem">Cancha original</label>
+              <select name="recinto_original_id" id="editRecintoOriginalId" class="form-control">
+                <option value="">— Sin registrar —</option>
+                <?php foreach ($todos_recintos as $rc): ?>
+                  <option value="<?= $rc['id'] ?>"><?= epl_h($rc['label']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+          </div>
+        </details>
+
         <div id="editContactosWrapper" style="margin-top:1.25rem;border-top:1px solid var(--gray-100);padding-top:1rem">
           <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;color:var(--navy);margin-bottom:.5rem">Contacto jugadores</p>
           <div id="editContactosList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.6rem"></div>
@@ -875,6 +907,9 @@ window.editarPartido = function (btn) {
     setVal('input[name="s'+s+'_v"]', p['games_s'+s+'_visitante'] != null ? p['games_s'+s+'_visitante'] : '');
   });
   setVal('input[name="alerta_admin"]', p.alerta_admin || '');
+  // Reserva original
+  setVal('input[name="fecha_original"]', p.fecha_original ? String(p.fecha_original).replace(' ', 'T').substring(0,16) : '');
+  setVal('select[name="recinto_original_id"]', p.recinto_original_id || '');
 
   // Contactos WhatsApp
   var contactList = document.getElementById('editContactosList');

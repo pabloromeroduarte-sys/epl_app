@@ -144,12 +144,24 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
             <span class="extra-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <?= date('d/m H:i', strtotime($p['fecha_programada'])) ?></span>
           <?php endif; ?>
           <?php if ($p['recinto_nombre']): ?>
-            <span class="extra-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> <?= epl_h($p['recinto_nombre']) ?></span>
+            <span class="extra-item" style="color:#15803d;font-weight:600">✅ <?= epl_h($p['recinto_nombre']) ?></span>
           <?php endif; ?>
           <?php if (!empty($p['motivo'])): ?>
             <span class="extra-item motivo">"<?= epl_h(mb_strimwidth($p['motivo'], 0, 70, '…')) ?>"</span>
           <?php endif; ?>
         </div>
+        <?php
+          // Mostrar la reserva original (cancha + fecha) destacada para que el admin la pueda dar de baja
+          $_tiene_original = !empty($p['fecha_original']) || !empty($p['recinto_original_nombre']);
+          if ($_tiene_original):
+            $_fo = $p['fecha_original'] ?: null;
+        ?>
+          <div style="margin-top:.5rem;padding:.45rem .7rem;background:#fee2e2;border-left:3px solid #dc2626;border-radius:6px;font-size:.75rem;color:#991b1b;line-height:1.4;display:inline-flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+            <span style="font-weight:800">🚫 DAR DE BAJA:</span>
+            <?php if ($_fo): ?><span><?= date('d/m H:i', strtotime($_fo)) ?></span><?php endif; ?>
+            <?php if (!empty($p['recinto_original_nombre'])): ?><span>· <?= epl_h($p['recinto_original_nombre']) ?></span><?php endif; ?>
+          </div>
+        <?php endif; ?>
       </div>
       <a href="liga_detalle.php?id=<?= $p['liga_id'] ?>&tab=partidos" class="btn-gestionar">Gestionar</a>
     </div>
@@ -449,53 +461,6 @@ require_once '../includes/header.php';
         <?php endforeach; ?>
       </div>
     </section>
-    <?php endif; ?>
-
-    <!-- ═══════ SECCIÓN: Canchas a dar de baja ═══════ -->
-    <?php if (!empty($reservas_baja)): ?>
-    <section class="sec-card sec-bajas">
-      <div class="sec-head">
-        <div>
-          <h2 class="sec-title">🏟️ Canchas a dar de baja</h2>
-          <p class="sec-sub">Reservas hechas para partidos que se reprogramaron — cancelá estas para liberar el horario</p>
-        </div>
-        <div class="sec-count" style="background:#fef3c7;color:#92400e"><?= count($reservas_baja) ?></div>
-      </div>
-      <div class="sec-body">
-        <?php foreach ($reservas_baja as $r):
-          $_fo = $r['fecha_original'] ?: null;
-          $_fa = ($r['fecha_programada'] && date('Y-m-d', strtotime($r['fecha_programada'])) !== '2026-12-31')
-                 ? date('d/m H:i', strtotime($r['fecha_programada']))
-                 : 'Sin fecha nueva';
-        ?>
-        <div class="partido-row" style="background:#fffbeb">
-          <div class="partido-row-main">
-            <div class="partido-meta">
-              <span class="partido-liga"><?= epl_h($r['liga_nombre']) ?></span>
-              <?php if ($r['jornada']): ?><span class="partido-jornada">J<?= $r['jornada'] ?></span><?php endif; ?>
-            </div>
-            <div class="partido-equipos">
-              <strong><?= epl_h($r['local_nombre']) ?></strong>
-              <span class="vs">vs</span>
-              <strong><?= epl_h($r['visitante_nombre']) ?></strong>
-            </div>
-            <div class="partido-extra" style="margin-top:.45rem">
-              <span style="display:inline-flex;align-items:center;gap:.3rem;background:#fee2e2;color:#991b1b;padding:.25rem .6rem;border-radius:6px;font-size:.72rem;font-weight:700">
-                🚫 DAR DE BAJA: <?= $_fo ? date('d/m H:i', strtotime($_fo)) : '—' ?>
-                <?php if ($r['recinto_original_nombre']): ?> · <?= epl_h($r['recinto_original_nombre']) ?><?php endif; ?>
-              </span>
-              <span style="display:inline-flex;align-items:center;gap:.3rem;background:#dcfce7;color:#15803d;padding:.25rem .6rem;border-radius:6px;font-size:.72rem;font-weight:700">
-                ✅ NUEVA: <?= $_fa ?>
-                <?php if ($r['recinto_nombre']): ?> · <?= epl_h($r['recinto_nombre']) ?><?php endif; ?>
-              </span>
-            </div>
-          </div>
-          <a href="liga_detalle.php?id=<?= $r['liga_id'] ?>&tab=partidos#p<?= $r['id'] ?>" class="btn-gestionar">Ver</a>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    </section>
-    <style>.sec-bajas { border-left:5px solid #f59e0b !important; }</style>
     <?php endif; ?>
 
     <!-- ═════════════════════ SECCIÓN 4: TOP equipos con más reprogramaciones ═════════════════════ -->
