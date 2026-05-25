@@ -63,6 +63,7 @@ $partidos_open = $db->query("
     SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada, p.fecha_original,
            p.estado, p.alerta_admin, p.recinto_original_id, p.baja_token,
            p.baja_solicitada_at, p.baja_confirmada_at, p.baja_confirmada_por,
+           p.recinto_id, p.cancha_confirmada_at,
            l.id AS liga_id, l.nombre AS liga_nombre,
            el.id AS local_id, el.nombre AS local_nombre,
            ev.id AS visitante_id, ev.nombre AS visitante_nombre,
@@ -71,7 +72,8 @@ $partidos_open = $db->query("
            ro.contacto1_nombre, ro.contacto1_telefono,
            ro.contacto2_nombre, ro.contacto2_telefono,
            ro.contacto3_nombre, ro.contacto3_telefono,
-           sr.motivo, sr.rival_no_responde, sr.created_at AS fecha_solicitud
+           sr.motivo, sr.rival_no_responde, sr.created_at AS fecha_solicitud,
+           sr.estado AS sol_estado, sr.mutuo_acuerdo AS sol_mutuo
     FROM partidos p
     JOIN ligas l ON l.id = p.liga_id
     JOIN equipos el ON el.id = p.equipo_local_id
@@ -104,9 +106,35 @@ $hoy = new DateTime('today');
 $es_sin_fecha = fn($p) => !$p['fecha_programada'] || date('Y-m-d', strtotime($p['fecha_programada'])) === '2026-12-31';
 $es_vencido   = fn($p) => !$es_sin_fecha($p) && new DateTime($p['fecha_programada']) < $hoy;
 
-// Recientes: solicitudes creadas en las últimas 48h (para destacarlas)
+// Recientes: solicitudes creadas en las últimas 48h Y que aún necesitan gestión
 $limite_reciente = new DateTime('-48 hours');
-$es_reciente = fn($p) => !empty($p['fecha_solicitud']) && new DateTime($p['fecha_solicitud']) >= $limite_reciente;
+
+/**
+ * ¿Este partido todavía necesita acción del admin o del club?
+ * Si está todo resuelto (baja confirmada + cancha asignada, o partido sin gestión pendiente),
+ * no aparece en "Nuevas".
+ */
+$necesita_gestion = function(array $p): bool {
+    $tiene_fecha_nueva = !empty($p['fecha_programada']) && date('Y-m-d', strtotime($p['fecha_programada'])) !== '2026-12-31';
+
+    // 1) Solicitud aún pendiente de aprobación del admin
+    if (($p['sol_estado'] ?? '') === 'pendiente') return true;
+
+    // 2) Baja iniciada pero no confirmada por el club
+    if (!empty($p['baja_solicitada_at']) && empty($p['baja_confirmada_at'])) return true;
+
+    // 3) Post-aprobado (con snapshot) y la baja todavía no fue resuelta
+    if (!empty($p['fecha_original']) && empty($p['baja_confirmada_at'])) return true;
+
+    // 4) Hay fecha nueva pero falta asignar cancha
+    if ($tiene_fecha_nueva && empty($p['cancha_confirmada_at']) && empty($p['recinto_id'])) return true;
+
+    return false;
+};
+
+$es_reciente = fn($p) => !empty($p['fecha_solicitud'])
+    && new DateTime($p['fecha_solicitud']) >= $limite_reciente
+    && $necesita_gestion($p);
 
 $recientes = array_values(array_filter($partidos_open, $es_reciente));
 // Ordenar recientes: más nuevas primero
