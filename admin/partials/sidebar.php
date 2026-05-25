@@ -357,4 +357,20 @@ document.addEventListener('keydown', function(e){
     if (s && s.classList.contains('open')) { s.classList.remove('open'); document.body.style.overflow=''; }
   }
 });
+
+// FIX iOS: mover el bottom-nav y el sheet directamente al <body> para que
+// position:fixed funcione siempre (evita contextos rotos por grid/transform/contain)
+(function(){
+  function moverAlBody() {
+    var nav = document.querySelector('.dash-bottom-nav--admin');
+    var sheet = document.getElementById('bnMasSheet');
+    if (nav && nav.parentNode !== document.body) document.body.appendChild(nav);
+    if (sheet && sheet.parentNode !== document.body) document.body.appendChild(sheet);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', moverAlBody);
+  } else {
+    moverAlBody();
+  }
+})();
 </script>

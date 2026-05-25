@@ -1268,6 +1268,7 @@ button { cursor: pointer; font-family: inherit; border: none; }
 .dash-bottom-nav {
   position: fixed;
   bottom: 0;
+  inset-block-end: 0;
   left: 0;
   right: 0;
   background: rgba(10,22,50,0.97);
@@ -1278,6 +1279,13 @@ button { cursor: pointer; font-family: inherit; border: none; }
   padding-bottom: env(safe-area-inset-bottom);
   display: none;
   box-shadow: 0 -4px 24px rgba(0,0,0,0.35);
+  /* Forzar capa propia para evitar bug iOS Safari con position:fixed */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+  /* iOS PWA standalone: anclar al borde físico */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 @media (max-width: 992px) {
   .dash-layout { grid-template-columns: 1fr; }
