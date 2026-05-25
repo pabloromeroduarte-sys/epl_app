@@ -293,17 +293,17 @@ require_once '../includes/header.php';
           <!-- Cards: lo que se va a dar de baja + (si hay snapshot) la nueva fecha -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem;margin-bottom:1rem">
             <div style="background:#fee2e2;border-left:4px solid #dc2626;padding:.85rem 1rem;border-radius:8px">
-              <div style="font-size:.65rem;color:#991b1b;font-weight:800;text-transform:uppercase;letter-spacing:.08em">🚫 Reserva original a cancelar</div>
+              <div style="font-size:.65rem;color:#991b1b;font-weight:800;text-transform:uppercase;letter-spacing:.08em">📅 Fecha original del partido</div>
+              <div style="font-size:.7rem;color:#b91c1c;margin-top:.15rem;margin-bottom:.25rem">La reserva que hay que DAR DE BAJA en el club</div>
               <?php if ($_baja_fecha_lbl): ?>
-                <div style="font-weight:800;color:#7f1d1d;font-size:.95rem;margin-top:.3rem"><?= $_baja_fecha_lbl ?></div>
+                <div style="font-weight:900;color:#7f1d1d;font-size:1rem;margin-top:.2rem"><?= $_baja_fecha_lbl ?></div>
               <?php else: ?>
-                <div style="font-weight:700;color:#b91c1c;font-size:.82rem;margin-top:.3rem;font-style:italic">📅 Fecha no registrada — completá abajo</div>
+                <div style="font-weight:700;color:#b91c1c;font-size:.85rem;margin-top:.2rem;background:#fecaca;padding:.4rem .6rem;border-radius:6px">
+                  ⚠ No registrada — completá con el formulario de abajo
+                </div>
               <?php endif; ?>
               <?php if ($_baja_recinto_nom): ?>
-                <div style="font-size:.8rem;color:#991b1b;margin-top:.15rem">🎾 <?= epl_h($_baja_recinto_nom) ?></div>
-              <?php endif; ?>
-              <?php if (!$tiene_original): ?>
-                <div style="font-size:.66rem;color:#b91c1c;font-style:italic;margin-top:.3rem">⚙ Registrá la reserva original abajo</div>
+                <div style="font-size:.82rem;color:#991b1b;margin-top:.25rem;font-weight:700">🎾 <?= epl_h($_baja_recinto_nom) ?></div>
               <?php endif; ?>
             </div>
             <?php
@@ -312,12 +312,13 @@ require_once '../includes/header.php';
             ?>
             <?php if ($mostrar_nueva): ?>
             <div style="background:#dbeafe;border-left:4px solid #2563eb;padding:.85rem 1rem;border-radius:8px">
-              <div style="font-size:.65rem;color:#1e40af;font-weight:800;text-transform:uppercase;letter-spacing:.08em">📅 Nueva fecha del partido</div>
-              <div style="font-weight:800;color:#1e3a8a;font-size:.95rem;margin-top:.3rem"><?= $_fecha_lbl ?></div>
-              <?php if ($p['recinto_nombre'] && $p['recinto_nombre'] !== $_baja_recinto_nom): ?>
-                <div style="font-size:.8rem;color:#1e40af;margin-top:.15rem">🎾 <?= epl_h($p['recinto_nombre']) ?></div>
-              <?php elseif (!$p['recinto_id'] || empty($p['cancha_confirmada_at'])): ?>
-                <div style="font-size:.76rem;color:#2563eb;margin-top:.15rem;font-style:italic">⚠ Sin cancha asignada aún</div>
+              <div style="font-size:.65rem;color:#1e40af;font-weight:800;text-transform:uppercase;letter-spacing:.08em">📅 Fecha propuesta (nueva)</div>
+              <div style="font-size:.7rem;color:#1e40af;margin-top:.15rem;margin-bottom:.25rem">La nueva fecha acordada para el partido</div>
+              <div style="font-weight:900;color:#1e3a8a;font-size:1rem;margin-top:.2rem"><?= $_fecha_lbl ?></div>
+              <?php if (!empty($p['cancha_confirmada_at']) && $p['recinto_nombre']): ?>
+                <div style="font-size:.82rem;color:#15803d;margin-top:.25rem;font-weight:700">🎾 <?= epl_h($p['recinto_nombre']) ?></div>
+              <?php else: ?>
+                <div style="font-size:.76rem;color:#2563eb;margin-top:.25rem;font-weight:700;font-style:italic">⚠ Sin cancha asignada aún</div>
               <?php endif; ?>
             </div>
             <?php endif; ?>
