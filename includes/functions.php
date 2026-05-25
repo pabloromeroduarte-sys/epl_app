@@ -1030,6 +1030,67 @@ function epl_ensure_disputas_schema(): void {
     }
 }
 
+/**
+ * Asegura columnas fecha_original y recinto_original_id en la tabla partidos.
+ * Sirve para registrar la fecha/cancha PREVIA cuando un partido se reprograma,
+ * y así el admin sepa qué reservas dar de baja.
+ */
+function epl_ensure_partidos_columnas_originales(): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        $db = epl_db();
+        $cols = array_column($db->query('SHOW COLUMNS FROM partidos')->fetchAll(), 'Field');
+        if (!in_array('fecha_original', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `fecha_original` DATETIME NULL AFTER `fecha_programada`");
+        }
+        if (!in_array('recinto_original_id', $cols, true)) {
+            $db->exec("ALTER TABLE partidos ADD COLUMN `recinto_original_id` INT UNSIGNED NULL AFTER `recinto_id`");
+        }
+    } catch (Throwable $e) {
+        error_log('epl_ensure_partidos_columnas_originales: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Antes de reprogramar un partido, guarda su fecha/cancha actual como "original"
+ * si todavía no se guardó. Es idempotente: si ya existe valor, no lo pisa.
+ *
+ * Llamarla ANTES de UPDATE partidos cuando se va a cambiar fecha_programada
+ * o recinto_id de un partido que entra en estado 'reprogramado'.
+ */
+function epl_partido_snapshot_original(int $partido_id): void {
+    epl_ensure_partidos_columnas_originales();
+    try {
+        $db = epl_db();
+        $st = $db->prepare("SELECT fecha_programada, recinto_id, fecha_original, recinto_original_id, estado FROM partidos WHERE id = ?");
+        $st->execute([$partido_id]);
+        $p = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$p) return;
+
+        // Solo guardar si NO existe ya (no pisar el original real)
+        $setFecha   = ($p['fecha_original']      === null && $p['fecha_programada'] !== null);
+        $setRecinto = ($p['recinto_original_id'] === null && $p['recinto_id']       !== null);
+        if (!$setFecha && !$setRecinto) return;
+
+        // No usar el placeholder 31/12/2026 como original
+        if ($setFecha && date('Y-m-d', strtotime((string)$p['fecha_programada'])) === '2026-12-31') {
+            $setFecha = false;
+        }
+        if (!$setFecha && !$setRecinto) return;
+
+        $sets = [];
+        $args = [];
+        if ($setFecha)   { $sets[] = 'fecha_original = ?';      $args[] = $p['fecha_programada']; }
+        if ($setRecinto) { $sets[] = 'recinto_original_id = ?'; $args[] = $p['recinto_id'];       }
+        $args[] = $partido_id;
+        $db->prepare("UPDATE partidos SET " . implode(', ', $sets) . " WHERE id = ?")->execute($args);
+    } catch (Throwable $e) {
+        error_log('epl_partido_snapshot_original: ' . $e->getMessage());
+    }
+}
+
 /** Devuelve array de IDs de todos los administradores activos. */
 function epl_admins_ids(): array {
     $db = epl_db();

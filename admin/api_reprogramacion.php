@@ -43,6 +43,9 @@ if ($accion === 'aprobar') {
         WHERE id=?
     ")->execute([$fecha_aprobada, $cancha_aprobada?:null, $admin['id'], $id]);
 
+    // Capturar snapshot original ANTES de cambiar fecha/cancha
+    epl_partido_snapshot_original((int)$sol['partido_id']);
+
     // Actualizar el partido con la nueva fecha y cancha
     $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=?, cancha=? WHERE id=?")
        ->execute([$fecha_aprobada, $cancha_aprobada?:null, $sol['partido_id']]);

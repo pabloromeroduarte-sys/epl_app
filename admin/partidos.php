@@ -128,6 +128,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($bulk_action === 'cambiar_fecha_programada') {
             $sin_fecha    = !empty($_POST['bulk_sin_fecha']);
             $n_fecha_prog = trim($_POST['bulk_fecha_programada'] ?? '');
+            // Guardar snapshot original antes de cambiar
+            foreach ($partido_ids as $_pid) { epl_partido_snapshot_original((int)$_pid); }
             if ($sin_fecha) {
                 $db->query("UPDATE partidos SET fecha_programada=NULL WHERE id IN ($ids_str)");
                 $db->query("UPDATE partidos SET recinto_id=NULL WHERE id IN ($ids_str) AND estado='reprogramado'");
@@ -146,6 +148,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($bulk_action === 'cambiar_estado') {
             $nuevo_estado = $_POST['bulk_estado'] ?? '';
             if (in_array($nuevo_estado, ['pendiente','jugado','reprogramado','walkover','no_presentado'], true)) {
+                // Si pasa a reprogramado, guardar snapshot original
+                if ($nuevo_estado === 'reprogramado') {
+                    foreach ($partido_ids as $_pid) { epl_partido_snapshot_original((int)$_pid); }
+                }
                 $db->prepare("UPDATE partidos SET estado=? WHERE id IN ($ids_str)")->execute([$nuevo_estado]);
                 if ($nuevo_estado === 'reprogramado') {
                     $db->query("UPDATE partidos SET recinto_id=NULL WHERE id IN ($ids_str) AND (fecha_programada IS NULL OR DATE(fecha_programada)='2026-12-31')");
@@ -211,6 +217,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if ($est === 'reprogramado' && !$fecha_p) $recinto_id = null;
 
+        // Si el partido pasa a reprogramado o se cambia fecha/cancha estando reprogramado,
+        // capturar el snapshot original ANTES del UPDATE
+        if ($est === 'reprogramado' || $p2['estado'] === 'reprogramado') {
+            epl_partido_snapshot_original($pid);
+        }
+
         $db->prepare("UPDATE partidos SET estado=?,fecha_programada=?,fecha_jugado=?,jornada=?,nombre_fecha=?,recinto_id=?,sets_local=?,sets_visitante=?,games_s1_local=?,games_s1_visitante=?,games_s2_local=?,games_s2_visitante=?,games_s3_local=?,games_s3_visitante=?,ganador_id=?,alerta_admin=? WHERE id=?")
            ->execute([$est, $fecha_p, $fecha_j ?: null, $jornada, $nombre_f, $recinto_id, $sets_l, $sets_v, $sets[1]['l'], $sets[1]['v'], $sets[2]['l'], $sets[2]['v'], $sets[3]['l'], $sets[3]['v'], $ganador_id, $alerta_a, $pid]);
         epl_recalcular_clasificacion((int)$p2['liga_id']);
@@ -269,6 +281,9 @@ if ($f_search) {
         for ($i = 0; $i < 11; $i++) $params_p[] = $p_val;
     }
 }
+
+// Asegurar columnas originales
+epl_ensure_partidos_columnas_originales();
 
 $stP = $db->prepare("
     SELECT p.*, el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
@@ -643,6 +658,19 @@ require_once '../includes/header.php';
                 </div>
                 <?php if ($p['recinto_id'] && isset($map_recintos_full[$p['recinto_id']])): ?>
                   <div class="pf-card-cancha">📍 <?= epl_h($map_recintos_full[$p['recinto_id']]) ?></div>
+                <?php endif; ?>
+                <?php
+                  // Mostrar reserva ORIGINAL si fue reprogramado y tenemos snapshot
+                  if ($p['estado'] === 'reprogramado' && (!empty($p['fecha_original']) || !empty($p['recinto_original_id']))):
+                    $_fo = $p['fecha_original'] ?: null;
+                    $_ro = $p['recinto_original_id'] ?: null;
+                    $_ro_label = ($_ro && isset($map_recintos_full[$_ro])) ? $map_recintos_full[$_ro] : '';
+                ?>
+                  <div style="margin-top:.4rem;padding:.4rem .55rem;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:6px;font-size:.7rem;color:#92400e;line-height:1.4">
+                    ⚠️ <strong>Reserva original a dar de baja:</strong>
+                    <?= $_fo ? date('d/m H:i', strtotime($_fo)) : '—' ?>
+                    <?= $_ro_label ? '· ' . epl_h($_ro_label) : '' ?>
+                  </div>
                 <?php endif; ?>
               </div>
               <button type="button" onclick="window.editarPartido(this)" data-partido="<?= epl_h(base64_encode((string)(json_encode($p, JSON_UNESCAPED_UNICODE) ?: '{}'))) ?>" class="pf-card-btn">Editar</button>

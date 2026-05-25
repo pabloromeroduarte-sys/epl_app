@@ -291,6 +291,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($bulk_action === 'cambiar_fecha_programada') {
                 $sin_fecha    = !empty($_POST['bulk_sin_fecha']);
                 $n_fecha_prog = trim($_POST['bulk_fecha_programada'] ?? '');
+                // Snapshot original antes de cambiar
+                foreach ($partido_ids as $_pid) { epl_partido_snapshot_original((int)$_pid); }
                 if ($sin_fecha) {
                     $db->query("UPDATE partidos SET fecha_programada=NULL WHERE id IN ($ids_str)");
                     // Si están reprogramados, limpiar recinto también

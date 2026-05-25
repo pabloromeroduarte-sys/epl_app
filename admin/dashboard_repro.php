@@ -5,23 +5,27 @@ require_once '../includes/functions.php';
 epl_require_admin();
 
 $db = epl_db();
+epl_ensure_partidos_columnas_originales();
 
 // ────────────────────────────────────────────────────────────────────────
 // QUERY: SOLO partidos REPROGRAMADOS (los pendientes con fecha futura
 // son del calendario normal del torneo, no son problema del admin acá)
 // ────────────────────────────────────────────────────────────────────────
 $partidos_open = $db->query("
-    SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada, p.estado, p.alerta_admin,
+    SELECT p.id, p.jornada, p.nombre_fecha, p.fecha_programada, p.fecha_original,
+           p.estado, p.alerta_admin, p.recinto_original_id,
            l.id AS liga_id, l.nombre AS liga_nombre,
            el.id AS local_id, el.nombre AS local_nombre,
            ev.id AS visitante_id, ev.nombre AS visitante_nombre,
            r.nombre AS recinto_nombre,
+           ro.nombre AS recinto_original_nombre,
            sr.motivo, sr.rival_no_responde, sr.created_at AS fecha_solicitud
     FROM partidos p
     JOIN ligas l ON l.id = p.liga_id
     JOIN equipos el ON el.id = p.equipo_local_id
     JOIN equipos ev ON ev.id = p.equipo_visitante_id
-    LEFT JOIN recintos r ON r.id = p.recinto_id
+    LEFT JOIN recintos r  ON r.id  = p.recinto_id
+    LEFT JOIN recintos ro ON ro.id = p.recinto_original_id
     LEFT JOIN solicitudes_reprogramacion sr ON sr.id = (
         SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
         WHERE sr2.partido_id = p.id AND sr2.estado != 'rechazada'
@@ -31,6 +35,17 @@ $partidos_open = $db->query("
         (p.fecha_programada IS NULL OR DATE(p.fecha_programada)='2026-12-31') ASC,
         p.fecha_programada ASC
 ")->fetchAll();
+
+// Reservas a dar de baja (partidos reprogramados con fecha/cancha original conocida)
+$reservas_baja = array_values(array_filter($partidos_open, function($p) {
+    return !empty($p['fecha_original']) || !empty($p['recinto_original_id']);
+}));
+// Ordenar por fecha_original ascendente para que las más cercanas aparezcan primero
+usort($reservas_baja, function($a, $b) {
+    $ta = $a['fecha_original'] ? strtotime($a['fecha_original']) : PHP_INT_MAX;
+    $tb = $b['fecha_original'] ? strtotime($b['fecha_original']) : PHP_INT_MAX;
+    return $ta <=> $tb;
+});
 
 // Helpers
 $hoy = new DateTime('today');
@@ -434,6 +449,53 @@ require_once '../includes/header.php';
         <?php endforeach; ?>
       </div>
     </section>
+    <?php endif; ?>
+
+    <!-- ═══════ SECCIÓN: Canchas a dar de baja ═══════ -->
+    <?php if (!empty($reservas_baja)): ?>
+    <section class="sec-card sec-bajas">
+      <div class="sec-head">
+        <div>
+          <h2 class="sec-title">🏟️ Canchas a dar de baja</h2>
+          <p class="sec-sub">Reservas hechas para partidos que se reprogramaron — cancelá estas para liberar el horario</p>
+        </div>
+        <div class="sec-count" style="background:#fef3c7;color:#92400e"><?= count($reservas_baja) ?></div>
+      </div>
+      <div class="sec-body">
+        <?php foreach ($reservas_baja as $r):
+          $_fo = $r['fecha_original'] ?: null;
+          $_fa = ($r['fecha_programada'] && date('Y-m-d', strtotime($r['fecha_programada'])) !== '2026-12-31')
+                 ? date('d/m H:i', strtotime($r['fecha_programada']))
+                 : 'Sin fecha nueva';
+        ?>
+        <div class="partido-row" style="background:#fffbeb">
+          <div class="partido-row-main">
+            <div class="partido-meta">
+              <span class="partido-liga"><?= epl_h($r['liga_nombre']) ?></span>
+              <?php if ($r['jornada']): ?><span class="partido-jornada">J<?= $r['jornada'] ?></span><?php endif; ?>
+            </div>
+            <div class="partido-equipos">
+              <strong><?= epl_h($r['local_nombre']) ?></strong>
+              <span class="vs">vs</span>
+              <strong><?= epl_h($r['visitante_nombre']) ?></strong>
+            </div>
+            <div class="partido-extra" style="margin-top:.45rem">
+              <span style="display:inline-flex;align-items:center;gap:.3rem;background:#fee2e2;color:#991b1b;padding:.25rem .6rem;border-radius:6px;font-size:.72rem;font-weight:700">
+                🚫 DAR DE BAJA: <?= $_fo ? date('d/m H:i', strtotime($_fo)) : '—' ?>
+                <?php if ($r['recinto_original_nombre']): ?> · <?= epl_h($r['recinto_original_nombre']) ?><?php endif; ?>
+              </span>
+              <span style="display:inline-flex;align-items:center;gap:.3rem;background:#dcfce7;color:#15803d;padding:.25rem .6rem;border-radius:6px;font-size:.72rem;font-weight:700">
+                ✅ NUEVA: <?= $_fa ?>
+                <?php if ($r['recinto_nombre']): ?> · <?= epl_h($r['recinto_nombre']) ?><?php endif; ?>
+              </span>
+            </div>
+          </div>
+          <a href="liga_detalle.php?id=<?= $r['liga_id'] ?>&tab=partidos#p<?= $r['id'] ?>" class="btn-gestionar">Ver</a>
+        </div>
+        <?php endforeach; ?>
+      </div>
+    </section>
+    <style>.sec-bajas { border-left:5px solid #f59e0b !important; }</style>
     <?php endif; ?>
 
     <!-- ═════════════════════ SECCIÓN 4: TOP equipos con más reprogramaciones ═════════════════════ -->
