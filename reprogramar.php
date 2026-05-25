@@ -145,24 +145,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
         ")->execute([$partido_id, $jugador['id'], $motivo, $fecha_final, $rival_no_resp, $mutuo_acuerdo,
                      $estado_sol, $auto_aprobada ? $fecha_final : null]);
 
-        if ($auto_aprobada) {
-            // Guardar snapshot original ANTES de cambiar la fecha
-            epl_partido_snapshot_original($partido_id);
-            // Mutuo acuerdo → aplicar inmediatamente sin esperar al admin.
-            // Limpiar recinto_id y la confirmación de cancha: el club debe asignar cancha para la nueva fecha.
-            $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=?,
-                            recinto_id=NULL, cancha_token=NULL, cancha_solicitada_at=NULL,
-                            cancha_confirmada_at=NULL, cancha_confirmada_por=NULL,
-                            baja_token=NULL, baja_solicitada_at=NULL, baja_confirmada_at=NULL, baja_confirmada_por=NULL
-                          WHERE id=?")
-               ->execute([$fecha_final, $partido_id]);
-        } else {
-            // Guardar snapshot original al marcar como reprogramado (sin fecha nueva todavía)
-            epl_partido_snapshot_original($partido_id);
-            $db->prepare("UPDATE partidos SET estado='reprogramado',
-                            baja_token=NULL, baja_solicitada_at=NULL, baja_confirmada_at=NULL, baja_confirmada_por=NULL
-                          WHERE id=?")->execute([$partido_id]);
-        }
+        // ─── NUEVA REGLA: el partido NO cambia fecha hasta que el admin apruebe ───
+        // Solo se marca como 'reprogramado' y se resetean tokens viejos de baja/cancha.
+        // La fecha propuesta vive en solicitudes_reprogramacion.fecha_propuesta hasta que admin apruebe.
+        $db->prepare("UPDATE partidos SET estado='reprogramado',
+                        baja_token=NULL, baja_solicitada_at=NULL, baja_confirmada_at=NULL, baja_confirmada_por=NULL,
+                        cancha_token=NULL, cancha_solicitada_at=NULL, cancha_confirmada_at=NULL, cancha_confirmada_por=NULL
+                      WHERE id=?")->execute([$partido_id]);
 
         // Notificar in-app + email (SMTP) a jugadores del partido rival y a los admins
         $solicitante_nombre = $jugador['nombre'] . ' ' . $jugador['apellido'];

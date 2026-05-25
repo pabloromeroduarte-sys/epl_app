@@ -28,14 +28,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: partido_detalle.php?id=$id"); exit;
     }
     if ($action === 'aprobar_reprog') {
-        // Marcar partido como pendiente (reprogramación aprobada manualmente)
-        $db->prepare("UPDATE partidos SET estado='pendiente' WHERE id = ?")->execute([$id]);
-        // Marcar solicitud pendiente como aprobada si existe
+        // 1) Buscar la solicitud pendiente más reciente para sacar fecha_propuesta
+        $sol_st = $db->prepare("SELECT id, fecha_propuesta FROM solicitudes_reprogramacion WHERE partido_id=? AND estado='pendiente' ORDER BY id DESC LIMIT 1");
+        $sol_st->execute([$id]);
+        $sol_row = $sol_st->fetch(PDO::FETCH_ASSOC);
+        $fecha_nueva = $sol_row['fecha_propuesta'] ?? null;
+
+        // 2) Guardar snapshot original ANTES de tocar fecha_programada/recinto_id
+        epl_partido_snapshot_original($id);
+
+        // 3) Aplicar nueva fecha y limpiar cancha (el club debe asignar nueva)
+        if ($fecha_nueva) {
+            $db->prepare("UPDATE partidos SET estado='pendiente', fecha_programada=?,
+                            recinto_id=NULL, cancha_token=NULL, cancha_solicitada_at=NULL,
+                            cancha_confirmada_at=NULL, cancha_confirmada_por=NULL
+                          WHERE id = ?")->execute([$fecha_nueva, $id]);
+        } else {
+            // Sin fecha propuesta → solo pasar a pendiente
+            $db->prepare("UPDATE partidos SET estado='pendiente' WHERE id = ?")->execute([$id]);
+        }
+
+        // 4) Marcar la solicitud como aprobada
         try {
-            $db->prepare("UPDATE solicitudes_reprogramacion SET estado='aprobada', updated_at=NOW() WHERE partido_id=? AND estado='pendiente'")
+            $db->prepare("UPDATE solicitudes_reprogramacion SET estado='aprobada', fecha_aprobada=NOW() WHERE partido_id=? AND estado='pendiente'")
                ->execute([$id]);
         } catch (Throwable $e) {}
-        if (session_status() === PHP_SESSION_NONE) session_start(); $_SESSION['_epl_flash'] = ['tipo'=>'ok','msg'=>'Reprogramación aprobada. El partido queda como pendiente.'];
+
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $_SESSION['_epl_flash'] = ['tipo'=>'ok','msg'=> $fecha_nueva
+            ? 'Reprogramación aprobada. El partido quedó con la nueva fecha y sin cancha (el club debe asignarla).'
+            : 'Reprogramación aprobada.'];
         header("Location: partido_detalle.php?id=$id"); exit;
     }
     if ($action === 'revertir_pendiente') {
@@ -155,22 +177,44 @@ $tiene_original = !empty($p['fecha_original']) || !empty($p['rec_o_id']);
 $baja_confirmada = !empty($p['baja_confirmada_at']);
 $baja_solicitada = !empty($p['baja_solicitada_at']) && !$baja_confirmada;
 
-// ── Sección "Pedir cancha nueva" ──────────────────────────────
-// Aparece cuando hay fecha nueva pero NO hay cancha asignada todavía (o forzamos pedir confirmación)
-$_tiene_fecha_nueva = $p['fecha_programada'] && date('Y-m-d', strtotime($p['fecha_programada'])) !== '2026-12-31';
-$_pedir_cancha      = $es_reprog && $_tiene_fecha_nueva && empty($p['recinto_id']);
+// ── Estado del flujo de reprogramación ──────────────────────────────
+// Hay 2 momentos:
+//   PRE-APROBADO  → estado='reprogramado' y fecha_original=NULL
+//                   ⇒ fecha_programada SIGUE siendo la original
+//                   ⇒ la fecha propuesta vive en solicitudes_reprogramacion.fecha_propuesta
+//   POST-APROBADO → fecha_original ya tiene el snapshot
+//                   ⇒ fecha_programada YA es la nueva fecha
+$_post_aprobado = !empty($p['fecha_original']);
 
-// ── Fecha/cancha a DAR DE BAJA ──────────────────────────────────────────────
-// SIEMPRE usar el snapshot original. La fecha nueva NUNCA es la fecha a cancelar.
-// Si no hay snapshot, el admin debe registrarlo primero.
-$_baja_fecha       = $p['fecha_original'];    // puede ser null si no se guardó snapshot
-$_baja_recinto_id  = $p['recinto_original_id'] ?: $p['recinto_id'];  // recinto a cancelar
-$_baja_recinto_nom = $p['recinto_original_nombre'] ?: $p['recinto_nombre'];
-$_baja_fecha_lbl   = ($_baja_fecha && date('Y-m-d', strtotime($_baja_fecha)) !== '2026-12-31')
-                     ? date('d/m/Y H:i', strtotime($_baja_fecha)) : null;
+// Fecha propuesta (nueva) — desde la solicitud si pre-aprobado, desde fecha_programada si post
+if ($_post_aprobado) {
+    $_propuesta_raw = $p['fecha_programada'];
+    $_propuesta_recinto = $p['recinto_nombre'];   // puede estar NULL si aún no asignaron
+} else {
+    $_propuesta_raw = $sol['fecha_propuesta'] ?? null;
+    $_propuesta_recinto = null; // pre-aprobado: aún no se eligió cancha
+}
+$_propuesta_lbl = ($_propuesta_raw && date('Y-m-d', strtotime($_propuesta_raw)) !== '2026-12-31')
+                  ? date('d/m/Y H:i', strtotime($_propuesta_raw)) : null;
+$_tiene_fecha_nueva = !empty($_propuesta_lbl);
 
-// ¿Necesita asignar cancha nueva? (hay nueva fecha pero sin recinto asignado)
-$_necesita_cancha  = $es_reprog && $_tiene_fecha_nueva && empty($p['recinto_id']);
+// Fecha original (lo que hay que dar de baja en el club)
+if ($_post_aprobado) {
+    $_baja_fecha       = $p['fecha_original'];
+    $_baja_recinto_id  = $p['recinto_original_id'];
+    $_baja_recinto_nom = $p['recinto_original_nombre'];
+} else {
+    // PRE-aprobado: fecha_programada todavía es la fecha original
+    $_baja_fecha       = $p['fecha_programada'];
+    $_baja_recinto_id  = $p['recinto_id'];
+    $_baja_recinto_nom = $p['recinto_nombre'];
+}
+$_baja_fecha_lbl = ($_baja_fecha && date('Y-m-d', strtotime($_baja_fecha)) !== '2026-12-31')
+                   ? date('d/m/Y H:i', strtotime($_baja_fecha)) : null;
+
+// ¿Necesita asignar cancha nueva? (post-aprobado con fecha nueva pero sin cancha)
+$_necesita_cancha = $_post_aprobado && $_tiene_fecha_nueva && empty($p['recinto_id']);
+$_pedir_cancha    = $_necesita_cancha;
 
 // Contactos del club (jerarquía: cancha original → sede → club)
 $_recinto_para_baja = $p['recinto_original_id'] ?: $p['recinto_id'];
@@ -196,15 +240,15 @@ $_partido_str = $p['local_nombre'] . " vs " . $p['visitante_nombre'];
 $_msg_wsp = "Hola, te hablo de Elite Padel League.\n\n";
 $_msg_wsp .= "👥 Partido: $_partido_str\n\n";
 
-if ($_tiene_fecha_nueva) {
-    // ── ESCENARIO B: hay fecha propuesta ──
+if ($_tiene_fecha_nueva && $_post_aprobado) {
+    // ── ESCENARIO B: hay fecha propuesta YA APROBADA por admin ──
     $_msg_wsp .= "Tenemos una REPROGRAMACIÓN:\n\n";
     $_msg_wsp .= "🚫 Fecha original (DAR DE BAJA):\n";
     $_msg_wsp .= "   📅 " . ($_baja_fecha_lbl ?: '⚠ pendiente de registrar') . "\n";
     if ($_baja_recinto_nom) $_msg_wsp .= "   🎾 $_baja_recinto_nom\n";
     $_msg_wsp .= "\n";
     $_msg_wsp .= "✅ Fecha propuesta (NUEVA):\n";
-    $_msg_wsp .= "   📅 $_fecha_lbl\n";
+    $_msg_wsp .= "   📅 $_propuesta_lbl\n";
     $_msg_wsp .= "   🎾 Necesitamos que nos asignen una cancha para esta fecha.\n";
 } else {
     // ── ESCENARIO A: solo baja de la reserva original ──
@@ -215,7 +259,7 @@ if ($_tiene_fecha_nueva) {
 
 // Línea de acción con el link
 if ($_baja_link) {
-    if ($_tiene_fecha_nueva) {
+    if ($_tiene_fecha_nueva && $_post_aprobado) {
         $_msg_wsp .= "\nDesde este link podés confirmar la baja Y elegir la nueva cancha en un solo paso:\n$_baja_link";
     } else {
         $_msg_wsp .= "\nConfirmá la baja desde este link:\n$_baja_link";
@@ -226,8 +270,11 @@ $_msg_wsp .= "\n\n¡Gracias!";
 // Compatibilidad con secciones legacy
 $_msg_cancha = $_msg_wsp;
 
-// ¿Está OK enviar el mensaje? Requiere fecha original registrada.
-$_msg_listo = !empty($_baja_fecha_lbl);
+// ¿Está OK enviar el mensaje?
+// - Requiere fecha original conocida
+// - Si hay propuesta sin aprobar, BLOQUEAR (admin debe aprobar primero)
+$_propuesta_pendiente = $_tiene_fecha_nueva && !$_post_aprobado;
+$_msg_listo = !empty($_baja_fecha_lbl) && !$_propuesta_pendiente;
 
 require_once '../includes/header.php';
 ?>
@@ -311,16 +358,18 @@ require_once '../includes/header.php';
                 <div style="font-size:.82rem;color:#991b1b;margin-top:.25rem;font-weight:700">🎾 <?= epl_h($_baja_recinto_nom) ?></div>
               <?php endif; ?>
             </div>
-            <?php
-              // Mostrar la nueva fecha del partido siempre que exista (el partido está reprogramado)
-              $mostrar_nueva = !$_sf;
-            ?>
-            <?php if ($mostrar_nueva): ?>
+            <?php if ($_tiene_fecha_nueva): ?>
             <div style="background:#dbeafe;border-left:4px solid #2563eb;padding:.85rem 1rem;border-radius:8px">
               <div style="font-size:.65rem;color:#1e40af;font-weight:800;text-transform:uppercase;letter-spacing:.08em">📅 Fecha propuesta (nueva)</div>
-              <div style="font-size:.7rem;color:#1e40af;margin-top:.15rem;margin-bottom:.25rem">La nueva fecha acordada para el partido</div>
-              <div style="font-weight:900;color:#1e3a8a;font-size:1rem;margin-top:.2rem"><?= $_fecha_lbl ?></div>
-              <?php if (!empty($p['cancha_confirmada_at']) && $p['recinto_nombre']): ?>
+              <div style="font-size:.7rem;color:#1e40af;margin-top:.15rem;margin-bottom:.25rem">
+                <?= $_post_aprobado ? 'Nueva fecha del partido (ya aprobada)' : 'Propuesta del jugador — falta aprobar' ?>
+              </div>
+              <div style="font-weight:900;color:#1e3a8a;font-size:1rem;margin-top:.2rem"><?= $_propuesta_lbl ?></div>
+              <?php if (!$_post_aprobado): ?>
+                <div style="font-size:.72rem;color:#92400e;margin-top:.35rem;background:#fef3c7;padding:.35rem .55rem;border-radius:6px;font-weight:700">
+                  ⏳ Aprobá la reprogramación abajo para aplicar esta fecha
+                </div>
+              <?php elseif (!empty($p['cancha_confirmada_at']) && $p['recinto_nombre']): ?>
                 <div style="font-size:.82rem;color:#15803d;margin-top:.25rem;font-weight:700">🎾 <?= epl_h($p['recinto_nombre']) ?></div>
               <?php else: ?>
                 <div style="font-size:.76rem;color:#2563eb;margin-top:.25rem;font-weight:700;font-style:italic">⚠ Sin cancha asignada aún</div>
@@ -350,10 +399,17 @@ require_once '../includes/header.php';
               </div>
             <?php else: ?>
               <?php if (!$_msg_listo): ?>
-                <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:1rem;font-size:.88rem;color:#92400e;margin-bottom:1rem">
-                  <strong>⚠ Falta registrar la fecha original</strong><br>
-                  No podés enviar el mensaje sin saber qué reserva dar de baja. Usá el formulario <strong>"Registrar manualmente reserva original"</strong> abajo y volvé a entrar.
-                </div>
+                <?php if ($_propuesta_pendiente): ?>
+                  <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:1rem;font-size:.88rem;color:#92400e;margin-bottom:1rem">
+                    <strong>⏳ Hay una reprogramación propuesta sin aprobar</strong><br>
+                    El jugador propuso <strong><?= epl_h($_propuesta_lbl) ?></strong>. Primero aprobá la reprogramación abajo (en "Acciones manuales"), y recién después mandá el mensaje al club.
+                  </div>
+                <?php else: ?>
+                  <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:1rem;font-size:.88rem;color:#92400e;margin-bottom:1rem">
+                    <strong>⚠ Falta registrar la fecha original</strong><br>
+                    No podés enviar el mensaje sin saber qué reserva dar de baja. Usá el formulario <strong>"Registrar manualmente reserva original"</strong> abajo y volvé a entrar.
+                  </div>
+                <?php endif; ?>
               <?php else: ?>
                 <p style="font-size:.85rem;color:#475569;margin-bottom:.5rem;font-weight:600">
                   📱 Enviar aviso al club por WhatsApp
