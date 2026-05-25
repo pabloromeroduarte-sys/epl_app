@@ -136,45 +136,200 @@ if ($equipo) {
     <?php endif; ?>
 
     <?php if (!$tiene_push): ?>
-    <div id="bannerPush" style="background:linear-gradient(135deg,#1c2f48,#1a3a64);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.85rem;flex-wrap:wrap">
-      <span style="font-size:1.4rem;flex-shrink:0">🔔</span>
+    <!-- Banner inteligente push (detecta estado y guía al usuario) -->
+    <div id="bannerPush" style="display:none;background:linear-gradient(135deg,#1c2f48,#1a3a64);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.25rem;align-items:center;gap:.85rem;flex-wrap:wrap">
+      <span id="bpIcon" style="font-size:1.4rem;flex-shrink:0">🔔</span>
       <div style="flex:1;min-width:160px">
-        <div style="font-weight:800;font-size:.88rem;color:#fff">Activá las notificaciones</div>
-        <div style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:.15rem">Recibí alertas de partidos y resultados en tu celular.</div>
+        <div id="bpTitulo" style="font-weight:800;font-size:.88rem;color:#fff">Activá las notificaciones</div>
+        <div id="bpSub" style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:.15rem">Recibí alertas de partidos y resultados en tu celular.</div>
       </div>
       <div style="display:flex;gap:.5rem;flex-shrink:0">
-        <button onclick="activarPush()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:.5rem 1rem;font-weight:800;font-size:.8rem;cursor:pointer">Activar</button>
-        <button onclick="this.closest('#bannerPush').remove()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:.5rem .75rem;font-size:.8rem;cursor:pointer">Ahora no</button>
+        <button id="bpBtn" onclick="bpAccion()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:.55rem 1.1rem;font-weight:800;font-size:.8rem;cursor:pointer">Activar</button>
+        <button onclick="this.closest('#bannerPush').remove()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:.5rem .75rem;font-size:.8rem;cursor:pointer">×</button>
       </div>
     </div>
-    <script>
-    async function activarPush() {
-      const banner = document.getElementById('bannerPush');
-      if (banner) banner.remove();
 
+    <!-- Modal con instrucciones específicas -->
+    <div id="bpModal" style="display:none;position:fixed;inset:0;background:rgba(10,20,33,.78);backdrop-filter:blur(6px);z-index:99999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)bpCerrarModal()">
+      <div style="background:#fff;border-radius:18px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+        <div style="background:linear-gradient(135deg,#1c2f48,#0f1e30);padding:1.1rem 1.4rem;color:#fff;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:.65rem;color:#C9A762;font-weight:900;letter-spacing:.2em;text-transform:uppercase">Notificaciones bloqueadas</div>
+            <h3 style="margin:.2rem 0 0;font-family:'Anton',sans-serif;font-size:1.05rem;text-transform:uppercase">Cómo <span style="color:#C9A762">activarlas</span></h3>
+          </div>
+          <button onclick="bpCerrarModal()" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:1.6rem;cursor:pointer;line-height:1;padding:0 .3rem">×</button>
+        </div>
+        <div id="bpInstrucciones" style="padding:1.25rem 1.4rem">
+          <!-- Inyectado por JS según browser -->
+        </div>
+        <div style="padding:0 1.4rem 1.25rem">
+          <button onclick="bpVerificar()" style="width:100%;background:var(--gold);color:var(--navy);border:none;padding:.85rem;border-radius:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:.78rem;cursor:pointer;font-family:inherit">
+            Ya las activé · Probar de nuevo
+          </button>
+          <p style="margin-top:.6rem;text-align:center;font-size:.7rem;color:#94a3b8">Después de activarlas, recargá la página.</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (function() {
       const VAPID_PUBLIC = "<?= htmlspecialchars(epl_env('VAPID_PUBLIC_KEY'), ENT_QUOTES) ?>";
+      const banner = document.getElementById('bannerPush');
+      const iconEl = document.getElementById('bpIcon');
+      const titEl  = document.getElementById('bpTitulo');
+      const subEl  = document.getElementById('bpSub');
+      const btnEl  = document.getElementById('bpBtn');
+
       function urlB64(b64){const pad='='.repeat((4-b64.length%4)%4);const raw=atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
 
-      try {
-        const perm = await Notification.requestPermission();
-        if (perm !== 'granted') return;
-        const reg = await navigator.serviceWorker.ready;
-        let sub = await reg.pushManager.getSubscription();
-        if (!sub && VAPID_PUBLIC) {
-          sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlB64(VAPID_PUBLIC)
-          });
+      // Detectar browser
+      function detectBrowser() {
+        const ua = navigator.userAgent;
+        if (/iPhone|iPad|iPod/.test(ua)) return 'ios';
+        if (/SamsungBrowser/.test(ua))   return 'samsung';
+        if (/Chrome/.test(ua) && /Android/.test(ua)) return 'chrome-android';
+        if (/Firefox/.test(ua)) return 'firefox';
+        if (/Chrome/.test(ua))  return 'chrome-desktop';
+        if (/Safari/.test(ua))  return 'safari-desktop';
+        return 'otro';
+      }
+
+      // Estado actual
+      function estadoActual() {
+        if (!('Notification' in window)) return 'no-soportado';
+        return Notification.permission; // 'default' | 'granted' | 'denied'
+      }
+
+      // Renderizar banner según estado
+      function renderBanner() {
+        const est = estadoActual();
+        if (est === 'no-soportado') return; // No mostrar nada
+        if (est === 'granted') {
+          // Ya tiene permiso pero no hay sub en BD: re-suscribir silenciosamente
+          window.bpAccion();
+          return;
         }
-        if (sub) {
-          await fetch('/push_subscribe.php', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify(sub)
-          });
+        banner.style.display = 'flex';
+        if (est === 'denied') {
+          iconEl.textContent = '🔕';
+          titEl.textContent  = 'Notificaciones BLOQUEADAS';
+          subEl.innerHTML    = 'Las tenés bloqueadas en este dispositivo. Te ayudo a reactivarlas.';
+          btnEl.textContent  = 'Cómo activar';
+        } else {
+          iconEl.textContent = '🔔';
+          titEl.textContent  = 'Activá las notificaciones';
+          subEl.textContent  = 'Recibí alertas de partidos y resultados en tu celular.';
+          btnEl.textContent  = 'Activar';
         }
-      } catch(e) { /* silencioso */ }
-    }
+      }
+
+      window.bpAccion = async function() {
+        const est = estadoActual();
+        if (est === 'denied') { bpAbrirModal(); return; }
+        try {
+          const perm = await Notification.requestPermission();
+          if (perm === 'denied') { bpAbrirModal(); return; }
+          if (perm !== 'granted') return;
+          const reg = await navigator.serviceWorker.ready;
+          let sub = await reg.pushManager.getSubscription();
+          if (sub) { try { await sub.unsubscribe(); } catch(e) {} sub = null; }
+          if (VAPID_PUBLIC) {
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlB64(VAPID_PUBLIC)
+            });
+          }
+          if (sub) {
+            await fetch('/push_subscribe.php', {
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify(sub)
+            });
+            banner.remove();
+            // Mini toast de confirmación
+            const t = document.createElement('div');
+            t.textContent = '✅ Notificaciones activadas';
+            t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-weight:700;font-size:.85rem;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.2)';
+            document.body.appendChild(t);
+            setTimeout(()=>t.remove(), 3500);
+          }
+        } catch(e) { console.warn('push:', e); }
+      };
+
+      window.bpAbrirModal = function() {
+        const b = detectBrowser();
+        const cont = document.getElementById('bpInstrucciones');
+        const instrucciones = {
+          'samsung': `
+            <div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.82rem;color:#92400e">
+              Detectamos <strong>Samsung Internet</strong>. Seguí estos pasos:
+            </div>
+            <ol style="padding-left:1.3rem;line-height:1.8;color:#475569;font-size:.88rem">
+              <li>Tocá el <strong>icono 🔒 (candado)</strong> a la izquierda de la URL arriba</li>
+              <li>Tocá <strong>"Permisos"</strong></li>
+              <li>Tocá <strong>"Notificaciones"</strong> y cambialo a <strong>Permitir</strong></li>
+              <li>Volvé acá y tocá el botón <strong>"Ya las activé"</strong></li>
+            </ol>
+            <div style="margin-top:1rem;padding:.65rem;background:#f0f9ff;border-radius:8px;font-size:.78rem;color:#1e40af">
+              💡 <strong>Tip:</strong> Si no aparece, abrí <strong>Ajustes de Samsung Internet → Sitios y descargas → Notificaciones</strong> y buscá <strong>epleague.cl</strong>.
+            </div>`,
+          'chrome-android': `
+            <div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.82rem;color:#92400e">
+              Detectamos <strong>Chrome Android</strong>. Pasos:
+            </div>
+            <ol style="padding-left:1.3rem;line-height:1.8;color:#475569;font-size:.88rem">
+              <li>Tocá el <strong>icono 🔒</strong> al lado de la URL (arriba)</li>
+              <li>Tocá <strong>"Permisos y privacidad"</strong></li>
+              <li>Buscá <strong>"Notificaciones"</strong> y cambialo a <strong>Permitir</strong></li>
+              <li>Volvé y tocá <strong>"Ya las activé"</strong></li>
+            </ol>`,
+          'ios': `
+            <div style="background:#fee2e2;border-left:4px solid #dc2626;padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.82rem;color:#991b1b">
+              <strong>iPhone:</strong> el push de Safari requiere instalar la app primero.
+            </div>
+            <ol style="padding-left:1.3rem;line-height:1.8;color:#475569;font-size:.88rem">
+              <li>Abrí <strong>epleague.cl en Safari</strong></li>
+              <li>Tocá el botón <strong>compartir ⬆</strong> (cuadrado con flecha)</li>
+              <li>Tocá <strong>"Añadir a pantalla de inicio"</strong></li>
+              <li>Cerrá Safari y <strong>abrí la app desde el icono nuevo</strong></li>
+              <li>Cuando te pregunte por notificaciones, tocá <strong>Permitir</strong></li>
+            </ol>
+            <div style="margin-top:1rem;padding:.65rem;background:#f0f9ff;border-radius:8px;font-size:.78rem;color:#1e40af">
+              💡 Si ya la instalaste y bloqueaste: <strong>Ajustes iOS → Notificaciones → EPL → Permitir</strong>.
+            </div>`,
+          'chrome-desktop': `
+            <ol style="padding-left:1.3rem;line-height:1.8;color:#475569;font-size:.88rem">
+              <li>Click en el <strong>🔒 candado</strong> al lado de la URL</li>
+              <li>Buscá <strong>"Notificaciones"</strong> y elegí <strong>Permitir</strong></li>
+              <li>Recargá la página</li>
+            </ol>`,
+          'firefox': `
+            <ol style="padding-left:1.3rem;line-height:1.8;color:#475569;font-size:.88rem">
+              <li>Click en el <strong>🔒 candado</strong> al lado de la URL</li>
+              <li>Buscá <strong>"Enviar notificaciones"</strong></li>
+              <li>Click en la <strong>X</strong> al lado de "Bloqueado temporalmente"</li>
+              <li>Recargá la página</li>
+            </ol>`,
+        };
+        cont.innerHTML = instrucciones[b] || instrucciones['chrome-desktop'];
+        document.getElementById('bpModal').style.display = 'flex';
+      };
+
+      window.bpCerrarModal = function() {
+        document.getElementById('bpModal').style.display = 'none';
+      };
+
+      window.bpVerificar = function() {
+        bpCerrarModal();
+        if (Notification.permission === 'granted') {
+          location.reload();
+        } else {
+          alert('Las notificaciones todavía están bloqueadas. Seguí los pasos del modal y recargá la página.');
+        }
+      };
+
+      renderBanner();
+    })();
     </script>
     <?php endif; ?>
 
