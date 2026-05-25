@@ -7,6 +7,21 @@ epl_require_admin();
 $db = epl_db();
 epl_ensure_partidos_columnas_originales();
 
+// Auto-limpieza: Si un partido es pre-aprobado (fecha_original es NULL) y ya tiene cancha asignada,
+// no requiere dar de baja nada ni solicitar cancha al club. Limpiar tokens/fechas de solicitud residuales.
+$db->query("
+    UPDATE partidos 
+    SET baja_solicitada_at = NULL, 
+        baja_confirmada_at = NULL,
+        baja_token = NULL, 
+        cancha_solicitada_at = NULL, 
+        cancha_confirmada_at = NULL,
+        cancha_token = NULL
+    WHERE estado = 'reprogramado' 
+      AND fecha_original IS NULL 
+      AND recinto_id IS NOT NULL
+");
+
 // ── POST: borrar reprogramación (solo demo) ──────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -272,12 +287,12 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           $_rec_actual_full = $_es_post ? ($p['recinto_nombre']
               ? $p['recinto_nombre'] . (!empty($p['recinto_sup']) ? ' (' . $p['recinto_sup'] . ')' : '')
               : null) : null;
-          $_tiene_original = $_fo_lbl || $_rec_orig;
+          $_tiene_original = $_es_post && ($_fo_lbl || $_rec_orig);
 
-          $_fecha_nueva_raw = $_es_post ? $p['fecha_programada'] : ($p['fecha_propuesta'] ?? null);
+          $_fecha_nueva_raw = $_es_post ? $p['fecha_programada'] : ($p['fecha_propuesta'] ?? $p['fecha_programada']);
           $_sf_nueva    = !$_fecha_nueva_raw || date('Y-m-d', strtotime($_fecha_nueva_raw)) === '2026-12-31';
           $_fecha_nueva = !$_sf_nueva ? date('d/m/Y H:i', strtotime($_fecha_nueva_raw)) : null;
-          $_necesita_cancha = $_fecha_nueva && ($_es_post ? empty($p['recinto_nombre']) : true);
+          $_necesita_cancha = $_fecha_nueva && ($_es_post ? empty($p['recinto_nombre']) : empty($p['recinto_id']));
 
           $_confirmada  = !empty($p['baja_confirmada_at']);
           $_solicitada  = !empty($p['baja_solicitada_at']);
