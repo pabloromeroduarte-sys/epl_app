@@ -219,14 +219,20 @@ if ($_post_aprobado) {
     $_baja_fecha       = $p['fecha_original'];
     $_baja_recinto_id  = $p['recinto_original_id'];
     $_baja_recinto_nom = $p['recinto_original_nombre'];
+    $_baja_recinto_sup = $p['recinto_original_sup'] ?? null;
 } else {
     // PRE-aprobado: fecha_programada todavía es la fecha original
     $_baja_fecha       = $p['fecha_programada'];
     $_baja_recinto_id  = $p['recinto_id'];
     $_baja_recinto_nom = $p['recinto_nombre'];
+    $_baja_recinto_sup = $p['recinto_sup'] ?? null;
 }
 $_baja_fecha_lbl = ($_baja_fecha && date('Y-m-d', strtotime($_baja_fecha)) !== '2026-12-31')
                    ? date('d/m/Y H:i', strtotime($_baja_fecha)) : null;
+// Etiqueta legible "Cancha 12 (Santa Blanca)"
+$_baja_recinto_full = $_baja_recinto_nom
+    ? $_baja_recinto_nom . ($_baja_recinto_sup ? ' (' . $_baja_recinto_sup . ')' : '')
+    : null;
 
 // ¿Necesita asignar cancha nueva? (post-aprobado con fecha nueva pero sin cancha)
 $_necesita_cancha = $_post_aprobado && $_tiene_fecha_nueva && empty($p['recinto_id']);
@@ -271,7 +277,7 @@ if ($_tiene_fecha_nueva) {
     $_msg_wsp .= "Tenemos una REPROGRAMACIÓN:\n\n";
     $_msg_wsp .= "🚫 Fecha original (DAR DE BAJA):\n";
     $_msg_wsp .= "   📅 " . ($_baja_fecha_lbl ?: '⚠ pendiente de registrar') . "\n";
-    if ($_baja_recinto_nom) $_msg_wsp .= "   🎾 $_baja_recinto_nom\n";
+    if ($_baja_recinto_full) $_msg_wsp .= "   🎾 $_baja_recinto_full\n";
     $_msg_wsp .= "\n";
     $_msg_wsp .= "✅ Fecha nueva del partido:\n";
     $_msg_wsp .= "   📅 $_propuesta_lbl\n";
@@ -280,7 +286,7 @@ if ($_tiene_fecha_nueva) {
     // ── ESCENARIO A: solo baja de la reserva original ──
     $_msg_wsp .= "Necesitamos DAR DE BAJA esta reserva:\n";
     $_msg_wsp .= "📅 " . ($_baja_fecha_lbl ?: '⚠ fecha pendiente de registrar') . "\n";
-    if ($_baja_recinto_nom) $_msg_wsp .= "🎾 $_baja_recinto_nom\n";
+    if ($_baja_recinto_full) $_msg_wsp .= "🎾 $_baja_recinto_full\n";
 }
 
 // Línea de acción con el link

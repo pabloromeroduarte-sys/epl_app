@@ -67,8 +67,8 @@ $partidos_open = $db->query("
            l.id AS liga_id, l.nombre AS liga_nombre,
            el.id AS local_id, el.nombre AS local_nombre,
            ev.id AS visitante_id, ev.nombre AS visitante_nombre,
-           r.nombre AS recinto_nombre,
-           ro.nombre AS recinto_original_nombre,
+           r.nombre AS recinto_nombre, rs.nombre AS recinto_sup,
+           ro.nombre AS recinto_original_nombre, rop.nombre AS recinto_original_sup,
            ro.contacto1_nombre, ro.contacto1_telefono,
            ro.contacto2_nombre, ro.contacto2_telefono,
            ro.contacto3_nombre, ro.contacto3_telefono,
@@ -79,7 +79,9 @@ $partidos_open = $db->query("
     JOIN equipos el ON el.id = p.equipo_local_id
     JOIN equipos ev ON ev.id = p.equipo_visitante_id
     LEFT JOIN recintos r  ON r.id  = p.recinto_id
+    LEFT JOIN recintos rs ON rs.id = r.superior_id
     LEFT JOIN recintos ro ON ro.id = p.recinto_original_id
+    LEFT JOIN recintos rop ON rop.id = ro.superior_id
     LEFT JOIN solicitudes_reprogramacion sr ON sr.id = (
         SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
         WHERE sr2.partido_id = p.id AND sr2.estado != 'rechazada'
@@ -254,6 +256,12 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           $_fo             = $p['fecha_original'] ?: null;         // fecha a DAR DE BAJA
           $_fo_lbl         = $_fo ? date('d/m/Y H:i', strtotime($_fo)) : null;
           $_rec_orig       = $p['recinto_original_nombre'] ?? null; // cancha a dar de baja
+          $_rec_orig_sup   = $p['recinto_original_sup'] ?? null;    // sede de la cancha a dar de baja
+          // "Cancha 12 (Santa Blanca)"
+          $_rec_orig_full  = $_rec_orig ? $_rec_orig . ($_rec_orig_sup ? " ($_rec_orig_sup)" : '') : null;
+          $_rec_actual_full = $p['recinto_nombre']
+              ? $p['recinto_nombre'] . (!empty($p['recinto_sup']) ? ' (' . $p['recinto_sup'] . ')' : '')
+              : null;
           $_tiene_original = $_fo_lbl || $_rec_orig;
 
           $_sf_nueva    = !$p['fecha_programada'] || date('Y-m-d', strtotime($p['fecha_programada'])) === '2026-12-31';
@@ -285,11 +293,11 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           if ($_tiene_original) {
               $_msg .= "Necesitamos DAR DE BAJA esta reserva:\n";
               if ($_fo_lbl)  $_msg .= "📅 $_fo_lbl\n";
-              if ($_rec_orig) $_msg .= "🎾 $_rec_orig\n";
+              if ($_rec_orig_full) $_msg .= "🎾 $_rec_orig_full\n";
               $_msg .= "👥 {$p['local_nombre']} vs {$p['visitante_nombre']}\n";
               if ($_fecha_nueva) {
                   $_msg .= "\nNueva fecha del partido: $_fecha_nueva\n";
-                  if ($p['recinto_nombre']) $_msg .= "Nueva cancha: {$p['recinto_nombre']}\n";
+                  if ($_rec_actual_full) $_msg .= "Nueva cancha: $_rec_actual_full\n";
               }
           } else {
               $_msg .= "Tenemos un partido reprogramado y necesitamos asignar cancha:\n";
