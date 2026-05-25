@@ -104,10 +104,19 @@ $hoy = new DateTime('today');
 $es_sin_fecha = fn($p) => !$p['fecha_programada'] || date('Y-m-d', strtotime($p['fecha_programada'])) === '2026-12-31';
 $es_vencido   = fn($p) => !$es_sin_fecha($p) && new DateTime($p['fecha_programada']) < $hoy;
 
-// Segmentar
-$sin_fecha = array_values(array_filter($partidos_open, $es_sin_fecha));
-$vencidos  = array_values(array_filter($partidos_open, $es_vencido));
-$con_fecha = array_values(array_filter($partidos_open, fn($p) => !$es_sin_fecha($p) && !$es_vencido($p)));
+// Recientes: solicitudes creadas en las últimas 48h (para destacarlas)
+$limite_reciente = new DateTime('-48 hours');
+$es_reciente = fn($p) => !empty($p['fecha_solicitud']) && new DateTime($p['fecha_solicitud']) >= $limite_reciente;
+
+$recientes = array_values(array_filter($partidos_open, $es_reciente));
+// Ordenar recientes: más nuevas primero
+usort($recientes, fn($a,$b) => strtotime($b['fecha_solicitud']) - strtotime($a['fecha_solicitud']));
+$n_recientes = count($recientes);
+
+// Segmentar (excluyendo los recientes para no duplicar)
+$sin_fecha = array_values(array_filter($partidos_open, fn($p) => $es_sin_fecha($p) && !$es_reciente($p)));
+$vencidos  = array_values(array_filter($partidos_open, fn($p) => $es_vencido($p) && !$es_reciente($p)));
+$con_fecha = array_values(array_filter($partidos_open, fn($p) => !$es_sin_fecha($p) && !$es_vencido($p) && !$es_reciente($p)));
 
 // Avance del torneo
 $total_jugados  = (int)$db->query("SELECT COUNT(*) FROM partidos WHERE estado IN ('jugado','walkover','no_presentado')")->fetchColumn();
@@ -321,7 +330,11 @@ require_once '../includes/header.php';
     </div>
 
     <!-- TABS: Solicitudes | Informe -->
-    <?php $tab_inicial = isset($_GET['tab']) && $_GET['tab'] === 'informe' ? 'informe' : ($n_solicitudes > 0 ? 'solicitudes' : 'informe'); ?>
+    <?php
+      // Si hay recientes → abrir Informe directamente para que se vean
+      $tab_inicial = isset($_GET['tab']) ? $_GET['tab']
+          : ($n_recientes > 0 ? 'informe' : ($n_solicitudes > 0 ? 'solicitudes' : 'informe'));
+    ?>
     <div class="tabs-bar">
       <button class="tab-btn <?= $tab_inicial==='solicitudes'?'active':'' ?>" data-tab="solicitudes" onclick="cambiarTab('solicitudes')">
         📨 Solicitudes
@@ -331,6 +344,9 @@ require_once '../includes/header.php';
       </button>
       <button class="tab-btn <?= $tab_inicial==='informe'?'active':'' ?>" data-tab="informe" onclick="cambiarTab('informe')">
         📊 Informe
+        <?php if ($n_recientes > 0): ?>
+          <span class="tab-badge" style="background:#8b5cf6"><?= $n_recientes ?> nuevo<?= $n_recientes>1?'s':'' ?></span>
+        <?php endif; ?>
       </button>
     </div>
 
@@ -487,6 +503,39 @@ require_once '../includes/header.php';
 
     <!-- ═══════════════════ TAB INFORME ═══════════════════ -->
     <div id="tab-informe" class="tab-content" style="display:<?= $tab_inicial==='informe'?'block':'none' ?>">
+
+    <!-- 🆕 SECCIÓN RECIENTES (últimas 48h) -->
+    <?php if (!empty($recientes)): ?>
+    <section class="sec-card" style="border-left:5px solid #8b5cf6;margin-bottom:1.25rem;background:linear-gradient(135deg,#faf5ff,#f5f3ff)">
+      <div class="sec-head" style="background:transparent">
+        <div>
+          <h2 class="sec-title" style="color:#6d28d9">🆕 Nuevas — últimas 48 hs</h2>
+          <p class="sec-sub">Recién llegadas, todavía no gestionadas</p>
+        </div>
+        <div class="sec-count" style="background:#ede9fe;color:#6d28d9"><?= $n_recientes ?></div>
+      </div>
+      <div class="sec-body">
+        <?php foreach ($recientes as $p):
+          $sf = $es_sin_fecha($p);
+          $vc = $es_vencido($p);
+          $hace = '';
+          if (!empty($p['fecha_solicitud'])) {
+              $diff = (new DateTime())->diff(new DateTime($p['fecha_solicitud']));
+              $hace = $diff->h > 0 ? "hace {$diff->h}h" : "hace {$diff->i}m";
+          }
+        ?>
+        <div style="position:relative">
+          <?php if ($hace): ?>
+            <span style="position:absolute;top:.65rem;right:3.5rem;background:#8b5cf6;color:#fff;font-size:.6rem;font-weight:900;padding:.2rem .55rem;border-radius:999px;text-transform:uppercase;letter-spacing:.05em;z-index:1">
+              🆕 <?= $hace ?>
+            </span>
+          <?php endif; ?>
+          <?= repro_fila_partido($p, $sf, $vc) ?>
+        </div>
+        <?php endforeach; ?>
+      </div>
+    </section>
+    <?php endif; ?>
 
     <!-- 4 KPI cards grandes y simples -->
     <div class="kpi-row">
