@@ -212,73 +212,110 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           <?php endif; ?>
         </div>
         <?php
-          // Mostrar la reserva original (cancha + fecha) destacada para que el admin la pueda dar de baja
-          $_tiene_original = !empty($p['fecha_original']) || !empty($p['recinto_original_nombre']);
-          if ($_tiene_original):
-            $_fo = $p['fecha_original'] ?: null;
-            // Estado de la baja
-            $_confirmada = !empty($p['baja_confirmada_at']);
-            $_solicitada = !empty($p['baja_solicitada_at']);
-            $_bg = $_confirmada ? '#dcfce7' : ($_solicitada ? '#fef3c7' : '#fee2e2');
-            $_bd = $_confirmada ? '#10b981' : ($_solicitada ? '#f59e0b' : '#dc2626');
-            $_tc = $_confirmada ? '#15803d' : ($_solicitada ? '#92400e' : '#991b1b');
-            $_lbl = $_confirmada ? '✅ BAJA CONFIRMADA' : ($_solicitada ? '⏳ ESPERANDO CONFIRMACIÓN' : '🚫 DAR DE BAJA');
+          // ── Datos del partido ───────────────────────────────────────
+          $_fo             = $p['fecha_original'] ?: null;         // fecha a DAR DE BAJA
+          $_fo_lbl         = $_fo ? date('d/m/Y H:i', strtotime($_fo)) : null;
+          $_rec_orig       = $p['recinto_original_nombre'] ?? null; // cancha a dar de baja
+          $_tiene_original = $_fo_lbl || $_rec_orig;
+
+          $_sf_nueva    = !$p['fecha_programada'] || date('Y-m-d', strtotime($p['fecha_programada'])) === '2026-12-31';
+          $_fecha_nueva = !$_sf_nueva ? date('d/m/Y H:i', strtotime($p['fecha_programada'])) : null;
+          $_necesita_cancha = $_fecha_nueva && empty($p['recinto_nombre']); // nueva fecha pero sin cancha
+
+          $_confirmada  = !empty($p['baja_confirmada_at']);
+          $_solicitada  = !empty($p['baja_solicitada_at']);
+
+          // Mostrar bloque cuando: hay algo de baja O necesita asignar cancha nueva
+          $_mostrar_bloque = $_tiene_original || $_necesita_cancha;
+
+          // Contactos: vienen de recinto_original_id (ya traídos por el JOIN)
+          $_contactos = [];
+          for ($i = 1; $i <= 3; $i++) {
+            if (!empty($p["contacto{$i}_telefono"])) {
+              $_contactos[] = ['nombre' => $p["contacto{$i}_nombre"] ?? '', 'telefono' => $p["contacto{$i}_telefono"]];
+            }
+          }
+
+          // Token + link (baja + cancha en una sola página)
+          $_proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+          $_host  = $_SERVER['HTTP_HOST'] ?? 'epleague.cl';
+          $_token = (!$_confirmada && $_mostrar_bloque) ? epl_partido_baja_token((int)$p['id']) : '';
+          $_link  = $_token ? "$_proto://$_host/confirmar_baja.php?t=$_token" : '';
+
+          // ── Construir mensaje WhatsApp ──────────────────────────────
+          $_msg = "Hola, te hablo de Elite Padel League.\n\n";
+          if ($_tiene_original) {
+              $_msg .= "Necesitamos DAR DE BAJA esta reserva:\n";
+              if ($_fo_lbl)  $_msg .= "📅 $_fo_lbl\n";
+              if ($_rec_orig) $_msg .= "🎾 $_rec_orig\n";
+              $_msg .= "👥 {$p['local_nombre']} vs {$p['visitante_nombre']}\n";
+              if ($_fecha_nueva) {
+                  $_msg .= "\nNueva fecha del partido: $_fecha_nueva\n";
+                  if ($p['recinto_nombre']) $_msg .= "Nueva cancha: {$p['recinto_nombre']}\n";
+              }
+          } else {
+              $_msg .= "Tenemos un partido reprogramado y necesitamos asignar cancha:\n";
+              if ($_fecha_nueva) $_msg .= "📅 $_fecha_nueva\n";
+              $_msg .= "👥 {$p['local_nombre']} vs {$p['visitante_nombre']}\n";
+          }
+          if ($_link) {
+              if ($_necesita_cancha && $_tiene_original) {
+                  $_msg .= "\nDesde este link confirmás la baja Y elegís la cancha para la nueva fecha:\n$_link\n(¡Solo tocás la cancha y queda todo listo!)";
+              } elseif ($_necesita_cancha) {
+                  $_msg .= "\nElegí la cancha para la nueva fecha desde acá:\n$_link\n(¡Solo tocás la cancha y queda confirmada!)";
+              } else {
+                  $_msg .= "\nConfirmá la baja desde este link:\n$_link";
+              }
+          }
+          $_msg .= "\n\n¡Gracias!";
+
+          if ($_mostrar_bloque):
+            // Colores del bloque según estado
+            if ($_confirmada) {
+                [$_bg,$_bd,$_tc,$_lbl] = ['#dcfce7','#10b981','#15803d','✅ BAJA CONFIRMADA'];
+            } elseif ($_necesita_cancha && !$_tiene_original) {
+                [$_bg,$_bd,$_tc,$_lbl] = ['#dbeafe','#3b82f6','#1e40af','🎾 ASIGNAR CANCHA'];
+            } elseif ($_solicitada) {
+                [$_bg,$_bd,$_tc,$_lbl] = ['#fef3c7','#f59e0b','#92400e','⏳ ESPERANDO CONFIRMACIÓN'];
+            } else {
+                [$_bg,$_bd,$_tc,$_lbl] = ['#fee2e2','#dc2626','#991b1b', $_necesita_cancha ? '🚫 BAJA + 🎾 ELEGIR CANCHA' : '🚫 DAR DE BAJA'];
+            }
         ?>
           <div style="margin-top:.5rem;padding:.55rem .75rem;background:<?= $_bg ?>;border-left:3px solid <?= $_bd ?>;border-radius:6px;font-size:.75rem;color:<?= $_tc ?>;line-height:1.5">
-            <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;font-weight:800">
-              <?= $_lbl ?>:
-              <?php if ($_fo): ?><span style="font-weight:600"><?= date('d/m H:i', strtotime($_fo)) ?></span><?php endif; ?>
-              <?php if (!empty($p['recinto_original_nombre'])): ?><span style="font-weight:600">· <?= epl_h($p['recinto_original_nombre']) ?></span><?php endif; ?>
+            <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;font-weight:800;margin-bottom:.2rem">
+              <?= $_lbl ?>
+              <?php if ($_fo_lbl): ?><span style="font-weight:600"><?= $_fo_lbl ?></span><?php endif; ?>
+              <?php if ($_rec_orig): ?><span style="font-weight:600">· <?= epl_h($_rec_orig) ?></span><?php endif; ?>
+              <?php if ($_necesita_cancha && $_fecha_nueva): ?>
+                <span style="font-weight:600;color:#1d4ed8">→ Nueva: <?= $_fecha_nueva ?></span>
+              <?php endif; ?>
             </div>
-            <?php if ($_confirmada): ?>
-              <div style="font-size:.7rem;font-weight:600;margin-top:.2rem;opacity:.85">
-                Confirmado <?= date('d/m H:i', strtotime($p['baja_confirmada_at'])) ?>
-                <?php if ($p['baja_confirmada_por']): ?>por <?= epl_h($p['baja_confirmada_por']) ?><?php endif; ?>
-              </div>
-            <?php else:
-              // Botones WhatsApp por contacto del club
-              $_contactos = [];
-              for ($i = 1; $i <= 3; $i++) {
-                if (!empty($p["contacto{$i}_telefono"])) {
-                  $_contactos[] = ['nombre' => $p["contacto{$i}_nombre"] ?? '', 'telefono' => $p["contacto{$i}_telefono"]];
-                }
-              }
-              if (!empty($_contactos)):
-                $_token = epl_partido_baja_token((int)$p['id']);
-                $_proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-                $_host  = $_SERVER['HTTP_HOST'] ?? 'epleague.cl';
-                $_link  = $_proto . '://' . $_host . '/confirmar_baja.php?t=' . $_token;
 
-                // Construir mensaje
-                $_msg = "Hola, te hablo de Elite Padel League.\n\n";
-                $_msg .= "Necesitamos dar de BAJA la siguiente reserva:\n";
-                if ($_fo)                                      $_msg .= "📅 " . date('d/m/Y H:i', strtotime($_fo)) . "\n";
-                if (!empty($p['recinto_original_nombre']))     $_msg .= "🎾 " . $p['recinto_original_nombre'] . "\n";
-                $_msg .= "👥 " . $p['local_nombre'] . " vs " . $p['visitante_nombre'] . "\n";
-                if ($p['fecha_programada'] && date('Y-m-d',strtotime($p['fecha_programada'])) !== '2026-12-31') {
-                    $_msg .= "\nNueva fecha confirmada: " . date('d/m/Y H:i', strtotime($p['fecha_programada'])) . "\n";
-                }
-                $_msg .= "\nPor favor confirmá la baja en este link:\n" . $_link;
-            ?>
-              <div style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.35rem">
-                <?php foreach ($_contactos as $c):
-                  $_tel = preg_replace('/[^0-9]/', '', $c['telefono']);
+            <?php if ($_confirmada): ?>
+              <div style="font-size:.7rem;font-weight:600;opacity:.85">
+                Confirmado <?= date('d/m H:i', strtotime($p['baja_confirmada_at'])) ?>
+                <?php if ($p['baja_confirmada_por']): ?>· por <?= epl_h($p['baja_confirmada_por']) ?><?php endif; ?>
+              </div>
+            <?php elseif (!empty($_contactos)): ?>
+              <div style="margin-top:.4rem;display:flex;flex-wrap:wrap;gap:.35rem">
+                <?php foreach ($_contactos as $_c):
+                  $_tel = preg_replace('/[^0-9]/', '', $_c['telefono']);
                   if (!$_tel) continue;
                   if (substr($_tel, 0, 2) !== '56') $_tel = '56' . $_tel;
-                  $_wsp = "https://wa.me/{$_tel}?text=" . rawurlencode($_msg);
+                  $_wsp_url = "https://wa.me/{$_tel}?text=" . rawurlencode($_msg);
                 ?>
-                <a href="<?= $_wsp ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.35rem;background:#25D366;color:#fff;padding:.35rem .7rem;border-radius:6px;font-size:.7rem;font-weight:800;text-decoration:none">
-                  📱 <?= epl_h($c['nombre'] ?: 'WhatsApp') ?>
+                <a href="<?= $_wsp_url ?>" target="_blank" rel="noopener"
+                   style="display:inline-flex;align-items:center;gap:.3rem;background:#25D366;color:#fff;padding:.3rem .65rem;border-radius:6px;font-size:.68rem;font-weight:800;text-decoration:none">
+                  <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M17.6 6.32A7.85 7.85 0 0012.05 4a7.94 7.94 0 00-6.88 11.93L4 20l4.21-1.1a7.95 7.95 0 003.84.98h.01a7.94 7.94 0 005.54-13.56M12.05 18.5a6.62 6.62 0 01-3.36-.92l-.24-.14-2.5.66.67-2.44-.16-.25a6.59 6.59 0 0110.21-8.16 6.55 6.55 0 011.93 4.66 6.62 6.62 0 01-6.55 6.59"/></svg>
+                  <?= epl_h($_c['nombre'] ?: 'WhatsApp') ?>
                 </a>
                 <?php endforeach; ?>
               </div>
-            <?php elseif ($_tiene_original): ?>
-              <div style="font-size:.68rem;margin-top:.3rem;opacity:.75">
-                ⚠ Sin contactos cargados — agregalos en Recintos
+            <?php else: ?>
+              <div style="font-size:.68rem;margin-top:.25rem;opacity:.75">
+                ⚠ Sin contactos — agregalos en <a href="recintos.php" style="color:inherit;font-weight:700">Recintos</a>
               </div>
-            <?php endif;
-            endif;
-            ?>
+            <?php endif; ?>
           </div>
         <?php endif; ?>
       </div>
