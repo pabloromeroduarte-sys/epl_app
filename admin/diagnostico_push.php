@@ -38,22 +38,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Limpiar endpoints muertos masivamente
-    if (!empty($_POST['limpiar_muertos'])) {
-        $st = $db->query("SELECT id, endpoint, p256dh, auth FROM push_subscriptions");
-        $todos = $st->fetchAll(PDO::FETCH_ASSOC);
-        $borrados = 0;
-        foreach ($todos as $sub) {
-            $res = epl_web_push_send($sub, 'EPL', 'ping', '/');
-            if (in_array($res['status'], [404, 410])) {
-                $db->prepare("DELETE FROM push_subscriptions WHERE id=?")->execute([$sub['id']]);
-                $borrados++;
-            }
+    // Limpiar endpoints muertos UNO POR UNO (AJAX): action=limpiar_uno&id=X
+    if (($_POST['action'] ?? '') === 'limpiar_uno') {
+        header('Content-Type: application/json');
+        @set_time_limit(20);
+        $sid = (int)($_POST['id'] ?? 0);
+        $st = $db->prepare("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE id = ?");
+        $st->execute([$sid]);
+        $sub = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$sub) {
+            echo json_encode(['ok' => false, 'borrado' => false, 'status' => 0, 'error' => 'No existe']);
+            exit;
         }
-        epl_flash_set('ok', "✅ $borrados endpoint(s) muerto(s) limpiado(s).");
-        header('Location: diagnostico_push.php'); exit;
+        $res = epl_web_push_send($sub, 'EPL', 'ping', '/');
+        $borrado = false;
+        if (in_array($res['status'], [404, 410])) {
+            $db->prepare("DELETE FROM push_subscriptions WHERE id=?")->execute([$sub['id']]);
+            $borrado = true;
+        }
+        echo json_encode([
+            'ok'      => $res['ok'],
+            'status'  => $res['status'],
+            'borrado' => $borrado,
+            'error'   => $res['error'] ? substr($res['error'], 0, 100) : '',
+        ]);
+        exit;
     }
 }
+
+// Lista de IDs para el limpiador AJAX
+$_ids_para_limpiar = [];
+try {
+    $_ids_para_limpiar = array_column($db->query("SELECT id FROM push_subscriptions ORDER BY id")->fetchAll(PDO::FETCH_ASSOC), 'id');
+} catch (Throwable $_e) {}
 
 // ── Stats ──────────────────────────────────────────────────────
 $stats = [
@@ -138,21 +155,50 @@ require_once '../includes/header.php';
       <?php endif; ?>
     </div>
 
-    <!-- Acción: limpiar muertos -->
+    <!-- Acción: limpiar muertos (AJAX uno por uno) -->
     <div class="card mb-3" style="padding:1rem 1.25rem;background:#fffbeb;border-left:4px solid #f59e0b">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
-        <div>
+        <div style="flex:1;min-width:200px">
           <div style="font-weight:800;color:var(--navy);font-size:.9rem">🧹 Mantenimiento</div>
-          <div style="font-size:.78rem;color:#64748b;margin-top:.15rem">Probá TODOS los endpoints y borra los muertos (devuelven 404/410)</div>
+          <div style="font-size:.78rem;color:#64748b;margin-top:.15rem">Prueba cada endpoint individualmente y elimina los muertos (404/410)</div>
+          <div id="limpiarProgress" style="display:none;margin-top:.5rem;font-size:.78rem;color:#92400e;font-weight:700"></div>
         </div>
-        <form method="post" style="margin:0">
-          <input type="hidden" name="limpiar_muertos" value="1">
-          <button type="submit" class="btn btn-sm" style="background:#f59e0b;color:#fff;font-weight:800;border:none;padding:.55rem 1rem;border-radius:8px;cursor:pointer" data-confirm="Esto probará cada suscripción individualmente. Puede tardar varios segundos." data-confirm-ok="Limpiar muertos">
-            Limpiar endpoints muertos
-          </button>
-        </form>
+        <button type="button" id="btnLimpiar" onclick="limpiarMuertos()" style="background:#f59e0b;color:#fff;font-weight:800;border:none;padding:.55rem 1rem;border-radius:8px;cursor:pointer;font-family:inherit">
+          Limpiar muertos
+        </button>
       </div>
     </div>
+    <script>
+    const _idsLimpiar = <?= json_encode($_ids_para_limpiar) ?>;
+    async function limpiarMuertos() {
+      const btn = document.getElementById('btnLimpiar');
+      const prog = document.getElementById('limpiarProgress');
+      if (_idsLimpiar.length === 0) { alert('No hay suscripciones para limpiar.'); return; }
+      if (!confirm('Esto probará ' + _idsLimpiar.length + ' endpoints. Puede tardar un rato.')) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Procesando…';
+      prog.style.display = 'block';
+
+      let borrados = 0, ok = 0, error = 0;
+      for (let i = 0; i < _idsLimpiar.length; i++) {
+        const id = _idsLimpiar[i];
+        prog.textContent = '⏳ Probando ' + (i+1) + '/' + _idsLimpiar.length + '...';
+        try {
+          const fd = new FormData();
+          fd.append('action', 'limpiar_uno');
+          fd.append('id', id);
+          const r = await fetch('diagnostico_push.php', { method: 'POST', body: fd });
+          const data = await r.json();
+          if (data.borrado) borrados++;
+          else if (data.ok) ok++;
+          else error++;
+        } catch(e) { error++; }
+      }
+      prog.innerHTML = '✅ Completado: <strong>' + borrados + '</strong> borrados · <strong>' + ok + '</strong> OK · <strong>' + error + '</strong> con error. Recargando…';
+      setTimeout(() => location.reload(), 1500);
+    }
+    </script>
 
     <?php if ($test_results !== null): ?>
     <!-- Resultados del último test -->
