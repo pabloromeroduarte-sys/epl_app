@@ -146,10 +146,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
                      $estado_sol, $auto_aprobada ? $fecha_final : null]);
 
         if ($auto_aprobada) {
+            // Guardar snapshot original ANTES de cambiar la fecha
+            epl_partido_snapshot_original($partido_id);
             // Mutuo acuerdo → aplicar inmediatamente sin esperar al admin
             $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=? WHERE id=?")
                ->execute([$fecha_final, $partido_id]);
         } else {
+            // Guardar snapshot original al marcar como reprogramado
+            epl_partido_snapshot_original($partido_id);
             $db->prepare("UPDATE partidos SET estado='reprogramado' WHERE id=?")->execute([$partido_id]);
         }
 
