@@ -137,6 +137,16 @@ $es_reciente = fn($p) => !empty($p['fecha_solicitud'])
     && $necesita_gestion($p);
 
 $recientes = array_values(array_filter($partidos_open, $es_reciente));
+
+// TODOS los partidos que necesitan gestión (sin filtro de 48h) — para la pestaña SOLICITUDES
+$pendientes_gestion = array_values(array_filter($partidos_open, $necesita_gestion));
+// Ordenar: más urgentes (sin fecha) primero, luego por fecha de solicitud descendente
+usort($pendientes_gestion, function($a, $b) {
+    $sa = !empty($a['fecha_solicitud']) ? strtotime($a['fecha_solicitud']) : 0;
+    $sb = !empty($b['fecha_solicitud']) ? strtotime($b['fecha_solicitud']) : 0;
+    return $sb <=> $sa;
+});
+$n_pendientes_gestion = count($pendientes_gestion);
 // Ordenar recientes: más nuevas primero
 usort($recientes, fn($a,$b) => strtotime($b['fecha_solicitud']) - strtotime($a['fecha_solicitud']));
 $n_recientes = count($recientes);
@@ -396,15 +406,17 @@ require_once '../includes/header.php';
 
     <!-- TABS: Solicitudes | Informe -->
     <?php
-      // Si hay recientes → abrir Informe directamente para que se vean
+      // Sumar badge de Solicitudes: solicitudes pendientes + partidos pendientes de gestión
+      $badge_solicitudes = $n_solicitudes + $n_pendientes_gestion;
+      // Abrir en Solicitudes si hay algo pendiente; si no, Informe
       $tab_inicial = isset($_GET['tab']) ? $_GET['tab']
-          : ($n_recientes > 0 ? 'informe' : ($n_solicitudes > 0 ? 'solicitudes' : 'informe'));
+          : ($badge_solicitudes > 0 ? 'solicitudes' : ($n_recientes > 0 ? 'informe' : 'informe'));
     ?>
     <div class="tabs-bar">
       <button class="tab-btn <?= $tab_inicial==='solicitudes'?'active':'' ?>" data-tab="solicitudes" onclick="cambiarTab('solicitudes')">
         📨 Solicitudes
-        <?php if ($n_solicitudes > 0): ?>
-          <span class="tab-badge"><?= $n_solicitudes ?></span>
+        <?php if ($badge_solicitudes > 0): ?>
+          <span class="tab-badge"><?= $badge_solicitudes ?></span>
         <?php endif; ?>
       </button>
       <button class="tab-btn <?= $tab_inicial==='informe'?'active':'' ?>" data-tab="informe" onclick="cambiarTab('informe')">
@@ -429,12 +441,56 @@ require_once '../includes/header.php';
 
       <?php if (empty($solicitudes_pendientes)): ?>
         <section class="sec-card" style="border-left:5px solid #10b981">
-          <div style="padding:1.5rem;text-align:center;color:#15803d">
-            <div style="font-size:2rem">✅</div>
-            <p style="font-weight:700;margin-top:.3rem;font-size:.95rem">No hay solicitudes pendientes</p>
-            <p style="font-size:.82rem;color:#64748b">Más abajo podés ver las últimas procesadas.</p>
+          <div style="padding:1.25rem;text-align:center;color:#15803d">
+            <div style="font-size:1.75rem">✅</div>
+            <p style="font-weight:700;margin-top:.3rem;font-size:.92rem">No hay solicitudes nuevas del jugador</p>
+            <?php if ($n_pendientes_gestion === 0): ?>
+              <p style="font-size:.8rem;color:#64748b">Más abajo podés ver las últimas procesadas.</p>
+            <?php endif; ?>
           </div>
         </section>
+      <?php endif; ?>
+
+      <!-- ═════════════════════ PENDIENTES DE GESTIÓN ═════════════════════ -->
+      <?php if ($n_pendientes_gestion > 0): ?>
+      <section class="sec-card sec-urgente" style="border-left:5px solid #f59e0b">
+        <div class="sec-head">
+          <div>
+            <h2 class="sec-title" style="color:#92400e">⏳ Partidos en gestión</h2>
+            <p class="sec-sub">Reprogramados que todavía esperan acción (aprobar, dar de baja la reserva original o asignar cancha nueva)</p>
+          </div>
+          <div class="sec-count" style="background:#fef3c7;color:#92400e"><?= $n_pendientes_gestion ?></div>
+        </div>
+        <div class="sec-body">
+          <?php foreach ($pendientes_gestion as $p):
+            // Decidir qué tag mostrar arriba del partido
+            $_tag = '';
+            $_tag_bg = '#fef3c7';
+            $_tag_color = '#92400e';
+            if (($p['sol_estado'] ?? '') === 'pendiente') {
+                $_tag = '📨 Falta aprobar';
+            } elseif (!empty($p['baja_solicitada_at']) && empty($p['baja_confirmada_at'])) {
+                $_tag = '⏳ Esperando confirmación del club';
+                $_tag_bg = '#dbeafe'; $_tag_color = '#1e40af';
+            } elseif (!empty($p['fecha_original']) && empty($p['baja_confirmada_at'])) {
+                $_tag = '🚫 Falta dar de baja la cancha original';
+                $_tag_bg = '#fee2e2'; $_tag_color = '#991b1b';
+            } else {
+                $_tag = '🎾 Falta asignar cancha nueva';
+                $_tag_bg = '#dbeafe'; $_tag_color = '#1e40af';
+            }
+            $sf = $es_sin_fecha($p);
+            $vc = $es_vencido($p);
+          ?>
+          <div style="position:relative">
+            <span style="position:absolute;top:.65rem;right:3.5rem;background:<?= $_tag_bg ?>;color:<?= $_tag_color ?>;font-size:.62rem;font-weight:900;padding:.22rem .6rem;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;z-index:1;white-space:nowrap">
+              <?= $_tag ?>
+            </span>
+            <?= repro_fila_partido($p, $sf, $vc) ?>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      </section>
       <?php endif; ?>
 
       <?php if (!empty($solicitudes_pendientes)): ?>
