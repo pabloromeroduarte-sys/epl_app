@@ -44,8 +44,8 @@ if ($partido) {
         || date('Y-m-d', strtotime($partido['fecha_programada'])) === '2026-12-31';
     $nueva_fecha_lbl = !$_sf ? date('d/m/Y H:i', strtotime($partido['fecha_programada'])) : null;
 
-    // Necesita cancha: hay nueva fecha y aún no tiene recinto asignado
-    $necesita_cancha = $nueva_fecha_lbl && empty($partido['recinto_id']);
+    // Necesita cancha: hay nueva fecha y el club todavía no confirmó qué cancha asignan
+    $necesita_cancha = $nueva_fecha_lbl && empty($partido['cancha_confirmada_at']);
 
     if ($necesita_cancha) {
         $ref = $partido['recinto_original_id'] ?: null;
