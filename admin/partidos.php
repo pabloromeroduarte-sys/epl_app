@@ -11,8 +11,11 @@ $db = epl_db();
 // Helper redirect que preserva filtros
 // ────────────────────────────────────────────────────────────────────────
 function partidos_redirect(string $msg = '', string $err = '', array $extra = []): void {
-    if ($msg) epl_flash_set('ok', $msg);
-    if ($err) epl_flash_set('error', $err);
+    if ($msg || $err) {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        if ($msg) $_SESSION['_epl_flash'] = ['tipo'=>'ok', 'msg'=>$msg];
+        if ($err) $_SESSION['_epl_flash'] = ['tipo'=>'error', 'msg'=>$err];
+    }
 
     $params = [];
     // Filtros desde POST hidden inputs
