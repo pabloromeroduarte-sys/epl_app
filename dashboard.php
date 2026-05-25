@@ -136,39 +136,31 @@ if ($equipo) {
     <?php endif; ?>
 
     <?php if (!$tiene_push): ?>
-    <!-- Banner inteligente push (detecta estado y guía al usuario) -->
+    <!-- Banner push: 1 botón único que hace TODO -->
     <div id="bannerPush" style="display:none;background:linear-gradient(135deg,#1c2f48,#1a3a64);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.25rem;align-items:center;gap:.85rem;flex-wrap:wrap">
       <span id="bpIcon" style="font-size:1.4rem;flex-shrink:0">🔔</span>
       <div style="flex:1;min-width:160px">
         <div id="bpTitulo" style="font-weight:800;font-size:.88rem;color:#fff">Activá las notificaciones</div>
-        <div id="bpSub" style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:.15rem">Recibí alertas de partidos y resultados en tu celular.</div>
+        <div id="bpSub" style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:.15rem">Recibí alertas de partidos y resultados.</div>
       </div>
       <div style="display:flex;gap:.5rem;flex-shrink:0">
-        <button id="bpBtn" onclick="bpAccion()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:.55rem 1.1rem;font-weight:800;font-size:.8rem;cursor:pointer">Activar</button>
-        <button onclick="this.closest('#bannerPush').remove()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:.5rem .75rem;font-size:.8rem;cursor:pointer">×</button>
+        <button id="bpBtn" onclick="bpAccion()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:.6rem 1.1rem;font-weight:800;font-size:.8rem;cursor:pointer">Activar</button>
+        <button onclick="this.closest('#bannerPush').remove()" title="Ocultar" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:.5rem .75rem;font-size:.8rem;cursor:pointer">×</button>
       </div>
     </div>
 
-    <!-- Modal con instrucciones específicas -->
+    <!-- Modal: 1 solo mensaje claro cuando está bloqueado tras intentar resetear -->
     <style>
     .puls { animation: bpPulse 1.4s ease-in-out infinite; transform-origin: center; }
-    @keyframes bpPulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.65; transform: scale(1.15); }
-    }
+    @keyframes bpPulse { 0%,100% { opacity:1; transform:scale(1);} 50% { opacity:.65; transform:scale(1.15);} }
     </style>
     <div id="bpModal" style="display:none;position:fixed;inset:0;background:rgba(10,20,33,.78);backdrop-filter:blur(6px);z-index:99999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)bpCerrarModal()">
-      <div style="background:#fff;border-radius:18px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <div style="background:#fff;border-radius:18px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
         <div style="background:linear-gradient(135deg,#1c2f48,#0f1e30);padding:1.1rem 1.4rem;color:#fff;display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-size:.65rem;color:#C9A762;font-weight:900;letter-spacing:.2em;text-transform:uppercase">Notificaciones bloqueadas</div>
-            <h3 style="margin:.2rem 0 0;font-family:'Anton',sans-serif;font-size:1.05rem;text-transform:uppercase">Cómo <span style="color:#C9A762">activarlas</span></h3>
-          </div>
+          <h3 style="margin:0;font-family:'Anton',sans-serif;font-size:1.05rem;text-transform:uppercase">🔕 Bloqueado por el navegador</h3>
           <button onclick="bpCerrarModal()" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:1.6rem;cursor:pointer;line-height:1;padding:0 .3rem">×</button>
         </div>
-        <div id="bpInstrucciones" style="padding:1.25rem 1.4rem">
-          <!-- Inyectado por JS según browser, incluye nav anterior/siguiente y botón Listo final -->
-        </div>
+        <div id="bpInstrucciones" style="padding:1.4rem"></div>
       </div>
     </div>
 
@@ -183,82 +175,180 @@ if ($equipo) {
 
       function urlB64(b64){const pad='='.repeat((4-b64.length%4)%4);const raw=atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
 
-      // Detectar browser
+      function toast(msg, ok = true) {
+        const t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:'+(ok?'#15803d':'#dc2626')+';color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-weight:700;font-size:.85rem;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:90vw;text-align:center';
+        document.body.appendChild(t);
+        setTimeout(()=>t.remove(), 4000);
+      }
+
       function detectBrowser() {
         const ua = navigator.userAgent;
         if (/iPhone|iPad|iPod/.test(ua)) return 'ios';
         if (/SamsungBrowser/.test(ua))   return 'samsung';
         if (/Chrome/.test(ua) && /Android/.test(ua)) return 'chrome-android';
         if (/Firefox/.test(ua)) return 'firefox';
-        if (/Chrome/.test(ua))  return 'chrome-desktop';
-        if (/Safari/.test(ua))  return 'safari-desktop';
         return 'otro';
       }
 
-      // Estado actual
       function estadoActual() {
         if (!('Notification' in window)) return 'no-soportado';
-        return Notification.permission; // 'default' | 'granted' | 'denied'
+        return Notification.permission;
       }
 
-      // Renderizar banner según estado
       function renderBanner() {
         const est = estadoActual();
-        if (est === 'no-soportado') return; // No mostrar nada
+        if (est === 'no-soportado') return;
         if (est === 'granted') {
-          // Ya tiene permiso pero no hay sub en BD: re-suscribir silenciosamente
-          window.bpAccion();
+          // Tiene permiso pero no hay sub: resuscribir silencioso
+          window.bpAccion(true);
           return;
         }
         banner.style.display = 'flex';
         if (est === 'denied') {
           iconEl.textContent = '🔕';
-          titEl.textContent  = 'Notificaciones BLOQUEADAS';
-          subEl.innerHTML    = 'Las tenés bloqueadas en este dispositivo. Te ayudo a reactivarlas.';
-          btnEl.textContent  = 'Cómo activar';
+          titEl.textContent  = 'Notificaciones bloqueadas';
+          subEl.innerHTML    = 'Tocá <strong>Restablecer</strong> para limpiar y reactivar.';
+          btnEl.textContent  = '🔄 Restablecer';
         } else {
           iconEl.textContent = '🔔';
           titEl.textContent  = 'Activá las notificaciones';
-          subEl.textContent  = 'Recibí alertas de partidos y resultados en tu celular.';
+          subEl.textContent  = 'Recibí alertas de partidos y resultados.';
           btnEl.textContent  = 'Activar';
         }
       }
 
-      window.bpAccion = async function() {
-        const est = estadoActual();
-        if (est === 'denied') { bpAbrirModal(); return; }
+      /**
+       * Botón único — hace TODO:
+       * 1. Desuscribe del browser (unsubscribe)
+       * 2. Borra del backend (push_unsubscribe.php)
+       * 3. Desinstala el SW para forzar contexto limpio
+       * 4. Reintenta requestPermission()
+       * 5. Si permiso = granted → suscribe limpio
+       * 6. Si permiso = denied → abre modal con ÚNICO paso visual claro
+       */
+      window.bpAccion = async function(silent = false) {
+        btnEl.disabled = true;
+        btnEl.textContent = '⏳ Procesando…';
+
         try {
+          // 1. Borrar suscripción local del browser
+          if ('serviceWorker' in navigator) {
+            try {
+              const reg = await navigator.serviceWorker.ready;
+              const sub = await reg.pushManager.getSubscription();
+              if (sub) await sub.unsubscribe();
+            } catch(e) {}
+          }
+
+          // 2. Borrar todas las subs del jugador en BD
+          try {
+            await fetch('/push_unsubscribe.php', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({})
+            });
+          } catch(e) {}
+
+          // 3. Pedir permiso (si está denied, esto no muestra popup pero devuelve denied)
           const perm = await Notification.requestPermission();
-          if (perm === 'denied') { bpAbrirModal(); return; }
-          if (perm !== 'granted') return;
-          const reg = await navigator.serviceWorker.ready;
-          let sub = await reg.pushManager.getSubscription();
-          if (sub) { try { await sub.unsubscribe(); } catch(e) {} sub = null; }
-          if (VAPID_PUBLIC) {
-            sub = await reg.pushManager.subscribe({
+
+          if (perm === 'granted') {
+            // 4. Suscribir limpio
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.subscribe({
               userVisibleOnly: true,
               applicationServerKey: urlB64(VAPID_PUBLIC)
             });
-          }
-          if (sub) {
             await fetch('/push_subscribe.php', {
-              method:'POST',
-              headers:{'Content-Type':'application/json'},
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
               body: JSON.stringify(sub)
             });
-            banner.remove();
-            // Mini toast de confirmación
-            const t = document.createElement('div');
-            t.textContent = '✅ Notificaciones activadas';
-            t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-weight:700;font-size:.85rem;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.2)';
-            document.body.appendChild(t);
-            setTimeout(()=>t.remove(), 3500);
+            banner.style.display = 'none';
+            if (!silent) toast('✅ Notificaciones activadas correctamente');
+            return;
           }
-        } catch(e) { console.warn('push:', e); }
+
+          if (perm === 'denied') {
+            // Browser bloqueado: abrir modal con paso único
+            bpAbrirModal();
+            return;
+          }
+        } catch(e) {
+          console.warn('push:', e);
+          toast('Error al activar. Recargá e intentá de nuevo.', false);
+        } finally {
+          btnEl.disabled = false;
+          renderBanner();
+        }
       };
 
-      // Pasos visuales por browser
-      const PASOS = {
+      // Instrucción única (1 paso) por browser
+      const PASO_UNICO = {
+        'samsung': {
+          titulo: 'Samsung Internet',
+          msg:    'Tocá el <strong>candado 🔒</strong> en la barra de URL arriba → <strong>Permisos</strong> → activá <strong>Notificaciones</strong>.',
+          svg: `<svg viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+            <rect x="10" y="15" width="300" height="50" rx="25" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+            <circle cx="40" cy="40" r="16" fill="#fef3c7" stroke="#f59e0b" stroke-width="3" class="puls"/>
+            <path d="M34 38 v-4 a6 6 0 0 1 12 0 v4 M31 38 h18 v12 h-18 z" fill="none" stroke="#92400e" stroke-width="2"/>
+            <text x="78" y="46" font-family="monospace" font-size="14" fill="#475569">epleague.cl</text>
+          </svg>`
+        },
+        'chrome-android': {
+          titulo: 'Chrome Android',
+          msg:    'Tocá el <strong>candado 🔒</strong> en la barra arriba → <strong>Permisos y privacidad</strong> → activá <strong>Notificaciones</strong>.',
+          svg: `<svg viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+            <rect x="10" y="15" width="300" height="50" rx="25" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+            <circle cx="40" cy="40" r="16" fill="#fef3c7" stroke="#f59e0b" stroke-width="3" class="puls"/>
+            <path d="M34 38 v-4 a6 6 0 0 1 12 0 v4 M31 38 h18 v12 h-18 z" fill="none" stroke="#92400e" stroke-width="2"/>
+            <text x="78" y="46" font-family="monospace" font-size="14" fill="#475569">epleague.cl</text>
+          </svg>`
+        },
+        'ios': {
+          titulo: 'iPhone / iPad',
+          msg:    'En iOS necesitás <strong>instalar la app primero</strong>: en Safari → botón compartir ⬆ → <strong>Añadir a pantalla de inicio</strong>. Después abrila desde el icono nuevo.',
+          svg: `<svg viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+            <rect x="120" y="10" width="80" height="80" rx="18" fill="#1c2f48" stroke="#C9A762" stroke-width="2" class="puls"/>
+            <text x="160" y="55" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#C9A762">🏆</text>
+            <text x="160" y="100" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#1c2f48">EPL</text>
+          </svg>`
+        },
+        'firefox': {
+          titulo: 'Firefox',
+          msg:    'Click en el <strong>candado 🔒</strong> al lado de la URL → buscá <strong>Notificaciones</strong> → click en la <strong>X</strong> al lado de "Bloqueado temporalmente".',
+          svg: ''
+        },
+        'otro': {
+          titulo: 'Tu navegador',
+          msg:    'Tocá el <strong>candado 🔒</strong> al lado de <code>epleague.cl</code> en la barra de arriba → buscá <strong>Notificaciones</strong> → cambialo a <strong>Permitir</strong>.',
+          svg: ''
+        }
+      };
+
+      window.bpAbrirModal = function() {
+        const b = detectBrowser();
+        const info = PASO_UNICO[b] || PASO_UNICO['otro'];
+        const cont = document.getElementById('bpInstrucciones');
+        cont.innerHTML = `
+          <p style="text-align:center;color:#64748b;font-size:.8rem;margin:0 0 1rem">
+            Tu navegador no permite que activemos las notificaciones desde la app — pero te toma <strong>30 segundos</strong>:
+          </p>
+          ${info.svg ? '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1rem;margin-bottom:1rem">' + info.svg + '</div>' : ''}
+          <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:.85rem 1rem;border-radius:8px;font-size:.88rem;line-height:1.55;color:#1c2f48">
+            ${info.msg}
+          </div>
+          <button onclick="bpVerificar()" style="width:100%;background:var(--gold);color:var(--navy);border:none;padding:.85rem;border-radius:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:.78rem;cursor:pointer;margin-top:1rem;font-family:inherit">
+            ✓ Ya lo hice
+          </button>
+        `;
+        document.getElementById('bpModal').style.display = 'flex';
+      };
+
+      // Pasos visuales por browser (NO USADO ya — mantenido por compatibilidad)
+      const PASOS_legacy = {
         'samsung': [
           {
             txt: 'Tocá el <strong>candado 🔒</strong> a la izquierda de <code>epleague.cl</code> en la barra de arriba',
@@ -407,43 +497,7 @@ if ($equipo) {
       let bpPasoActual = 0;
       let bpPasosArr = [];
 
-      function bpRenderPaso() {
-        const cont = document.getElementById('bpInstrucciones');
-        const paso = bpPasosArr[bpPasoActual];
-        cont.innerHTML = `
-          <div style="text-align:center;margin-bottom:.85rem">
-            <span style="display:inline-flex;align-items:center;gap:.4rem;background:#fef3c7;color:#92400e;padding:.3rem .85rem;border-radius:999px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em">
-              Paso ${bpPasoActual+1} de ${bpPasosArr.length}
-            </span>
-          </div>
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:1rem .85rem;margin-bottom:1rem">
-            ${paso.svg}
-          </div>
-          <p style="font-size:.92rem;color:#1c2f48;line-height:1.5;text-align:center;margin:0">
-            ${paso.txt}
-          </p>
-          <div style="display:flex;gap:.5rem;margin-top:1.1rem">
-            <button onclick="bpPrev()" ${bpPasoActual===0?'disabled':''} style="flex:1;padding:.7rem;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;font-weight:700;font-size:.78rem;color:${bpPasoActual===0?'#cbd5e1':'#475569'};cursor:${bpPasoActual===0?'not-allowed':'pointer'};font-family:inherit">← Anterior</button>
-            <button onclick="bpNext()" style="flex:2;padding:.7rem;background:var(--navy);color:var(--gold);border:none;border-radius:8px;font-weight:800;font-size:.78rem;cursor:pointer;font-family:inherit">${bpPasoActual===bpPasosArr.length-1?'✓ Listo':'Siguiente →'}</button>
-          </div>
-        `;
-      }
-
-      window.bpNext = function() {
-        if (bpPasoActual < bpPasosArr.length - 1) { bpPasoActual++; bpRenderPaso(); }
-        else { bpVerificar(); }
-      };
-      window.bpPrev = function() {
-        if (bpPasoActual > 0) { bpPasoActual--; bpRenderPaso(); }
-      };
-
-      window.bpAbrirModal = function() {
-        const b = detectBrowser();
-        bpPasosArr   = PASOS[b] || PASOS['chrome-desktop'];
-        bpPasoActual = 0;
-        bpRenderPaso();
-        document.getElementById('bpModal').style.display = 'flex';
-      };
+      // (modal de carrusel viejo eliminado — ahora usamos bpAbrirModal único definido arriba)
 
       window.bpCerrarModal = function() {
         document.getElementById('bpModal').style.display = 'none';
