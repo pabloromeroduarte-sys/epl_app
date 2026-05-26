@@ -92,6 +92,40 @@ if ($equipo) {
     $mis_solicitudes = $stS->fetchAll();
 }
 
+$otros_reprogramados = [];
+if ($liga) {
+    $equipo_id = $equipo ? (int)$equipo['id'] : 0;
+    $stOtros = $db->prepare("
+        SELECT p.id, p.jornada, p.fecha_programada,
+               el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+               el.id AS local_equipo_id, ev.id AS visitante_equipo_id,
+               jl1.nombre AS l1n, jl1.apellido AS l1a, jl1.telefono AS l1t,
+               jl2.nombre AS l2n, jl2.apellido AS l2a, jl2.telefono AS l2t,
+               jv1.nombre AS v1n, jv1.apellido AS jv1a, jv1.telefono AS v1t,
+               jv2.nombre AS v2n, jv2.apellido AS jv2a, jv2.telefono AS v2t
+        FROM partidos p
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        LEFT JOIN jugadores jl1 ON jl1.id = el.jugador1_id
+        LEFT JOIN jugadores jl2 ON jl2.id = el.jugador2_id
+        LEFT JOIN jugadores jv1 ON jv1.id = ev.jugador1_id
+        LEFT JOIN jugadores jv2 ON jv2.id = ev.jugador2_id
+        WHERE p.liga_id = ?
+          AND p.estado = 'reprogramado'
+          " . ($equipo_id > 0 ? "AND p.equipo_local_id != ? AND p.equipo_visitante_id != ?" : "") . "
+        ORDER BY p.jornada ASC, p.fecha_programada ASC
+    ");
+    $params = [$liga['id']];
+    if ($equipo_id > 0) {
+        $params[] = $equipo_id;
+        $params[] = $equipo_id;
+    }
+    $stOtros->execute($params);
+    $otros_reprogramados = $stOtros->fetchAll();
+}
+
+$WA_SVG = '<svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.404c0 6.556-5.332 11.888-11.888 11.888-2.003 0-3.963-.505-5.698-1.465l-6.305 1.693zm6.443-4.045c1.474.873 3.103 1.332 4.775 1.332 5.054 0 9.163-4.109 9.163-9.163s-4.109-9.163-9.163-9.163-9.163 4.109-9.163 9.163c0 1.95.623 3.856 1.799 5.437l-1.002 3.659 3.743-.999zm10.742-5.466c-.303-.151-1.788-.882-2.067-.981-.278-.099-.481-.151-.683.151-.202.303-.783.981-.96 1.183-.177.202-.354.227-.657.076-.303-.151-1.28-.471-2.438-1.504-.901-.803-1.508-1.796-1.685-2.098-.177-.302-.019-.465.132-.615.136-.135.303-.354.455-.53.151-.177.202-.303.303-.505.101-.202.051-.379-.025-.53-.076-.151-.683-1.643-.935-2.249-.245-.59-.495-.51-.683-.52l-.582-.01c-.202 0-.531.076-.809.379-.278.303-1.062 1.037-1.062 2.529 0 1.492 1.087 2.932 1.239 3.134.151.202 2.14 3.268 5.184 4.582.724.312 1.29.499 1.731.639.727.231 1.388.199 1.911.121.582-.087 1.788-.731 2.041-1.439.253-.708.253-1.313.177-1.439-.076-.126-.278-.202-.581-.353z"/></svg>';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $bloqueado_reprogs) {
     $error = "Tu equipo ya tiene {$total_reprogramados} partidos reprogramados. Por bases del torneo no se permite más de {$MAX_REPROGS}.";
 }
@@ -229,7 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
                     $filas_repr, $subtitulo, $tip_email, epl_url('mis_torneos.php'));
             }
 
-            epl_redirect_ok('reprog_auto_ok');
+            epl_redirect_ok('reprog_auto_ok', 'reprogramar.php#mis-reprogramaciones');
         } else {
             // Sin mutuo acuerdo → flujo normal: admin debe aprobar
             $asunto_repr = epl_mail_asunto('📅 Solicitud de reprogramación', $partido['local_nombre'], $partido['visitante_nombre'], $partido['jornada'] ?? null);
@@ -259,7 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
                     epl_url('mis_torneos.php'));
             }
 
-            epl_redirect_ok('solicitud_ok');
+            epl_redirect_ok('solicitud_ok', 'reprogramar.php#mis-reprogramaciones');
         }
     }
 }
@@ -285,228 +319,430 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
   <div class="alert alert-error"><?= epl_h($error) ?></div>
   <?php endif; ?>
 
-  <?php if (!$equipo): ?>
-    <div class="alert alert-info">No estás inscrito en ningún equipo activo en esta liga.</div>
+  <div class="rp-tabs" style="margin-bottom:1.5rem">
+    <button type="button" class="rp-tab-btn active" data-tab="solicitar" onclick="rpSwitchTab('solicitar')">
+      <span>🔄</span> Solicitar
+    </button>
+    <button type="button" class="rp-tab-btn" data-tab="mis-reprogramaciones" onclick="rpSwitchTab('mis-reprogramaciones')">
+      <span>📅</span> Mis Reprogramaciones
+      <?php if ($total_reprogramados > 0): ?>
+        <span class="rp-tab-badge"><?= $total_reprogramados ?></span>
+      <?php endif; ?>
+    </button>
+    <button type="button" class="rp-tab-btn" data-tab="otros-reprogramados" onclick="rpSwitchTab('otros-reprogramados')">
+      <span>🏆</span> Otros Reprogramados
+      <?php if (count($otros_reprogramados) > 0): ?>
+        <span class="rp-tab-badge" style="background:#0369a1"><?= count($otros_reprogramados) ?></span>
+      <?php endif; ?>
+    </button>
+  </div>
 
-  <?php elseif ($bloqueado_reprogs): ?>
-  <!-- BLOQUEO: límite de reprogramaciones alcanzado -->
-  <div style="background:#fff;border-radius:16px;border:2px solid #fca5a5;padding:2rem 1.5rem;max-width:560px">
-    <div style="display:flex;gap:1rem;align-items:flex-start">
-      <div style="font-size:2.5rem;flex-shrink:0;line-height:1">🚫</div>
-      <div>
-        <h3 style="font-family:var(--font-head);font-size:1.1rem;text-transform:uppercase;color:#991b1b;margin:0 0 .6rem">Límite de reprogramaciones alcanzado</h3>
-        <p style="color:#7f1d1d;font-size:.9rem;line-height:1.55;margin:0 0 .75rem">
-          Tu equipo ya tiene <strong><?= $total_reprogramados ?> partido<?= $total_reprogramados > 1 ? 's' : '' ?> reprogramado<?= $total_reprogramados > 1 ? 's' : '' ?></strong>.
-          Según las bases del torneo, <strong>no está permitido reprogramar más de <?= $MAX_REPROGS ?> partidos por equipo</strong>.
-        </p>
-        <div style="background:#fee2e2;border-radius:10px;padding:.75rem 1rem;font-size:.82rem;color:#991b1b;font-weight:600;margin-bottom:1rem">
-          📋 Si tienes algún inconveniente especial, contacta directamente al administrador del torneo.
+  <!-- Pestaña 1: Solicitar Reprogramación -->
+  <div id="tab-solicitar" class="rp-tab-panel active">
+    <?php if (!$equipo): ?>
+      <div class="alert alert-info">No estás inscrito en ningún equipo activo en esta liga.</div>
+
+    <?php elseif ($bloqueado_reprogs): ?>
+      <!-- BLOQUEO: límite de reprogramaciones alcanzado -->
+      <div style="background:#fff;border-radius:16px;border:2px solid #fca5a5;padding:2rem 1.5rem;max-width:560px">
+        <div style="display:flex;gap:1rem;align-items:flex-start">
+          <div style="font-size:2.5rem;flex-shrink:0;line-height:1">🚫</div>
+          <div>
+            <h3 style="font-family:var(--font-head);font-size:1.1rem;text-transform:uppercase;color:#991b1b;margin:0 0 .6rem">Límite de reprogramaciones alcanzado</h3>
+            <p style="color:#7f1d1d;font-size:.9rem;line-height:1.55;margin:0 0 .75rem">
+              Tu equipo ya tiene <strong><?= $total_reprogramados ?> partido<?= $total_reprogramados > 1 ? 's' : '' ?> reprogramado<?= $total_reprogramados > 1 ? 's' : '' ?></strong>.
+              Según las bases del torneo, <strong>no está permitido reprogramar más de <?= $MAX_REPROGS ?> partidos por equipo</strong>.
+            </p>
+            <div style="background:#fee2e2;border-radius:10px;padding:.75rem 1rem;font-size:.82rem;color:#991b1b;font-weight:600;margin-bottom:1rem">
+              📋 Si tienes algún inconveniente especial, contacta directamente al administrador del torneo.
+            </div>
+
+            <?php if (!empty($partidos_reprogramados_actuales)): ?>
+            <!-- Mostrar al jugador CUÁLES son los partidos que lo bloquean -->
+            <div style="background:#fef9f9;border:1px solid #fecaca;border-radius:10px;padding:.85rem 1rem;margin-top:.5rem">
+              <div style="font-size:.7rem;font-weight:800;color:#991b1b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">
+                ⚠ Tus reprogramaciones activas
+              </div>
+              <?php foreach ($partidos_reprogramados_actuales as $pr):
+                $rival = ($pr['local_nombre'] === $equipo['nombre']) ? $pr['visitante_nombre'] : $pr['local_nombre'];
+                $fecha_lbl = $pr['fecha_programada'] && date('Y-m-d', strtotime($pr['fecha_programada'])) !== '2026-12-31'
+                    ? date('d/m H:i', strtotime($pr['fecha_programada']))
+                    : 'Sin fecha';
+              ?>
+              <div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-top:1px solid #fee2e2;font-size:.82rem;color:#7f1d1d">
+                <span style="background:#fee2e2;color:#991b1b;font-weight:800;font-size:.65rem;border-radius:4px;padding:.1rem .4rem">J<?= $pr['jornada'] ?: '?' ?></span>
+                <span style="flex:1">vs <strong><?= epl_h($rival) ?></strong></span>
+                <span style="font-size:.75rem;color:#9f1239;font-weight:600"><?= $fecha_lbl ?></span>
+              </div>
+              <?php endforeach; ?>
+              <p style="font-size:.72rem;color:#7f1d1d;margin-top:.6rem;font-weight:600;line-height:1.4">
+                💡 Cuando alguno de estos partidos se juegue, podrás reprogramar otro.
+              </p>
+            </div>
+            <?php endif; ?>
+          </div>
+        </div>
+        <div style="margin-top:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap">
+          <a href="mis_torneos.php" class="btn btn-sm" style="background:var(--navy);color:#fff;text-decoration:none">← Volver a mis torneos</a>
+          <a href="dashboard.php"   class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600);text-decoration:none">Ir al dashboard</a>
+        </div>
+      </div>
+
+    <?php elseif (empty($partidos_pendientes)): ?>
+      <div class="rp-empty">
+        <div style="font-size:2.5rem;margin-bottom:.75rem">📅</div>
+        <h3>Sin partidos para reprogramar</h3>
+        <p>No tienes partidos pendientes o todos tienen fecha con más de 48h de anticipación.</p>
+      </div>
+    <?php else: ?>
+
+      <form method="post" id="formReprog">
+
+        <!-- Paso 1: Seleccionar partido -->
+        <div class="rp-card">
+          <div class="rp-card-header">
+            <span class="rp-step-dot">1</span>
+            <div>
+              <div class="rp-card-title">Selecciona el partido</div>
+              <div class="rp-card-sub">Partidos pendientes o con fecha vencida.</div>
+            </div>
+          </div>
+          <input type="hidden" name="partido_id" id="hiddenPartidoIdRp">
+          <div class="rp-partidos-list" style="margin-top:1rem" id="rpListaPartidos">
+            <?php
+              $pre_id = (int)($_GET['partido_id'] ?? 0);
+              foreach ($partidos_pendientes as $p):
+                $esLocal = ($p['equipo_local_id'] == $equipo['id']);
+                $rivales = [];
+                if ($esLocal) {
+                  $rivales[] = ['n'=>$p['v1n'],  'a'=>$p['jv1a'], 't'=>$p['v1t']];
+                  $rivales[] = ['n'=>$p['v2n'],  'a'=>$p['v2a'],  't'=>$p['v2t']];
+                } else {
+                  $rivales[] = ['n'=>$p['l1n'],  'a'=>$p['l1a'],  't'=>$p['l1t']];
+                  $rivales[] = ['n'=>$p['l2n'],  'a'=>$p['l2a'],  't'=>$p['l2t']];
+                }
+                $dataRivales = htmlspecialchars(base64_encode(json_encode($rivales)), ENT_QUOTES);
+                $checked = ($p['id'] == $pre_id) ? 'checked' : '';
+            ?>
+            <label class="rp-partido-option" for="rpp<?= $p['id'] ?>">
+              <input type="radio" name="_rp_partido_pick" id="rpp<?= $p['id'] ?>" value="<?= $p['id'] ?>"
+                     data-rivales="<?= $dataRivales ?>" <?= $checked ?>
+                     onchange="rpSelPartido(this)">
+              <div class="rp-partido-content">
+                <div class="rp-partido-fecha">
+                  <?php if ($p['fecha_programada']): ?>
+                    <span class="rp-dia"><?= date('d', strtotime($p['fecha_programada'])) ?></span>
+                    <span class="rp-mes"><?= strtoupper(date('M', strtotime($p['fecha_programada']))) ?></span>
+                  <?php else: ?>
+                    <span class="rp-dia">?</span><span class="rp-mes">TBD</span>
+                  <?php endif; ?>
+                </div>
+                <div class="rp-partido-teams">
+                  <span><?= epl_h($p['local_nombre']) ?></span>
+                  <span class="rp-vs">VS</span>
+                  <span><?= epl_h($p['visitante_nombre']) ?></span>
+                </div>
+                <div class="rp-partido-meta">
+                  <span class="rp-jornada">F.<?= $p['jornada'] ?? '?' ?></span>
+                  <?php if ($p['estado']==='reprogramado'): ?>
+                    <span class="badge badge-walkover" style="font-size:.55rem">Reprog.</span>
+                  <?php endif; ?>
+                </div>
+              </div>
+              <div class="rp-partido-check">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </label>
+            <?php endforeach; ?>
+          </div>
         </div>
 
-        <?php if (!empty($partidos_reprogramados_actuales)): ?>
-        <!-- Mostrar al jugador CUÁLES son los partidos que lo bloquean -->
-        <div style="background:#fef9f9;border:1px solid #fecaca;border-radius:10px;padding:.85rem 1rem;margin-top:.5rem">
-          <div style="font-size:.7rem;font-weight:800;color:#991b1b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">
-            ⚠ Tus reprogramaciones activas
+        <!-- Paso 2: Contactar rivales -->
+        <div id="seccionRivales" class="rp-card rp-card-rivales" style="display:none">
+          <div class="rp-card-header">
+            <span class="rp-step-dot" style="background:#0369A1">2</span>
+            <div>
+              <div class="rp-card-title" style="color:#0369A1">Contacta a tus rivales</div>
+              <div class="rp-card-sub">Coordina la nueva fecha antes de enviar la solicitud.</div>
+            </div>
           </div>
+          <div id="listaRivales" style="display:flex;flex-direction:column;gap:.6rem;margin-top:1rem"></div>
+        </div>
+
+        <!-- Paso 3: Motivo -->
+        <div class="rp-card">
+          <div class="rp-card-header">
+            <span class="rp-step-dot">3</span>
+            <div>
+              <div class="rp-card-title">Motivo de la reprogramación</div>
+            </div>
+          </div>
+          <textarea name="motivo" class="form-control" rows="3" required
+                    placeholder="Explica brevemente el motivo del cambio..."
+                    style="margin-top:1rem;resize:vertical"></textarea>
+        </div>
+
+        <!-- Paso 4: Rival no responde -->
+        <div class="rp-card">
+          <div class="rp-card-header">
+            <span class="rp-step-dot">4</span>
+            <div>
+              <div class="rp-card-title">¿El rival no responde?</div>
+            </div>
+          </div>
+          <label class="rp-toggle-row" style="margin-top:1rem">
+            <div class="rp-toggle-info">
+              <div style="font-weight:700;font-size:.9rem;color:var(--navy)">El rival no responde ni coordina</div>
+              <div style="font-size:.78rem;color:var(--gray-500);margin-top:.2rem">El partido quedará sin fecha y la organización tomará acción.</div>
+            </div>
+            <label class="rp-switch">
+              <input type="checkbox" name="rival_no_responde" id="chkRivalNoResp" onchange="toggleRivalNoResp(this)">
+              <span class="rp-slider"></span>
+            </label>
+          </label>
+        </div>
+
+        <!-- Paso 5: Nueva fecha + mutuo acuerdo -->
+        <div id="seccionFecha" class="rp-card rp-card-fecha">
+          <div class="rp-card-header">
+            <span class="rp-step-dot" style="background:#1d4ed8">5</span>
+            <div>
+              <div class="rp-card-title" style="color:#1d4ed8">Nueva fecha propuesta</div>
+              <div class="rp-card-sub">Mínimo 48 horas desde ahora.</div>
+            </div>
+          </div>
+          <input type="text" name="fecha_propuesta" id="fpFechaPropuesta" class="form-control"
+                 placeholder="Seleccioná día y hora"
+                 data-min="<?= date('Y-m-d H:i', strtotime('+48 hours')) ?>"
+                 autocomplete="off" readonly
+                 style="margin-top:1rem;max-width:320px;cursor:pointer;background:#fff">
+
+          <label class="rp-acuerdo-row">
+            <input type="checkbox" name="mutuo_acuerdo" id="chkMutuo" required>
+            <div>
+              <div style="font-weight:700;font-size:.88rem;color:#1e40af">Confirmo mutuo acuerdo</div>
+              <div style="font-size:.78rem;color:#3b82f6;margin-top:.1rem">He coordinado esta fecha con el equipo rival y ambos estamos de acuerdo.</div>
+            </div>
+          </label>
+        </div>
+
+        <button type="submit" class="rp-submit-btn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          Enviar solicitud
+        </button>
+
+      </form>
+    <?php endif; ?>
+  </div>
+
+  <!-- Pestaña 2: Mis Reprogramaciones (Activas e Historial) -->
+  <div id="tab-mis-reprogramaciones" class="rp-tab-panel" style="display:none">
+    
+    <!-- Reprogramaciones Activas (Limite) -->
+    <?php if ($equipo && !empty($partidos_reprogramados_actuales)): ?>
+      <div style="margin-bottom:2.5rem">
+        <h3 style="font-family:var(--font-head);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy);margin-bottom:1rem">
+          🔄 Mis Reprogramaciones Activas (<?= $total_reprogramados ?>/<?= $MAX_REPROGS ?>)
+        </h3>
+        <p style="font-size:.8rem;color:var(--gray-500);margin-bottom:1rem">
+          Partidos de tu equipo que están en estado reprogramado. Deberán jugarse antes de poder reprogramar otros.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:.6rem">
           <?php foreach ($partidos_reprogramados_actuales as $pr):
             $rival = ($pr['local_nombre'] === $equipo['nombre']) ? $pr['visitante_nombre'] : $pr['local_nombre'];
             $fecha_lbl = $pr['fecha_programada'] && date('Y-m-d', strtotime($pr['fecha_programada'])) !== '2026-12-31'
-                ? date('d/m H:i', strtotime($pr['fecha_programada']))
-                : 'Sin fecha';
+                ? date('d/m/Y H:i', strtotime($pr['fecha_programada']))
+                : 'A coordinar';
           ?>
-          <div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-top:1px solid #fee2e2;font-size:.82rem;color:#7f1d1d">
-            <span style="background:#fee2e2;color:#991b1b;font-weight:800;font-size:.65rem;border-radius:4px;padding:.1rem .4rem">J<?= $pr['jornada'] ?: '?' ?></span>
-            <span style="flex:1">vs <strong><?= epl_h($rival) ?></strong></span>
-            <span style="font-size:.75rem;color:#9f1239;font-weight:600"><?= $fecha_lbl ?></span>
+          <div class="rp-historial-row" style="border-left:4px solid var(--gold)">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:.88rem;color:var(--navy)">
+                <?= epl_h($pr['local_nombre'] . ' vs ' . $pr['visitante_nombre']) ?>
+              </div>
+              <div style="font-size:.75rem;color:var(--gray-500);margin-top:.2rem">
+                <span>Jornada <?= $pr['jornada'] ?: '?' ?></span> · 
+                <span style="color:var(--navy);font-weight:600">Fecha: <?= $fecha_lbl ?></span>
+              </div>
+            </div>
+            <span class="badge badge-walkover" style="font-size:.65rem;flex-shrink:0;align-self:flex-start">Reprogramado</span>
           </div>
           <?php endforeach; ?>
-          <p style="font-size:.72rem;color:#7f1d1d;margin-top:.6rem;font-weight:600;line-height:1.4">
-            💡 Cuando alguno de estos partidos se juegue, podrás reprogramar otro.
-          </p>
         </div>
-        <?php endif; ?>
       </div>
+    <?php endif; ?>
+
+    <!-- Historial de Solicitudes -->
+    <div>
+      <h3 style="font-family:var(--font-head);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy);margin-bottom:1rem">
+        📋 Historial de Solicitudes
+      </h3>
+      <?php if ($mis_solicitudes): ?>
+        <div style="display:flex;flex-direction:column;gap:.6rem">
+          <?php foreach ($mis_solicitudes as $s):
+            $badgeCls = match($s['estado']) { 'aprobada'=>'badge-jugado', 'rechazada'=>'badge-walkover', default=>'badge-pendiente' };
+          ?>
+          <div class="rp-historial-row">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:.88rem;color:var(--navy)"><?= epl_h($s['local_nombre'].' vs '.$s['visitante_nombre']) ?></div>
+              <div style="font-size:.75rem;color:var(--gray-400);margin-top:.2rem">
+                <?= $s['fecha_propuesta'] ? date('d/m/Y H:i', strtotime($s['fecha_propuesta'])) : 'Sin fecha' ?>
+                <?php if ($s['rival_no_responde']): ?><span class="badge badge-walkover" style="font-size:.6rem;margin-left:.4rem">Rival no respondió</span><?php endif; ?>
+                <?php if ($s['mutuo_acuerdo']): ?><span class="badge badge-jugado" style="font-size:.6rem;margin-left:.4rem">Mutuo acuerdo</span><?php endif; ?>
+              </div>
+              <?php if ($s['fecha_aprobada'] && $s['estado']==='aprobada'): ?>
+                <div style="font-size:.75rem;color:#22c55e;margin-top:.2rem;font-weight:600">✓ <?= date('d/m/Y H:i', strtotime($s['fecha_aprobada'])) ?> <?= $s['cancha_aprobada']?'· '.$s['cancha_aprobada']:'' ?></div>
+              <?php endif; ?>
+              <div style="font-size:.72rem;color:var(--gray-500);margin-top:.2rem;font-style:italic"><?= epl_h(mb_strimwidth($s['motivo'], 0, 80, '...')) ?></div>
+            </div>
+            <span class="badge <?= $badgeCls ?>" style="flex-shrink:0;align-self:flex-start"><?= ucfirst($s['estado']) ?></span>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      <?php else: ?>
+        <div class="rp-empty" style="padding:1.5rem 0">
+          <p>No tienes solicitudes de reprogramación anteriores.</p>
+        </div>
+      <?php endif; ?>
     </div>
-    <div style="margin-top:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap">
-      <a href="mis_torneos.php" class="btn btn-sm" style="background:var(--navy);color:#fff;text-decoration:none">← Volver a mis torneos</a>
-      <a href="dashboard.php"   class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600);text-decoration:none">Ir al dashboard</a>
-    </div>
+
   </div>
 
-  <?php elseif (empty($partidos_pendientes)): ?>
-  <div class="rp-empty">
-    <div style="font-size:2.5rem;margin-bottom:.75rem">📅</div>
-    <h3>Sin partidos para reprogramar</h3>
-    <p>No tienes partidos pendientes o todos tienen fecha con más de 48h de anticipación.</p>
-  </div>
-  <?php else: ?>
-
-  <form method="post" id="formReprog">
-
-    <!-- Paso 1: Seleccionar partido -->
-    <div class="rp-card">
-      <div class="rp-card-header">
-        <span class="rp-step-dot">1</span>
-        <div>
-          <div class="rp-card-title">Selecciona el partido</div>
-          <div class="rp-card-sub">Partidos pendientes o con fecha vencida.</div>
-        </div>
-      </div>
-      <input type="hidden" name="partido_id" id="hiddenPartidoIdRp">
-      <div class="rp-partidos-list" style="margin-top:1rem" id="rpListaPartidos">
-        <?php
-          $pre_id = (int)($_GET['partido_id'] ?? 0);
-          foreach ($partidos_pendientes as $p):
-            $esLocal = ($p['equipo_local_id'] == $equipo['id']);
-            $rivales = [];
-            if ($esLocal) {
-              $rivales[] = ['n'=>$p['v1n'],  'a'=>$p['jv1a'], 't'=>$p['v1t']];
-              $rivales[] = ['n'=>$p['v2n'],  'a'=>$p['v2a'],  't'=>$p['v2t']];
-            } else {
-              $rivales[] = ['n'=>$p['l1n'],  'a'=>$p['l1a'],  't'=>$p['l1t']];
-              $rivales[] = ['n'=>$p['l2n'],  'a'=>$p['l2a'],  't'=>$p['l2t']];
-            }
-            $dataRivales = htmlspecialchars(base64_encode(json_encode($rivales)), ENT_QUOTES);
-            $checked = ($p['id'] == $pre_id) ? 'checked' : '';
-        ?>
-        <label class="rp-partido-option" for="rpp<?= $p['id'] ?>">
-          <input type="radio" name="_rp_partido_pick" id="rpp<?= $p['id'] ?>" value="<?= $p['id'] ?>"
-                 data-rivales="<?= $dataRivales ?>" <?= $checked ?>
-                 onchange="rpSelPartido(this)">
-          <div class="rp-partido-content">
-            <div class="rp-partido-fecha">
-              <?php if ($p['fecha_programada']): ?>
-                <span class="rp-dia"><?= date('d', strtotime($p['fecha_programada'])) ?></span>
-                <span class="rp-mes"><?= strtoupper(date('M', strtotime($p['fecha_programada']))) ?></span>
-              <?php else: ?>
-                <span class="rp-dia">?</span><span class="rp-mes">TBD</span>
-              <?php endif; ?>
-            </div>
-            <div class="rp-partido-teams">
-              <span><?= epl_h($p['local_nombre']) ?></span>
-              <span class="rp-vs">VS</span>
-              <span><?= epl_h($p['visitante_nombre']) ?></span>
-            </div>
-            <div class="rp-partido-meta">
-              <span class="rp-jornada">F.<?= $p['jornada'] ?? '?' ?></span>
-              <?php if ($p['estado']==='reprogramado'): ?>
-                <span class="badge badge-walkover" style="font-size:.55rem">Reprog.</span>
-              <?php endif; ?>
-            </div>
-          </div>
-          <div class="rp-partido-check">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-          </div>
-        </label>
-        <?php endforeach; ?>
-      </div>
+  <!-- Pestaña 3: Otros Reprogramados -->
+  <div id="tab-otros-reprogramados" class="rp-tab-panel" style="display:none">
+    <div style="margin-bottom:1.5rem">
+      <h3 style="font-family:var(--font-head);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy);margin-bottom:.5rem">
+        🏆 Partidos Reprogramados en la Liga
+      </h3>
+      <p style="color:var(--gray-500);font-size:.8rem;line-height:1.4">
+        Revisa los partidos de otros equipos que están reprogramados. Puedes contactar a sus jugadores si deseas coordinar para adelantar partidos pendientes.
+      </p>
     </div>
 
-    <!-- Paso 2: Contactar rivales -->
-    <div id="seccionRivales" class="rp-card rp-card-rivales" style="display:none">
-      <div class="rp-card-header">
-        <span class="rp-step-dot" style="background:#0369A1">2</span>
-        <div>
-          <div class="rp-card-title" style="color:#0369A1">Contacta a tus rivales</div>
-          <div class="rp-card-sub">Coordina la nueva fecha antes de enviar la solicitud.</div>
-        </div>
+    <?php if (empty($otros_reprogramados)): ?>
+      <div class="rp-empty">
+        <div style="font-size:2.5rem;margin-bottom:.75rem">🥎</div>
+        <h3>No hay otros partidos reprogramados</h3>
+        <p>Actualmente no hay partidos de otros equipos marcados como reprogramados en esta liga.</p>
       </div>
-      <div id="listaRivales" style="display:flex;flex-direction:column;gap:.6rem;margin-top:1rem"></div>
-    </div>
-
-    <!-- Paso 3: Motivo -->
-    <div class="rp-card">
-      <div class="rp-card-header">
-        <span class="rp-step-dot">3</span>
-        <div>
-          <div class="rp-card-title">Motivo de la reprogramación</div>
-        </div>
-      </div>
-      <textarea name="motivo" class="form-control" rows="3" required
-                placeholder="Explica brevemente el motivo del cambio..."
-                style="margin-top:1rem;resize:vertical"></textarea>
-    </div>
-
-    <!-- Paso 4: Rival no responde -->
-    <div class="rp-card">
-      <div class="rp-card-header">
-        <span class="rp-step-dot">4</span>
-        <div>
-          <div class="rp-card-title">¿El rival no responde?</div>
-        </div>
-      </div>
-      <label class="rp-toggle-row" style="margin-top:1rem">
-        <div class="rp-toggle-info">
-          <div style="font-weight:700;font-size:.9rem;color:var(--navy)">El rival no responde ni coordina</div>
-          <div style="font-size:.78rem;color:var(--gray-500);margin-top:.2rem">El partido quedará sin fecha y la organización tomará acción.</div>
-        </div>
-        <label class="rp-switch">
-          <input type="checkbox" name="rival_no_responde" id="chkRivalNoResp" onchange="toggleRivalNoResp(this)">
-          <span class="rp-slider"></span>
-        </label>
-      </label>
-    </div>
-
-    <!-- Paso 5: Nueva fecha + mutuo acuerdo -->
-    <div id="seccionFecha" class="rp-card rp-card-fecha">
-      <div class="rp-card-header">
-        <span class="rp-step-dot" style="background:#1d4ed8">5</span>
-        <div>
-          <div class="rp-card-title" style="color:#1d4ed8">Nueva fecha propuesta</div>
-          <div class="rp-card-sub">Mínimo 48 horas desde ahora.</div>
-        </div>
-      </div>
-      <input type="text" name="fecha_propuesta" id="fpFechaPropuesta" class="form-control"
-             placeholder="Seleccioná día y hora"
-             data-min="<?= date('Y-m-d H:i', strtotime('+48 hours')) ?>"
-             autocomplete="off" readonly
-             style="margin-top:1rem;max-width:320px;cursor:pointer;background:#fff">
-
-      <label class="rp-acuerdo-row">
-        <input type="checkbox" name="mutuo_acuerdo" id="chkMutuo" required>
-        <div>
-          <div style="font-weight:700;font-size:.88rem;color:#1e40af">Confirmo mutuo acuerdo</div>
-          <div style="font-size:.78rem;color:#3b82f6;margin-top:.1rem">He coordinado esta fecha con el equipo rival y ambos estamos de acuerdo.</div>
-        </div>
-      </label>
-    </div>
-
-    <button type="submit" class="rp-submit-btn">
-      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-      Enviar solicitud
-    </button>
-
-  </form>
-  <?php endif; ?>
-
-  <!-- Historial de solicitudes -->
-  <?php if ($mis_solicitudes): ?>
-  <div style="margin-top:2.5rem">
-    <h3 style="font-family:var(--font-head);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy);margin-bottom:1rem">Mis solicitudes anteriores</h3>
-    <div style="display:flex;flex-direction:column;gap:.6rem">
-      <?php foreach ($mis_solicitudes as $s):
-        $badgeCls = match($s['estado']) { 'aprobada'=>'badge-jugado', 'rechazada'=>'badge-walkover', default=>'badge-pendiente' };
+    <?php else:
+      // Agrupar por jornada
+      $por_jornada = [];
+      foreach ($otros_reprogramados as $p) {
+          $j = $p['jornada'] ?: 'Sin Jornada';
+          $por_jornada[$j][] = $p;
+      }
+      ksort($por_jornada);
+      
+      foreach ($por_jornada as $jornada => $partidos):
       ?>
-      <div class="rp-historial-row">
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:.88rem;color:var(--navy)"><?= epl_h($s['local_nombre'].' vs '.$s['visitante_nombre']) ?></div>
-          <div style="font-size:.75rem;color:var(--gray-400);margin-top:.2rem">
-            <?= $s['fecha_propuesta'] ? date('d/m/Y H:i', strtotime($s['fecha_propuesta'])) : 'Sin fecha' ?>
-            <?php if ($s['rival_no_responde']): ?><span class="badge badge-walkover" style="font-size:.6rem;margin-left:.4rem">Rival no respondió</span><?php endif; ?>
-            <?php if ($s['mutuo_acuerdo']): ?><span class="badge badge-jugado" style="font-size:.6rem;margin-left:.4rem">Mutuo acuerdo</span><?php endif; ?>
-          </div>
-          <?php if ($s['fecha_aprobada'] && $s['estado']==='aprobada'): ?>
-            <div style="font-size:.75rem;color:#22c55e;margin-top:.2rem;font-weight:600">✓ <?= date('d/m/Y H:i', strtotime($s['fecha_aprobada'])) ?> <?= $s['cancha_aprobada']?'· '.$s['cancha_aprobada']:'' ?></div>
-          <?php endif; ?>
-          <div style="font-size:.72rem;color:var(--gray-500);margin-top:.2rem;font-style:italic"><?= epl_h(mb_strimwidth($s['motivo'], 0, 80, '...')) ?></div>
+      <div style="margin-bottom:2rem">
+        <div style="background:#f1f5f9;color:var(--navy);font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;padding:.5rem 1rem;border-radius:8px;margin-bottom:.85rem;display:inline-block">
+          Jornada <?= $jornada ?>
         </div>
-        <span class="badge <?= $badgeCls ?>" style="flex-shrink:0;align-self:flex-start"><?= ucfirst($s['estado']) ?></span>
+        
+        <div style="display:flex;flex-direction:column;gap:1rem">
+          <?php foreach ($partidos as $p):
+            $fecha_orig = $p['fecha_programada'] && date('Y-m-d', strtotime($p['fecha_programada'])) !== '2026-12-31'
+                ? date('d/m/Y H:i', strtotime($p['fecha_programada']))
+                : 'A coordinar';
+          ?>
+          <div class="rp-card-otro">
+            <!-- Encabezado del partido -->
+            <div class="rp-otro-header">
+              <div style="flex:1">
+                <div class="rp-otro-teams">
+                  <span class="rp-team-name"><?= epl_h($p['local_nombre']) ?></span>
+                  <span class="rp-vs-small">VS</span>
+                  <span class="rp-team-name"><?= epl_h($p['visitante_nombre']) ?></span>
+                </div>
+                <div class="rp-otro-fecha">
+                  <span>📅 Fecha original: <strong><?= $fecha_orig ?></strong></span>
+                </div>
+              </div>
+              <span class="badge badge-walkover" style="font-size:.62rem;align-self:center">Reprogramado</span>
+            </div>
+            
+            <!-- Jugadores y contacto -->
+            <div class="rp-otro-players-section">
+              <!-- Equipo Local -->
+              <div class="rp-otro-equipo-box">
+                <div class="rp-otro-equipo-title">Local: <?= epl_h($p['local_nombre']) ?></div>
+                <div class="rp-otro-players-list">
+                  <?php
+                    $jugadores_locales = [
+                      ['n' => $p['l1n'], 'a' => $p['l1a'], 't' => $p['l1t']],
+                      ['n' => $p['l2n'], 'a' => $p['l2a'], 't' => $p['l2t']],
+                    ];
+                    foreach ($jugadores_locales as $jl):
+                      if (empty($jl['n'])) continue;
+                      $tel = preg_replace('/\D/', '', $jl['t'] ?? '');
+                      $clean = str_starts_with($tel, '56') ? $tel : '56' . $tel;
+                      $msg = rawurlencode("Hola {$jl['n']}, te contacto porque vi que tienen un partido reprogramado en la Elite Padel League. ¿Les interesaría coordinar para adelantar partido?");
+                      $wsp = $tel ? "https://wa.me/{$clean}?text={$msg}" : null;
+                      $iniciales = mb_strtoupper(mb_substr($jl['n'], 0, 1) . mb_substr($jl['a'] ?? '', 0, 1));
+                  ?>
+                  <div class="rp-otro-player-row">
+                    <div class="rp-otro-player-avatar"><?= $iniciales ?></div>
+                    <div class="rp-otro-player-info">
+                      <span class="rp-otro-player-name"><?= epl_h($jl['n'] . ' ' . ($jl['a'] ?? '')) ?></span>
+                    </div>
+                    <?php if ($wsp): ?>
+                      <a href="<?= $wsp ?>" target="_blank" class="rp-otro-contact-btn wsp" title="Contactar por WhatsApp">
+                        <?= $WA_SVG ?>
+                      </a>
+                    <?php else: ?>
+                      <span class="rp-otro-no-contact">Sin tel.</span>
+                    <?php endif; ?>
+                  </div>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+
+              <!-- Divisor -->
+              <div class="rp-otro-divider"></div>
+
+              <!-- Equipo Visitante -->
+              <div class="rp-otro-equipo-box">
+                <div class="rp-otro-equipo-title">Visitante: <?= epl_h($p['visitante_nombre']) ?></div>
+                <div class="rp-otro-players-list">
+                  <?php
+                    $jugadores_visitantes = [
+                      ['n' => $p['v1n'], 'a' => $p['jv1a'], 't' => $p['v1t']],
+                      ['n' => $p['v2n'], 'a' => $p['v2a'], 't' => $p['v2t']],
+                    ];
+                    foreach ($jugadores_visitantes as $jv):
+                      if (empty($jv['n'])) continue;
+                      $tel = preg_replace('/\D/', '', $jv['t'] ?? '');
+                      $clean = str_starts_with($tel, '56') ? $tel : '56' . $tel;
+                      $msg = rawurlencode("Hola {$jv['n']}, te contacto porque vi que tienen un partido reprogramado en la Elite Padel League. ¿Les interesaría coordinar para adelantar partido?");
+                      $wsp = $tel ? "https://wa.me/{$clean}?text={$msg}" : null;
+                      $iniciales = mb_strtoupper(mb_substr($jv['n'], 0, 1) . mb_substr($jv['a'] ?? '', 0, 1));
+                  ?>
+                  <div class="rp-otro-player-row">
+                    <div class="rp-otro-player-avatar"><?= $iniciales ?></div>
+                    <div class="rp-otro-player-info">
+                      <span class="rp-otro-player-name"><?= epl_h($jv['n'] . ' ' . ($jv['a'] ?? '')) ?></span>
+                    </div>
+                    <?php if ($wsp): ?>
+                      <a href="<?= $wsp ?>" target="_blank" class="rp-otro-contact-btn wsp" title="Contactar por WhatsApp">
+                        <?= $WA_SVG ?>
+                      </a>
+                    <?php else: ?>
+                      <span class="rp-otro-no-contact">Sin tel.</span>
+                    <?php endif; ?>
+                  </div>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <?php endforeach; ?>
+        </div>
       </div>
       <?php endforeach; ?>
-    </div>
+    <?php endif; ?>
   </div>
-  <?php endif; ?>
 
 </main>
 </div>
@@ -532,6 +768,216 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 }
 .rp-empty { text-align: center; padding: 3rem 1rem; color: var(--gray-400); animation: rp-fade-up .4s ease both; }
 .rp-empty h3 { font-family: var(--font-head); text-transform: uppercase; color: var(--navy); margin: 0 0 .5rem; }
+
+/* Pestañas */
+.rp-tabs {
+  display: flex;
+  gap: .25rem;
+  border-bottom: 2px solid var(--gray-100);
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -webkit-overflow-scrolling: touch;
+}
+.rp-tabs::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+.rp-tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--gray-500);
+  font-family: var(--font-head);
+  font-size: .88rem;
+  font-weight: 700;
+  padding: .75rem 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  transition: all .25s ease;
+  margin-bottom: -2px;
+}
+.rp-tab-btn:hover {
+  color: var(--navy);
+  border-bottom-color: var(--gray-300);
+}
+.rp-tab-btn.active {
+  color: var(--navy);
+  border-bottom-color: var(--gold);
+}
+.rp-tab-badge {
+  background: var(--navy);
+  color: var(--white);
+  font-size: .7rem;
+  font-weight: 800;
+  padding: .15rem .45rem;
+  border-radius: 20px;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(28,47,72,.2);
+}
+.rp-tab-btn.active .rp-tab-badge {
+  background: var(--navy);
+  color: var(--gold);
+}
+.rp-tab-panel {
+  display: none;
+  animation: rp-fade-up .3s ease both;
+}
+.rp-tab-panel.active {
+  display: block;
+}
+
+/* Tarjetas de otros partidos reprogramados */
+.rp-card-otro {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: 18px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 18px rgba(0,0,0,.03);
+  transition: all .2s ease;
+}
+.rp-card-otro:hover {
+  box-shadow: 0 6px 24px rgba(0,0,0,.06);
+  border-color: var(--gray-200);
+}
+.rp-otro-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--gray-100);
+  padding-bottom: .85rem;
+  margin-bottom: .85rem;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.rp-otro-teams {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  flex-wrap: wrap;
+}
+.rp-team-name {
+  font-family: var(--font-head);
+  font-weight: 800;
+  color: var(--navy);
+  font-size: .92rem;
+}
+.rp-vs-small {
+  background: var(--navy);
+  color: var(--gold);
+  border-radius: 5px;
+  padding: .1rem .35rem;
+  font-size: .55rem;
+  font-weight: 800;
+}
+.rp-otro-fecha {
+  font-size: .75rem;
+  color: var(--gray-500);
+  margin-top: .25rem;
+}
+.rp-otro-players-section {
+  display: flex;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+.rp-otro-equipo-box {
+  flex: 1;
+  min-width: 0;
+}
+.rp-otro-equipo-title {
+  font-size: .72rem;
+  font-weight: 800;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: .5rem;
+}
+.rp-otro-players-list {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.rp-otro-player-row {
+  display: flex;
+  align-items: center;
+  background: var(--gray-50);
+  border-radius: 12px;
+  padding: .45rem .75rem;
+  gap: .6rem;
+}
+.rp-otro-player-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: var(--gold);
+  font-size: .68rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rp-otro-player-info {
+  flex: 1;
+  min-width: 0;
+}
+.rp-otro-player-name {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--navy);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+.rp-otro-contact-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.rp-otro-contact-btn.wsp {
+  background: #25d366;
+  color: white;
+}
+.rp-otro-contact-btn.wsp:hover {
+  background: #20ba5a;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(37,211,102,.3);
+}
+.rp-otro-no-contact {
+  font-size: .7rem;
+  color: var(--gray-400);
+  font-style: italic;
+  white-space: nowrap;
+}
+.rp-otro-divider {
+  width: 1px;
+  background: var(--gray-100);
+  align-self: stretch;
+}
+
+@media (max-width: 768px) {
+  .rp-otro-players-section {
+    flex-direction: column;
+    gap: .85rem;
+  }
+  .rp-otro-divider {
+    width: 100%;
+    height: 1px;
+  }
+}
 
 /* Stepper layout */
 .rp-stepper { position: relative; }
@@ -723,6 +1169,38 @@ function cargarRivales(b64) {
   wrapper.style.display = alguno ? 'block' : 'none';
 }
 
+function rpSwitchTab(tabId) {
+  // Ocultar todos los paneles
+  document.querySelectorAll('.rp-tab-panel').forEach(p => {
+    p.style.display = 'none';
+    p.classList.remove('active');
+  });
+  // Desactivar todos los botones
+  document.querySelectorAll('.rp-tab-btn').forEach(b => {
+    b.classList.remove('active');
+  });
+  
+  // Mostrar el panel seleccionado
+  const targetPanel = document.getElementById('tab-' + tabId);
+  if (targetPanel) {
+    targetPanel.style.display = 'block';
+    targetPanel.classList.add('active');
+  }
+  
+  // Activar el botón seleccionado
+  const targetBtn = document.querySelector(`.rp-tab-btn[data-tab="${tabId}"]`);
+  if (targetBtn) {
+    targetBtn.classList.add('active');
+  }
+  
+  // Actualizar hash en la URL sin saltar el scroll
+  if (history.pushState) {
+    history.pushState(null, null, '#' + tabId);
+  } else {
+    window.location.hash = tabId;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const checked = document.querySelector('input[name="_rp_partido_pick"]:checked');
   if (checked) {
@@ -733,6 +1211,14 @@ document.addEventListener('DOMContentLoaded', () => {
       checked.closest('.rp-partido-option')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 200);
   }
+
+  // Inicialización de pestañas al cargar
+  let defaultTab = 'solicitar';
+  const hash = window.location.hash.replace('#', '');
+  if (hash && ['solicitar', 'mis-reprogramaciones', 'otros-reprogramados'].includes(hash)) {
+    defaultTab = hash;
+  }
+  rpSwitchTab(defaultTab);
 });
 </script>
 
