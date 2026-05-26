@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 $db = epl_db();
-$liga = epl_liga_activa();
 
-$st = $db->prepare("
-    SELECT e.* FROM equipos e
-    WHERE e.liga_id = ? AND (e.jugador1_id = 40 OR e.jugador2_id = 40)
-");
-$st->execute([$liga['id']]);
-print_r($st->fetchAll(PDO::FETCH_ASSOC));
+$st = $db->query("SELECT * FROM equipos WHERE id = 12");
+$equipo = $st->fetch(PDO::FETCH_ASSOC);
+print_r($equipo);
+
+if ($equipo) {
+    $stJ = $db->prepare("SELECT id, nombre, apellido, email FROM jugadores WHERE id IN (?, ?)");
+    $stJ->execute([$equipo['jugador1_id'], $equipo['jugador2_id']]);
+    print_r($stJ->fetchAll(PDO::FETCH_ASSOC));
+}
 ?>
