@@ -862,7 +862,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
                   <?php
                     $jugadores_visitantes = [
                       ['n' => $p['v1n'], 'a' => $p['jv1a'], 't' => $p['v1t']],
-                      ['n' => $p['v2n'], 'a' => $p['v2a'], 't' => $p['v2t']],
+                      ['n' => $p['v2n'], 'a' => $p['jv2a'], 't' => $p['v2t']],
                     ];
                     foreach ($jugadores_visitantes as $jv):
                       if (empty($jv['n'])) continue;
@@ -1226,6 +1226,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
   -webkit-overflow-scrolling: touch !important;
   scrollbar-width: thin !important;
   scrollbar-color: var(--navy) #f1f5f9 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .fechas-scroll .fecha-btn {
