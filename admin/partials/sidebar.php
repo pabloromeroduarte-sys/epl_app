@@ -28,7 +28,7 @@ function adm_link(string $href, string $cur_file, $active_files, string $icon, s
     <?php
 }
 
-$_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notificaciones.php','configuracion.php','erp_financiero.php','recintos.php']);
+$_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notificaciones.php','configuracion.php','erp_financiero.php','recintos.php','diagnostico_push.php','diagnostico_mail.php']);
 ?>
 <aside class="dash-sidebar dash-sidebar--admin">
   <div class="adm-brand">
@@ -63,6 +63,7 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
       <?php adm_link('erp_financiero.php',   $cur, 'erp_financiero.php',   '💰', 'ERP Financiero'); ?>
       <?php adm_link('notificaciones.php',   $cur, 'notificaciones.php',   '✉️', 'Mensajería'); ?>
       <?php adm_link('diagnostico_push.php', $cur, 'diagnostico_push.php', '🔔', 'Diagnóstico Push'); ?>
+      <?php adm_link('diagnostico_mail.php', $cur, 'diagnostico_mail.php', '📬', 'Diagnóstico Mail'); ?>
       <?php adm_link('automatizaciones.php', $cur, 'automatizaciones.php', '⚡', 'Automatizaciones'); ?>
       <?php adm_link('content_studio.php',   $cur, 'content_studio.php',   '🎬', 'Content Studio'); ?>
       <?php adm_link('recintos.php',         $cur, 'recintos.php',         '📍', 'Recintos'); ?>
