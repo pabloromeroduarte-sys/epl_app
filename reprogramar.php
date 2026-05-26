@@ -94,7 +94,6 @@ if ($equipo) {
 
 $otros_reprogramados = [];
 if ($liga) {
-    $equipo_id = $equipo ? (int)$equipo['id'] : 0;
     $stOtros = $db->prepare("
         SELECT p.id, p.jornada, p.fecha_programada,
                el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
@@ -112,15 +111,9 @@ if ($liga) {
         LEFT JOIN jugadores jv2 ON jv2.id = ev.jugador2_id
         WHERE p.liga_id = ?
           AND p.estado = 'reprogramado'
-          " . ($equipo_id > 0 ? "AND p.equipo_local_id != ? AND p.equipo_visitante_id != ?" : "") . "
         ORDER BY p.jornada ASC, p.fecha_programada ASC
     ");
-    $params = [$liga['id']];
-    if ($equipo_id > 0) {
-        $params[] = $equipo_id;
-        $params[] = $equipo_id;
-    }
-    $stOtros->execute($params);
+    $stOtros->execute([$liga['id']]);
     $otros_reprogramados = $stOtros->fetchAll();
 
     // Determinar jornada reciente de forma inteligente:
@@ -387,7 +380,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
       <?php endif; ?>
     </button>
     <button type="button" class="rp-tab-btn" data-tab="otros-reprogramados" onclick="rpSwitchTab('otros-reprogramados')">
-      <span>🏆</span> Otros Reprogramados
+      <span>🏆</span> Todos los Reprogramados
       <?php if (count($otros_reprogramados) > 0): ?>
         <span class="rp-tab-badge" style="background:#0369a1"><?= count($otros_reprogramados) ?></span>
       <?php endif; ?>
@@ -664,22 +657,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 
   </div>
 
-  <!-- Pestaña 3: Otros Reprogramados -->
+  <!-- Pestaña 3: Todos los Reprogramados -->
   <div id="tab-otros-reprogramados" class="rp-tab-panel" style="display:none">
     <div style="margin-bottom:1.5rem">
       <h3 style="font-family:var(--font-head);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy);margin-bottom:.5rem">
-        🏆 Partidos Reprogramados en la Liga
+        🏆 Todos los Partidos Reprogramados
       </h3>
       <p style="color:var(--gray-500);font-size:.8rem;line-height:1.4">
-        Revisa los partidos de otros equipos que están reprogramados. Puedes contactar a sus jugadores si deseas coordinar para adelantar partidos pendientes.
+        Revisa todos los partidos reprogramados en la liga. Puedes contactar a los jugadores si deseas coordinar para adelantar partidos pendientes.
       </p>
     </div>
 
     <?php if (empty($otros_reprogramados)): ?>
       <div class="rp-empty">
         <div style="font-size:2.5rem;margin-bottom:.75rem">🥎</div>
-        <h3>No hay otros partidos reprogramados</h3>
-        <p>Actualmente no hay partidos de otros equipos marcados como reprogramados en esta liga.</p>
+        <h3>No hay partidos reprogramados</h3>
+        <p>Actualmente no hay partidos marcados como reprogramados en esta liga.</p>
       </div>
     <?php else:
       // Agrupar por jornada
