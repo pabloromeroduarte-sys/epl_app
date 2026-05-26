@@ -378,16 +378,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 
   <div class="rp-tabs" style="margin-bottom:1.5rem">
     <button type="button" class="rp-tab-btn active" data-tab="solicitar" onclick="rpSwitchTab('solicitar')">
-      <span>🔄</span> Solicitar
+      <span>🔄</span> <span class="rp-tab-text">Solicitar</span>
     </button>
     <button type="button" class="rp-tab-btn" data-tab="mis-reprogramaciones" onclick="rpSwitchTab('mis-reprogramaciones')">
-      <span>📅</span> Mis Reprogramaciones
+      <span>📅</span> <span class="rp-tab-text">Mis <span class="rp-tab-text-long">Reprogramaciones</span><span class="rp-tab-text-short">Reprogs.</span></span>
       <?php if ($total_reprogramados > 0): ?>
         <span class="rp-tab-badge"><?= $total_reprogramados ?></span>
       <?php endif; ?>
     </button>
     <button type="button" class="rp-tab-btn" data-tab="otros-reprogramados" onclick="rpSwitchTab('otros-reprogramados')">
-      <span>🏆</span> Todos los Reprogramados
+      <span>🏆</span> <span class="rp-tab-text">Todos<span class="rp-tab-text-long"> los Reprogramados</span></span>
       <?php if (count($otros_reprogramados) > 0): ?>
         <span class="rp-tab-badge" style="background:#0369a1"><?= count($otros_reprogramados) ?></span>
       <?php endif; ?>
@@ -1088,6 +1088,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 .rp-equipo-solicitante-box {
   border-left: 3px solid #e11d48;
   padding-left: .6rem;
+}
+
+.rp-team-name {
+  word-break: break-word;
+  white-space: normal !important;
+}
+
+.rp-tab-text-short {
+  display: none;
+}
+
+.rp-partido-teams span {
+  white-space: normal !important;
+  word-break: break-word;
+  line-height: 1.25;
+}
+
+@media (max-width: 576px) {
+  .rp-partido-teams {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: .25rem !important;
+  }
+  .rp-vs {
+    align-self: flex-start;
+    padding: .1rem .35rem !important;
+    font-size: .55rem !important;
+    margin: .1rem 0;
+  }
+  .rp-partido-option {
+    padding: .75rem .6rem !important;
+    gap: .5rem !important;
+  }
+  .rp-partido-content {
+    gap: .5rem !important;
+  }
+  .rp-partido-fecha {
+    padding: .3rem .45rem !important;
+    min-width: 38px !important;
+  }
+  .rp-dia {
+    font-size: .95rem !important;
+  }
+  .rp-mes {
+    font-size: .48rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .rp-tab-text-long {
+    display: none;
+  }
+  .rp-tab-text-short {
+    display: inline;
+  }
+  .rp-tabs {
+    gap: 0;
+  }
+  .rp-tab-btn {
+    font-size: .75rem !important;
+    padding: .6rem .4rem !important;
+    gap: .25rem !important;
+  }
+  .rp-tab-badge {
+    font-size: .65rem !important;
+    padding: .1rem .35rem !important;
+    min-width: 14px !important;
+  }
 }
 
 /* Stepper layout */
