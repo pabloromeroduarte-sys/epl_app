@@ -1340,3 +1340,80 @@ function epl_pagos_listar(int $liga_id = 0, string $estado = ''): array {
     return $st->fetchAll();
 }
 
+/**
+ * Notifica por push y email a los 4 jugadores y a los administradores
+ * sobre la asignación de cancha para un partido reprogramado.
+ */
+function epl_notificar_asignacion_cancha(int $partido_id): void {
+    $db = epl_db();
+    
+    $st = $db->prepare("
+        SELECT p.*,
+               el.nombre AS local_nombre,
+               ev.nombre AS visitante_nombre,
+               r.nombre AS recinto_nombre,
+               rs.nombre AS superior_nombre,
+               ra.nombre AS abuelo_nombre
+        FROM partidos p
+        LEFT JOIN equipos el ON el.id = p.equipo_local_id
+        LEFT JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        LEFT JOIN recintos r  ON r.id  = p.recinto_id
+        LEFT JOIN recintos rs ON rs.id = r.superior_id
+        LEFT JOIN recintos ra ON ra.id = rs.superior_id
+        WHERE p.id = ?
+    ");
+    $st->execute([$partido_id]);
+    $p = $st->fetch(PDO::FETCH_ASSOC);
+    if (!$p) return;
+
+    $jornada = $p['jornada'] ?? '';
+    $fecha   = $p['fecha_programada'] ? date('d/m/Y H:i', strtotime($p['fecha_programada'])) : 'Sin fecha';
+    $local   = $p['local_nombre'] ?? '';
+    $visita  = $p['visitante_nombre'] ?? '';
+    
+    // Armar nombre jerárquico de la cancha
+    $cancha_parts = array_filter([$p['abuelo_nombre'], $p['superior_nombre'], $p['recinto_nombre']]);
+    if (empty($cancha_parts)) {
+        $cancha_str = 'Sin cancha';
+    } else {
+        // Formato: Club - Sede - Cancha X
+        // Si el recinto_nombre es solo un número, lo mejoramos
+        $recinto_final = $p['recinto_nombre'];
+        if (is_numeric($recinto_final)) {
+            $cancha_parts[count($cancha_parts)-1] = 'Cancha ' . $recinto_final;
+        }
+        $cancha_str = implode(' - ', $cancha_parts);
+    }
+    
+    // 1. Notificar a los 4 jugadores
+    $tit_jugador = '🎾 Cancha confirmada';
+    $msg_jugador = "Tu partido de la jornada {$jornada} se realizó el cambio a la fecha {$fecha} cancha {$cancha_str}. Recuerda retirar agua y pelotas en el mesón de atención del club.";
+    $url = epl_url('dashboard.php');
+    
+    $jugadores_ids = array_unique(array_filter([
+        (int)$p['jl1_id'], (int)$p['jl2_id'],
+        (int)$p['jv1_id'], (int)$p['jv2_id'],
+    ]));
+    
+    foreach ($jugadores_ids as $jid) {
+        if ($jid) {
+            // skip_email = false para que envíe correo y push
+            epl_notif_crear($jid, 'partido', $tit_jugador, $msg_jugador, $url, false);
+        }
+    }
+    
+    // 2. Notificar a administradores
+    $stAdms = $db->query("SELECT id FROM jugadores WHERE rol = 'admin' AND estado = 'activo'");
+    $admins = $stAdms->fetchAll(PDO::FETCH_COLUMN);
+    
+    $tit_admin = '📢 Cancha Asignada';
+    $msg_admin = "El club asignó la cancha {$cancha_str} para el partido {$local} vs {$visita} (Jornada {$jornada}) en la fecha {$fecha}.";
+    $url_admin = epl_url('admin/partido_detalle.php?id=' . $partido_id);
+
+    foreach ($admins as $aid) {
+        if ($aid) {
+            // skip_email = false
+            epl_notif_crear((int)$aid, 'admin', $tit_admin, $msg_admin, $url_admin, false);
+        }
+    }
+}

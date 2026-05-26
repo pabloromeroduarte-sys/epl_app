@@ -173,25 +173,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['baja_confirm
     try {
         $msg_adm = "El club confirmó la baja de la reserva del partido $local vs $visita.";
         if ($quien) $msg_adm .= " Confirmó: $quien.";
-        if ($cancha_nombre) $msg_adm .= " Cancha asignada para la nueva fecha: $cancha_nombre.";
         foreach (epl_admins_ids() as $aid) {
-            epl_notif_crear((int)$aid, 'admin', '✅ Baja confirmada' . ($cancha_nombre ? ' + cancha asignada' : ''), $msg_adm, $url_admin, true);
+            epl_notif_crear((int)$aid, 'admin', '✅ Baja confirmada', $msg_adm, $url_admin, true);
         }
     } catch (Throwable $e) {}
 
-    // Notificar jugadores: cancha nueva asignada
+    // Notificar jugadores y admins: cancha nueva asignada
     if ($cancha_nombre) {
         try {
-            $fecha_txt = $nueva_fecha_lbl ?? '';
-            $tit  = '🎾 Cancha confirmada';
-            $msg_j = "El club asignó la cancha «$cancha_nombre» para tu partido $local vs $visita" . ($fecha_txt ? " ($fecha_txt)" : '') . ".";
-            foreach (array_unique(array_filter([
-                (int)$partido['jl1_id'], (int)$partido['jl2_id'],
-                (int)$partido['jv1_id'], (int)$partido['jv2_id'],
-            ])) as $jid) {
-                if ($jid) epl_notif_crear($jid, 'partido', $tit, $msg_j, epl_url('dashboard.php'), true);
-            }
-        } catch (Throwable $e) {}
+            epl_notificar_asignacion_cancha((int)$partido['id']);
+        } catch (Throwable $e) {
+            error_log('Error notif cancha: ' . $e->getMessage());
+        }
     }
 
     $confirmado = true;

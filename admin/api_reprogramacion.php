@@ -9,6 +9,16 @@ $id     = (int)($_POST['id']     ?? 0);
 $accion = $_POST['accion']       ?? '';
 $admin  = epl_jugador_actual();
 
+if ($accion === 'reenviar_notif_cancha') {
+    $partido_id = (int)($_POST['partido_id'] ?? 0);
+    if ($partido_id) {
+        epl_notificar_asignacion_cancha($partido_id);
+    }
+    header('Content-Type: application/json');
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
 if (!$id || !in_array($accion, ['aprobar','rechazar'])) {
     header('Location: index.php');
     exit;

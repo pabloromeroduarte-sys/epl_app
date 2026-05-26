@@ -228,58 +228,60 @@ if ($equipo) {
        * 5. Si permiso = granted → suscribe limpio
        * 6. Si permiso = denied → abre modal con ÚNICO paso visual claro
        */
-      window.bpAccion = async function(silent = false) {
+      window.bpAccion = function(silent = false) {
         btnEl.disabled = true;
         btnEl.textContent = '⏳ Procesando…';
 
-        try {
-          // 1. Borrar suscripción local del browser
-          if ('serviceWorker' in navigator) {
-            try {
-              const reg = await navigator.serviceWorker.ready;
-              const sub = await reg.pushManager.getSubscription();
-              if (sub) await sub.unsubscribe();
-            } catch(e) {}
-          }
-
-          // 2. Borrar todas las subs del jugador en BD
+        var handlePerm = async function(perm) {
           try {
-            await fetch('/push_unsubscribe.php', {
-              method: 'POST',
-              headers: {'Content-Type':'application/json'},
-              body: JSON.stringify({})
-            });
-          } catch(e) {}
+            if (perm === 'granted') {
+              // Si fue granted, ahora limpiamos sub vieja si existe y suscribimos
+              if ('serviceWorker' in navigator) {
+                try {
+                  const reg = await navigator.serviceWorker.ready;
+                  const sub = await reg.pushManager.getSubscription();
+                  if (sub) await sub.unsubscribe();
+                } catch(e) {}
+              }
+              try {
+                await fetch('/push_unsubscribe.php', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
+              } catch(e) {}
 
-          // 3. Pedir permiso (si está denied, esto no muestra popup pero devuelve denied)
-          const perm = await Notification.requestPermission();
-
-          if (perm === 'granted') {
-            // 4. Suscribir limpio
-            const reg = await navigator.serviceWorker.ready;
-            const sub = await reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: urlB64(VAPID_PUBLIC)
-            });
-            await fetch('/push_subscribe.php', {
-              method: 'POST',
-              headers: {'Content-Type':'application/json'},
-              body: JSON.stringify(sub)
-            });
-            banner.style.display = 'none';
-            if (!silent) toast('✅ Notificaciones activadas correctamente');
-            return;
+              const reg = await navigator.serviceWorker.ready;
+              const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlB64(VAPID_PUBLIC)
+              });
+              await fetch('/push_subscribe.php', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(sub)
+              });
+              banner.style.display = 'none';
+              if (!silent) toast('✅ Notificaciones activadas correctamente');
+            } else if (perm === 'denied') {
+              bpAbrirModal();
+            }
+          } catch(e) {
+            console.warn('push:', e);
+            toast('Error al activar. Recargá e intentá de nuevo.', false);
+          } finally {
+            btnEl.disabled = false;
+            renderBanner();
           }
+        };
 
-          if (perm === 'denied') {
-            // Browser bloqueado: abrir modal con paso único
-            bpAbrirModal();
-            return;
+        try {
+          var promise = Notification.requestPermission(handlePerm);
+          if (promise && typeof promise.then === 'function') {
+            promise.then(handlePerm).catch(function(e){ 
+               console.warn(e); 
+               btnEl.disabled = false;
+               renderBanner();
+            });
           }
-        } catch(e) {
-          console.warn('push:', e);
-          toast('Error al activar. Recargá e intentá de nuevo.', false);
-        } finally {
+        } catch(e) { 
+          console.warn(e); 
           btnEl.disabled = false;
           renderBanner();
         }

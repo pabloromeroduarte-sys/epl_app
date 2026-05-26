@@ -570,12 +570,17 @@ function previewFoto(input) {
     setNotifUI(Notification.permission);
   }
 
-  btnNotif.addEventListener('click', async () => {
-    try {
-      const perm = await Notification.requestPermission();
+  btnNotif.addEventListener('click', function() {
+    var handlePerm = function(perm) {
       setNotifUI(perm);
       if (perm === 'granted' && typeof window.eplSuscribirPush === 'function') {
         window.eplSuscribirPush();
+      }
+    };
+    try {
+      var promise = Notification.requestPermission(handlePerm);
+      if (promise && typeof promise.then === 'function') {
+        promise.then(handlePerm).catch(function(e){ console.warn(e); });
       }
     } catch(e) { console.warn(e); }
   });

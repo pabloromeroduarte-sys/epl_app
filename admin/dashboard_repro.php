@@ -393,6 +393,12 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
       </div>
       <div style="display:flex;flex-direction:column;gap:.35rem;align-items:stretch">
         <a href="partido_detalle.php?id=<?= $p['id'] ?>" class="btn-gestionar">Gestionar</a>
+        <?php if ($_confirmada && $p['recinto_id']): ?>
+          <button type="button" class="btn-gestionar" onclick="reenviarNotifCancha(<?= $p['id'] ?>, this)"
+                  style="width:100%;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;font-size:.65rem;padding:.35rem .6rem">
+            📢 Reenviar Notif.
+          </button>
+        <?php endif; ?>
         <form method="post" style="margin:0">
           <input type="hidden" name="action" value="reset_reprog">
           <input type="hidden" name="partido_id" value="<?= $p['id'] ?>">
@@ -1000,6 +1006,38 @@ require_once '../includes/header.php';
 </style>
 
 <script>
+function reenviarNotifCancha(partidoId, btn) {
+  if (!confirm('¿Reenviar notificaciones de cancha a los jugadores y administradores?')) return;
+  const prevText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Enviando...';
+  
+  const fd = new FormData();
+  fd.append('accion', 'reenviar_notif_cancha');
+  fd.append('partido_id', partidoId);
+  
+  fetch('api_reprogramacion.php', {
+    method: 'POST',
+    body: fd
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.ok) {
+      alert('✅ Notificaciones enviadas correctamente');
+    } else {
+      alert('Error al reenviar notificaciones');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Error de conexión');
+  })
+  .finally(() => {
+    btn.disabled = false;
+    btn.textContent = prevText;
+  });
+}
+
 function cambiarTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');

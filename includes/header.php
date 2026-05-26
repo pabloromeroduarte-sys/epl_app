@@ -167,6 +167,13 @@ $site_url = $_proto . '://' . $_host;
       });
     }
 
+    window.eplSuscribirPush = function() {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.ready.then(function(reg) {
+        subscribirYGuardar(reg).catch(function(e){ console.error('Push error:', e); });
+      });
+    };
+
     navigator.serviceWorker.register('/sw.js').then(function(reg) {
       if (Notification.permission !== 'granted' || !VAPID_PUBLIC) return;
 

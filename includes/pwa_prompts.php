@@ -275,10 +275,9 @@ function initNotifBanner() {
     sessionStorage.setItem(KEY_NOTIF_DISMISSED, '1');
   });
 
-  btnOn.addEventListener('click', async () => {
+  btnOn.addEventListener('click', function() {
     banner.style.display = 'none';
-    try {
-      const perm = await Notification.requestPermission();
+    var handlePerm = async function(perm) {
       if (perm === 'granted') {
         // Intentar suscribir al push (si existe el service worker de EPL)
         if ('serviceWorker' in navigator) {
@@ -290,6 +289,12 @@ function initNotifBanner() {
             }
           }
         }
+      }
+    };
+    try {
+      var promise = Notification.requestPermission(handlePerm);
+      if (promise && typeof promise.then === 'function') {
+        promise.then(handlePerm).catch(function(e){ console.warn('Notif request error:', e); });
       }
     } catch(e) { console.warn('Notif request error:', e); }
   });
