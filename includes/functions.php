@@ -1401,7 +1401,7 @@ function epl_notificar_asignacion_cancha(int $partido_id): void {
     }
     
     // 1. Notificar a los 4 jugadores
-    $tit_jugador = '🎾 Cancha confirmada';
+    $tit_jugador = "🎾 Reprogramación jornada {$jornada} ({$local} vs {$visita})";
     $msg_jugador = "Tu partido de la jornada {$jornada} se realizó el cambio a la fecha {$fecha} cancha {$cancha_str}. Recuerda retirar agua y pelotas en el mesón de atención del club. En caso de no haber sido notificado por los rivales o no aceptar el cambio favor contactar a la organización.";
     $url = epl_url('dashboard.php');
     
@@ -1420,8 +1420,9 @@ function epl_notificar_asignacion_cancha(int $partido_id): void {
     $stAdms = $db->query("SELECT id FROM jugadores WHERE rol = 'admin' AND estado = 'activo'");
     $admins = $stAdms->fetchAll(PDO::FETCH_COLUMN);
     
+    $cambiado_por = $p['cancha_confirmada_por'] ? " Cambiado por: {$p['cancha_confirmada_por']}." : "";
     $tit_admin = '📢 Baja de Cancha (Reprogramación)';
-    $msg_admin = "Estimados, se dio de baja la cancha {$cancha_orig_str} con fecha {$fecha_orig} por cancha {$cancha_str} fecha nueva {$fecha}. Partido: {$local} vs {$visita} (Jornada {$jornada}).";
+    $msg_admin = "Estimados, se dio de baja la cancha {$cancha_orig_str} con fecha {$fecha_orig} por cancha {$cancha_str} fecha nueva {$fecha}. Partido: {$local} vs {$visita} (Jornada {$jornada}).{$cambiado_por}";
     $url_admin = epl_url('admin/partido_detalle.php?id=' . $partido_id);
 
     foreach ($admins as $aid) {
