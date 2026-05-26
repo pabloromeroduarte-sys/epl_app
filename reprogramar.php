@@ -716,7 +716,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
           $is_recent = ($j == $jornada_reciente);
           $btn_label = "Fecha " . $j;
           if ($is_recent) {
-              $btn_label .= " (Esta semana) ⭐";
+              $btn_label .= " ⭐";
           }
         ?>
           <button type="button" class="fecha-btn" onclick="rpFilterJornada('<?= $j ?>', this)" <?= $is_recent ? 'style="border: 2px solid var(--gold); font-weight: bold;"' : '' ?>>
@@ -1218,37 +1218,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 }
 
 .fechas-scroll {
-  display: flex !important;
-  gap: .5rem !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  padding: .3rem .1rem .8rem !important;
-  -webkit-overflow-scrolling: touch !important;
-  scrollbar-width: thin !important;
-  scrollbar-color: var(--navy) #f1f5f9 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
+  display: flex;
+  gap: .45rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .3rem .25rem .75rem;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: none;
+  width: 100%;
+  box-sizing: border-box;
 }
-
-.fechas-scroll .fecha-btn {
-  flex-shrink: 0 !important;
-}
-
 .fechas-scroll::-webkit-scrollbar {
-  display: block !important;
-  height: 6px !important;
-}
-.fechas-scroll::-webkit-scrollbar-track {
-  background: #f1f5f9 !important;
-  border-radius: 10px !important;
-}
-.fechas-scroll::-webkit-scrollbar-thumb {
-  background: var(--navy) !important;
-  border-radius: 10px !important;
-}
-.fechas-scroll::-webkit-scrollbar-button {
-  display: none !important;
+  display: none;
 }
 
 @media (max-width: 576px) {
