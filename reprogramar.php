@@ -1219,18 +1219,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 
 .fechas-scroll {
   display: flex;
+  flex-wrap: wrap;
   gap: .45rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: .3rem .25rem .75rem;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
-  scrollbar-width: none;
+  padding: .3rem 0 .25rem;
   width: 100%;
   box-sizing: border-box;
 }
-.fechas-scroll::-webkit-scrollbar {
-  display: none;
+
+/* En desktop si hay muchos, scroll horizontal */
+@media (min-width: 768px) {
+  .fechas-scroll {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x;
+    scrollbar-width: thin;
+    scrollbar-color: var(--navy) #f1f5f9;
+    padding-bottom: .6rem;
+  }
+  .fechas-scroll::-webkit-scrollbar { height: 6px; }
+  .fechas-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+  .fechas-scroll::-webkit-scrollbar-thumb { background: var(--navy); border-radius: 10px; }
 }
 
 @media (max-width: 576px) {
