@@ -1351,6 +1351,8 @@ function epl_notificar_asignacion_cancha(int $partido_id): void {
         SELECT p.*,
                el.nombre AS local_nombre,
                ev.nombre AS visitante_nombre,
+               el.jugador1_id AS jl1_id, el.jugador2_id AS jl2_id,
+               ev.jugador1_id AS jv1_id, ev.jugador2_id AS jv2_id,
                r.nombre AS recinto_nombre,
                rs.nombre AS superior_nombre,
                ra.nombre AS abuelo_nombre
