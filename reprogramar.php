@@ -123,20 +123,62 @@ if ($liga) {
     $stOtros->execute($params);
     $otros_reprogramados = $stOtros->fetchAll();
 
-    // Determinar jornada reciente (más cercana a la fecha actual)
-    $stReciente = $db->prepare("
-        SELECT p.jornada, ABS(TIMESTAMPDIFF(SECOND, p.fecha_programada, NOW())) as diff
+    // Determinar jornada reciente de forma inteligente:
+    // 1. Jornada con más partidos programados en la semana actual (lunes a domingo)
+    $lunes = date('Y-m-d 00:00:00', strtotime('monday this week'));
+    $domingo = date('Y-m-d 23:59:59', strtotime('sunday this week'));
+
+    $stSemana = $db->prepare("
+        SELECT p.jornada, COUNT(*) as cnt
         FROM partidos p
         WHERE p.liga_id = ?
-          AND p.fecha_programada IS NOT NULL
-          AND p.fecha_programada > '1900-01-01'
+          AND p.fecha_programada >= ?
+          AND p.fecha_programada <= ?
           AND p.jornada IS NOT NULL AND p.jornada > 0
-        ORDER BY diff ASC
+        GROUP BY p.jornada
+        ORDER BY cnt DESC
         LIMIT 1
     ");
-    $stReciente->execute([$liga['id']]);
-    $reciente = $stReciente->fetch();
-    $jornada_reciente = $reciente ? (int)$reciente['jornada'] : null;
+    $stSemana->execute([$liga['id'], $lunes, $domingo]);
+    $resSemana = $stSemana->fetch();
+
+    $jornada_reciente = null;
+    if ($resSemana) {
+        $jornada_reciente = (int)$resSemana['jornada'];
+    } else {
+        // Fallback 1: Primer partido en el futuro
+        $stFuturo = $db->prepare("
+            SELECT p.jornada
+            FROM partidos p
+            WHERE p.liga_id = ?
+              AND p.fecha_programada >= NOW()
+              AND p.jornada IS NOT NULL AND p.jornada > 0
+            ORDER BY p.fecha_programada ASC
+            LIMIT 1
+        ");
+        $stFuturo->execute([$liga['id']]);
+        $resFuturo = $stFuturo->fetch();
+        if ($resFuturo) {
+            $jornada_reciente = (int)$resFuturo['jornada'];
+        } else {
+            // Fallback 2: Partido más cercano absoluto
+            $stAbs = $db->prepare("
+                SELECT p.jornada, ABS(TIMESTAMPDIFF(SECOND, p.fecha_programada, NOW())) as diff
+                FROM partidos p
+                WHERE p.liga_id = ?
+                  AND p.fecha_programada IS NOT NULL
+                  AND p.fecha_programada > '1900-01-01'
+                  AND p.jornada IS NOT NULL AND p.jornada > 0
+                ORDER BY diff ASC
+                LIMIT 1
+            ");
+            $stAbs->execute([$liga['id']]);
+            $resAbs = $stAbs->fetch();
+            if ($resAbs) {
+                $jornada_reciente = (int)$resAbs['jornada'];
+            }
+        }
+    }
 }
 
 $WA_SVG = '<svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.404c0 6.556-5.332 11.888-11.888 11.888-2.003 0-3.963-.505-5.698-1.465l-6.305 1.693zm6.443-4.045c1.474.873 3.103 1.332 4.775 1.332 5.054 0 9.163-4.109 9.163-9.163s-4.109-9.163-9.163-9.163-9.163 4.109-9.163 9.163c0 1.95.623 3.856 1.799 5.437l-1.002 3.659 3.743-.999zm10.742-5.466c-.303-.151-1.788-.882-2.067-.981-.278-.099-.481-.151-.683.151-.202.303-.783.981-.96 1.183-.177.202-.354.227-.657.076-.303-.151-1.28-.471-2.438-1.504-.901-.803-1.508-1.796-1.685-2.098-.177-.302-.019-.465.132-.615.136-.135.303-.354.455-.53.151-.177.202-.303.303-.505.101-.202.051-.379-.025-.53-.076-.151-.683-1.643-.935-2.249-.245-.59-.495-.51-.683-.52l-.582-.01c-.202 0-.531.076-.809.379-.278.303-1.062 1.037-1.062 2.529 0 1.492 1.087 2.932 1.239 3.134.151.202 2.14 3.268 5.184 4.582.724.312 1.29.499 1.731.639.727.231 1.388.199 1.911.121.582-.087 1.788-.731 2.041-1.439.253-.708.253-1.313.177-1.439-.076-.126-.278-.202-.581-.353z"/></svg>';
