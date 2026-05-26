@@ -719,7 +719,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
               $btn_label .= " ⭐";
           }
         ?>
-          <button type="button" class="fecha-btn" onclick="rpFilterJornada('<?= $j ?>', this)" <?= $is_recent ? 'style="border: 2px solid var(--gold); font-weight: bold;"' : '' ?>>
+          <button type="button" class="fecha-btn<?= $is_recent ? ' fecha-btn-actual' : '' ?>" onclick="rpFilterJornada('<?= $j ?>', this)">
             <?= $btn_label ?>
           </button>
         <?php endforeach; ?>
@@ -1220,7 +1220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 .fechas-scroll {
   display: flex;
   flex-wrap: wrap;
-  gap: .45rem;
+  gap: .35rem;
   padding: .3rem 0 .25rem;
   width: 100%;
   box-sizing: border-box;

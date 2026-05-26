@@ -1120,18 +1120,18 @@ button { cursor: pointer; font-family: inherit; border: none; }
 .fecha-btn {
   white-space: nowrap;
   flex-shrink: 0;
-  padding: .55rem 1.2rem;
+  padding: .45rem 1rem;
   background: #fff;
   border: 1px solid var(--gray-200);
   border-radius: 20px;
   font-family: var(--font-head);
   font-weight: 700;
-  font-size: .82rem;
+  font-size: .78rem;
   text-transform: uppercase;
   color: var(--navy);
   cursor: pointer;
   transition: all .2s;
-  letter-spacing: .04em;
+  letter-spacing: .03em;
 }
 .fecha-btn:hover {
   border-color: var(--navy);
@@ -1143,10 +1143,21 @@ button { cursor: pointer; font-family: inherit; border: none; }
   border-color: var(--navy);
   box-shadow: 0 3px 10px rgba(28,47,72,.2);
 }
+.fecha-btn-actual {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: #fff8ed;
+}
+.fecha-btn-actual.active {
+  background: var(--navy);
+  color: var(--gold);
+  border-color: var(--gold);
+}
 @media (max-width: 576px) {
   .fecha-btn {
-    padding: .4rem .85rem;
-    font-size: .72rem;
+    padding: .32rem .7rem;
+    font-size: .68rem;
+    letter-spacing: .02em;
   }
 }
 
