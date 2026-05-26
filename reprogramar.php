@@ -1217,17 +1217,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
   line-height: 1.25;
 }
 
+.fechas-scroll {
+  display: flex !important;
+  gap: .5rem !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: .3rem .1rem .8rem !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--navy) #f1f5f9 !important;
+}
+
+.fechas-scroll::-webkit-scrollbar {
+  display: block !important;
+  height: 6px !important;
+}
+.fechas-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+  border-radius: 10px !important;
+}
+.fechas-scroll::-webkit-scrollbar-thumb {
+  background: var(--navy) !important;
+  border-radius: 10px !important;
+}
+.fechas-scroll::-webkit-scrollbar-button {
+  display: none !important;
+}
+
 @media (max-width: 576px) {
-  .rp-partido-teams {
-    flex-direction: column;
+  .rp-partido-teams, .rp-otro-teams {
+    flex-direction: column !important;
     align-items: flex-start !important;
     gap: .25rem !important;
   }
-  .rp-vs {
-    align-self: flex-start;
+  .rp-vs, .rp-vs-small {
+    align-self: flex-start !important;
     padding: .1rem .35rem !important;
     font-size: .55rem !important;
-    margin: .1rem 0;
+    margin: .1rem 0 !important;
   }
   .rp-partido-option {
     padding: .75rem .6rem !important;
