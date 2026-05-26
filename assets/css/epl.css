@@ -580,7 +580,7 @@ button { cursor: pointer; font-family: inherit; border: none; }
 .dash-sidebar--admin .tools-arrow { stroke: rgba(28,47,72,.55); }
 .dash-sidebar--admin .dash-nav-link[style*="rgba(255,255,255,.65)"] { color: rgba(28,47,72,.6) !important; }
 
-.dash-main { padding: 2rem; background: var(--bg); }
+.dash-main { padding: 2rem; background: var(--bg); min-width: 0; max-width: 100%; overflow-x: hidden; }
 .dash-header { margin-bottom: 2rem; }
 .dash-title {
   font-family: var(--font-head);
