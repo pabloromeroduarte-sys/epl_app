@@ -198,6 +198,82 @@ if ($liga) {
 
 $WA_SVG = '<svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.404c0 6.556-5.332 11.888-11.888 11.888-2.003 0-3.963-.505-5.698-1.465l-6.305 1.693zm6.443-4.045c1.474.873 3.103 1.332 4.775 1.332 5.054 0 9.163-4.109 9.163-9.163s-4.109-9.163-9.163-9.163-9.163 4.109-9.163 9.163c0 1.95.623 3.856 1.799 5.437l-1.002 3.659 3.743-.999zm10.742-5.466c-.303-.151-1.788-.882-2.067-.981-.278-.099-.481-.151-.683.151-.202.303-.783.981-.96 1.183-.177.202-.354.227-.657.076-.303-.151-1.28-.471-2.438-1.504-.901-.803-1.508-1.796-1.685-2.098-.177-.302-.019-.465.132-.615.136-.135.303-.354.455-.53.151-.177.202-.303.303-.505.101-.202.051-.379-.025-.53-.076-.151-.683-1.643-.935-2.249-.245-.59-.495-.51-.683-.52l-.582-.01c-.202 0-.531.076-.809.379-.278.303-1.062 1.037-1.062 2.529 0 1.492 1.087 2.932 1.239 3.134.151.202 2.14 3.268 5.184 4.582.724.312 1.29.499 1.731.639.727.231 1.388.199 1.911.121.582-.087 1.788-.731 2.041-1.439.253-.708.253-1.313.177-1.439-.076-.126-.278-.202-.581-.353z"/></svg>';
 
+// ─── NUEVA ACCIÓN: Asignar fecha a un partido reprogramado SIN fecha ───
+// Se usa cuando el jugador inicialmente reprogramó con "rival no responde" y luego coordinó.
+// Crea una nueva solicitud y anula las pendientes anteriores.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && ($_POST['action'] ?? '') === 'asignar_fecha') {
+    $partido_id      = (int)($_POST['partido_id']     ?? 0);
+    $fecha_propuesta = trim($_POST['fecha_propuesta']  ?? '');
+    $motivo          = trim($_POST['motivo']           ?? '');
+    $mutuo_acuerdo   = isset($_POST['mutuo_acuerdo'])  ? 1 : 0;
+
+    // Validar partido: reprogramado, sin fecha, del equipo del usuario
+    $stVal = $db->prepare("
+        SELECT p.*, el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+        FROM partidos p
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        WHERE p.id = ?
+          AND p.estado = 'reprogramado'
+          AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
+          AND (p.fecha_programada IS NULL OR DATE(p.fecha_programada) = '2026-12-31')
+    ");
+    $stVal->execute([$partido_id, $equipo['id'], $equipo['id']]);
+    $partido_af = $stVal->fetch();
+
+    if (!$partido_af) {
+        $error = 'Partido no válido o ya tiene fecha asignada.';
+    } elseif (!$fecha_propuesta) {
+        $error = 'Debes proponer una fecha.';
+    } else {
+        if (!$motivo) $motivo = 'Asignación de fecha tras coordinación con rival';
+
+        // Anular solicitudes pendientes anteriores
+        $db->prepare("UPDATE solicitudes_reprogramacion
+                      SET estado='rechazada'
+                      WHERE partido_id=? AND estado='pendiente'")
+           ->execute([$partido_id]);
+
+        // Crear nueva solicitud
+        $auto_aprobada = $mutuo_acuerdo ? 1 : 0;
+        $estado_sol    = $auto_aprobada ? 'aprobada' : 'pendiente';
+        $fecha_aprob   = $auto_aprobada ? $fecha_propuesta : null;
+
+        $db->prepare("
+            INSERT INTO solicitudes_reprogramacion
+              (partido_id, solicitante_id, motivo, fecha_propuesta, rival_no_responde, mutuo_acuerdo, estado, fecha_aprobada)
+            VALUES (?,?,?,?,0,?,?,?)
+        ")->execute([$partido_id, $jugador['id'], $motivo, $fecha_propuesta, $mutuo_acuerdo, $estado_sol, $fecha_aprob]);
+
+        // Si auto-aprobada (mutuo acuerdo), aplicar nueva fecha al partido
+        if ($auto_aprobada) {
+            if (empty($partido_af['fecha_original']) && function_exists('epl_partido_snapshot_original')) {
+                epl_partido_snapshot_original($partido_id);
+            }
+            $db->prepare("UPDATE partidos SET fecha_programada=? WHERE id=?")
+               ->execute([$fecha_propuesta, $partido_id]);
+        }
+
+        // Notificar
+        $solic_nombre = $jugador['nombre'] . ' ' . $jugador['apellido'];
+        $partido_str  = $partido_af['local_nombre'] . ' vs ' . $partido_af['visitante_nombre'];
+        $fecha_str    = date('d/m/Y H:i', strtotime($fecha_propuesta));
+
+        $titulo = $auto_aprobada
+            ? "📅 Partido reprogramado: {$partido_str}"
+            : "📅 Asignación de fecha: {$partido_str}";
+        $msg = $auto_aprobada
+            ? "El partido se reprogramó por mutuo acuerdo para el {$fecha_str}."
+            : "{$solic_nombre} asignó una nueva fecha al partido: {$fecha_str}";
+
+        epl_notif_partido($partido_id, 'reprogramacion', $titulo, $msg,
+            epl_url('mis_torneos.php'), true, [(int)$jugador['id']], true);
+
+        epl_redirect_ok($auto_aprobada ? 'reprog_auto_ok' : 'fecha_asignada_ok',
+            'reprogramar.php#mis-reprogramaciones');
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $bloqueado_reprogs) {
     $error = "Tu equipo ya tiene {$total_reprogramados} partidos reprogramados. Por bases del torneo no se permite más de {$MAX_REPROGS}.";
 }
@@ -622,21 +698,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
         <div style="display:flex;flex-direction:column;gap:.6rem">
           <?php foreach ($partidos_reprogramados_actuales as $pr):
             $rival = ($pr['local_nombre'] === $equipo['nombre']) ? $pr['visitante_nombre'] : $pr['local_nombre'];
-            $fecha_lbl = $pr['fecha_programada'] && date('Y-m-d', strtotime($pr['fecha_programada'])) !== '2026-12-31'
-                ? date('d/m/Y H:i', strtotime($pr['fecha_programada']))
-                : 'A coordinar';
+            $sin_fecha = !$pr['fecha_programada'] || date('Y-m-d', strtotime($pr['fecha_programada'])) === '2026-12-31';
+            $fecha_lbl = !$sin_fecha ? date('d/m/Y H:i', strtotime($pr['fecha_programada'])) : 'A coordinar';
           ?>
-          <div class="rp-historial-row" style="border-left:4px solid var(--gold)">
+          <div class="rp-historial-row" style="border-left:4px solid <?= $sin_fecha ? '#f97316' : 'var(--gold)' ?>;flex-wrap:wrap">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:.88rem;color:var(--navy)">
                 <?= epl_h($pr['local_nombre'] . ' vs ' . $pr['visitante_nombre']) ?>
               </div>
               <div style="font-size:.75rem;color:var(--gray-500);margin-top:.2rem">
-                <span>Jornada <?= $pr['jornada'] ?: '?' ?></span> · 
-                <span style="color:var(--navy);font-weight:600">Fecha: <?= $fecha_lbl ?></span>
+                <span>Jornada <?= $pr['jornada'] ?: '?' ?></span> ·
+                <span style="color:<?= $sin_fecha ? '#c2410c' : 'var(--navy)' ?>;font-weight:600">Fecha: <?= $fecha_lbl ?></span>
               </div>
             </div>
             <span class="badge badge-walkover" style="font-size:.65rem;flex-shrink:0;align-self:flex-start">Reprogramado</span>
+            <?php if ($sin_fecha): ?>
+              <button type="button" class="btn-asignar-fecha"
+                      data-partido-id="<?= (int)$pr['id'] ?>"
+                      data-partido-str="<?= epl_h($pr['local_nombre'] . ' vs ' . $pr['visitante_nombre']) ?>"
+                      onclick="abrirModalAsignar(this)">
+                📅 Asignar fecha
+              </button>
+            <?php endif; ?>
           </div>
           <?php endforeach; ?>
         </div>
@@ -897,6 +980,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
       <?php endforeach; ?>
       </div>
     <?php endif; ?>
+  </div>
+
+  <!-- Modal: Asignar fecha a partido reprogramado sin fecha -->
+  <div id="modalAsignarFecha" class="modal-af-overlay" style="display:none" onclick="cerrarModalAsignar(event)">
+    <div class="modal-af-content" onclick="event.stopPropagation()">
+      <div class="modal-af-header">
+        <h3>📅 Asignar fecha al partido</h3>
+        <button type="button" class="modal-af-close" onclick="cerrarModalAsignar()" aria-label="Cerrar">×</button>
+      </div>
+      <p class="modal-af-partido" id="modalPartidoStr"></p>
+      <p class="modal-af-info">
+        Ahora que coordinaste con el rival, propone una fecha nueva. Esto creará una solicitud que el administrador deberá aprobar para asignar cancha.
+      </p>
+      <form method="post">
+        <input type="hidden" name="action" value="asignar_fecha">
+        <input type="hidden" name="partido_id" id="modalPartidoId">
+
+        <label class="modal-af-label">Nueva fecha y hora</label>
+        <input type="text" name="fecha_propuesta" id="fpModalFecha" class="form-control"
+               placeholder="Seleccioná día y hora"
+               data-min="<?= date('Y-m-d H:i', strtotime('+48 hours')) ?>"
+               autocomplete="off" readonly required
+               style="cursor:pointer;background:#fff">
+
+        <label class="modal-af-label" style="margin-top:1rem">Motivo (opcional)</label>
+        <textarea name="motivo" class="form-control" rows="2"
+                  placeholder="Ej: ya coordinamos con el rival"></textarea>
+
+        <label class="rp-acuerdo-row" style="margin-top:1rem">
+          <input type="checkbox" name="mutuo_acuerdo">
+          <div>
+            <div style="font-weight:700;font-size:.88rem;color:#1e40af">Confirmo mutuo acuerdo</div>
+            <div style="font-size:.78rem;color:#3b82f6;margin-top:.1rem">El rival ya está de acuerdo con esta fecha (aplica inmediatamente sin esperar al admin).</div>
+          </div>
+        </label>
+
+        <div class="modal-af-actions">
+          <button type="button" class="modal-af-btn-cancel" onclick="cerrarModalAsignar()">Cancelar</button>
+          <button type="submit" class="modal-af-btn-submit">Enviar solicitud</button>
+        </div>
+      </form>
+    </div>
   </div>
 
 </main>
@@ -1431,6 +1556,114 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
   color: var(--white); font-weight: 800; font-size: .8rem;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
+
+/* ─── Botón Asignar Fecha + Modal ─── */
+.btn-asignar-fecha {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: .55rem 1rem;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 3px 10px rgba(249,115,22,.3);
+  margin-top: .5rem;
+  width: 100%;
+}
+.btn-asignar-fecha:hover {
+  background: linear-gradient(135deg, #ea580c, #c2410c);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(249,115,22,.4);
+}
+@media (min-width: 576px) {
+  .btn-asignar-fecha { width: auto; margin-top: 0; align-self: center; }
+}
+
+.modal-af-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,.55);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+  animation: rp-fade-up .25s ease both;
+}
+.modal-af-content {
+  background: #fff;
+  border-radius: 20px;
+  max-width: 480px;
+  width: 100%;
+  padding: 1.5rem;
+  box-shadow: 0 25px 60px rgba(15,23,42,.3);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-af-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: .5rem;
+}
+.modal-af-header h3 {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  color: var(--navy);
+  margin: 0;
+}
+.modal-af-close {
+  background: transparent; border: none;
+  font-size: 1.8rem; color: var(--gray-400);
+  cursor: pointer; line-height: 1;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  transition: all .15s;
+}
+.modal-af-close:hover { background: var(--gray-100); color: var(--navy); }
+.modal-af-partido {
+  font-weight: 700; color: var(--navy); font-size: .92rem;
+  margin: 0 0 .5rem; padding: .65rem .9rem;
+  background: #f8fafc; border-radius: 10px;
+}
+.modal-af-info {
+  font-size: .78rem; color: var(--gray-500); line-height: 1.5;
+  margin: 0 0 1rem;
+}
+.modal-af-label {
+  display: block;
+  font-size: .75rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: var(--navy); margin-bottom: .35rem;
+}
+.modal-af-actions {
+  display: flex; gap: .65rem; margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+.modal-af-btn-cancel, .modal-af-btn-submit {
+  flex: 1; min-width: 120px;
+  padding: .8rem 1rem;
+  border-radius: 12px;
+  font-family: var(--font-head);
+  font-weight: 700; font-size: .82rem;
+  text-transform: uppercase; letter-spacing: .05em;
+  cursor: pointer; transition: all .2s;
+  border: none;
+}
+.modal-af-btn-cancel {
+  background: var(--gray-100); color: var(--gray-600);
+}
+.modal-af-btn-cancel:hover { background: var(--gray-200); }
+.modal-af-btn-submit {
+  background: linear-gradient(135deg, var(--navy), #1a3a64);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(28,47,72,.25);
+}
+.modal-af-btn-submit:hover {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  box-shadow: 0 6px 18px rgba(249,115,22,.35);
+}
 </style>
 
 <script>
@@ -1710,24 +1943,48 @@ document.addEventListener('DOMContentLoaded', () => {
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const el = document.getElementById('fpFechaPropuesta');
-  if (!el || typeof flatpickr === 'undefined') return;
-  const minAttr = el.getAttribute('data-min') || '';
-  flatpickr(el, {
+  if (typeof flatpickr === 'undefined') return;
+
+  const fpOpts = {
     locale: 'es',
     enableTime: true,
     time_24hr: true,
     dateFormat: 'Y-m-d H:i',
     altInput: true,
     altFormat: 'l j \\d\\e F · H:i',
-    minDate: minAttr || 'today',
     minuteIncrement: 15,
     defaultHour: 21,
     defaultMinute: 0,
     disableMobile: false,
     position: 'auto center'
-  });
+  };
+
+  const el = document.getElementById('fpFechaPropuesta');
+  if (el) {
+    flatpickr(el, Object.assign({}, fpOpts, {
+      minDate: el.getAttribute('data-min') || 'today'
+    }));
+  }
+
+  const elModal = document.getElementById('fpModalFecha');
+  if (elModal) {
+    flatpickr(elModal, Object.assign({}, fpOpts, {
+      minDate: elModal.getAttribute('data-min') || 'today'
+    }));
+  }
 });
+
+function abrirModalAsignar(btn) {
+  document.getElementById('modalPartidoId').value = btn.dataset.partidoId;
+  document.getElementById('modalPartidoStr').textContent = btn.dataset.partidoStr;
+  document.getElementById('modalAsignarFecha').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function cerrarModalAsignar(evt) {
+  if (evt && evt.target && evt.target.classList && !evt.target.classList.contains('modal-af-overlay') && evt.type === 'click') return;
+  document.getElementById('modalAsignarFecha').style.display = 'none';
+  document.body.style.overflow = '';
+}
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
