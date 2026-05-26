@@ -122,6 +122,21 @@ if ($liga) {
     }
     $stOtros->execute($params);
     $otros_reprogramados = $stOtros->fetchAll();
+
+    // Determinar jornada reciente (más cercana a la fecha actual)
+    $stReciente = $db->prepare("
+        SELECT p.jornada, ABS(TIMESTAMPDIFF(SECOND, p.fecha_programada, NOW())) as diff
+        FROM partidos p
+        WHERE p.liga_id = ?
+          AND p.fecha_programada IS NOT NULL
+          AND p.fecha_programada > '1900-01-01'
+          AND p.jornada IS NOT NULL AND p.jornada > 0
+        ORDER BY diff ASC
+        LIMIT 1
+    ");
+    $stReciente->execute([$liga['id']]);
+    $reciente = $stReciente->fetch();
+    $jornada_reciente = $reciente ? (int)$reciente['jornada'] : null;
 }
 
 $WA_SVG = '<svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.404c0 6.556-5.332 11.888-11.888 11.888-2.003 0-3.963-.505-5.698-1.465l-6.305 1.693zm6.443-4.045c1.474.873 3.103 1.332 4.775 1.332 5.054 0 9.163-4.109 9.163-9.163s-4.109-9.163-9.163-9.163-9.163 4.109-9.163 9.163c0 1.95.623 3.856 1.799 5.437l-1.002 3.659 3.743-.999zm10.742-5.466c-.303-.151-1.788-.882-2.067-.981-.278-.099-.481-.151-.683.151-.202.303-.783.981-.96 1.183-.177.202-.354.227-.657.076-.303-.151-1.28-.471-2.438-1.504-.901-.803-1.508-1.796-1.685-2.098-.177-.302-.019-.465.132-.615.136-.135.303-.354.455-.53.151-.177.202-.303.303-.505.101-.202.051-.379-.025-.53-.076-.151-.683-1.643-.935-2.249-.245-.59-.495-.51-.683-.52l-.582-.01c-.202 0-.531.076-.809.379-.278.303-1.062 1.037-1.062 2.529 0 1.492 1.087 2.932 1.239 3.134.151.202 2.14 3.268 5.184 4.582.724.312 1.29.499 1.731.639.727.231 1.388.199 1.911.121.582-.087 1.788-.731 2.041-1.439.253-.708.253-1.313.177-1.439-.076-.126-.278-.202-.581-.353z"/></svg>';
@@ -633,11 +648,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
       }
       ksort($por_jornada);
       
+      // Filtro de Jornadas (fechas)
+      $jornadas_disponibles = array_keys($por_jornada);
+      sort($jornadas_disponibles);
+      ?>
+      
+      <div class="fechas-scroll" style="margin-bottom:1.5rem">
+        <button type="button" class="fecha-btn active" onclick="rpFilterJornada('all', this)">Todas</button>
+        <?php foreach ($jornadas_disponibles as $j):
+          $is_recent = ($j == $jornada_reciente);
+          $btn_label = "Fecha " . $j;
+          if ($is_recent) {
+              $btn_label .= " (Esta semana) ⭐";
+          }
+        ?>
+          <button type="button" class="fecha-btn" onclick="rpFilterJornada('<?= $j ?>', this)" <?= $is_recent ? 'style="border: 2px solid var(--gold); font-weight: bold;"' : '' ?>>
+            <?= $btn_label ?>
+          </button>
+        <?php endforeach; ?>
+      </div>
+
+      <div id="rp-otros-list-container">
+      <?php
       foreach ($por_jornada as $jornada => $partidos):
       ?>
-      <div style="margin-bottom:2rem">
+      <div class="jornada-group" data-jornada="<?= $jornada ?>" style="margin-bottom:2rem">
         <div style="background:#f1f5f9;color:var(--navy);font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;padding:.5rem 1rem;border-radius:8px;margin-bottom:.85rem;display:inline-block">
           Jornada <?= $jornada ?>
+          <?php if ($jornada == $jornada_reciente): ?>
+            <span style="color:var(--gold);margin-left:.4rem">★ Esta semana</span>
+          <?php endif; ?>
         </div>
         
         <div style="display:flex;flex-direction:column;gap:1rem">
@@ -741,6 +781,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
         </div>
       </div>
       <?php endforeach; ?>
+      </div>
     <?php endif; ?>
   </div>
 
@@ -1167,6 +1208,24 @@ function cargarRivales(b64) {
   });
 
   wrapper.style.display = alguno ? 'block' : 'none';
+}
+
+function rpFilterJornada(jor, btn) {
+  // Desactivar todos los botones de jornada
+  document.querySelectorAll('#tab-otros-reprogramados .fecha-btn').forEach(b => {
+    b.classList.remove('active');
+  });
+  // Activar el seleccionado
+  btn.classList.add('active');
+  
+  // Filtrar grupos de jornada
+  document.querySelectorAll('#tab-otros-reprogramados .jornada-group').forEach(group => {
+    if (jor === 'all' || group.getAttribute('data-jornada') == jor) {
+      group.style.display = '';
+    } else {
+      group.style.display = 'none';
+    }
+  });
 }
 
 function rpSwitchTab(tabId) {
