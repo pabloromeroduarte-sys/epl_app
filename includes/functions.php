@@ -1355,13 +1355,19 @@ function epl_notificar_asignacion_cancha(int $partido_id): void {
                ev.jugador1_id AS jv1_id, ev.jugador2_id AS jv2_id,
                r.nombre AS recinto_nombre,
                rs.nombre AS superior_nombre,
-               ra.nombre AS abuelo_nombre
+               ra.nombre AS abuelo_nombre,
+               ro.nombre AS recinto_orig_nombre,
+               ros.nombre AS superior_orig_nombre,
+               roa.nombre AS abuelo_orig_nombre
         FROM partidos p
         LEFT JOIN equipos el ON el.id = p.equipo_local_id
         LEFT JOIN equipos ev ON ev.id = p.equipo_visitante_id
         LEFT JOIN recintos r  ON r.id  = p.recinto_id
         LEFT JOIN recintos rs ON rs.id = r.superior_id
         LEFT JOIN recintos ra ON ra.id = rs.superior_id
+        LEFT JOIN recintos ro  ON ro.id  = p.recinto_original_id
+        LEFT JOIN recintos ros ON ros.id = ro.superior_id
+        LEFT JOIN recintos roa ON roa.id = ros.superior_id
         WHERE p.id = ?
     ");
     $st->execute([$partido_id]);
@@ -1370,6 +1376,7 @@ function epl_notificar_asignacion_cancha(int $partido_id): void {
 
     $jornada = $p['jornada'] ?? '';
     $fecha   = $p['fecha_programada'] ? date('d/m/Y H:i', strtotime($p['fecha_programada'])) : 'Sin fecha';
+    $fecha_orig = $p['fecha_original'] ? date('d/m/Y H:i', strtotime($p['fecha_original'])) : 'Sin fecha original';
     $local   = $p['local_nombre'] ?? '';
     $visita  = $p['visitante_nombre'] ?? '';
     
@@ -1378,18 +1385,24 @@ function epl_notificar_asignacion_cancha(int $partido_id): void {
     if (empty($cancha_parts)) {
         $cancha_str = 'Sin cancha';
     } else {
-        // Formato: Club - Sede - Cancha X
-        // Si el recinto_nombre es solo un número, lo mejoramos
         $recinto_final = $p['recinto_nombre'];
-        if (is_numeric($recinto_final)) {
-            $cancha_parts[count($cancha_parts)-1] = 'Cancha ' . $recinto_final;
-        }
+        if (is_numeric($recinto_final)) $cancha_parts[count($cancha_parts)-1] = 'Cancha ' . $recinto_final;
         $cancha_str = implode(' - ', $cancha_parts);
+    }
+
+    // Armar nombre jerárquico de la cancha original
+    $cancha_orig_parts = array_filter([$p['abuelo_orig_nombre'], $p['superior_orig_nombre'], $p['recinto_orig_nombre']]);
+    if (empty($cancha_orig_parts)) {
+        $cancha_orig_str = 'Sin cancha original';
+    } else {
+        $recinto_orig_final = $p['recinto_orig_nombre'];
+        if (is_numeric($recinto_orig_final)) $cancha_orig_parts[count($cancha_orig_parts)-1] = 'Cancha ' . $recinto_orig_final;
+        $cancha_orig_str = implode(' - ', $cancha_orig_parts);
     }
     
     // 1. Notificar a los 4 jugadores
     $tit_jugador = '🎾 Cancha confirmada';
-    $msg_jugador = "Tu partido de la jornada {$jornada} se realizó el cambio a la fecha {$fecha} cancha {$cancha_str}. Recuerda retirar agua y pelotas en el mesón de atención del club.";
+    $msg_jugador = "Tu partido de la jornada {$jornada} se realizó el cambio a la fecha {$fecha} cancha {$cancha_str}. Recuerda retirar agua y pelotas en el mesón de atención del club. En caso de no haber sido notificado por los rivales o no aceptar el cambio favor contactar a la organización.";
     $url = epl_url('dashboard.php');
     
     $jugadores_ids = array_unique(array_filter([
@@ -1399,7 +1412,6 @@ function epl_notificar_asignacion_cancha(int $partido_id): void {
     
     foreach ($jugadores_ids as $jid) {
         if ($jid) {
-            // skip_email = false para que envíe correo y push
             epl_notif_crear($jid, 'partido', $tit_jugador, $msg_jugador, $url, false);
         }
     }
@@ -1408,13 +1420,12 @@ function epl_notificar_asignacion_cancha(int $partido_id): void {
     $stAdms = $db->query("SELECT id FROM jugadores WHERE rol = 'admin' AND estado = 'activo'");
     $admins = $stAdms->fetchAll(PDO::FETCH_COLUMN);
     
-    $tit_admin = '📢 Cancha Asignada';
-    $msg_admin = "El club asignó la cancha {$cancha_str} para el partido {$local} vs {$visita} (Jornada {$jornada}) en la fecha {$fecha}.";
+    $tit_admin = '📢 Baja de Cancha (Reprogramación)';
+    $msg_admin = "Estimados, se dio de baja la cancha {$cancha_orig_str} con fecha {$fecha_orig} por cancha {$cancha_str} fecha nueva {$fecha}. Partido: {$local} vs {$visita} (Jornada {$jornada}).";
     $url_admin = epl_url('admin/partido_detalle.php?id=' . $partido_id);
 
     foreach ($admins as $aid) {
         if ($aid) {
-            // skip_email = false
             epl_notif_crear((int)$aid, 'admin', $tit_admin, $msg_admin, $url_admin, false);
         }
     }
