@@ -2,7 +2,7 @@
 // Script de prueba para diagnosticar el error 500 en cumpleanos.php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
-epl_require_admin();
+// epl_require_admin();
 
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
