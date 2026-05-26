@@ -93,7 +93,22 @@ if ($equipo) {
 }
 
 $otros_reprogramados = [];
+$rivales_jugados = [];
 if ($liga) {
+    $equipo_id = $equipo ? (int)$equipo['id'] : 0;
+    if ($equipo_id > 0) {
+        $stRivals = $db->prepare("
+            SELECT DISTINCT 
+                CASE WHEN equipo_local_id = ? THEN equipo_visitante_id ELSE equipo_local_id END AS rival_id
+            FROM partidos
+            WHERE liga_id = ?
+              AND (equipo_local_id = ? OR equipo_visitante_id = ?)
+              AND estado IN ('jugado', 'walkover', 'no_presentado')
+        ");
+        $stRivals->execute([$equipo_id, $liga['id'], $equipo_id, $equipo_id]);
+        $rivales_jugados = array_column($stRivals->fetchAll(), 'rival_id');
+    }
+
     $stOtros = $db->prepare("
         SELECT p.id, p.jornada, p.fecha_programada,
                el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
@@ -710,6 +725,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
         <?php endforeach; ?>
       </div>
 
+      <?php
+      $equipo_id = $equipo ? (int)$equipo['id'] : 0;
+      if ($equipo_id > 0):
+      ?>
+      <div style="margin-bottom:1.5rem;display:flex;align-items:center;gap:.6rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem">
+        <label class="rp-toggle-row" style="padding:0;margin:0;width:100%;display:flex;align-items:center;justify-content:space-between">
+          <div class="rp-toggle-info">
+            <div style="font-weight:700;font-size:.85rem;color:var(--navy)">Ocultar partidos ya jugados</div>
+            <div style="font-size:.75rem;color:var(--gray-500);margin-top:.1rem">Oculta partidos donde ya jugaste contra ambos equipos.</div>
+          </div>
+          <label class="rp-switch">
+            <input type="checkbox" id="chkOcultarJugados" onchange="rpToggleOcultarJugados(this)">
+            <span class="rp-slider"></span>
+          </label>
+        </label>
+      </div>
+      <?php endif; ?>
+
       <div id="rp-otros-list-container">
       <?php
       foreach ($por_jornada as $jornada => $partidos):
@@ -730,8 +763,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
             $solicitante_id = $p['solicitante_id'] ? (int)$p['solicitante_id'] : 0;
             $local_solicito = ($solicitante_id > 0 && ($solicitante_id === (int)$p['l1'] || $solicitante_id === (int)$p['l2']));
             $visitante_solicito = ($solicitante_id > 0 && ($solicitante_id === (int)$p['v1'] || $solicitante_id === (int)$p['v2']));
+
+            // Determinar si ya se jugó contra estos equipos
+            $ya_jugado_ambos = 0;
+            if ($equipo_id > 0) {
+                if ((int)$p['local_equipo_id'] !== $equipo_id && (int)$p['visitante_equipo_id'] !== $equipo_id) {
+                    $l_jugado = in_array((int)$p['local_equipo_id'], $rivales_jugados);
+                    $v_jugado = in_array((int)$p['visitante_equipo_id'], $rivales_jugados);
+                    if ($l_jugado && $v_jugado) {
+                        $ya_jugado_ambos = 1;
+                    }
+                }
+            }
           ?>
-          <div class="rp-card-otro">
+          <div class="rp-card-otro" data-ya-jugado-ambos="<?= $ya_jugado_ambos ?>">
             <!-- Encabezado del partido -->
             <div class="rp-otro-header">
               <div style="flex:1">
@@ -751,7 +796,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
             <div class="rp-otro-players-section">
               <!-- Equipo Local -->
               <div class="rp-otro-equipo-box<?= $local_solicito ? ' rp-equipo-solicitante-box' : '' ?>">
-                <div class="rp-otro-equipo-title<?= $local_solicito ? ' rp-title-solicitante' : '' ?>">Local: <?= epl_h($p['local_nombre']) ?><?= $local_solicito ? '<span class="rp-solicito-badge">Solicitó</span>' : '' ?></div>
+                <div class="rp-otro-equipo-title<?= $local_solicito ? ' rp-title-solicitante' : '' ?>">
+                  Local: <?= epl_h($p['local_nombre']) ?>
+                  <?php if ($equipo_id > 0): ?>
+                    <?php if ((int)$p['local_equipo_id'] === $equipo_id): ?>
+                      <span class="badge-propio">Tú</span>
+                    <?php elseif (in_array((int)$p['local_equipo_id'], $rivales_jugados)): ?>
+                      <span class="badge-jugado-rival">Ya jugado</span>
+                    <?php else: ?>
+                      <span class="badge-pendiente-rival">Pendiente</span>
+                    <?php endif; ?>
+                  <?php endif; ?>
+                  <?= $local_solicito ? '<span class="rp-solicito-badge">Solicitó</span>' : '' ?>
+                </div>
                 <div class="rp-otro-players-list">
                   <?php
                     $jugadores_locales = [
@@ -788,7 +845,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 
               <!-- Equipo Visitante -->
               <div class="rp-otro-equipo-box<?= $visitante_solicito ? ' rp-equipo-solicitante-box' : '' ?>">
-                <div class="rp-otro-equipo-title<?= $visitante_solicito ? ' rp-title-solicitante' : '' ?>">Visitante: <?= epl_h($p['visitante_nombre']) ?><?= $visitante_solicito ? '<span class="rp-solicito-badge">Solicitó</span>' : '' ?></div>
+                <div class="rp-otro-equipo-title<?= $visitante_solicito ? ' rp-title-solicitante' : '' ?>">
+                  Visitante: <?= epl_h($p['visitante_nombre']) ?>
+                  <?php if ($equipo_id > 0): ?>
+                    <?php if ((int)$p['visitante_equipo_id'] === $equipo_id): ?>
+                      <span class="badge-propio">Tú</span>
+                    <?php elseif (in_array((int)$p['visitante_equipo_id'], $rivales_jugados)): ?>
+                      <span class="badge-jugado-rival">Ya jugado</span>
+                    <?php else: ?>
+                      <span class="badge-pendiente-rival">Pendiente</span>
+                    <?php endif; ?>
+                  <?php endif; ?>
+                  <?= $visitante_solicito ? '<span class="rp-solicito-badge">Solicitó</span>' : '' ?>
+                </div>
                 <div class="rp-otro-players-list">
                   <?php
                     $jugadores_visitantes = [
@@ -1090,6 +1159,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
   padding-left: .6rem;
 }
 
+.badge-propio {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  font-size: .62rem;
+  font-weight: 800;
+  padding: .15rem .45rem;
+  border-radius: 6px;
+  margin-left: .4rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  display: inline-block;
+  vertical-align: middle;
+}
+.badge-jugado-rival {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  font-size: .62rem;
+  font-weight: 800;
+  padding: .15rem .45rem;
+  border-radius: 6px;
+  margin-left: .4rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  display: inline-block;
+  vertical-align: middle;
+}
+.badge-pendiente-rival {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  font-size: .62rem;
+  font-weight: 800;
+  padding: .15rem .45rem;
+  border-radius: 6px;
+  margin-left: .4rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  display: inline-block;
+  vertical-align: middle;
+}
+
 .rp-team-name {
   word-break: break-word;
   white-space: normal !important;
@@ -1356,12 +1468,53 @@ function rpFilterJornada(jor, btn) {
   // Activar el seleccionado
   btn.classList.add('active');
   
-  // Filtrar grupos de jornada
+  actualizarVisibilidadGruposJornada();
+}
+
+function rpToggleOcultarJugados(chk) {
+  actualizarVisibilidadGruposJornada();
+}
+
+function actualizarVisibilidadGruposJornada() {
+  const chk = document.getElementById('chkOcultarJugados');
+  const hidePlayed = chk ? chk.checked : false;
+  
+  // Buscar qué botón de fecha está activo
+  const activeBtn = document.querySelector('#tab-otros-reprogramados .fecha-btn.active');
+  let selectedJor = 'all';
+  if (activeBtn) {
+    const onclickStr = activeBtn.getAttribute('onclick') || '';
+    const match = onclickStr.match(/'([^']+)'/);
+    if (match) {
+      selectedJor = match[1];
+    }
+  }
+
   document.querySelectorAll('#tab-otros-reprogramados .jornada-group').forEach(group => {
-    if (jor === 'all' || group.getAttribute('data-jornada') == jor) {
-      group.style.display = '';
-    } else {
+    const jor = group.getAttribute('data-jornada');
+    
+    // Si la jornada no coincide con la seleccionada, ocultamos el grupo completo
+    if (selectedJor !== 'all' && jor != selectedJor) {
       group.style.display = 'none';
+      return;
+    }
+    
+    let cardsVisibles = 0;
+    group.querySelectorAll('.rp-card-otro').forEach(card => {
+      const yaJugadoAmbos = card.getAttribute('data-ya-jugado-ambos') == '1';
+      if (hidePlayed && yaJugadoAmbos) {
+        card.style.display = 'none';
+      } else {
+        card.style.display = '';
+        cardsVisibles++;
+      }
+    });
+    
+    // Si no hay partidos visibles en esta jornada, ocultamos el grupo completo
+    if (cardsVisibles === 0) {
+      group.style.display = 'none';
+    } else {
+      group.style.display = '';
     }
   });
 }
