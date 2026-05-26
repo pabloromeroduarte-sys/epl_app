@@ -26,7 +26,7 @@ $st = $db->prepare("
            (YEAR(CURDATE()) - YEAR(fecha_nacimiento)) as edad_cumple
     FROM jugadores
     WHERE fecha_nacimiento IS NOT NULL 
-      AND fecha_nacimiento != '0000-00-00'
+      AND fecha_nacimiento > '1900-01-01'
       AND MONTH(fecha_nacimiento) = ?
       AND estado = 'activo'
     ORDER BY dia ASC, nombre ASC
@@ -47,7 +47,7 @@ $st_hoy = $db->prepare("
            (YEAR(CURDATE()) - YEAR(fecha_nacimiento)) as edad_cumple
     FROM jugadores
     WHERE fecha_nacimiento IS NOT NULL
-      AND fecha_nacimiento != '0000-00-00'
+      AND fecha_nacimiento > '1900-01-01'
       AND DATE_FORMAT(fecha_nacimiento, '%m-%d') = ?
       AND estado = 'activo'
     ORDER BY nombre ASC
