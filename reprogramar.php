@@ -98,10 +98,13 @@ if ($liga) {
         SELECT p.id, p.jornada, p.fecha_programada,
                el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
                el.id AS local_equipo_id, ev.id AS visitante_equipo_id,
+               el.jugador1_id AS l1, el.jugador2_id AS l2,
+               ev.jugador1_id AS v1, ev.jugador2_id AS v2,
                jl1.nombre AS l1n, jl1.apellido AS l1a, jl1.telefono AS l1t,
                jl2.nombre AS l2n, jl2.apellido AS l2a, jl2.telefono AS l2t,
                jv1.nombre AS v1n, jv1.apellido AS jv1a, jv1.telefono AS v1t,
-               jv2.nombre AS v2n, jv2.apellido AS jv2a, jv2.telefono AS v2t
+               jv2.nombre AS v2n, jv2.apellido AS jv2a, jv2.telefono AS v2t,
+               sr.solicitante_id
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
@@ -109,6 +112,10 @@ if ($liga) {
         LEFT JOIN jugadores jl2 ON jl2.id = el.jugador2_id
         LEFT JOIN jugadores jv1 ON jv1.id = ev.jugador1_id
         LEFT JOIN jugadores jv2 ON jv2.id = ev.jugador2_id
+        LEFT JOIN solicitudes_reprogramacion sr ON sr.id = (
+            SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
+            WHERE sr2.partido_id = p.id
+        )
         WHERE p.liga_id = ?
           AND p.estado = 'reprogramado'
         ORDER BY p.jornada ASC, p.fecha_programada ASC
@@ -664,7 +671,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
         🏆 Todos los Partidos Reprogramados
       </h3>
       <p style="color:var(--gray-500);font-size:.8rem;line-height:1.4">
-        Revisa todos los partidos reprogramados en la liga. Puedes contactar a los jugadores si deseas coordinar para adelantar partidos pendientes.
+        Revisa todos los partidos reprogramados en la liga. El equipo que solicitó la reprogramación se destaca en <strong style="color:#e11d48">rojo</strong> con la etiqueta <span class="rp-solicito-badge" style="margin-left:0;font-size:0.55rem;padding:0.1rem 0.3rem">Solicitó</span> para saber a quién debes contactar.
       </p>
     </div>
 
@@ -720,15 +727,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
             $fecha_orig = $p['fecha_programada'] && date('Y-m-d', strtotime($p['fecha_programada'])) !== '2026-12-31'
                 ? date('d/m/Y H:i', strtotime($p['fecha_programada']))
                 : 'A coordinar';
+            $solicitante_id = $p['solicitante_id'] ? (int)$p['solicitante_id'] : 0;
+            $local_solicito = ($solicitante_id > 0 && ($solicitante_id === (int)$p['l1'] || $solicitante_id === (int)$p['l2']));
+            $visitante_solicito = ($solicitante_id > 0 && ($solicitante_id === (int)$p['v1'] || $solicitante_id === (int)$p['v2']));
           ?>
           <div class="rp-card-otro">
             <!-- Encabezado del partido -->
             <div class="rp-otro-header">
               <div style="flex:1">
                 <div class="rp-otro-teams">
-                  <span class="rp-team-name"><?= epl_h($p['local_nombre']) ?></span>
+                  <span class="rp-team-name<?= $local_solicito ? ' rp-team-solicitante' : '' ?>"><?= epl_h($p['local_nombre']) ?></span>
                   <span class="rp-vs-small">VS</span>
-                  <span class="rp-team-name"><?= epl_h($p['visitante_nombre']) ?></span>
+                  <span class="rp-team-name<?= $visitante_solicito ? ' rp-team-solicitante' : '' ?>"><?= epl_h($p['visitante_nombre']) ?></span>
                 </div>
                 <div class="rp-otro-fecha">
                   <span>📅 Fecha original: <strong><?= $fecha_orig ?></strong></span>
@@ -740,8 +750,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
             <!-- Jugadores y contacto -->
             <div class="rp-otro-players-section">
               <!-- Equipo Local -->
-              <div class="rp-otro-equipo-box">
-                <div class="rp-otro-equipo-title">Local: <?= epl_h($p['local_nombre']) ?></div>
+              <div class="rp-otro-equipo-box<?= $local_solicito ? ' rp-equipo-solicitante-box' : '' ?>">
+                <div class="rp-otro-equipo-title<?= $local_solicito ? ' rp-title-solicitante' : '' ?>">Local: <?= epl_h($p['local_nombre']) ?><?= $local_solicito ? '<span class="rp-solicito-badge">Solicitó</span>' : '' ?></div>
                 <div class="rp-otro-players-list">
                   <?php
                     $jugadores_locales = [
@@ -777,8 +787,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
               <div class="rp-otro-divider"></div>
 
               <!-- Equipo Visitante -->
-              <div class="rp-otro-equipo-box">
-                <div class="rp-otro-equipo-title">Visitante: <?= epl_h($p['visitante_nombre']) ?></div>
+              <div class="rp-otro-equipo-box<?= $visitante_solicito ? ' rp-equipo-solicitante-box' : '' ?>">
+                <div class="rp-otro-equipo-title<?= $visitante_solicito ? ' rp-title-solicitante' : '' ?>">Visitante: <?= epl_h($p['visitante_nombre']) ?><?= $visitante_solicito ? '<span class="rp-solicito-badge">Solicitó</span>' : '' ?></div>
                 <div class="rp-otro-players-list">
                   <?php
                     $jugadores_visitantes = [
@@ -1053,6 +1063,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
     width: 100%;
     height: 1px;
   }
+}
+
+.rp-team-solicitante {
+  color: #e11d48 !important;
+}
+.rp-solicito-badge {
+  background: #ffe4e6;
+  color: #be123c;
+  font-size: .62rem;
+  font-weight: 800;
+  padding: .15rem .45rem;
+  border-radius: 6px;
+  margin-left: .4rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  display: inline-block;
+  border: 1px solid #fecdd3;
+  vertical-align: middle;
+}
+.rp-title-solicitante {
+  color: #be123c !important;
+}
+.rp-equipo-solicitante-box {
+  border-left: 3px solid #e11d48;
+  padding-left: .6rem;
 }
 
 /* Stepper layout */
