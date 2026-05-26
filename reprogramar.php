@@ -730,16 +730,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
       if ($equipo_id > 0):
       ?>
       <div style="margin-bottom:1.5rem;display:flex;align-items:center;gap:.6rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem">
-        <label class="rp-toggle-row" style="padding:0;margin:0;width:100%;display:flex;align-items:center;justify-content:space-between">
-          <div class="rp-toggle-info">
+        <div class="rp-toggle-row" style="padding:0;margin:0;width:100%;display:flex;align-items:center;justify-content:space-between">
+          <div class="rp-toggle-info" style="min-width:0;flex:1;padding-right:1rem;">
             <div style="font-weight:700;font-size:.85rem;color:var(--navy)">Ocultar partidos ya jugados</div>
             <div style="font-size:.75rem;color:var(--gray-500);margin-top:.1rem">Oculta partidos donde ya jugaste contra ambos equipos.</div>
           </div>
-          <label class="rp-switch">
+          <label class="rp-switch" style="flex-shrink:0;">
             <input type="checkbox" id="chkOcultarJugados" onchange="rpToggleOcultarJugados(this)">
             <span class="rp-slider"></span>
           </label>
-        </label>
+        </div>
       </div>
       <?php endif; ?>
 
@@ -1226,6 +1226,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
   -webkit-overflow-scrolling: touch !important;
   scrollbar-width: thin !important;
   scrollbar-color: var(--navy) #f1f5f9 !important;
+}
+
+.fechas-scroll .fecha-btn {
+  flex-shrink: 0 !important;
 }
 
 .fechas-scroll::-webkit-scrollbar {
