@@ -166,7 +166,7 @@ require_once 'includes/header.php';
                     <div class="rule-number">04</div>
                     <h2 class="text-3xl font-primary text-epl-blue uppercase tracking-tight mb-6 relative z-10">Reprogramaciones, Lluvia y Feriados</h2>
                     <ul class="rule-list text-gray-600 space-y-3 relative z-10">
-                        <li><strong class="text-epl-blue">Reprogramación de Partidos:</strong> Solo se permitirá reprogramar un encuentro si se avisa con un mínimo de <strong>48 horas de anticipación.</strong>
+                        <li><strong class="text-epl-blue">Reprogramación de Partidos:</strong> Solo se permitirá reprogramar un encuentro si se avisa con un mínimo de <strong>24 horas de anticipación.</strong>
                             <div class="sub-rule">
                                 <p>Y se deberá informar el día y hora de la fecha reprogramada, la cual deberá ser antes de la siguiente fecha regular. Situaciones de excepción que requieran un plazo mayor, deberán ser expuestas a la organización para su resolución en instancia única y final.</p>
                                 <p>El partido reprogramado, se podrá jugar cualquier día de lunes a domingo en Conecta Santa Blanca, con la sola excepción del horario de <strong>19:30 (de lunes a jueves) y de 10:30 (sábado, domingos y festivos).</strong></p>

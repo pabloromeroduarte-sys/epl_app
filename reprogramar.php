@@ -62,7 +62,7 @@ if ($equipo && !$bloqueado_reprogs) {
           AND (
             p.fecha_programada IS NULL
             OR p.fecha_programada < NOW()
-            OR p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR)
+            OR p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 24 HOUR)
           )
         ORDER BY p.fecha_programada ASC
     ");
@@ -300,7 +300,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
           AND (
             p.fecha_programada IS NULL
             OR p.fecha_programada < NOW()
-            OR p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 48 HOUR)
+            OR p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 24 HOUR)
           )
     ");
     $stVal->execute([$partido_id, $equipo['id'], $equipo['id']]);
@@ -540,7 +540,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
       <div class="rp-empty">
         <div style="font-size:2.5rem;margin-bottom:.75rem">📅</div>
         <h3>Sin partidos para reprogramar</h3>
-        <p>No tienes partidos pendientes o todos tienen fecha con más de 48h de anticipación.</p>
+        <p>No tienes partidos pendientes o todos tienen fecha con menos de 24h de anticipación.</p>
       </div>
     <?php else: ?>
 
@@ -656,12 +656,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
             <span class="rp-step-dot" style="background:#1d4ed8">5</span>
             <div>
               <div class="rp-card-title" style="color:#1d4ed8">Nueva fecha propuesta</div>
-              <div class="rp-card-sub">Mínimo 48 horas desde ahora.</div>
+              <div class="rp-card-sub">Cualquier fecha futura (mínimo 1 hora desde ahora).</div>
             </div>
           </div>
           <input type="text" name="fecha_propuesta" id="fpFechaPropuesta" class="form-control"
                  placeholder="Seleccioná día y hora"
-                 data-min="<?= date('Y-m-d H:i', strtotime('+48 hours')) ?>"
+                 data-min="<?= date('Y-m-d H:i', strtotime('+1 hour')) ?>"
                  autocomplete="off" readonly
                  style="margin-top:1rem;max-width:320px;cursor:pointer;background:#fff">
 
