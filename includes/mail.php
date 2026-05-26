@@ -284,10 +284,14 @@ final class EplSmtpClient
 
         $fromHeader = $this->formatAddress($fromEmail, $fromName);
         $toHeader   = $this->formatAddress($to, $toName ?? '');
-        // Gmail: autenticas con @gmail.com; el From visible puede ser un alias verificado en "Enviar como".
-        $envelopeFrom = trim($this->cfg['user'] ?? '');
-        if ($envelopeFrom === '' || !filter_var($envelopeFrom, FILTER_VALIDATE_EMAIL)) {
-            $envelopeFrom = $fromEmail;
+        // Por defecto para SMTP profesional (como Brevo) el envelope debe ser el remitente real.
+        // Solo para Gmail forzamos que sea el usuario autenticado (requerido por su SMTP).
+        $envelopeFrom = $fromEmail;
+        if (str_contains(strtolower($host), 'gmail.com')) {
+            $userEmail = trim($this->cfg['user'] ?? '');
+            if ($userEmail !== '' && filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
+                $envelopeFrom = $userEmail;
+            }
         }
         $this->cmd('MAIL FROM:<' . $envelopeFrom . '>', [250, 251]);
         $this->cmd('RCPT TO:<' . $to . '>', [250, 251]);
