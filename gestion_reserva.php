@@ -296,7 +296,13 @@ $todo_confirmado = $partido
   <div class="hdr">
     <h1>Elite <span class="gold">Padel</span> League</h1>
     <p style="color:#C9A762;font-size:.68rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-top:.4rem">
-      <?= $necesita_cancha ? 'Confirmar baja + asignar cancha' : 'Confirmar baja de cancha' ?>
+      <?php
+         $hay_baja = $baja_fecha_lbl || $baja_recinto_nom;
+         if ($hay_baja && $necesita_cancha) echo 'Confirmar baja + asignar cancha';
+         elseif ($hay_baja && !$necesita_cancha) echo 'Confirmar baja de cancha';
+         elseif (!$hay_baja && $necesita_cancha) echo 'Asignar cancha';
+         else echo 'Gestionar reserva';
+      ?>
     </p>
   </div>
   <div class="body">
@@ -429,10 +435,14 @@ $todo_confirmado = $partido
         <input type="text" name="quien" placeholder="Ej: Hugo, encargado" maxlength="100">
 
         <button type="submit" class="btn-submit">
-          <?php if ($necesita_cancha): ?>
+          <?php if ($hay_baja && $necesita_cancha): ?>
             ✅ Confirmar baja<?php if (!empty($canchas)): ?> y asignar cancha<?php endif; ?>
-          <?php else: ?>
+          <?php elseif ($hay_baja && !$necesita_cancha): ?>
             ✅ Confirmar baja
+          <?php elseif (!$hay_baja && $necesita_cancha): ?>
+            ✅ Asignar cancha
+          <?php else: ?>
+            ✅ Confirmar
           <?php endif; ?>
         </button>
       <?php endif; ?>
