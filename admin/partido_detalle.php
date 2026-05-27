@@ -200,7 +200,7 @@ $baja_solicitada = !empty($p['baja_solicitada_at']) && !$baja_confirmada;
 //                   ⇒ la fecha propuesta vive en solicitudes_reprogramacion.fecha_propuesta
 //   POST-APROBADO → fecha_original ya tiene el snapshot
 //                   ⇒ fecha_programada YA es la nueva fecha
-$_post_aprobado = !empty($p['fecha_original']);
+$_post_aprobado = !empty($p['fecha_original']) || ($sol && $sol['estado'] === 'aprobada');
 
 // Fecha propuesta (nueva) — desde la solicitud si pre-aprobado, desde fecha_programada si post
 if ($_post_aprobado) {
