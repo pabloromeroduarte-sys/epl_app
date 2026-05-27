@@ -284,26 +284,40 @@ $_msg_wsp .= "👥 Partido: $_partido_str\n\n";
 if ($_tiene_fecha_nueva) {
     // ── ESCENARIO B: hay fecha propuesta (aprobada o no) ──
     $_msg_wsp .= "Tenemos una REPROGRAMACIÓN:\n\n";
-    $_msg_wsp .= "🚫 Fecha original (DAR DE BAJA):\n";
-    $_msg_wsp .= "   📅 " . ($_baja_fecha_lbl ?: '⚠ pendiente de registrar') . "\n";
-    if ($_baja_recinto_full) $_msg_wsp .= "   🎾 $_baja_recinto_full\n";
-    $_msg_wsp .= "\n";
+    if ($_baja_fecha_lbl) {
+        $_msg_wsp .= "🚫 Fecha original (DAR DE BAJA):\n";
+        $_msg_wsp .= "   📅 " . $_baja_fecha_lbl . "\n";
+        if ($_baja_recinto_full) $_msg_wsp .= "   🎾 $_baja_recinto_full\n";
+        $_msg_wsp .= "\n";
+    } else {
+        $_msg_wsp .= "ℹ️ Esta cancha ya se bajó y solo necesitamos asignar.\n\n";
+    }
     $_msg_wsp .= "✅ Fecha nueva del partido:\n";
     $_msg_wsp .= "   📅 $_propuesta_lbl\n";
     $_msg_wsp .= "   🎾 Necesitamos que nos asignen una cancha para esta fecha.\n";
 } else {
     // ── ESCENARIO A: solo baja de la reserva original ──
-    $_msg_wsp .= "Necesitamos DAR DE BAJA esta reserva:\n";
-    $_msg_wsp .= "📅 " . ($_baja_fecha_lbl ?: '⚠ fecha pendiente de registrar') . "\n";
-    if ($_baja_recinto_full) $_msg_wsp .= "🎾 $_baja_recinto_full\n";
+    if ($_baja_fecha_lbl) {
+        $_msg_wsp .= "Necesitamos DAR DE BAJA esta reserva:\n";
+        $_msg_wsp .= "📅 " . $_baja_fecha_lbl . "\n";
+        if ($_baja_recinto_full) $_msg_wsp .= "🎾 $_baja_recinto_full\n";
+    } else {
+        $_msg_wsp .= "Esta cancha ya se bajó y solo necesitamos asignar cuando haya nueva fecha.\n";
+    }
 }
 
 // Línea de acción con el link
 if ($_baja_link) {
     if ($_tiene_fecha_nueva) {
-        $_msg_wsp .= "\nDesde este link podés confirmar la baja Y elegir la cancha nueva en un solo paso:\n$_baja_link";
+        if ($_baja_fecha_lbl) {
+            $_msg_wsp .= "\nDesde este link podés confirmar la baja Y elegir la cancha nueva en un solo paso:\n$_baja_link";
+        } else {
+            $_msg_wsp .= "\nDesde este link podés elegir y confirmar la cancha nueva:\n$_baja_link";
+        }
     } else {
-        $_msg_wsp .= "\nConfirmá la baja desde este link:\n$_baja_link";
+        if ($_baja_fecha_lbl) {
+            $_msg_wsp .= "\nConfirmá la baja desde este link:\n$_baja_link";
+        }
     }
 }
 $_msg_wsp .= "\n\n¡Gracias!";
@@ -311,8 +325,8 @@ $_msg_wsp .= "\n\n¡Gracias!";
 // Compatibilidad con secciones legacy
 $_msg_cancha = $_msg_wsp;
 
-// ¿Está OK enviar el mensaje? Solo requiere fecha original conocida.
-$_msg_listo = !empty($_baja_fecha_lbl);
+// ¿Está OK enviar el mensaje? Ya no bloqueamos si falta fecha original.
+$_msg_listo = true;
 
 require_once '../includes/header.php';
 ?>
@@ -388,8 +402,8 @@ require_once '../includes/header.php';
               <?php if ($_baja_fecha_lbl): ?>
                 <div style="font-weight:900;color:#7f1d1d;font-size:1rem;margin-top:.2rem"><?= $_baja_fecha_lbl ?></div>
               <?php else: ?>
-                <div style="font-weight:700;color:#b91c1c;font-size:.85rem;margin-top:.2rem;background:#fecaca;padding:.4rem .6rem;border-radius:6px">
-                  ⚠ No registrada — completá con el formulario de abajo
+                <div style="font-weight:900;color:#7f1d1d;font-size:.95rem;margin-top:.3rem">
+                  Reprogramación sin fecha - J<?= $p['jornada'] ?: '?' ?>
                 </div>
               <?php endif; ?>
               <?php if ($_baja_recinto_nom): ?>
@@ -436,12 +450,6 @@ require_once '../includes/header.php';
                 <a href="recintos.php" style="color:#1c2f48;font-weight:800;text-decoration:underline">Cargá los contactos del club acá →</a>
               </div>
             <?php else: ?>
-              <?php if (empty($_baja_fecha_lbl)): ?>
-                <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:1rem;font-size:.88rem;color:#92400e;margin-bottom:1rem">
-                  <strong>⚠ Falta registrar la fecha original</strong><br>
-                  No podés enviar el mensaje sin saber qué reserva dar de baja. Usá el formulario <strong>"Registrar manualmente reserva original"</strong> abajo y volvé a entrar.
-                </div>
-              <?php else: ?>
                 <p style="font-size:.85rem;color:#475569;margin-bottom:.5rem;font-weight:600">
                   📱 Enviar aviso al club por WhatsApp
                   <?php if ($contactos_recomendados): ?>
@@ -477,7 +485,6 @@ require_once '../includes/header.php';
                     ⏳ Ya enviaste el mensaje (<?= date('d/m/Y H:i', strtotime($p['baja_solicitada_at'])) ?>). Esperando que el club confirme el link.
                   </div>
                 <?php endif; ?>
-              <?php endif; ?>  <!-- _baja_fecha_lbl -->
             <?php endif; ?>  <!-- contactos_club -->
           <?php endif; ?>  <!-- baja_confirmada -->
 
