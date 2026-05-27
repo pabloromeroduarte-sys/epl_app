@@ -1503,12 +1503,52 @@ function epl_notificar_asignacion_cancha(int $partido_id): void {
         if (is_numeric($recinto_orig_final)) $cancha_orig_parts[count($cancha_orig_parts)-1] = 'Cancha ' . $recinto_orig_final;
         $cancha_orig_str = implode(' - ', $cancha_orig_parts);
     }
-    
+    // Detección de los tres casos de reprogramación
+    $es_fecha_valida = function(?string $f): bool {
+        if (empty($f)) return false;
+        if (strpos($f, '0000-00-00') !== false) return false;
+        if (date('Y-m-d', strtotime($f)) === '2026-12-31') return false;
+        return true;
+    };
+
+    $had_date  = $es_fecha_valida($p['fecha_original']);
+    $had_court = !empty($p['recinto_original_id']);
+    $had_sched = $had_date && $had_court;
+
+    $has_date  = $es_fecha_valida($p['fecha_programada']);
+    $has_court = !empty($p['recinto_id']);
+    $has_sched = $has_date && $has_court;
+
+    $cambiado_por = $p['cancha_confirmada_por'] ? " Cambiado por: {$p['cancha_confirmada_por']}." : "";
+
+    if ($had_sched && $has_sched) {
+        // --- CASO 1: Reprogramación con fecha ---
+        $tit_jugador = "🎾 Reprogramación: {$local} vs {$visita} (Jornada {$jornada})";
+        $msg_jugador = "Estimados, tu partido de la jornada {$jornada} ({$local} vs {$visita}) ha sido reprogramado. La nueva fecha es el {$fecha} en la cancha {$cancha_str} (fecha original: {$fecha_orig} - cancha: {$cancha_orig_str}). Recuerden retirar agua y pelotas en el mesón de atención del club. En caso de no haber sido notificado por los rivales o no aceptar el cambio favor contactar a la organización.";
+
+        $tit_admin = "📢 Reprogramación de Partido (Jornada {$jornada})";
+        $msg_admin = "Estimados, se ha reprogramado el partido {$local} vs {$visita} (Jornada {$jornada}) con fecha anterior {$fecha_orig} (cancha {$cancha_orig_str}) a la fecha nueva {$fecha} (cancha {$cancha_str}).{$cambiado_por}";
+    } elseif ($had_sched && !$has_sched) {
+        // --- CASO 2: Baja de cancha / queda sin fecha ---
+        $tit_jugador = "⚠️ Partido sin fecha (Baja de cancha) - Jornada {$jornada}";
+        $msg_jugador = "Estimados, les informamos que se dio de baja la fecha/cancha de su partido {$local} vs {$visita} de la jornada {$jornada} (cancha original: {$cancha_orig_str} - fecha: {$fecha_orig}). El partido queda temporalmente \"Sin fecha\" pendiente de reprogramación. Nos contactaremos para coordinar la nueva fecha.";
+
+        $tit_admin = "🚨 Alerta: Baja de Cancha (Jornada {$jornada})";
+        $msg_admin = "Estimados, se dio de baja la cancha {$cancha_orig_str} con fecha {$fecha_orig} del partido {$local} vs {$visita} (Jornada {$jornada}). El partido quedó pendiente de programación (Sin fecha).{$cambiado_por}";
+    } elseif (!$had_sched && $has_sched) {
+        // --- CASO 3: Asignación a partido pendiente / sin fecha (B2.0) ---
+        $tit_jugador = "📅 Asignación de Cancha y Fecha - Jornada {$jornada}";
+        $msg_jugador = "Estimados, se ha asignado fecha y cancha para su partido pendiente de la jornada {$jornada} ({$local} vs {$visita}): se jugará el {$fecha} en la cancha {$cancha_str}. Recuerden retirar agua y pelotas en el mesón de atención del club.";
+
+        $tit_admin = "✅ Programación de Partido sin fecha (Jornada {$jornada})";
+        $msg_admin = "Estimados, se ha asignado fecha y cancha al partido que estaba sin fecha: {$local} vs {$visita} (Jornada {$jornada}) para el {$fecha} en la cancha {$cancha_str}.{$cambiado_por}";
+    } else {
+        // Fallback: Si no hay un cambio de estado significativo, no enviar notificaciones redundantes
+        return;
+    }
+
     // 1. Notificar a los 4 jugadores
-    $tit_jugador = "🎾 Reprogramación jornada {$jornada} ({$local} vs {$visita})";
-    $msg_jugador = "Tu partido de la jornada {$jornada} se realizó el cambio a la fecha {$fecha} cancha {$cancha_str}. Recuerda retirar agua y pelotas en el mesón de atención del club. En caso de no haber sido notificado por los rivales o no aceptar el cambio favor contactar a la organización.";
     $url = epl_url('dashboard.php');
-    
     $jugadores_ids = array_unique(array_filter([
         (int)$p['jl1_id'], (int)$p['jl2_id'],
         (int)$p['jv1_id'], (int)$p['jv2_id'],
@@ -1524,9 +1564,6 @@ function epl_notificar_asignacion_cancha(int $partido_id): void {
     $stAdms = $db->query("SELECT id FROM jugadores WHERE rol = 'admin' AND estado = 'activo'");
     $admins = $stAdms->fetchAll(PDO::FETCH_COLUMN);
     
-    $cambiado_por = $p['cancha_confirmada_por'] ? " Cambiado por: {$p['cancha_confirmada_por']}." : "";
-    $tit_admin = '📢 Baja de Cancha (Reprogramación)';
-    $msg_admin = "Estimados, se dio de baja la cancha {$cancha_orig_str} con fecha {$fecha_orig} por cancha {$cancha_str} fecha nueva {$fecha}. Partido: {$local} vs {$visita} (Jornada {$jornada}).{$cambiado_por}";
     $url_admin = epl_url('admin/partido_detalle.php?id=' . $partido_id);
 
     foreach ($admins as $aid) {

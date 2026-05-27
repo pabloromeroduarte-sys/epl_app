@@ -6,7 +6,6 @@
 declare(strict_types=1);
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
-epl_require_login();
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -14,6 +13,38 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['respuesta' => 'Método no permitido.', 'link' => null, 'sugerencias' => []]);
     exit;
 }
+
+$context = trim($_POST['context'] ?? 'player');
+
+// ── Validación de seguridad y sesión por contexto ──────────────────────
+if ($context === 'admin') {
+    $j = epl_jugador_actual();
+    if (!$j) {
+        echo json_encode([
+            'respuesta' => 'Tu sesión de administrador ha expirado. Por favor, inicia sesión de nuevo.',
+            'link' => ['url' => '/login.php', 'texto' => '🔑 Iniciar Sesión'],
+            'sugerencias' => []
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    if ($j['rol'] !== 'admin') {
+        echo json_encode([
+            'respuesta' => 'No tienes permisos de administrador.',
+            'link' => null,
+            'sugerencias' => []
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+} elseif ($context === 'player') {
+    if (!epl_jugador_actual()) {
+        echo json_encode([
+            'respuesta' => 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo para continuar.',
+            'link' => ['url' => '/login.php', 'texto' => '🔑 Iniciar Sesión'],
+            'sugerencias' => []
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+} // 'public' no requiere sesión
 
 $pregunta = trim($_POST['pregunta'] ?? '');
 if ($pregunta === '') {
@@ -36,10 +67,164 @@ function asist_tokens(string $s): array {
     return array_values(array_filter(preg_split('/[\s\W]+/u', asist_norm($s))));
 }
 
-// ── Base de intents ───────────────────────────────────────────
-$intents = [
+// ── Intents para ADMIN ────────────────────────────────────────
+$intents_admin = [
+    [
+        'id'       => 'resultados_admin',
+        'kw'       => ['resultado','resultados','registrar','ingresar','cambiar resultado','editar resultado',
+                       'corregir resultado','marcador','puntaje','score','modificar resultado','sets','games','anotar'],
+        'peso'     => 2,
+        'resp'     => 'Para **gestionar resultados** como administrador:\n1. Ve a la sección **Partidos** en el menú.\n2. Busca el partido por liga/jornada o usando los filtros.\n3. Haz clic en **Editar/Ver detalle** de ese partido.\n4. Desde el detalle del partido, puedes ingresar o modificar el resultado set a set.\n\n💡 Recuerda que cuando un jugador ingresa un resultado, su rival tiene 24 horas para disputarlo antes de que quede confirmado automáticamente.',
+        'link'     => ['url' => '/admin/partidos.php', 'texto' => '🎾 Gestionar Partidos'],
+        'sug'      => ['¿Cómo gestiono reprogramaciones?','¿Cómo resuelvo una disputa?'],
+    ],
+    [
+        'id'       => 'reprogramar_admin',
+        'kw'       => ['reprogramar','reprogramacion','reprogramaciones','cambiar fecha','aprobar reprogramacion',
+                       'rechazar reprogramacion','solicitudes','cambio fecha','reagendar','mover partido'],
+        'peso'     => 2,
+        'resp'     => 'Para **gestionar reprogramaciones**:\n1. En tu **Inicio de Admin** verás la sección de "Solicitudes de reprogramación" pendientes.\n2. Haz clic en **Aprobar** para asignar la fecha final y cancha definitiva, o **Rechazar** si corresponde.\n3. También puedes ver todo el historial y solicitudes pendientes en **Competencia → Reprogramaciones**.',
+        'link'     => ['url' => '/admin/dashboard_repro.php', 'texto' => '📅 Ver Reprogramaciones'],
+        'sug'      => ['¿Cómo asigno una cancha?','¿Cómo edito un partido?'],
+    ],
+    [
+        'id'       => 'disputas_admin',
+        'kw'       => ['disputa','disputas','reclamar','reclamo','reclamos','resultado disputado','impugnar',
+                       'resultado incorrecto','error resultado','marcador incorrecto'],
+        'peso'     => 2,
+        'resp'     => 'Cuando un jugador disputa un resultado:\n1. Recibirás una notificación y aparecerá una alerta en el panel.\n2. Ve a **Competencia → Disputas**.\n3. Revisa el comentario del jugador que reclama y el marcador propuesto.\n4. Puedes contactar a las parejas y luego modificar el marcador definitivo en el detalle del partido.',
+        'link'     => ['url' => '/admin/disputas.php', 'texto' => '⚠️ Ver Disputas'],
+        'sug'      => ['¿Cómo modifico un resultado?','¿Cómo contacto a un jugador?'],
+    ],
+    [
+        'id'       => 'inscripciones_admin',
+        'kw'       => ['inscripcion','inscripciones','inscribir','aprobar inscripcion','rechazar inscripcion',
+                       'validar pago','pendiente','aprobar pareja','parejas inscritas'],
+        'peso'     => 2,
+        'resp'     => 'Para **gestionar inscripciones**:\n1. Ve a **Competencia → Inscripciones** en el menú lateral.\n2. Verás las solicitudes de parejas pendientes de aprobación.\n3. Verifica que hayan realizado el pago de la inscripción.\n4. Presiona **Aprobar** para asignarlos formalmente a la categoría seleccionada, o **Rechazar** si hay algún inconveniente.',
+        'link'     => ['url' => '/admin/inscripciones.php', 'texto' => '📝 Ver Inscripciones'],
+        'sug'      => ['¿Cómo creo una liga?','¿Cómo agrego jugadores?'],
+    ],
+    [
+        'id'       => 'jugadores_admin',
+        'kw'       => ['jugador','jugadores','crear jugador','editar jugador','buscar jugador','cambiar clave',
+                       'resetear contrasena','cambiar correo','bloquear jugador','rol','hacer admin','datos jugador'],
+        'peso'     => 2,
+        'resp'     => 'Para **gestionar jugadores**:\n1. Ve a **Jugadores** en el menú.\n2. Usa el buscador para encontrar al jugador por nombre, apellido o email.\n3. Haz clic en **Editar** para cambiar sus datos, cambiar su rol (hacerlo admin/jugador), o resetear su contraseña generando una clave provisoria que le llegará a su correo.',
+        'link'     => ['url' => '/admin/jugadores.php', 'texto' => '👤 Gestionar Jugadores'],
+        'sug'      => ['¿Cómo creo un equipo?','¿Cómo veo las categorías?'],
+    ],
+    [
+        'id'       => 'notificaciones_admin',
+        'kw'       => ['notificacion','notificaciones','enviar aviso','correo masivo','enviar mail','push masivo',
+                       'alertas','alerta masiva','avisar','comunicacion','mensajes'],
+        'peso'     => 2,
+        'resp'     => 'Para **enviar avisos masivos** (correos y notificaciones push):\n1. Ve a **Comunicación → Notificaciones** en el menú.\n2. Selecciona si quieres enviar un Correo, una Alerta Push o Ambos.\n3. Filtra los destinatarios (todos, por liga específica, o por categorías).\n4. Escribe el asunto y el mensaje, y presiona **Enviar**.',
+        'link'     => ['url' => '/admin/notificaciones.php', 'texto' => '🔔 Enviar Notificaciones'],
+        'sug'      => ['¿Cómo pruebo si funcionan las notificaciones?'],
+    ],
+    [
+        'id'       => 'finanzas_admin',
+        'kw'       => ['finanzas','pagos','cobros','ingresos','egresos','caja','erps','financiero',
+                       'dinero','balance','resumen financiero','gasto','gastos'],
+        'peso'     => 2,
+        'resp'     => 'El **ERP Financiero** te permite llevar el control de la liga:\n1. Ve a **Finanzas → ERP Financiero**.\n2. Aquí puedes registrar un nuevo ingreso (como auspicios o inscripciones manuales) o un egreso (pago de canchas, premios, pelotas, etc.).\n3. Verás un balance en tiempo real con gráficos y resumen de cobros pendientes.',
+        'link'     => ['url' => '/admin/erp_financiero.php', 'texto' => '💵 ERP Financiero'],
+        'sug'      => ['¿Cómo veo las inscripciones pendientes?'],
+    ],
+    [
+        'id'       => 'ligas_admin',
+        'kw'       => ['liga','ligas','crear liga','nueva liga','categoria','categorias','grupos',
+                       'fixture','generar fixture','generar partidos','fases'],
+        'peso'     => 2,
+        'resp'     => 'Para **gestionar ligas y categorías**:\n1. Ve a **Competencia → Ligas**.\n2. Puedes crear una nueva liga, definir sus categorías y grupos.\n3. Una vez cerradas las inscripciones, puedes generar el fixture y calendario de partidos automáticamente desde la configuración de la categoría.',
+        'link'     => ['url' => '/admin/ligas.php', 'texto' => '🏆 Gestionar Ligas'],
+        'sug'      => ['¿Cómo creo un recinto o cancha?'],
+    ],
+    [
+        'id'       => 'recintos_admin',
+        'kw'       => ['sede','recinto','cancha','canchas','agregar cancha','crear recinto','club','clubes'],
+        'peso'     => 2,
+        'resp'     => 'Para **gestionar recintos y canchas**:\n1. Ve a **Configuración → Sedes/Recintos**.\n2. Puedes crear clubes (recinto superior) y agregar canchas específicas dentro de cada club.\n3. Esto facilitará que al aprobar reprogramaciones o crear partidos puedas seleccionarlas en un menú desplegable ordenado.',
+        'link'     => ['url' => '/admin/recintos.php', 'texto' => '🏛️ Gestionar Sedes'],
+        'sug'      => ['¿Cómo creo una nueva liga?'],
+    ],
+    [
+        'id'       => 'saludo_admin',
+        'kw'       => ['hola','buenas','buen dia','buenos dias','buenas tardes','buenas noches','hey','hola admin'],
+        'peso'     => 1,
+        'resp'     => '¡Hola, Administrador! 👋 Soy tu asistente de *Elite Padel League*. Puedo guiarte en el uso del panel para gestionar ligas, reprogramaciones, resultados, notificaciones y finanzas. ¿Qué deseas consultar?',
+        'link'     => null,
+        'sug'      => ['¿Cómo edito un resultado?','¿Cómo apruebo una inscripción?','¿Cómo gestiono reprogramaciones?'],
+    ],
+];
 
-    // ── RESULTADO ──────────────────────────────────────────────
+// ── Intents para PUBLIC (Landing/Registro/Login) ─────────────
+$intents_public = [
+    [
+        'id'       => 'registro_pub',
+        'kw'       => ['registrar','registro','crear cuenta','unirse','inscribirse liga','inscribirme',
+                       'cuenta nueva','como entro','formulario','registrarse'],
+        'peso'     => 2,
+        'resp'     => 'Para **crear tu cuenta** en Elite Padel League:\n1. Ve a la página de **Registro**.\n2. Completa tus datos personales, comuna, teléfono, y tu perfil deportivo (categoría, lado de juego, marca de pala, frecuencia).\n3. Al finalizar, el sistema te enviará automáticamente un email con una **contraseña provisoria**.\n4. Usa esa contraseña para iniciar sesión por primera vez, y luego cámbiala por una de tu preferencia.',
+        'link'     => ['url' => '/registro.php', 'texto' => '📝 Crear Cuenta'],
+        'sug'      => ['No me llega el correo con la contraseña','¿Qué categoría me corresponde?'],
+    ],
+    [
+        'id'       => 'inscripcion_pub',
+        'kw'       => ['inscribirse torneo','inscribirme liga','inscribir pareja','jugar torneo',
+                       'jugar liga','precio','costo','inscribir','unirse torneo'],
+        'peso'     => 2,
+        'resp'     => 'Para **inscribirte en una competición activa**:\n1. Primero debes registrarte e iniciar sesión.\n2. Ve a **Inscripciones** en el menú principal.\n3. Selecciona la liga o torneo en el que deseas participar.\n4. Ingresa los datos de tu pareja de juego (ambos deben estar registrados, o puedes ingresar su correo).\n5. Sigue las instrucciones de pago que indique el sistema.\n6. El administrador validará el pago y confirmará tu inscripción.',
+        'link'     => ['url' => '/inscribirse.php', 'texto' => '🏅 Ver Competiciones'],
+        'sug'      => ['¿Qué pasa si no tengo pareja?','¿Cómo me registro?'],
+    ],
+    [
+        'id'       => 'pareja_pub',
+        'kw'       => ['sin pareja','no tengo pareja','buscar pareja','jugar solo','pareja suplente','singles'],
+        'peso'     => 2,
+        'resp'     => 'Elite Padel League es una competencia en modalidad de **dobles**.\n\n- **Si tienes pareja**: Puedes inscribirla ingresando su correo al momento de inscribirte en la liga.\n- **Si no tienes pareja**: Te sugerimos unirte al grupo oficial de WhatsApp de la comunidad para buscar partner, o registrarte y marcar en tu perfil que estás disponible para que otros jugadores te contacten.',
+        'link'     => null,
+        'sug'      => ['¿Cómo me registro?','¿Qué categoría me corresponde?'],
+    ],
+    [
+        'id'       => 'contrasena_pub',
+        'kw'       => ['contrasena provisoria','no me llega','no me llego','no recibi','contrasena temporal',
+                       'password temporal','error correo','correo temporal','no me llega el mail','no puedo entrar','olvide clave'],
+        'peso'     => 3,
+        'resp'     => 'Si te registraste pero **no has recibido el email** con tu contraseña provisoria:\n1. Revisa tu carpeta de **Spam o Correo No Deseado**.\n2. Asegúrate de haber escrito correctamente tu correo electrónico.\n3. Si sigues sin recibirlo, ve a **Recuperar Contraseña** e ingresa tu email para solicitar una nueva clave.\n4. Si el problema persiste, contacta al soporte de la liga por WhatsApp.',
+        'link'     => ['url' => '/recuperar.php', 'texto' => '🔑 Recuperar Contraseña'],
+        'sug'      => ['¿Cómo contacto al soporte?','¿Cómo me registro?'],
+    ],
+    [
+        'id'       => 'categorias_pub',
+        'kw'       => ['categoria','categorias','nivel','niveles','que categoria','mi nivel',
+                       'masculino','femenino','drive','reves'],
+        'peso'     => 2,
+        'resp'     => 'Las categorías en Elite Padel League se dividen en:\n\n- 👨 **Masculinas (1ª a 6ª)**: Donde 1ª es el nivel más avanzado (profesional/federado) y 6ª es el nivel inicial/principiantes.\n- 👩 **Femeninas (Categorías A a D)**: Donde A es el nivel más alto y D es el nivel inicial.\n\nAl registrarte debes seleccionar tu categoría. Si no estás seguro, te aconsejamos inscribirte en la categoría en la que sueles jugar habitualmente o consultar al soporte de la liga.',
+        'link'     => null,
+        'sug'      => ['¿Cómo me registro?','¿Cómo me inscribo a un torneo?'],
+    ],
+    [
+        'id'       => 'contacto_pub',
+        'kw'       => ['contacto','soporte','whatsapp','telefono','ayuda','hablar con alguien','organizadores','organizador','administrador'],
+        'peso'     => 2,
+        'resp'     => 'Puedes contactar a los organizadores de **Elite Padel League** enviando un mensaje directo de WhatsApp al número de soporte de la liga (el enlace está disponible en el pie de página de la web principal) o por el correo oficial de la liga. Estamos para ayudarte con cualquier duda sobre inscripciones o registro.',
+        'link'     => null,
+        'sug'      => ['¿Cómo me registro?','¿Cómo me inscribo a un torneo?'],
+    ],
+    [
+        'id'       => 'saludo_pub',
+        'kw'       => ['hola','buenas','buen dia','buenos dias','buenas tardes','buenas noches','hey'],
+        'peso'     => 1,
+        'resp'     => '¡Hola! 👋 Soy el asistente de *Elite Padel League*. Estoy aquí para ayudarte con el registro de cuenta, inscripciones en torneos, dudas sobre categorías o contacto de soporte. ¿En qué puedo ayudarte?',
+        'link'     => null,
+        'sug'      => ['¿Cómo me registro?','¿Cómo me inscribo a un torneo?','¿Qué pasa si no tengo pareja?'],
+    ],
+];
+
+// ── Intents para JUGADOR (Existentes) ────────────────────────
+$intents_player = [
     [
         'id'       => 'resultado',
         'kw'       => ['resultado','resultados','registrar','ingresar','puntaje','marcador','anotar',
@@ -50,8 +235,6 @@ $intents = [
         'link'     => ['url' => '/ingresar_resultado.php', 'texto' => '🏆 Ingresar Resultado'],
         'sug'      => ['¿Cuánto tiempo tiene el rival para reclamar?','¿Qué pasa si el rival disputa?'],
     ],
-
-    // ── RECLAMAR / DISPUTA ─────────────────────────────────────
     [
         'id'       => 'reclamar',
         'kw'       => ['reclamar','reclamo','disputar','disputa','resultado mal','marcador mal',
@@ -63,8 +246,6 @@ $intents = [
         'link'     => ['url' => '/tutoriales.php', 'texto' => '⚠️ Ver Tutorial Reclamos'],
         'sug'      => ['¿Cuánto tiempo tengo para reclamar?','¿Quién puede reclamar un resultado?','¿Cómo contacto al admin?'],
     ],
-
-    // ── REPROGRAMAR ────────────────────────────────────────────
     [
         'id'       => 'reprogramar',
         'kw'       => ['reprogramar','reprogramacion','reprogramación','cambiar fecha','nueva fecha',
@@ -75,8 +256,6 @@ $intents = [
         'link'     => ['url' => '/reprogramar.php', 'texto' => '📅 Reprogramar Partido'],
         'sug'      => ['¿Qué pasa si el rival no responde?','¿Puedo reprogramar más de una vez?'],
     ],
-
-    // ── CLASIFICACIÓN ──────────────────────────────────────────
     [
         'id'       => 'clasificacion',
         'kw'       => ['clasificacion','clasificación','tabla','posicion','posición','ranking',
@@ -87,8 +266,6 @@ $intents = [
         'link'     => ['url' => '/clasificacion.php', 'texto' => '📊 Ver Clasificación'],
         'sug'      => ['¿Cómo se calculan los puntos?','¿Cuándo termina la liga?'],
     ],
-
-    // ── MIS PARTIDOS / DASHBOARD ───────────────────────────────
     [
         'id'       => 'partidos',
         'kw'       => ['partido','partidos','calendario','proximo','proximos','cuando juego',
@@ -99,8 +276,6 @@ $intents = [
         'link'     => ['url' => '/dashboard.php', 'texto' => '🏠 Ir al Inicio'],
         'sug'      => ['¿Cómo registro un resultado?','¿Cómo reprogramo?'],
     ],
-
-    // ── INSCRIPCIÓN ────────────────────────────────────────────
     [
         'id'       => 'inscripcion',
         'kw'       => ['inscribirse','inscripcion','inscripción','torneo','liga','unirse','participar',
@@ -111,8 +286,6 @@ $intents = [
         'link'     => ['url' => '/inscribirse.php', 'texto' => '🏅 Ver Inscripciones'],
         'sug'      => ['¿Puedo inscribirme solo?','¿Cuándo cierran las inscripciones?'],
     ],
-
-    // ── NOTIFICACIONES ─────────────────────────────────────────
     [
         'id'       => 'notificaciones',
         'kw'       => ['notificacion','notificaciones','notificación','alerta','alertas','aviso',
@@ -123,8 +296,6 @@ $intents = [
         'link'     => ['url' => '/dashboard.php', 'texto' => '🔔 Ir al Inicio'],
         'sug'      => ['No me llegó la pregunta de permiso','Tengo iPhone, ¿cómo activo?'],
     ],
-
-    // ── NOTIFICACIONES IPHONE ──────────────────────────────────
     [
         'id'       => 'notif_iphone',
         'kw'       => ['iphone','ios','safari','apple','no me pregunto','no me llega iphone',
@@ -134,8 +305,6 @@ $intents = [
         'link'     => ['url' => '/tutoriales.php', 'texto' => '📖 Ver Tutorial iPhone'],
         'sug'      => ['¿Cómo instalo la app en iPhone?'],
     ],
-
-    // ── INSTALAR APP ───────────────────────────────────────────
     [
         'id'       => 'instalar',
         'kw'       => ['instalar','descargar','app','aplicacion','aplicación','icono','ícono',
@@ -146,8 +315,6 @@ $intents = [
         'link'     => ['url' => '/tutoriales.php', 'texto' => '📲 Tutorial Instalación'],
         'sug'      => ['¿Funciona en iPhone?','¿Necesito la Play Store?'],
     ],
-
-    // ── PERFIL ─────────────────────────────────────────────────
     [
         'id'       => 'perfil',
         'kw'       => ['perfil','datos','informacion','información','foto','contraseña','password',
@@ -158,8 +325,6 @@ $intents = [
         'link'     => ['url' => '/mi_perfil.php', 'texto' => '👤 Ir a Mi Perfil'],
         'sug'      => ['¿Cómo cambio mi foto?','¿Puedo cambiar mi correo?'],
     ],
-
-    // ── SUPLENTES ──────────────────────────────────────────────
     [
         'id'       => 'suplentes',
         'kw'       => ['suplente','suplentes','reemplazo','reemplazar','lesion','lesión',
@@ -169,8 +334,6 @@ $intents = [
         'link'     => ['url' => '/mis_suplentes.php', 'texto' => '🔄 Ir a Suplentes'],
         'sug'      => ['¿Hasta cuándo puedo registrar suplente?'],
     ],
-
-    // ── CANCHA / SEDE ──────────────────────────────────────────
     [
         'id'       => 'cancha',
         'kw'       => ['cancha','sede','recinto','donde','dónde','direccion','dirección',
@@ -180,8 +343,6 @@ $intents = [
         'link'     => ['url' => '/dashboard.php', 'texto' => '🏟️ Ver mis Partidos'],
         'sug'      => ['¿Cómo reprogramo si no hay cancha?'],
     ],
-
-    // ── REGLAS / BASES ─────────────────────────────────────────
     [
         'id'       => 'reglas',
         'kw'       => ['reglas','bases','reglamento','normas','formato','sistema','grupos',
@@ -192,8 +353,6 @@ $intents = [
         'link'     => ['url' => '/inscribirse.php', 'texto' => '📋 Ver Inscripciones'],
         'sug'      => ['¿Cómo contacto al administrador?'],
     ],
-
-    // ── CONTACTO / ADMIN ───────────────────────────────────────
     [
         'id'       => 'contacto',
         'kw'       => ['contacto','administrador','admin','ayuda','soporte','problema','error',
@@ -204,8 +363,6 @@ $intents = [
         'link'     => null,
         'sug'      => ['¿Cómo disputo un resultado?','¿Cómo reprogramo un partido?'],
     ],
-
-    // ── TUTORIALES ─────────────────────────────────────────────
     [
         'id'       => 'tutoriales',
         'kw'       => ['tutorial','tutoriales','guia','guía','como','cómo','ayuda','aprender',
@@ -215,8 +372,6 @@ $intents = [
         'link'     => ['url' => '/tutoriales.php', 'texto' => '📖 Ver Tutoriales'],
         'sug'      => ['¿Cómo registro un resultado?','¿Cómo instalo la app?'],
     ],
-
-    // ── HISTORIAL ──────────────────────────────────────────────
     [
         'id'       => 'historial',
         'kw'       => ['historial','anteriores','jugados','pasados','resultados anteriores',
@@ -226,8 +381,6 @@ $intents = [
         'link'     => ['url' => '/dashboard.php', 'texto' => '📈 Ver Historial'],
         'sug'      => ['¿Cómo registro un resultado?'],
     ],
-
-    // ── SALUDO ─────────────────────────────────────────────────
     [
         'id'       => 'saludo',
         'kw'       => ['hola','buenas','buen dia','buenos dias','buenas tardes','buenas noches',
@@ -237,8 +390,16 @@ $intents = [
         'link'     => null,
         'sug'      => ['¿Cómo registro un resultado?','¿Cómo veo mi próximo partido?','¿Cómo activo notificaciones?'],
     ],
-
 ];
+
+// Seleccionar base de intents según contexto
+$intents = $intents_player;
+if ($context === 'admin') {
+    $intents = $intents_admin;
+} elseif ($context === 'public') {
+    $intents = $intents_public;
+}
+
 
 // ── Motor de matching ─────────────────────────────────────────
 $tokens_pregunta = asist_tokens($pregunta);
@@ -279,9 +440,23 @@ if ($mejor_intent && $mejor_score >= 1) {
         'sugerencias' => $mejor_intent['sug']  ?? [],
     ], JSON_UNESCAPED_UNICODE);
 } else {
-    echo json_encode([
-        'respuesta'   => 'No encontré una respuesta exacta para eso. 😅 Puedo ayudarte con resultados, reprogramaciones, clasificación, notificaciones e inscripciones. ¿O prefieres ver los tutoriales?',
-        'link'        => ['url' => '/tutoriales.php', 'texto' => '📖 Ver Tutoriales'],
-        'sugerencias' => ['¿Cómo registro un resultado?','¿Cómo reprogramo un partido?','¿Cómo activo notificaciones?'],
-    ], JSON_UNESCAPED_UNICODE);
+    if ($context === 'admin') {
+        echo json_encode([
+            'respuesta'   => 'No encontré una respuesta exacta para administradores. 😅 Puedo ayudarte con gestión de resultados, reprogramaciones, jugadores, finanzas, notificaciones masivas y creación de ligas.',
+            'link'        => ['url' => '/admin/configuracion.php', 'texto' => '⚙️ Configuración del Sistema'],
+            'sugerencias' => ['¿Cómo edito un resultado?','¿Cómo apruebo una inscripción?','¿Cómo gestiono reprogramaciones?','¿Cómo envío notificaciones masivas?'],
+        ], JSON_UNESCAPED_UNICODE);
+    } elseif ($context === 'public') {
+        echo json_encode([
+            'respuesta'   => 'No encontré una respuesta exacta para eso. 😅 Puedo ayudarte con el registro de cuenta, inscripción a torneos, categorías y contacto de soporte.',
+            'link'        => ['url' => '/registro.php', 'texto' => '📝 Registrarme ahora'],
+            'sugerencias' => ['¿Cómo me registro?','¿Cómo me inscribo a un torneo?','¿Qué pasa si no tengo pareja?'],
+        ], JSON_UNESCAPED_UNICODE);
+    } else {
+        echo json_encode([
+            'respuesta'   => 'No encontré una respuesta exacta para eso. 😅 Puedo ayudarte con resultados, reprogramaciones, clasificación, notificaciones e inscripciones. ¿O prefieres ver los tutoriales?',
+            'link'        => ['url' => '/tutoriales.php', 'texto' => '📖 Ver Tutoriales'],
+            'sugerencias' => ['¿Cómo registro un resultado?','¿Cómo reprogramo un partido?','¿Cómo activo notificaciones?'],
+        ], JSON_UNESCAPED_UNICODE);
+    }
 }

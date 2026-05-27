@@ -173,10 +173,29 @@
     });
 </script>
 
-<?php if (isset($player_tab)): ?>
-<?php require_once __DIR__ . '/pwa_prompts.php'; ?>
-<?php require_once __DIR__ . '/chat_asistente.php'; ?>
-<?php endif; ?>
+<?php
+// Mostrar PWA prompts solo a jugadores logueados en su panel
+if (isset($player_tab) && epl_jugador_actual()):
+    require_once __DIR__ . '/pwa_prompts.php';
+endif;
+
+// Mostrar chat asistente según el contexto (admin o público/jugador)
+$j_actual = epl_jugador_actual();
+$is_admin_path = (strpos($_SERVER['REQUEST_URI'], '/admin/') !== false);
+$show_chat = false;
+
+if ($is_admin_path) {
+    if ($j_actual && $j_actual['rol'] === 'admin') {
+        $show_chat = true;
+    }
+} else {
+    $show_chat = true;
+}
+
+if ($show_chat):
+    require_once __DIR__ . '/chat_asistente.php';
+endif;
+?>
 
 <?php
 // ── Google Analytics 4 (opcional) ────────────────────────────────────────────

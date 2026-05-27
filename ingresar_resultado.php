@@ -109,6 +109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             $ganador_nombre  = $gano ? $mi_nombre : $rival_nombre;
             $resultado_sets  = implode(' / ', array_map(fn($s) => "{$s['local']}-{$s['visitante']}", $sets));
             $url_reclamar    = epl_url("reclamar_resultado.php?partido_id={$partido_id}");
+            
+            $nombre_quien_ingresa = trim(($jugador['nombre'] ?? '') . ' ' . ($jugador['apellido'] ?? ''));
+            $texto_rival_subtitulo = "El jugador {$nombre_quien_ingresa} ingresó el resultado de tu partido {$partido['local_nombre']} vs {$partido['visitante_nombre']} (Jornada " . ($partido['jornada'] ?? '—') . ").";
+            $texto_rival_tip = "⚠️ En caso de tener algún problema con el resultado contáctate con los organizadores (tienes 24 horas para reclamar).";
+
             $re_st = $db->prepare("SELECT jugador1_id, jugador2_id FROM equipos WHERE id = ?");
             $re_st->execute([$rival_id]);
             $re = $re_st->fetch(PDO::FETCH_ASSOC);
@@ -121,23 +126,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
                     $rival_jugador_id,
                     'resultado',
                     $asunto_res,
-                    ($gano ? "{$mi_nombre} ganó" : "{$rival_nombre} ganó") . " {$resultado}. Tienes 24 horas para reclamar si hay un error.",
+                    $texto_rival_subtitulo . ' ' . $texto_rival_tip,
                     $url_reclamar,
                     true // skip_email: enviamos visual por separado
                 );
                 epl_mail_partido_visual(
                     $rival_jugador_id,
                     $asunto_res,
-                    $mi_nombre,
-                    $rival_nombre,
+                    $partido['local_nombre'],
+                    $partido['visitante_nombre'],
                     [
                         ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
                         ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
                     ],
-                    ($gano ? "{$mi_nombre} ganó" : "{$rival_nombre} ganó") . ' el partido.',
-                    '⚠️ Tienes 24 horas para reclamar si el marcador es incorrecto. Pasado ese plazo, el resultado queda confirmado.',
+                    $texto_rival_subtitulo,
+                    $texto_rival_tip,
                     $url_reclamar,
                     '⚠️ Reclamar Resultado'
+                );
+            }
+
+            // Notificar a los administradores
+            $admins_st = $db->query("SELECT id FROM jugadores WHERE rol = 'admin'");
+            $admins_ids = $admins_st->fetchAll(PDO::FETCH_COLUMN);
+            $fecha_hora_fmt = date('d/m/Y H:i', strtotime($ahora));
+            
+            $texto_admin_subtitulo = "El jugador {$nombre_quien_ingresa} registró el resultado {$resultado_sets} del partido {$partido['local_nombre']} vs {$partido['visitante_nombre']} de la jornada " . ($partido['jornada'] ?? '—') . ".";
+            $texto_admin_tip = "Fecha y hora de registro: {$fecha_hora_fmt}";
+            $url_admin = epl_url("admin/partido_detalle.php?id={$partido_id}");
+
+            foreach ($admins_ids as $admin_id) {
+                epl_notif_crear(
+                    (int)$admin_id,
+                    'resultado',
+                    $asunto_res,
+                    $texto_admin_subtitulo . ' ' . $texto_admin_tip,
+                    $url_admin,
+                    true // skip_email
+                );
+                epl_mail_partido_visual(
+                    (int)$admin_id,
+                    $asunto_res,
+                    $partido['local_nombre'],
+                    $partido['visitante_nombre'],
+                    [
+                        ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
+                        ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
+                    ],
+                    $texto_admin_subtitulo,
+                    $texto_admin_tip,
+                    $url_admin,
+                    'Ver en panel admin'
                 );
             }
 

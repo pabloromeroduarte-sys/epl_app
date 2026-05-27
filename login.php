@@ -146,5 +146,6 @@ function togglePass() {
   </div>
 
 </div>
+<?php require_once __DIR__ . '/includes/chat_asistente.php'; ?>
 </body>
 </html>

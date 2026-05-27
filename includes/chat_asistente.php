@@ -1,3 +1,14 @@
+<?php
+// Determinar contexto del chat de forma segura
+if (!isset($chat_context)) {
+    $j_actual = epl_jugador_actual();
+    if (strpos($_SERVER['REQUEST_URI'], '/admin/') !== false) {
+        $chat_context = ($j_actual && $j_actual['rol'] === 'admin') ? 'admin' : 'player';
+    } else {
+        $chat_context = $j_actual ? 'player' : 'public';
+    }
+}
+?>
 <!-- ── Asistente EPL — widget flotante ─────────────────────── -->
 <style>
 /* ── Botón flotante ── */
@@ -294,11 +305,26 @@
 
   // ── Mensaje de bienvenida ───────────────────────────────────
   function welcome() {
-    addBotMsg(
-      '¡Hola! 👋 Soy el asistente de *Elite Padel League*. ¿En qué puedo ayudarte?',
-      null,
-      ['¿Cómo registro un resultado?','¿Cómo veo mis partidos?','¿Cómo activo notificaciones?','¿Cómo reprogramo?']
-    );
+    const context = <?= json_encode($chat_context) ?>;
+    if (context === 'admin') {
+      addBotMsg(
+        '¡Hola, Administrador! 👋 Soy tu asistente de *Elite Padel League*. Puedo ayudarte con dudas sobre gestión de ligas, partidos, jugadores, finanzas y reprogramaciones. ¿Qué deseas consultar?',
+        null,
+        ['¿Cómo edito un resultado?','¿Cómo apruebo una inscripción?','¿Cómo gestiono reprogramaciones?','¿Cómo envío notificaciones masivas?']
+      );
+    } else if (context === 'public') {
+      addBotMsg(
+        '¡Hola! 👋 Soy el asistente de *Elite Padel League*. Estoy aquí para ayudarte a registrarte, inscribirte en torneos o resolver dudas generales de la liga. ¿En qué te puedo colaborar?',
+        null,
+        ['¿Cómo me registro?','¿Cómo me inscribo a un torneo?','¿Qué pasa si no tengo pareja?','No me llegó la contraseña']
+      );
+    } else {
+      addBotMsg(
+        '¡Hola! 👋 Soy el asistente de *Elite Padel League*. ¿En qué puedo ayudarte?',
+        null,
+        ['¿Cómo registro un resultado?','¿Cómo veo mis partidos?','¿Cómo activo notificaciones?','¿Cómo reprogramo?']
+      );
+    }
   }
 
   // ── Renderizar mensaje del bot ──────────────────────────────
@@ -398,6 +424,7 @@
 
     const fd = new FormData();
     fd.append('pregunta', texto);
+    fd.append('context', <?= json_encode($chat_context) ?>);
 
     fetch('/api_asistente.php', { method: 'POST', body: fd })
       .then(r => r.json())

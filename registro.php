@@ -626,5 +626,6 @@ document.querySelectorAll('.cap-words').forEach(function(el) {
 })();
 </script>
 
+<?php require_once __DIR__ . '/includes/chat_asistente.php'; ?>
 </body>
 </html>

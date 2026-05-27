@@ -51,6 +51,7 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
     <!-- ── COMPETENCIA ── -->
     <div class="adm-group-label">Competencia</div>
     <?php adm_link('ligas.php',           $cur, ['ligas.php','liga_detalle.php'],       '🏆', 'Ligas / Torneos'); ?>
+    <?php adm_link('dashboard_resultados.php', $cur, 'dashboard_resultados.php', '📊', 'Resultados'); ?>
     <?php adm_link('jugadores.php',       $cur, 'jugadores.php',                        '👥', 'Jugadores'); ?>
     <?php adm_link('suplentes.php',       $cur, 'suplentes.php',                        '🔄', 'Suplentes'); ?>
 
@@ -194,6 +195,10 @@ function toggleTools() {
       <a href="ligas.php" class="bn-tile <?= in_array($cur,['ligas.php','liga_detalle.php'])?'active':'' ?>">
         <span class="bn-tile-icon">🏆</span>
         <span>Ligas</span>
+      </a>
+      <a href="dashboard_resultados.php" class="bn-tile <?= $cur==='dashboard_resultados.php'?'active':'' ?>">
+        <span class="bn-tile-icon">📊</span>
+        <span>Resultados</span>
       </a>
       <a href="jugadores.php" class="bn-tile <?= $cur==='jugadores.php'?'active':'' ?>">
         <span class="bn-tile-icon">👥</span>
