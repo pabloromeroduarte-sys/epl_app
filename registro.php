@@ -11,7 +11,7 @@ $error  = '';
 $ok     = '';
 $campos = ['email','nombre','apellido','alias','rut','telefono',
            'fecha_nacimiento','sexo','comuna','profesion',
-           'nivel','lado','pala','frecuencia_juego'];
+           'nivel','lado','pala','talla','frecuencia_juego'];
 $val    = array_fill_keys($campos, '');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($campos as $c) {
@@ -107,6 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $comuna   = trim($_POST['comuna']   ?? '') ?: null;
     $profesion= trim($_POST['profesion']?? '') ?: null;
     $pala     = trim($_POST['pala']     ?? '') ?: null;
+    $talla    = in_array($_POST['talla'] ?? '', ['XS','S','M','L','XL','XXL','XXXL'])
+                ? $_POST['talla'] : null;
     $frec     = in_array($_POST['frecuencia_juego'] ?? '',
                     ['1_semana','2_semana','3_o_mas','ocasional'])
                 ? $_POST['frecuencia_juego'] : null;
@@ -139,13 +141,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 INSERT INTO jugadores
                     (email, password, nombre, apellido, alias, rut, telefono,
                      fecha_nacimiento, sexo, comuna, profesion, nivel, lado, pala,
-                     frecuencia_juego, estado, rol)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'activo','jugador')"
+                     talla, frecuencia_juego, estado, rol)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'activo','jugador')"
             )->execute([
                 $email, epl_hash_password($password),
                 $nombre, $apellido, $alias, $rut, $telefono,
                 $fnac, $sexo, $comuna, $profesion, $nivel, $lado, $pala,
-                $frec,
+                $talla, $frec,
             ]);
 
             // Correo de bienvenida automático
@@ -381,15 +383,25 @@ if ($val['telefono']) {
             </datalist>
           </div>
           <div class="form-group">
-            <label class="form-label" for="frecuencia_juego">Frecuencia de juego</label>
-            <select name="frecuencia_juego" id="frecuencia_juego" class="form-control">
+            <label class="form-label" for="talla">Talla de camiseta</label>
+            <select name="talla" id="talla" class="form-control">
               <option value="">— No indicar —</option>
-              <option value="1_semana"  <?= $val['frecuencia_juego']==='1_semana' ?'selected':'' ?>>1 vez por semana</option>
-              <option value="2_semana"  <?= $val['frecuencia_juego']==='2_semana' ?'selected':'' ?>>2 veces por semana</option>
-              <option value="3_o_mas"   <?= $val['frecuencia_juego']==='3_o_mas'  ?'selected':'' ?>>3 o más por semana</option>
-              <option value="ocasional" <?= $val['frecuencia_juego']==='ocasional'?'selected':'' ?>>Ocasional</option>
+              <?php foreach (['XS','S','M','L','XL','XXL','XXXL'] as $t): ?>
+                <option value="<?= $t ?>" <?= $val['talla']===$t?'selected':'' ?>><?= $t ?></option>
+              <?php endforeach; ?>
             </select>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="frecuencia_juego">Frecuencia de juego</label>
+          <select name="frecuencia_juego" id="frecuencia_juego" class="form-control">
+            <option value="">— No indicar —</option>
+            <option value="1_semana"  <?= $val['frecuencia_juego']==='1_semana' ?'selected':'' ?>>1 vez por semana</option>
+            <option value="2_semana"  <?= $val['frecuencia_juego']==='2_semana' ?'selected':'' ?>>2 veces por semana</option>
+            <option value="3_o_mas"   <?= $val['frecuencia_juego']==='3_o_mas'  ?'selected':'' ?>>3 o más por semana</option>
+            <option value="ocasional" <?= $val['frecuencia_juego']==='ocasional'?'selected':'' ?>>Ocasional</option>
+          </select>
         </div>
 
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;font-size:1rem;padding:.85rem;margin-top:.75rem">
