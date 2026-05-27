@@ -491,10 +491,12 @@ require_once '../includes/header.php';
                     <span style="font-size:.7rem;opacity:.85">· <?= epl_h($c['telefono']) ?></span>
                   </a>
                   <?php endforeach; ?>
-                  <a href="https://wa.me/?text=<?= rawurlencode($_msg_wsp) ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;background:#1e293b;color:#fff;padding:.65rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(30,41,59,.3)">
-                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17.6 6.32A7.85 7.85 0 0012.05 4a7.94 7.94 0 00-6.88 11.93L4 20l4.21-1.1a7.95 7.95 0 003.84.98h.01a7.94 7.94 0 005.54-13.56M12.05 18.5a6.62 6.62 0 01-3.36-.92l-.24-.14-2.5.66.67-2.44-.16-.25a6.59 6.59 0 0110.21-8.16 6.55 6.55 0 011.93 4.66 6.62 6.62 0 01-6.55 6.59"/></svg>
+                  <?php if ($_baja_link): ?>
+                  <a href="<?= epl_h($_baja_link) ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;background:#1e293b;color:#fff;padding:.65rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(30,41,59,.3)">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
                     Acción manual
                   </a>
+                  <?php endif; ?>
                 </div>
 
                 <!-- Preview del mensaje -->
@@ -630,10 +632,12 @@ require_once '../includes/header.php';
                 <span style="font-size:.7rem;opacity:.85">· <?= epl_h($c['telefono']) ?></span>
               </a>
               <?php endforeach; ?>
-              <a href="https://wa.me/?text=<?= rawurlencode($_msg_cancha) ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;background:#1e293b;color:#fff;padding:.65rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(30,41,59,.3)">
-                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17.6 6.32A7.85 7.85 0 0012.05 4a7.94 7.94 0 00-6.88 11.93L4 20l4.21-1.1a7.95 7.95 0 003.84.98h.01a7.94 7.94 0 005.54-13.56M12.05 18.5a6.62 6.62 0 01-3.36-.92l-.24-.14-2.5.66.67-2.44-.16-.25a6.59 6.59 0 0110.21-8.16 6.55 6.55 0 011.93 4.66 6.62 6.62 0 01-6.55 6.59"/></svg>
+              <?php if ($_cancha_link): ?>
+              <a href="<?= epl_h($_cancha_link) ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;background:#1e293b;color:#fff;padding:.65rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(30,41,59,.3)">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
                 Acción manual
               </a>
+              <?php endif; ?>
             </div>
 
             <!-- Preview del mensaje -->
