@@ -282,27 +282,159 @@ if ($equipo && $liga) {
         </div>
       <?php else: ?>
         <div class="sup-add-card">
-          <form method="post">
+          <?php
+            // Preparar array JS-safe para autocomplete
+            $disp_json = array_map(fn($d) => [
+                'id'    => (int)$d['id'],
+                'label' => trim($d['nombre'].' '.$d['apellido']) . ($d['alias'] ? ' ("'.$d['alias'].'")' : ''),
+                'meta'  => $d['nivel'].'ª cat.' . ($d['lado'] ? ' · '.ucfirst($d['lado']) : ''),
+                'search'=> mb_strtolower(trim($d['nombre'].' '.$d['apellido'].' '.($d['alias']??'')), 'UTF-8'),
+            ], $disponibles);
+          ?>
+          <form method="post" id="supForm">
             <input type="hidden" name="action" value="agregar">
-            <div class="form-group" style="margin-bottom:1.25rem">
-              <label class="form-label">Jugador</label>
-              <select name="jugador_id" class="form-control" required>
-                <option value="">— Selecciona un jugador —</option>
-                <?php foreach ($disponibles as $d): ?>
-                  <option value="<?= $d['id'] ?>">
-                    <?= epl_h($d['nombre'].' '.$d['apellido']) ?>
-                    <?= $d['alias'] ? ' ("'.$d['alias'].'")' : '' ?>
-                    — <?= $d['nivel'] ?>ª cat.<?= $d['lado'] ? ' · '.ucfirst($d['lado']) : '' ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-              <span class="form-hint">Solo aparecen jugadores disponibles para este torneo.</span>
+            <input type="hidden" name="jugador_id" id="supJugadorId" required>
+
+            <div class="form-group" style="margin-bottom:1.25rem;position:relative">
+              <label class="form-label" for="supBuscar">Buscar jugador</label>
+              <input type="text" id="supBuscar" class="form-control"
+                     placeholder="Escribe el nombre o apellido..."
+                     autocomplete="off">
+              <div id="supSugerencias" class="sup-suggest" style="display:none"></div>
+              <div id="supSeleccionado" style="display:none;margin-top:.5rem;padding:.6rem .85rem;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+                <div>
+                  <div style="font-weight:700;color:#166534;font-size:.9rem" id="supSelLabel"></div>
+                  <div style="font-size:.72rem;color:#15803d" id="supSelMeta"></div>
+                </div>
+                <button type="button" onclick="supLimpiar()" style="background:transparent;border:none;color:#166534;font-size:1.2rem;cursor:pointer;font-weight:700">×</button>
+              </div>
+              <span class="form-hint" id="supHint">Escribe al menos 2 caracteres para ver coincidencias.</span>
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+            <button type="submit" class="btn btn-primary" id="supBtnRegistrar" style="width:100%;justify-content:center" disabled>
               Registrar como suplente
             </button>
           </form>
         </div>
+
+        <style>
+          .sup-suggest {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(15,23,42,.08);
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 10;
+          }
+          .sup-suggest-item {
+            padding: .65rem .85rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--gray-100);
+            transition: background .15s;
+          }
+          .sup-suggest-item:last-child { border-bottom: none; }
+          .sup-suggest-item:hover, .sup-suggest-item.active {
+            background: #f1f5f9;
+          }
+          .sup-suggest-label {
+            font-weight: 700; color: var(--navy); font-size: .88rem;
+          }
+          .sup-suggest-meta {
+            font-size: .72rem; color: var(--gray-500); margin-top: .15rem;
+          }
+          .sup-suggest-empty {
+            padding: 1rem;
+            text-align: center;
+            color: var(--gray-400);
+            font-size: .82rem;
+          }
+        </style>
+
+        <script>
+          (function() {
+            const disponibles = <?= json_encode($disp_json, JSON_UNESCAPED_UNICODE) ?>;
+            const input  = document.getElementById('supBuscar');
+            const sugDiv = document.getElementById('supSugerencias');
+            const hint   = document.getElementById('supHint');
+            const hidden = document.getElementById('supJugadorId');
+            const selBox = document.getElementById('supSeleccionado');
+            const selLbl = document.getElementById('supSelLabel');
+            const selMet = document.getElementById('supSelMeta');
+            const btn    = document.getElementById('supBtnRegistrar');
+            if (!input) return;
+
+            function normalize(s) {
+              return (s||'').toString().toLowerCase()
+                .normalize('NFD').replace(/[̀-ͯ]/g,'');
+            }
+
+            function render(matches) {
+              if (!matches.length) {
+                sugDiv.innerHTML = '<div class="sup-suggest-empty">Sin coincidencias.</div>';
+              } else {
+                sugDiv.innerHTML = matches.map(m =>
+                  '<div class="sup-suggest-item" data-id="' + m.id + '" data-label="' + m.label.replace(/"/g,'&quot;') + '" data-meta="' + m.meta.replace(/"/g,'&quot;') + '">' +
+                    '<div class="sup-suggest-label">' + m.label + '</div>' +
+                    '<div class="sup-suggest-meta">' + m.meta + '</div>' +
+                  '</div>'
+                ).join('');
+                sugDiv.querySelectorAll('.sup-suggest-item').forEach(el => {
+                  el.addEventListener('click', () => {
+                    seleccionar(el.dataset.id, el.dataset.label, el.dataset.meta);
+                  });
+                });
+              }
+              sugDiv.style.display = 'block';
+            }
+
+            function seleccionar(id, label, meta) {
+              hidden.value = id;
+              selLbl.textContent = label;
+              selMet.textContent = meta;
+              selBox.style.display = 'flex';
+              input.style.display = 'none';
+              hint.style.display = 'none';
+              sugDiv.style.display = 'none';
+              btn.disabled = false;
+            }
+
+            window.supLimpiar = function() {
+              hidden.value = '';
+              selBox.style.display = 'none';
+              input.style.display = '';
+              input.value = '';
+              hint.style.display = '';
+              btn.disabled = true;
+              input.focus();
+            };
+
+            input.addEventListener('input', () => {
+              const q = normalize(input.value).trim();
+              if (q.length < 2) {
+                sugDiv.style.display = 'none';
+                return;
+              }
+              const matches = disponibles.filter(d => normalize(d.search).includes(q)).slice(0, 12);
+              render(matches);
+            });
+
+            input.addEventListener('focus', () => {
+              if (input.value.trim().length >= 2) {
+                input.dispatchEvent(new Event('input'));
+              }
+            });
+
+            // Cerrar sugerencias al hacer click fuera
+            document.addEventListener('click', (e) => {
+              if (!sugDiv.contains(e.target) && e.target !== input) {
+                sugDiv.style.display = 'none';
+              }
+            });
+          })();
+        </script>
       <?php endif; ?>
     </div>
 
