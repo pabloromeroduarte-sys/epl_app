@@ -491,6 +491,10 @@ require_once '../includes/header.php';
                     <span style="font-size:.7rem;opacity:.85">· <?= epl_h($c['telefono']) ?></span>
                   </a>
                   <?php endforeach; ?>
+                  <a href="https://wa.me/?text=<?= rawurlencode($_msg_wsp) ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;background:#1e293b;color:#fff;padding:.65rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(30,41,59,.3)">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17.6 6.32A7.85 7.85 0 0012.05 4a7.94 7.94 0 00-6.88 11.93L4 20l4.21-1.1a7.95 7.95 0 003.84.98h.01a7.94 7.94 0 005.54-13.56M12.05 18.5a6.62 6.62 0 01-3.36-.92l-.24-.14-2.5.66.67-2.44-.16-.25a6.59 6.59 0 0110.21-8.16 6.55 6.55 0 011.93 4.66 6.62 6.62 0 01-6.55 6.59"/></svg>
+                    Acción manual
+                  </a>
                 </div>
 
                 <!-- Preview del mensaje -->
@@ -626,6 +630,10 @@ require_once '../includes/header.php';
                 <span style="font-size:.7rem;opacity:.85">· <?= epl_h($c['telefono']) ?></span>
               </a>
               <?php endforeach; ?>
+              <a href="https://wa.me/?text=<?= rawurlencode($_msg_cancha) ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:.5rem;background:#1e293b;color:#fff;padding:.65rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(30,41,59,.3)">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17.6 6.32A7.85 7.85 0 0012.05 4a7.94 7.94 0 00-6.88 11.93L4 20l4.21-1.1a7.95 7.95 0 003.84.98h.01a7.94 7.94 0 005.54-13.56M12.05 18.5a6.62 6.62 0 01-3.36-.92l-.24-.14-2.5.66.67-2.44-.16-.25a6.59 6.59 0 0110.21-8.16 6.55 6.55 0 011.93 4.66 6.62 6.62 0 01-6.55 6.59"/></svg>
+                Acción manual
+              </a>
             </div>
 
             <!-- Preview del mensaje -->
@@ -768,39 +776,7 @@ require_once '../includes/header.php';
         </p>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem">
 
-          <!-- APROBAR REPROGRAMACIÓN -->
-          <?php if ($p['estado'] === 'reprogramado'): ?>
-          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:1rem">
-            <div style="font-weight:800;color:#14532d;font-size:.9rem;margin-bottom:.4rem">✅ Aprobar reprogramación</div>
-            <div style="font-size:.78rem;color:#15803d;margin-bottom:.85rem;line-height:1.4">
-              Aplica la nueva fecha y deja el partido como <strong>Pendiente</strong>.
-              <?php if ($_propuesta_lbl): ?>
-                <br>Propuesta: <strong><?= epl_h($_propuesta_lbl) ?></strong>
-              <?php endif; ?>
-            </div>
-            <form method="post">
-              <input type="hidden" name="action" value="aprobar_reprog">
-              <?php if (!empty($_canchas_club)): ?>
-                <label style="font-size:.7rem;color:#15803d;font-weight:800;display:block;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.05em">
-                  🎾 Cancha (opcional)
-                </label>
-                <select name="recinto_nuevo_id" class="form-control" style="margin-bottom:.6rem;font-size:.85rem">
-                  <option value="">— Que el club elija desde el link —</option>
-                  <?php foreach ($_canchas_club as $c): ?>
-                    <option value="<?= (int)$c['id'] ?>"><?= epl_h($c['nombre']) ?></option>
-                  <?php endforeach; ?>
-                </select>
-                <div style="font-size:.68rem;color:#15803d;margin-bottom:.65rem;line-height:1.35;font-style:italic">
-                  Si ya sabés qué cancha asignan, elegila acá. Si no, dejá que el club la elija desde el WhatsApp.
-                </div>
-              <?php endif; ?>
-              <button type="submit" class="btn btn-sm" style="background:#15803d;color:#fff;width:100%"
-                      data-confirm="¿Aprobar la reprogramación y aplicar la nueva fecha?" data-confirm-ok="Sí, aprobar">
-                ✅ Aprobar reprogramación
-              </button>
-            </form>
-          </div>
-          <?php endif; ?>
+
 
           <!-- CANCELAR PARTIDO -->
           <?php if (!in_array($p['estado'], ['jugado'])): ?>
