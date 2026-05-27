@@ -257,6 +257,32 @@ function epl_hash_password(string $password): string {
     return password_hash($password, PASSWORD_DEFAULT);
 }
 
+/**
+ * Genera una contraseña temporal aleatoria fácil de leer.
+ * Excluye caracteres confusos (0, O, 1, I, l) para evitar errores al transcribir.
+ */
+function epl_generar_password_temporal(int $largo = 10): string {
+    $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    $pwd = '';
+    $n = strlen($chars);
+    for ($i = 0; $i < $largo; $i++) {
+        $pwd .= $chars[random_int(0, $n - 1)];
+    }
+    return $pwd;
+}
+
+/**
+ * Asigna una contraseña temporal a un jugador y lo marca para forzar el cambio.
+ * Retorna la contraseña en texto plano (para enviarla por email).
+ */
+function epl_asignar_password_temporal(int $jugador_id): string {
+    $db = epl_db();
+    $pwd = epl_generar_password_temporal();
+    $db->prepare("UPDATE jugadores SET password=?, must_change_password=1 WHERE id=?")
+       ->execute([epl_hash_password($pwd), $jugador_id]);
+    return $pwd;
+}
+
 // Genera token para reset de contraseña
 function epl_generar_reset_token(string $email): ?string {
     $db = epl_db();

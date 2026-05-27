@@ -1,17 +1,27 @@
 <?php
 require_once 'includes/auth.php';
 require_once 'includes/functions.php';
+require_once 'includes/mail.php';
+require_once 'includes/mail_automations.php';
 
 $ok    = false;
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = strtolower(trim($_POST['email'] ?? ''));
-    $token = epl_generar_reset_token($email);
     // Siempre mostrar OK (no revelar si el email existe)
     $ok = true;
-    if ($token) {
-        // TODO: enviar email con link: reset.php?token=$token
+
+    if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $db = epl_db();
+        $st = $db->prepare("SELECT id, nombre, apellido, email FROM jugadores WHERE email = ? AND estado = 'activo' LIMIT 1");
+        $st->execute([$email]);
+        $jug = $st->fetch(PDO::FETCH_ASSOC);
+        if ($jug) {
+            // Asigna password temporal + manda mail
+            $pwd_plain = epl_asignar_password_temporal((int)$jug['id']);
+            epl_mail_password_temporal($jug, $pwd_plain, 'reset');
+        }
     }
 }
 ?>

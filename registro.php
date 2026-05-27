@@ -95,8 +95,6 @@ $marcas_pala = [
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = strtolower(trim($_POST['email']    ?? ''));
-    $password = $_POST['password']         ?? '';
-    $confirma = $_POST['password_confirma'] ?? '';
     $nombre   = ucwords(mb_strtolower(trim($_POST['nombre']   ?? ''), 'UTF-8'));
     $apellido = ucwords(mb_strtolower(trim($_POST['apellido'] ?? ''), 'UTF-8'));
     $alias    = trim($_POST['alias']  ?? '') ?: null;
@@ -124,10 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'El apellido es obligatorio.';
     } elseif (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Ingresa un email válido.';
-    } elseif (strlen($password) < 8) {
-        $error = 'La contraseña debe tener al menos 8 caracteres.';
-    } elseif ($password !== $confirma) {
-        $error = 'Las contraseñas no coinciden.';
     } elseif (!$fnac) {
         $error = 'La fecha de nacimiento es obligatoria.';
     } elseif (!$sexo) {
@@ -151,34 +145,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($existe->fetch()) {
             $error = 'Ya existe una cuenta con ese email. <a href="login.php" style="color:var(--gold)">Inicia sesión</a>.';
         } else {
+            // Generar contraseña temporal aleatoria + marcar para forzar cambio
+            $pwd_temporal = epl_generar_password_temporal();
+
             $db->prepare("
                 INSERT INTO jugadores
-                    (email, password, nombre, apellido, alias, rut, telefono,
+                    (email, password, must_change_password, nombre, apellido, alias, rut, telefono,
                      fecha_nacimiento, sexo, comuna, profesion, nivel, lado, pala,
                      frecuencia_juego, estado, rol)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'activo','jugador')"
+                VALUES (?,?,1,?,?,?,?,?,?,?,?,?,?,?,?,?,'activo','jugador')"
             )->execute([
-                $email, epl_hash_password($password),
+                $email, epl_hash_password($pwd_temporal),
                 $nombre, $apellido, $alias, $rut, $telefono,
                 $fnac, $sexo, $comuna, $profesion, $nivel, $lado, $pala,
                 $frec,
             ]);
 
-            // Correo de bienvenida automático
+            // Email con la contraseña provisoria
             try {
                 require_once __DIR__ . '/includes/mail.php';
                 require_once __DIR__ . '/includes/mail_automations.php';
-                epl_mail_bienvenida([
+                epl_mail_password_temporal([
                     'nombre'   => $nombre,
                     'apellido' => $apellido,
                     'email'    => $email,
-                ]);
+                ], $pwd_temporal, 'registro');
             } catch (Throwable $e) {
-                error_log('epl_mail_bienvenida: ' . $e->getMessage());
+                error_log('epl_mail_password_temporal: ' . $e->getMessage());
             }
 
-            epl_login($email, $password);
-            header('Location: dashboard.php?bienvenido=1');
+            // Redirige a página de "revisa tu mail" (no auto-login)
+            header('Location: registro.php?enviado=1');
             exit;
         }
     }
@@ -238,6 +235,19 @@ if ($val['telefono']) {
         ← Ya tengo cuenta
       </a>
 
+      <?php if (isset($_GET['enviado'])): ?>
+        <h1 class="login-title">¡Listo! 📬</h1>
+        <p class="login-sub">Te enviamos un email con tu contraseña provisoria.</p>
+        <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:1.25rem;margin-top:1rem;font-size:.9rem;color:#166534;line-height:1.55">
+          <strong>📧 Revisa tu bandeja de entrada</strong> (y la carpeta de spam por las dudas).<br>
+          Vas a recibir tu contraseña provisoria en unos minutos. Cuando ingreses al sitio, te pediremos que la cambies por una propia.
+        </div>
+        <a href="login.php" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:1.5rem;padding:.85rem">
+          Ir al login →
+        </a>
+
+      <?php else: ?>
+
       <h1 class="login-title">Crear cuenta</h1>
       <p class="login-sub">Completa tus datos para unirte a la liga.</p>
 
@@ -257,17 +267,8 @@ if ($val['telefono']) {
                  placeholder="tucorreo@ejemplo.com" required autofocus autocomplete="email">
         </div>
 
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label" for="password">Contraseña *</label>
-            <input type="password" name="password" id="password" class="form-control"
-                   placeholder="Mínimo 8 caracteres" required minlength="8" autocomplete="new-password">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="password_confirma">Confirmar *</label>
-            <input type="password" name="password_confirma" id="password_confirma" class="form-control"
-                   placeholder="Repite la contraseña" required autocomplete="new-password">
-          </div>
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.82rem;color:#1e40af;line-height:1.45">
+          <strong>🔑 Sin contraseña aquí</strong>: te enviaremos una contraseña provisoria al email cuando termines el registro. Al ingresar la cambias por una propia.
         </div>
 
         <!-- ── Datos personales ────────────── -->
@@ -414,6 +415,7 @@ if ($val['telefono']) {
         </p>
 
       </form>
+      <?php endif; ?>
     </div>
   </div>
 
