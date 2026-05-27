@@ -211,15 +211,16 @@ $profesiones = [
 
 // ── Filtros ───────────────────────────────────────────────
 $f_nivel  = (int)($_GET['nivel']  ?? 0);
-$f_estado = $_GET['estado'] ?? '';
+// Por defecto solo muestra activos. Si pasa estado vacío explícito (?estado=) muestra todos.
+$f_estado = isset($_GET['estado']) ? $_GET['estado'] : 'activo';
 $f_rol    = $_GET['rol'] ?? '';
 $f_q      = trim($_GET['q'] ?? '');
 
 $where = ['1=1'];
 $params = [];
-if ($f_nivel)  { $where[] = 'nivel=?'; $params[] = $f_nivel; }
-if ($f_estado) { $where[] = 'estado=?'; $params[] = $f_estado; }
-if ($f_rol)    { $where[] = 'rol=?';   $params[] = $f_rol; }
+if ($f_nivel)              { $where[] = 'nivel=?';  $params[] = $f_nivel; }
+if ($f_estado !== '')      { $where[] = 'estado=?'; $params[] = $f_estado; }
+if ($f_rol)                { $where[] = 'rol=?';    $params[] = $f_rol; }
 if ($f_q) {
     $where[] = "(nombre LIKE ? OR apellido LIKE ? OR email LIKE ? OR rut LIKE ?)";
     $like = "%{$f_q}%";
@@ -283,7 +284,7 @@ $jugadores = $st->fetchAll();
           </select>
         </div>
         <button type="submit" class="btn btn-navy btn-sm">Filtrar</button>
-        <?php if ($f_q || $f_nivel || $f_estado || $f_rol): ?>
+        <?php if ($f_q || $f_nivel || $f_estado !== 'activo' || $f_rol): ?>
           <a href="jugadores.php" class="btn btn-sm" style="border:1px solid var(--gray-200);color:var(--gray-600)">Limpiar</a>
         <?php endif; ?>
       </form>
