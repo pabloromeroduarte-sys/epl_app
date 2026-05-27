@@ -194,13 +194,25 @@ $baja_confirmada = !empty($p['baja_confirmada_at']);
 $baja_solicitada = !empty($p['baja_solicitada_at']) && !$baja_confirmada;
 
 // ── Estado del flujo de reprogramación ──────────────────────────────
-// Si hay una solicitud pendiente, la fecha propuesta viene de ahí.
-// Si ya fue aprobada (o no hay), la nueva fecha (si la hay) es la que está en fecha_programada.
-$_tiene_solicitud_pendiente = ($sol && $sol['estado'] === 'pendiente');
+// Determinar si hay una solicitud pendiente de ser procesada visualmente por el admin.
+// Incluso si sol_estado es 'aprobada', si la fecha_programada del partido no tiene esa fecha, significa
+// que aún no se aplicó (el admin tiene que asignar cancha).
+$_tiene_solicitud_pendiente = false;
+if ($sol && !empty($sol['fecha_propuesta'])) {
+    if ($sol['estado'] === 'pendiente') {
+        $_tiene_solicitud_pendiente = true;
+    } else if ($sol['estado'] === 'aprobada') {
+        $_fp = $p['fecha_programada'];
+        $_es_placeholder = $_fp && date('Y-m-d', strtotime($_fp)) === '2026-12-31';
+        if (!$_fp || $_es_placeholder || date('Y-m-d H:i', strtotime($_fp)) !== date('Y-m-d H:i', strtotime($sol['fecha_propuesta']))) {
+            $_tiene_solicitud_pendiente = true;
+        }
+    }
+}
 
 if ($_tiene_solicitud_pendiente) {
-    $_propuesta_raw = $sol['fecha_propuesta'] ?? null;
-    $_propuesta_recinto = null; // En solicitudes, aún no se elige cancha
+    $_propuesta_raw = $sol['fecha_propuesta'];
+    $_propuesta_recinto = null; 
     $_post_aprobado = false;
 } else {
     $_propuesta_raw = $p['fecha_programada'];
@@ -213,8 +225,6 @@ $_propuesta_lbl = ($_propuesta_raw && date('Y-m-d', strtotime($_propuesta_raw)) 
 $_tiene_fecha_nueva = !empty($_propuesta_lbl);
 
 // Fecha original (lo que hay que dar de baja en el club)
-// Siempre priorizamos fecha_original si existe, porque significa que ya hubo snapshot.
-// Si no hay snapshot, la fecha original a dar de baja es la fecha_programada actual.
 if (!empty($p['fecha_original'])) {
     $_baja_fecha       = $p['fecha_original'];
     $_baja_recinto_id  = $p['recinto_original_id'];
@@ -227,12 +237,12 @@ if (!empty($p['fecha_original'])) {
     $_baja_recinto_sup = $p['recinto_sup'] ?? null;
 }
 
-// PERO, si la fecha original es exactamente igual a la propuesta (caso de mutuo acuerdo o similar donde
-// no había fecha original previa y se sobreescribió, o un bug anterior), no queremos pedir que den de baja la misma.
-// En realidad, si fecha_original es vacía y la solicitud ya se aprobó y sobreescribió fecha_programada,
-// entonces NO HAY fecha vieja que dar de baja.
-if (empty($p['fecha_original']) && $_tiene_fecha_nueva && $_post_aprobado && $_baja_fecha === $_propuesta_raw) {
-    $_baja_fecha = null; // No hay baja que hacer, era un partido sin fecha.
+// Ocultar la fecha de baja si resulta ser idéntica a la fecha propuesta.
+// Esto evita que el admin se confunda viendo la fecha que acaban de pedir en la caja roja de "Fecha Original".
+if ($_tiene_fecha_nueva && $_baja_fecha && $_propuesta_raw) {
+    if (date('Y-m-d H:i', strtotime($_baja_fecha)) === date('Y-m-d H:i', strtotime($_propuesta_raw))) {
+        $_baja_fecha = null; 
+    }
 }
 
 $_baja_fecha_lbl = ($_baja_fecha && date('Y-m-d', strtotime($_baja_fecha)) !== '2026-12-31')
