@@ -94,6 +94,12 @@ $marcas_pala = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validar reCAPTCHA v3 antes que todo
+    $captcha_token = $_POST['recaptcha_token'] ?? '';
+    if (!epl_recaptcha_verificar($captcha_token, 'registro')) {
+        $error = 'No pudimos verificar que sos humano. Intenta de nuevo.';
+    }
+
     $email    = strtolower(trim($_POST['email']    ?? ''));
     $nombre   = ucwords(mb_strtolower(trim($_POST['nombre']   ?? ''), 'UTF-8'));
     $apellido = ucwords(mb_strtolower(trim($_POST['apellido'] ?? ''), 'UTF-8'));
@@ -116,7 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lado = in_array($_POST['lado'] ?? '', ['derecha','reves','ambos'])
             ? $_POST['lado'] : null;
 
-    if (!$nombre) {
+    if ($error) {
+        // ya hay error de captcha, no continuar
+    } elseif (!$nombre) {
         $error = 'El nombre es obligatorio.';
     } elseif (!$apellido) {
         $error = 'El apellido es obligatorio.';
@@ -212,7 +220,9 @@ if ($val['telefono']) {
     .tel-wrap { display:flex; gap:.5rem }
     .tel-wrap select { width:100px; flex-shrink:0 }
     .tel-wrap input  { flex:1; min-width:0 }
+    .grecaptcha-badge { visibility: hidden; }
   </style>
+  <?= epl_recaptcha_script() ?>
 </head>
 <body>
 <div class="login-page">
@@ -256,6 +266,7 @@ if ($val['telefono']) {
       <?php endif; ?>
 
       <form method="post" id="regForm">
+        <input type="hidden" name="recaptcha_token" id="regCaptchaToken">
 
         <!-- ── Acceso ───────────────────────── -->
         <p class="section-label" style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);margin:.5rem 0 .75rem">Acceso</p>
@@ -582,15 +593,37 @@ document.querySelectorAll('.cap-words').forEach(function(el) {
   buildCats();
 })();
 
-// ── Submit: asegurar que telefono hidden tenga valor ─────────────────────────
-document.getElementById('regForm').addEventListener('submit', function() {
-  var ccSel  = document.getElementById('tel_cc');
-  var numInp = document.getElementById('tel_num');
-  var hidden = document.getElementById('telefono');
-  if (ccSel && numInp && hidden && numInp.value.trim()) {
-    hidden.value = ccSel.value + ' ' + numInp.value.trim();
-  }
-});
+// ── Submit: asegurar que telefono hidden tenga valor + ejecutar reCAPTCHA ─────
+(function() {
+  var form = document.getElementById('regForm');
+  if (!form) return;
+  var siteKey = <?= json_encode(epl_recaptcha_site_key()) ?>;
+
+  form.addEventListener('submit', function(e) {
+    // 1) Teléfono
+    var ccSel  = document.getElementById('tel_cc');
+    var numInp = document.getElementById('tel_num');
+    var hidden = document.getElementById('telefono');
+    if (ccSel && numInp && hidden && numInp.value.trim()) {
+      hidden.value = ccSel.value + ' ' + numInp.value.trim();
+    }
+
+    // 2) reCAPTCHA — solo si hay clave configurada y aún no se generó el token
+    var tokenInp = document.getElementById('regCaptchaToken');
+    if (!siteKey || !tokenInp || tokenInp.value || typeof grecaptcha === 'undefined') return;
+
+    e.preventDefault();
+    grecaptcha.ready(function() {
+      grecaptcha.execute(siteKey, { action: 'registro' }).then(function(token) {
+        tokenInp.value = token;
+        form.submit();
+      }).catch(function() {
+        // Si falla reCAPTCHA, dejamos que igual se envíe (servidor decide)
+        form.submit();
+      });
+    });
+  });
+})();
 </script>
 
 </body>

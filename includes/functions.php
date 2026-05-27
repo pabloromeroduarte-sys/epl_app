@@ -2,6 +2,66 @@
 declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 
+// ── reCAPTCHA v3 ─────────────────────────────────────────────────────────────
+/**
+ * Verifica el token de reCAPTCHA v3 contra Google.
+ * Retorna true si el puntaje es aceptable (sobre el umbral), false si es bot.
+ * Si no hay clave configurada, retorna true (no bloquea, modo dev).
+ */
+function epl_recaptcha_verificar(string $token, string $action_esperada = ''): bool {
+    $secret = epl_env('RECAPTCHA_SECRET_KEY', '');
+    if (!$secret) return true; // sin clave configurada, no validar
+    if (!$token) return false;
+
+    $threshold = (float) epl_env('RECAPTCHA_THRESHOLD', '0.5');
+
+    $url = 'https://www.google.com/recaptcha/api/siteverify';
+    $payload = http_build_query([
+        'secret'   => $secret,
+        'response' => $token,
+        'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '',
+    ]);
+
+    $ctx = stream_context_create([
+        'http' => [
+            'method'        => 'POST',
+            'header'        => 'Content-Type: application/x-www-form-urlencoded',
+            'content'       => $payload,
+            'timeout'       => 5,
+            'ignore_errors' => true,
+        ],
+    ]);
+    $resp = @file_get_contents($url, false, $ctx);
+    if ($resp === false) {
+        error_log('[recaptcha] sin respuesta de Google');
+        return true; // no bloquear si Google está caído
+    }
+    $data = json_decode($resp, true);
+    if (!is_array($data) || empty($data['success'])) {
+        error_log('[recaptcha] fail: ' . substr($resp, 0, 200));
+        return false;
+    }
+    $score = (float)($data['score'] ?? 0);
+    if ($action_esperada && ($data['action'] ?? '') !== $action_esperada) {
+        error_log('[recaptcha] action mismatch: ' . ($data['action'] ?? '?'));
+        return false;
+    }
+    return $score >= $threshold;
+}
+
+/** Imprime el <script> de reCAPTCHA v3 (sitio_key) si está configurada. */
+function epl_recaptcha_script(): string {
+    $site_key = epl_env('RECAPTCHA_SITE_KEY', '');
+    if (!$site_key) return '';
+    return '<script src="https://www.google.com/recaptcha/api.js?render='
+         . htmlspecialchars($site_key, ENT_QUOTES) . '"></script>';
+}
+
+/** Devuelve el site key (para usar en JS inline). */
+function epl_recaptcha_site_key(): string {
+    return epl_env('RECAPTCHA_SITE_KEY', '');
+}
+
 // ── Flash messages (PRG pattern) ─────────────────────────────────────────────
 /**
  * Guarda un mensaje flash en sesión y redirige (Post → Redirect → Get).
