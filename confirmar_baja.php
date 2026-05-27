@@ -49,13 +49,28 @@ if ($partido) {
     // ── Lógica de pre-aprobado vs post-aprobado ──
     $es_post_aprobado = !empty($partido['fecha_original']);
     $fecha_baja_real = $es_post_aprobado ? $partido['fecha_original'] : $partido['fecha_programada'];
-    $fecha_nueva_real = $es_post_aprobado ? $partido['fecha_programada'] : ($partido['fecha_propuesta'] ?? null);
+    
+    $_fp = $partido['fecha_programada'];
+    $_es_placeholder = $_fp && date('Y-m-d', strtotime($_fp)) === '2026-12-31';
+    
+    if (!empty($partido['fecha_propuesta']) && (!$_fp || $_es_placeholder || date('Y-m-d H:i', strtotime($_fp)) !== date('Y-m-d H:i', strtotime($partido['fecha_propuesta'])))) {
+        $fecha_nueva_real = $partido['fecha_propuesta'];
+        $es_nueva_fecha_aplicada = false;
+    } else {
+        $fecha_nueva_real = $partido['fecha_programada'];
+        $es_nueva_fecha_aplicada = true;
+    }
 
     $_sf = !$fecha_nueva_real || date('Y-m-d', strtotime($fecha_nueva_real)) === '2026-12-31';
     $nueva_fecha_lbl = !$_sf ? date('d/m/Y H:i', strtotime($fecha_nueva_real)) : null;
 
+    // Si la fecha original a dar de baja resulta ser la misma que la propuesta, la ocultamos
+    if ($nueva_fecha_lbl && $fecha_baja_real && date('Y-m-d H:i', strtotime($fecha_baja_real)) === date('Y-m-d H:i', strtotime($fecha_nueva_real))) {
+        $fecha_baja_real = null;
+    }
+
     // Necesita cancha: hay nueva fecha y el club todavía no confirmó qué cancha asignan
-    $necesita_cancha = $nueva_fecha_lbl && empty($partido['cancha_confirmada_at']) && ($es_post_aprobado ? empty($partido['recinto_id']) : true);
+    $necesita_cancha = $nueva_fecha_lbl && empty($partido['cancha_confirmada_at']) && ($es_nueva_fecha_aplicada ? empty($partido['recinto_id']) : true);
 
     if ($necesita_cancha) {
         $ref = ($es_post_aprobado ? $partido['recinto_original_id'] : $partido['recinto_id']) ?: null;
@@ -130,8 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['baja_confirm
     $quien       = trim($_POST['quien'] ?? '');
     $recinto_nuevo = (int)($_POST['recinto_id'] ?? 0);
 
-    // Si es pre-aprobado (fecha_original es NULL), guardamos snapshot de la original y actualizamos a la propuesta
-    if (!$es_post_aprobado) {
+    // Si la fecha nueva aún no ha sido aplicada a la tabla partidos, la aplicamos.
+    if (!$es_nueva_fecha_aplicada) {
         epl_partido_snapshot_original((int)$partido['id']);
         if ($fecha_nueva_real) {
             $db->prepare("UPDATE partidos SET fecha_programada=? WHERE id=?")
@@ -156,8 +171,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['baja_confirm
             $db->prepare("UPDATE partidos SET recinto_id=?, cancha_confirmada_at=NOW(), cancha_confirmada_por=? WHERE id=?")
                ->execute([$recinto_nuevo, $quien ?: 'Club', $partido['id']]);
 
-            // Si es pre-aprobado, también guardamos la cancha aprobada en solicitudes_reprogramacion
-            if (!$es_post_aprobado) {
+            // Si la fecha nueva aún no ha sido aplicada, también guardamos la cancha aprobada en solicitudes_reprogramacion
+            if (!$es_nueva_fecha_aplicada) {
                 $db->prepare("UPDATE solicitudes_reprogramacion SET cancha_aprobada=? WHERE partido_id=? AND estado='aprobada'")
                    ->execute([$cancha_nombre, $partido['id']]);
             }
