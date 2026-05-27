@@ -176,13 +176,13 @@ $tab      = isset($_GET['tab']) && $_GET['tab'] === 'historial' ? 'historial' : 
 $show_form = ($tab === 'automatizaciones') && (isset($_GET['nuevo']) || $editing !== null);
 $lista    = $db->query("SELECT * FROM email_automatizaciones ORDER BY trigger_tipo, activo DESC, nombre")->fetchAll(PDO::FETCH_ASSOC);
 $smtp_ok  = epl_smtp_habilitado();
-// Jugadores recientes (últimos 30 días) para el envío manual de bienvenida
+// Jugadores recientes (últimas 12 horas) para el envío manual de bienvenida
 $jugadores_recientes = $db->query("
     SELECT id, nombre, apellido, email, created_at
     FROM jugadores
     WHERE estado='activo'
       AND email IS NOT NULL AND email <> ''
-      AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      AND created_at >= DATE_SUB(NOW(), INTERVAL 12 HOUR)
     ORDER BY created_at DESC
     LIMIT 100
 ")->fetchAll(PDO::FETCH_ASSOC);
@@ -545,7 +545,7 @@ $log_errors = count(array_filter($log_rows, fn($r) => $r['estado'] === 'error'))
       <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#fef3c7,#fde68a)">
         <div>
           <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:#92400e;margin:0">📤 Enviar bienvenida manualmente</h3>
-          <p style="font-size:.78rem;color:#78350f;margin:.2rem 0 0">Últimos 30 días — selecciona a quién enviarle el correo de bienvenida.</p>
+          <p style="font-size:.78rem;color:#78350f;margin:.2rem 0 0">Últimas 12 horas — selecciona a quién enviarle el correo de bienvenida.</p>
         </div>
         <button onclick="document.getElementById('modalBienvenidaManual').style.display='none'" style="background:transparent;border:none;font-size:1.6rem;color:#92400e;cursor:pointer;line-height:1">×</button>
       </div>
@@ -553,7 +553,7 @@ $log_errors = count(array_filter($log_rows, fn($r) => $r['estado'] === 'error'))
       <?php if (empty($jugadores_recientes)): ?>
         <div style="padding:2rem;text-align:center;color:var(--gray-400)">
           <div style="font-size:2.5rem;margin-bottom:.5rem">📭</div>
-          <p style="margin:0;font-weight:600">No hay jugadores registrados en los últimos 30 días.</p>
+          <p style="margin:0;font-weight:600">No hay jugadores registrados en las últimas 12 horas.</p>
         </div>
       <?php else: ?>
         <form method="POST" id="formBienvenidaManual" style="display:flex;flex-direction:column;flex:1;min-height:0">
@@ -569,8 +569,13 @@ $log_errors = count(array_filter($log_rows, fn($r) => $r['estado'] === 'error'))
 
           <div style="flex:1;overflow-y:auto;padding:.25rem 0">
             <?php foreach ($jugadores_recientes as $jr):
-              $dias = (int) ((time() - strtotime($jr['created_at'])) / 86400);
-              $dias_lbl = $dias === 0 ? 'hoy' : ($dias === 1 ? 'hace 1 día' : "hace {$dias} días");
+              $minutos = max(1, (int) ((time() - strtotime($jr['created_at'])) / 60));
+              if ($minutos < 60) {
+                  $tiempo_lbl = "hace {$minutos} min";
+              } else {
+                  $horas = (int) ($minutos / 60);
+                  $tiempo_lbl = $horas === 1 ? 'hace 1 hora' : "hace {$horas} horas";
+              }
             ?>
               <label class="bv-row" style="display:flex;align-items:center;gap:.75rem;padding:.65rem 1.5rem;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .15s">
                 <input type="checkbox" name="jugador_ids[]" value="<?= (int)$jr['id'] ?>"
@@ -584,7 +589,7 @@ $log_errors = count(array_filter($log_rows, fn($r) => $r['estado'] === 'error'))
                     <?= epl_h($jr['email']) ?>
                   </div>
                 </div>
-                <span style="font-size:.7rem;font-weight:600;color:#92400e;background:#fef3c7;padding:.2rem .55rem;border-radius:10px;white-space:nowrap;flex-shrink:0"><?= $dias_lbl ?></span>
+                <span style="font-size:.7rem;font-weight:600;color:#92400e;background:#fef3c7;padding:.2rem .55rem;border-radius:10px;white-space:nowrap;flex-shrink:0"><?= $tiempo_lbl ?></span>
               </label>
             <?php endforeach; ?>
           </div>
