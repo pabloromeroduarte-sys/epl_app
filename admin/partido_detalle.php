@@ -404,12 +404,13 @@ require_once '../includes/header.php';
       <div class="card-body">
 
         <?php
-          $_hay_info = $_baja_fecha_lbl || $_baja_recinto_nom;
+          // Hay info útil si hay algo que dar de baja, O BIEN si hay una propuesta nueva que mostrar
+          $_hay_info = $_baja_fecha_lbl || $_baja_recinto_nom || $_tiene_fecha_nueva;
         ?>
         <?php if (!$_hay_info): ?>
           <!-- Sin ningún dato útil: pedir registrar -->
           <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:10px;padding:1rem;font-size:.88rem;color:#92400e;margin-bottom:1rem">
-            ⚠️ Este partido no tiene fecha ni cancha asignada. Registrá manualmente abajo qué reservar dar de baja.
+            ⚠️ Este partido no tiene fecha ni cancha original asignada para dar de baja, y aún no hay propuesta nueva.
           </div>
         <?php else: ?>
           <!-- Cards: lo que se va a dar de baja + (si hay snapshot) la nueva fecha -->
