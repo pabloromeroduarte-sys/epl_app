@@ -251,6 +251,15 @@ if ($_club_ref) {
 // Contactos del club (jerarquía: cancha original → sede → club)
 $_recinto_para_baja = $p['recinto_original_id'] ?: $p['recinto_id'];
 $contactos_info     = $_recinto_para_baja ? epl_recinto_contactos_jerarquico((int)$_recinto_para_baja) : ['contactos' => [], 'recinto_id' => null, 'recinto_nombre' => null];
+
+// Si el partido no tiene recinto asignado (reprogramado sin fecha), recomienda
+// los contactos del club más usado en la liga.
+$contactos_recomendados = false;
+if (empty($contactos_info['contactos']) && !empty($p['liga_id'])) {
+    $contactos_info = epl_recintos_recomendados_liga((int)$p['liga_id']);
+    if (!empty($contactos_info['contactos'])) $contactos_recomendados = true;
+}
+
 $contactos_club     = $contactos_info['contactos'];
 $contactos_origen   = $contactos_info['recinto_nombre'];
 
@@ -435,7 +444,10 @@ require_once '../includes/header.php';
               <?php else: ?>
                 <p style="font-size:.85rem;color:#475569;margin-bottom:.5rem;font-weight:600">
                   📱 Enviar aviso al club por WhatsApp
-                  <?php if ($contactos_origen && $contactos_origen !== ($p['recinto_original_nombre'] ?: $p['recinto_nombre'])): ?>
+                  <?php if ($contactos_recomendados): ?>
+                    <span style="display:inline-block;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;font-size:.68rem;padding:.1rem .45rem;border-radius:6px;margin-left:.3rem">★ RECOMENDADO</span>
+                    <span style="font-weight:500;color:#64748b;font-size:.78rem;display:block;margin-top:.2rem">El partido no tiene recinto asignado. Usamos los contactos de <strong><?= epl_h($contactos_origen) ?></strong> (el club más usado en esta liga).</span>
+                  <?php elseif ($contactos_origen && $contactos_origen !== ($p['recinto_original_nombre'] ?: $p['recinto_nombre'])): ?>
                     <span style="font-weight:500;color:#64748b;font-size:.78rem">(contactos de <?= epl_h($contactos_origen) ?>)</span>
                   <?php endif; ?>
                 </p>
@@ -568,7 +580,10 @@ require_once '../includes/header.php';
           <?php else: ?>
             <p style="font-size:.85rem;color:#475569;margin-bottom:.5rem;font-weight:600">
               📱 Enviar link al club por WhatsApp
-              <?php if ($contactos_origen && $contactos_origen !== ($p['recinto_original_nombre'] ?: $p['recinto_nombre'])): ?>
+              <?php if ($contactos_recomendados): ?>
+                <span style="display:inline-block;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;font-size:.68rem;padding:.1rem .45rem;border-radius:6px;margin-left:.3rem">★ RECOMENDADO</span>
+                <span style="font-weight:500;color:#64748b;font-size:.78rem;display:block;margin-top:.2rem">Sin recinto asignado. Usamos los contactos de <strong><?= epl_h($contactos_origen) ?></strong>.</span>
+              <?php elseif ($contactos_origen && $contactos_origen !== ($p['recinto_original_nombre'] ?: $p['recinto_nombre'])): ?>
                 <span style="font-weight:500;color:#64748b;font-size:.78rem">(contactos de <?= epl_h($contactos_origen) ?>)</span>
               <?php endif; ?>
             </p>

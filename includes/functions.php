@@ -1206,6 +1206,50 @@ function epl_recinto_contactos_jerarquico(int $recinto_id): array {
 }
 
 /**
+ * Devuelve los contactos del recinto/club más usado en una liga.
+ * Útil cuando un partido no tiene recinto asignado (reprogramado sin fecha)
+ * y aún así se necesita contactar al club habitual.
+ *
+ * @return array Con la misma forma que epl_recinto_contactos_jerarquico
+ */
+function epl_recintos_recomendados_liga(int $liga_id): array {
+    if (!$liga_id) return ['contactos' => [], 'recinto_id' => null, 'recinto_nombre' => null];
+    epl_ensure_recintos_contactos();
+    $db = epl_db();
+
+    // Cuenta recintos raíz (clubes) más usados en la liga, a través de la jerarquía
+    // Recorre fecha_original y recinto_id de los partidos jugados/reprogramados
+    $st = $db->prepare("
+        SELECT COALESCE(p.recinto_id, p.recinto_original_id) AS rid, COUNT(*) AS cnt
+        FROM partidos p
+        WHERE p.liga_id = ?
+          AND COALESCE(p.recinto_id, p.recinto_original_id) IS NOT NULL
+        GROUP BY rid
+        ORDER BY cnt DESC
+    ");
+    $st->execute([$liga_id]);
+    $candidatos = $st->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($candidatos as $c) {
+        $rid = (int)$c['rid'];
+        if (!$rid) continue;
+        $info = epl_recinto_contactos_jerarquico($rid);
+        if (!empty($info['contactos'])) return $info;
+    }
+
+    // Fallback final: cualquier recinto del sistema que tenga contactos
+    $any = $db->query("
+        SELECT id FROM recintos
+        WHERE contacto1_telefono IS NOT NULL AND contacto1_telefono <> ''
+        ORDER BY id ASC LIMIT 1
+    ")->fetchColumn();
+    if ($any) {
+        return epl_recinto_contactos_jerarquico((int)$any);
+    }
+    return ['contactos' => [], 'recinto_id' => null, 'recinto_nombre' => null];
+}
+
+/**
  * Genera (o devuelve si ya existe) un token único para confirmar la baja de cancha
  * de un partido específico. El link de confirmación se incluye en el mensaje de WhatsApp.
  */

@@ -302,7 +302,10 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
 
           // Contactos: prueba en el orden: recinto_original_id → recinto_id (subiendo la jerarquía)
           // Si la cancha exacta no tiene contactos, busca en la sede / club padre.
+          // Si nada da resultado, recomienda el club más usado en la liga.
           $_contactos = [];
+          $_contactos_recomendados = false;
+          $_contactos_origen_nombre = '';
           for ($i = 1; $i <= 3; $i++) {
             if (!empty($p["contacto{$i}_telefono"])) {
               $_contactos[] = ['nombre' => $p["contacto{$i}_nombre"] ?? '', 'telefono' => $p["contacto{$i}_telefono"]];
@@ -311,12 +314,21 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           // Fallback 1: subir por la jerarquía desde recinto_original_id
           if (empty($_contactos) && !empty($p['recinto_original_id'])) {
             $_h = epl_recinto_contactos_jerarquico((int)$p['recinto_original_id']);
-            if (!empty($_h['contactos'])) $_contactos = $_h['contactos'];
+            if (!empty($_h['contactos'])) { $_contactos = $_h['contactos']; $_contactos_origen_nombre = $_h['recinto_nombre'] ?? ''; }
           }
           // Fallback 2: usar recinto_id (cancha asignada actual) y subir la jerarquía
           if (empty($_contactos) && !empty($p['recinto_id'])) {
             $_h = epl_recinto_contactos_jerarquico((int)$p['recinto_id']);
-            if (!empty($_h['contactos'])) $_contactos = $_h['contactos'];
+            if (!empty($_h['contactos'])) { $_contactos = $_h['contactos']; $_contactos_origen_nombre = $_h['recinto_nombre'] ?? ''; }
+          }
+          // Fallback 3: recomendar el club más usado en la liga
+          if (empty($_contactos) && !empty($p['liga_id'])) {
+            $_h = epl_recintos_recomendados_liga((int)$p['liga_id']);
+            if (!empty($_h['contactos'])) {
+              $_contactos = $_h['contactos'];
+              $_contactos_origen_nombre = $_h['recinto_nombre'] ?? '';
+              $_contactos_recomendados = true;
+            }
           }
 
           // Token + link (baja + cancha en una sola página)
@@ -380,6 +392,11 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
                 <?php if ($p['baja_confirmada_por']): ?>· por <?= epl_h($p['baja_confirmada_por']) ?><?php endif; ?>
               </div>
             <?php elseif (!empty($_contactos)): ?>
+              <?php if ($_contactos_recomendados): ?>
+                <div style="font-size:.68rem;margin:.25rem 0 .15rem;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;padding:.2rem .5rem;border-radius:5px;display:inline-block;font-weight:700">
+                  ★ Recomendado · <?= epl_h($_contactos_origen_nombre ?: 'club habitual') ?>
+                </div>
+              <?php endif; ?>
               <div style="margin-top:.4rem;display:flex;flex-wrap:wrap;gap:.35rem">
                 <?php foreach ($_contactos as $_c):
                   $_tel = preg_replace('/[^0-9]/', '', $_c['telefono']);
