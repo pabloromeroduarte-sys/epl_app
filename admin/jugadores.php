@@ -58,6 +58,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+    } elseif ($action === 'eliminar') {
+        $id = (int)($_POST['id'] ?? 0);
+        $admin_actual = epl_jugador_actual();
+        if ($id <= 0) {
+            $err = 'ID inválido.';
+        } elseif ($id === (int)($admin_actual['id'] ?? 0)) {
+            $err = 'No podés eliminarte a vos mismo.';
+        } else {
+            // Traer datos del jugador para confirmar y limpiar
+            $st = $db->prepare("SELECT nombre, apellido, email FROM jugadores WHERE id=?");
+            $st->execute([$id]);
+            $jdel = $st->fetch(PDO::FETCH_ASSOC);
+            if (!$jdel) {
+                $err = 'Jugador no encontrado.';
+            } else {
+                try {
+                    $db->beginTransaction();
+                    // Limpiar tablas relacionadas livianas (no críticas)
+                    foreach ([
+                        "DELETE FROM notificaciones WHERE jugador_id=?",
+                        "DELETE FROM push_tokens WHERE jugador_id=?",
+                        "DELETE FROM password_resets WHERE jugador_id=?",
+                    ] as $sql_clean) {
+                        try { $db->prepare($sql_clean)->execute([$id]); } catch (Throwable $e) { /* tabla puede no existir */ }
+                    }
+                    // Ahora intentar eliminar el jugador
+                    $db->prepare("DELETE FROM jugadores WHERE id=?")->execute([$id]);
+                    $db->commit();
+                    epl_redirect_ok("Jugador {$jdel['nombre']} {$jdel['apellido']} eliminado.");
+                } catch (PDOException $e) {
+                    if ($db->inTransaction()) $db->rollBack();
+                    if ((int)$e->getCode() === 23000) {
+                        $err = 'No se puede eliminar: el jugador tiene partidos, equipos o inscripciones registradas. Desactivalo en su lugar.';
+                    } else {
+                        $err = 'Error al eliminar: ' . $e->getMessage();
+                    }
+                }
+            }
+        }
+
     } elseif ($action === 'toggle_estado') {
         $id  = (int)($_POST['id'] ?? 0);
         $cur = $_POST['estado'] ?? 'activo';
@@ -370,6 +410,15 @@ $jugadores = $st->fetchAll();
                     <input type="hidden" name="action" value="clave_temporal">
                     <input type="hidden" name="id" value="<?= $j['id'] ?>">
                     <button type="submit" class="btn btn-sm" style="background:#fef9c3;border:1px solid #fbbf24;color:#854d0e;font-size:.7rem;font-weight:700">🔑 Temp</button>
+                  </form>
+                  <!-- Eliminar jugador -->
+                  <form method="post" style="display:inline"
+                        onsubmit="return confirm('⚠ ELIMINAR a <?= epl_h($j['nombre'].' '.$j['apellido']) ?>?\n\nEsta acción NO se puede deshacer.\n\nSi el jugador tiene partidos o inscripciones registradas, no se podrá eliminar — considerá desactivarlo en su lugar.')">
+                    <input type="hidden" name="action" value="eliminar">
+                    <input type="hidden" name="id" value="<?= $j['id'] ?>">
+                    <button type="submit" class="btn btn-sm btn-del-jugador"
+                            title="Eliminar jugador"
+                            style="background:#fff;border:1px solid #fecaca;color:#dc2626;font-size:.85rem;padding:.35rem .55rem;line-height:1">🗑</button>
                   </form>
                 </div>
               </td>
