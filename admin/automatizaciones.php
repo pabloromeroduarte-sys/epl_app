@@ -128,6 +128,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    if ($action === 'enviar_bienvenida_manual') {
+        require_once '../includes/mail_automations.php';
+        $ids = array_filter(array_map('intval', $_POST['jugador_ids'] ?? []));
+        if (empty($ids)) {
+            $err = 'No seleccionaste ningún jugador.';
+        } else {
+            $ph = implode(',', array_fill(0, count($ids), '?'));
+            $stJ = $db->prepare("SELECT id, nombre, apellido, email FROM jugadores WHERE id IN ($ph) AND estado='activo'");
+            $stJ->execute($ids);
+            $jugadores_send = $stJ->fetchAll(PDO::FETCH_ASSOC);
+            $enviados = 0; $fallidos = 0;
+            foreach ($jugadores_send as $jg) {
+                if (empty($jg['email'])) { $fallidos++; continue; }
+                try {
+                    epl_auto_dispatch('registro', $jg);
+                    $enviados++;
+                } catch (Throwable $e) {
+                    $fallidos++;
+                    error_log('[bienvenida_manual] ' . $e->getMessage());
+                }
+            }
+            $msg = "Bienvenida enviada a {$enviados} jugador(es)";
+            if ($fallidos) $msg .= " ({$fallidos} sin email o con error)";
+            epl_redirect_ok($msg . '.', 'automatizaciones.php');
+        }
+    }
+
     if ($action === 'limpiar_log') {
         $auto_id = (int)($_POST['auto_id'] ?? 0);
         if ($auto_id) {
@@ -149,6 +176,16 @@ $tab      = isset($_GET['tab']) && $_GET['tab'] === 'historial' ? 'historial' : 
 $show_form = ($tab === 'automatizaciones') && (isset($_GET['nuevo']) || $editing !== null);
 $lista    = $db->query("SELECT * FROM email_automatizaciones ORDER BY trigger_tipo, activo DESC, nombre")->fetchAll(PDO::FETCH_ASSOC);
 $smtp_ok  = epl_smtp_habilitado();
+// Jugadores recientes (últimos 30 días) para el envío manual de bienvenida
+$jugadores_recientes = $db->query("
+    SELECT id, nombre, apellido, email, created_at
+    FROM jugadores
+    WHERE estado='activo'
+      AND email IS NOT NULL AND email <> ''
+      AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    ORDER BY created_at DESC
+    LIMIT 100
+")->fetchAll(PDO::FETCH_ASSOC);
 $app_name = epl_config_get('smtp_from_name', 'Elite Padel League');
 
 // Datos JS para el editor
@@ -488,10 +525,113 @@ $log_errors = count(array_filter($log_rows, fn($r) => $r['estado'] === 'error'))
           <button type="submit" style="padding:.45rem .65rem;background:#fef2f2;color:#dc2626;border:none;border-radius:8px;font-size:.78rem;cursor:pointer">🗑</button>
         </form>
       </div>
+
+      <?php if ($auto['trigger_tipo'] === 'registro' && $auto['activo']): ?>
+        <!-- Envío manual a jugadores recientes -->
+        <button type="button"
+                onclick="document.getElementById('modalBienvenidaManual').style.display='flex'"
+                style="margin-top:.25rem;width:100%;padding:.5rem .75rem;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border:1px solid #fcd34d;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer">
+          📤 Enviar a jugadores recientes (<?= count($jugadores_recientes) ?>)
+        </button>
+      <?php endif; ?>
     </div>
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
+
+  <!-- Modal: Enviar bienvenida a jugadores recientes -->
+  <div id="modalBienvenidaManual" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99999;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)">
+    <div style="background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(15,23,42,.3);overflow:hidden">
+      <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#fef3c7,#fde68a)">
+        <div>
+          <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:#92400e;margin:0">📤 Enviar bienvenida manualmente</h3>
+          <p style="font-size:.78rem;color:#78350f;margin:.2rem 0 0">Últimos 30 días — selecciona a quién enviarle el correo de bienvenida.</p>
+        </div>
+        <button onclick="document.getElementById('modalBienvenidaManual').style.display='none'" style="background:transparent;border:none;font-size:1.6rem;color:#92400e;cursor:pointer;line-height:1">×</button>
+      </div>
+
+      <?php if (empty($jugadores_recientes)): ?>
+        <div style="padding:2rem;text-align:center;color:var(--gray-400)">
+          <div style="font-size:2.5rem;margin-bottom:.5rem">📭</div>
+          <p style="margin:0;font-weight:600">No hay jugadores registrados en los últimos 30 días.</p>
+        </div>
+      <?php else: ?>
+        <form method="POST" id="formBienvenidaManual" style="display:flex;flex-direction:column;flex:1;min-height:0">
+          <input type="hidden" name="action" value="enviar_bienvenida_manual">
+
+          <div style="padding:.75rem 1.5rem;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;background:#f8fafc">
+            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--navy)">
+              <input type="checkbox" id="bvSelectAll" onchange="bvToggleAll(this)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--navy)">
+              Seleccionar todos
+            </label>
+            <span id="bvCount" style="margin-left:auto;font-size:.78rem;color:var(--gray-500)">0 seleccionados</span>
+          </div>
+
+          <div style="flex:1;overflow-y:auto;padding:.25rem 0">
+            <?php foreach ($jugadores_recientes as $jr):
+              $dias = (int) ((time() - strtotime($jr['created_at'])) / 86400);
+              $dias_lbl = $dias === 0 ? 'hoy' : ($dias === 1 ? 'hace 1 día' : "hace {$dias} días");
+            ?>
+              <label class="bv-row" style="display:flex;align-items:center;gap:.75rem;padding:.65rem 1.5rem;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .15s">
+                <input type="checkbox" name="jugador_ids[]" value="<?= (int)$jr['id'] ?>"
+                       class="bv-check" onchange="bvUpdateCount()"
+                       style="width:18px;height:18px;cursor:pointer;accent-color:var(--navy);flex-shrink:0">
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:700;font-size:.88rem;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                    <?= epl_h($jr['nombre'].' '.$jr['apellido']) ?>
+                  </div>
+                  <div style="font-size:.75rem;color:var(--gray-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                    <?= epl_h($jr['email']) ?>
+                  </div>
+                </div>
+                <span style="font-size:.7rem;font-weight:600;color:#92400e;background:#fef3c7;padding:.2rem .55rem;border-radius:10px;white-space:nowrap;flex-shrink:0"><?= $dias_lbl ?></span>
+              </label>
+            <?php endforeach; ?>
+          </div>
+
+          <div style="padding:1rem 1.5rem;border-top:1px solid #e2e8f0;display:flex;gap:.65rem;background:#fff">
+            <button type="button" onclick="document.getElementById('modalBienvenidaManual').style.display='none'"
+                    style="flex:1;padding:.75rem 1rem;background:var(--gray-100);color:var(--gray-600);border:none;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer;text-transform:uppercase;letter-spacing:.05em">
+              Cancelar
+            </button>
+            <button type="submit" id="bvBtnEnviar" disabled
+                    style="flex:2;padding:.75rem 1rem;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;box-shadow:0 4px 12px rgba(245,158,11,.3);opacity:.5">
+              📤 Enviar bienvenida
+            </button>
+          </div>
+        </form>
+      <?php endif; ?>
+    </div>
+  </div>
+
+  <script>
+    function bvToggleAll(chk) {
+      document.querySelectorAll('.bv-check').forEach(c => { c.checked = chk.checked; });
+      bvUpdateCount();
+    }
+    function bvUpdateCount() {
+      const checked = document.querySelectorAll('.bv-check:checked').length;
+      const cnt = document.getElementById('bvCount');
+      const btn = document.getElementById('bvBtnEnviar');
+      if (cnt) cnt.textContent = checked + ' seleccionado' + (checked === 1 ? '' : 's');
+      if (btn) { btn.disabled = checked === 0; btn.style.opacity = checked === 0 ? .5 : 1; }
+      const all = document.getElementById('bvSelectAll');
+      const total = document.querySelectorAll('.bv-check').length;
+      if (all) { all.checked = (checked > 0 && checked === total); all.indeterminate = (checked > 0 && checked < total); }
+    }
+    document.querySelectorAll('.bv-row').forEach(r => {
+      r.addEventListener('mouseenter', () => r.style.background = '#fffbeb');
+      r.addEventListener('mouseleave', () => r.style.background = '');
+    });
+    var _frm = document.getElementById('formBienvenidaManual');
+    if (_frm) _frm.addEventListener('submit', function(e) {
+      const n = document.querySelectorAll('.bv-check:checked').length;
+      if (n === 0) { e.preventDefault(); return; }
+      if (!confirm('Vas a enviar el correo de bienvenida a ' + n + ' jugador(es). ¿Continuar?')) {
+        e.preventDefault();
+      }
+    });
+  </script>
 
   <!-- Cron info -->
   <details style="max-width:640px">
