@@ -288,7 +288,7 @@ $_host  = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $_baja_link = '';
 if (!$baja_confirmada) {
     $_token = epl_partido_baja_token($id);
-    $_baja_link = "$_proto://$_host/confirmar_baja.php?t=$_token";
+    $_baja_link = "$_proto://$_host/gestion_reserva.php?t=$_token";
 }
 
 // ── Mensaje WhatsApp ──────────────────────────────────────────────────────────

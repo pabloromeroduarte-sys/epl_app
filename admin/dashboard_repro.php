@@ -335,7 +335,7 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           $_proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
           $_host  = $_SERVER['HTTP_HOST'] ?? 'epleague.cl';
           $_token = (!$_confirmada && $_mostrar_bloque) ? epl_partido_baja_token((int)$p['id']) : '';
-          $_link  = $_token ? "$_proto://$_host/confirmar_baja.php?t=$_token" : '';
+          $_link  = $_token ? "$_proto://$_host/gestion_reserva.php?t=$_token" : '';
 
           // ── Construir mensaje WhatsApp ──────────────────────────────
           $_msg = "Hola, te hablo de Elite Padel League.\n\n";
