@@ -328,14 +328,12 @@ if ($val['telefono']) {
         <div class="grid-2">
           <div class="form-group">
             <label class="form-label" for="comuna">Comuna</label>
-            <input type="text" name="comuna" id="comuna" class="form-control"
-                   value="<?= epl_h($val['comuna']) ?>"
-                   list="lista_comunas" placeholder="Escribe tu comuna..." autocomplete="off">
-            <datalist id="lista_comunas">
+            <select name="comuna" id="comuna" class="form-control">
+              <option value="">— Selecciona —</option>
               <?php foreach ($comunas as $c): ?>
-                <option value="<?= epl_h($c) ?>">
+                <option value="<?= epl_h($c) ?>" <?= $val['comuna']===$c?'selected':'' ?>><?= epl_h($c) ?></option>
               <?php endforeach; ?>
-            </datalist>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label" for="profesion">Sector / Profesión</label>
@@ -373,14 +371,12 @@ if ($val['telefono']) {
         <div class="grid-2">
           <div class="form-group">
             <label class="form-label" for="pala">Marca de pala</label>
-            <input type="text" name="pala" id="pala" class="form-control"
-                   value="<?= epl_h($val['pala']) ?>"
-                   list="lista_palas" placeholder="Marca / Modelo" autocomplete="off">
-            <datalist id="lista_palas">
+            <select name="pala" id="pala" class="form-control">
+              <option value="">— Selecciona —</option>
               <?php foreach ($marcas_pala as $mp): ?>
-                <option value="<?= epl_h($mp) ?>">
+                <option value="<?= epl_h($mp) ?>" <?= $val['pala']===$mp?'selected':'' ?>><?= epl_h($mp) ?></option>
               <?php endforeach; ?>
-            </datalist>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label" for="talla">Talla de camiseta</label>
