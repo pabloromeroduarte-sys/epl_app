@@ -300,12 +300,23 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           // Mostrar bloque cuando: hay algo de baja O necesita asignar cancha nueva
           $_mostrar_bloque = $_tiene_original || $_necesita_cancha;
 
-          // Contactos: vienen de recinto_original_id (ya traídos por el JOIN)
+          // Contactos: prueba en el orden: recinto_original_id → recinto_id (subiendo la jerarquía)
+          // Si la cancha exacta no tiene contactos, busca en la sede / club padre.
           $_contactos = [];
           for ($i = 1; $i <= 3; $i++) {
             if (!empty($p["contacto{$i}_telefono"])) {
               $_contactos[] = ['nombre' => $p["contacto{$i}_nombre"] ?? '', 'telefono' => $p["contacto{$i}_telefono"]];
             }
+          }
+          // Fallback 1: subir por la jerarquía desde recinto_original_id
+          if (empty($_contactos) && !empty($p['recinto_original_id'])) {
+            $_h = epl_recinto_contactos_jerarquico((int)$p['recinto_original_id']);
+            if (!empty($_h['contactos'])) $_contactos = $_h['contactos'];
+          }
+          // Fallback 2: usar recinto_id (cancha asignada actual) y subir la jerarquía
+          if (empty($_contactos) && !empty($p['recinto_id'])) {
+            $_h = epl_recinto_contactos_jerarquico((int)$p['recinto_id']);
+            if (!empty($_h['contactos'])) $_contactos = $_h['contactos'];
           }
 
           // Token + link (baja + cancha en una sola página)
