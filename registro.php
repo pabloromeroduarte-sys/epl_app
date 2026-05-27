@@ -11,7 +11,7 @@ $error  = '';
 $ok     = '';
 $campos = ['email','nombre','apellido','alias','rut','telefono',
            'fecha_nacimiento','sexo','comuna','profesion',
-           'nivel','lado','pala','talla','frecuencia_juego'];
+           'nivel','lado','pala','frecuencia_juego'];
 $val    = array_fill_keys($campos, '');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($campos as $c) {
@@ -107,8 +107,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $comuna   = trim($_POST['comuna']   ?? '') ?: null;
     $profesion= trim($_POST['profesion']?? '') ?: null;
     $pala     = trim($_POST['pala']     ?? '') ?: null;
-    $talla    = in_array($_POST['talla'] ?? '', ['XS','S','M','L','XL','XXL','XXXL'])
-                ? $_POST['talla'] : null;
     $frec     = in_array($_POST['frecuencia_juego'] ?? '',
                     ['1_semana','2_semana','3_o_mas','ocasional'])
                 ? $_POST['frecuencia_juego'] : null;
@@ -130,6 +128,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'La contraseña debe tener al menos 8 caracteres.';
     } elseif ($password !== $confirma) {
         $error = 'Las contraseñas no coinciden.';
+    } elseif (!$fnac) {
+        $error = 'La fecha de nacimiento es obligatoria.';
+    } elseif (!$sexo) {
+        $error = 'Debes indicar el sexo.';
+    } elseif (!$telefono) {
+        $error = 'El teléfono / WhatsApp es obligatorio.';
+    } elseif (!$comuna) {
+        $error = 'Debes seleccionar tu comuna.';
+    } elseif (!$profesion) {
+        $error = 'Debes seleccionar tu sector / profesión.';
+    } elseif (!$lado) {
+        $error = 'Debes indicar tu lado de juego.';
+    } elseif (!$pala) {
+        $error = 'Debes seleccionar la marca de tu pala.';
+    } elseif (!$frec) {
+        $error = 'Debes indicar tu frecuencia de juego.';
     } else {
         $db = epl_db();
         $existe = $db->prepare("SELECT id FROM jugadores WHERE email = ?");
@@ -141,13 +155,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 INSERT INTO jugadores
                     (email, password, nombre, apellido, alias, rut, telefono,
                      fecha_nacimiento, sexo, comuna, profesion, nivel, lado, pala,
-                     talla, frecuencia_juego, estado, rol)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'activo','jugador')"
+                     frecuencia_juego, estado, rol)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'activo','jugador')"
             )->execute([
                 $email, epl_hash_password($password),
                 $nombre, $apellido, $alias, $rut, $telefono,
                 $fnac, $sexo, $comuna, $profesion, $nivel, $lado, $pala,
-                $talla, $frec,
+                $frec,
             ]);
 
             // Correo de bienvenida automático
@@ -290,14 +304,14 @@ if ($val['telefono']) {
 
         <div class="grid-2">
           <div class="form-group">
-            <label class="form-label" for="fecha_nacimiento">Fecha de nacimiento</label>
+            <label class="form-label" for="fecha_nacimiento">Fecha de nacimiento *</label>
             <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" class="form-control"
-                   value="<?= epl_h($val['fecha_nacimiento']) ?>">
+                   value="<?= epl_h($val['fecha_nacimiento']) ?>" required>
           </div>
           <div class="form-group">
-            <label class="form-label" for="sexo">Sexo</label>
-            <select name="sexo" id="sexo" class="form-control">
-              <option value="">— No indicar —</option>
+            <label class="form-label" for="sexo">Sexo *</label>
+            <select name="sexo" id="sexo" class="form-control" required>
+              <option value="">— Selecciona —</option>
               <option value="M"    <?= $val['sexo']==='M'   ?'selected':'' ?>>Masculino</option>
               <option value="F"    <?= $val['sexo']==='F'   ?'selected':'' ?>>Femenino</option>
               <option value="otro" <?= $val['sexo']==='otro'?'selected':'' ?>>Otro</option>
@@ -306,7 +320,7 @@ if ($val['telefono']) {
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="tel_num">Teléfono / WhatsApp</label>
+          <label class="form-label" for="tel_num">Teléfono / WhatsApp *</label>
           <div class="tel-wrap">
             <select id="tel_cc" class="form-control" aria-label="Código de país">
               <option value="+56" <?= $tel_cc==='+56'?'selected':'' ?>>🇨🇱 +56</option>
@@ -319,7 +333,7 @@ if ($val['telefono']) {
             </select>
             <input type="tel" id="tel_num" class="form-control"
                    value="<?= epl_h($tel_num) ?>"
-                   placeholder="9 1234 5678" inputmode="tel" autocomplete="tel-national">
+                   placeholder="9 1234 5678" inputmode="tel" autocomplete="tel-national" required>
           </div>
           <input type="hidden" name="telefono" id="telefono" value="<?= epl_h($val['telefono']) ?>">
           <span class="form-hint" id="tel_hint">Formato Chile: 9 XXXX XXXX</span>
@@ -327,8 +341,8 @@ if ($val['telefono']) {
 
         <div class="grid-2">
           <div class="form-group">
-            <label class="form-label" for="comuna">Comuna</label>
-            <select name="comuna" id="comuna" class="form-control">
+            <label class="form-label" for="comuna">Comuna *</label>
+            <select name="comuna" id="comuna" class="form-control" required>
               <option value="">— Selecciona —</option>
               <?php foreach ($comunas as $c): ?>
                 <option value="<?= epl_h($c) ?>" <?= $val['comuna']===$c?'selected':'' ?>><?= epl_h($c) ?></option>
@@ -336,8 +350,8 @@ if ($val['telefono']) {
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" for="profesion">Sector / Profesión</label>
-            <select name="profesion" id="profesion" class="form-control">
+            <label class="form-label" for="profesion">Sector / Profesión *</label>
+            <select name="profesion" id="profesion" class="form-control" required>
               <option value="">— Selecciona —</option>
               <?php foreach ($profesiones as $pr): ?>
                 <option value="<?= epl_h($pr) ?>" <?= $val['profesion']===$pr?'selected':'' ?>><?= epl_h($pr) ?></option>
@@ -351,16 +365,16 @@ if ($val['telefono']) {
 
         <div class="grid-2">
           <div class="form-group">
-            <label class="form-label" for="nivel">Categoría</label>
-            <select name="nivel" id="nivel" class="form-control">
+            <label class="form-label" for="nivel">Categoría *</label>
+            <select name="nivel" id="nivel" class="form-control" required>
               <!-- Options inserted by JS based on sexo -->
             </select>
             <span class="form-hint" id="nivel_hint"></span>
           </div>
           <div class="form-group">
-            <label class="form-label" for="lado">Lado de juego</label>
-            <select name="lado" id="lado" class="form-control">
-              <option value="">— No definido —</option>
+            <label class="form-label" for="lado">Lado de juego *</label>
+            <select name="lado" id="lado" class="form-control" required>
+              <option value="">— Selecciona —</option>
               <option value="derecha" <?= $val['lado']==='derecha'?'selected':'' ?>>Drive</option>
               <option value="reves"   <?= $val['lado']==='reves'  ?'selected':'' ?>>Revés</option>
               <option value="ambos"   <?= $val['lado']==='ambos'  ?'selected':'' ?>>Ambos</option>
@@ -370,8 +384,8 @@ if ($val['telefono']) {
 
         <div class="grid-2">
           <div class="form-group">
-            <label class="form-label" for="pala">Marca de pala</label>
-            <select name="pala" id="pala" class="form-control">
+            <label class="form-label" for="pala">Marca de pala *</label>
+            <select name="pala" id="pala" class="form-control" required>
               <option value="">— Selecciona —</option>
               <?php foreach ($marcas_pala as $mp): ?>
                 <option value="<?= epl_h($mp) ?>" <?= $val['pala']===$mp?'selected':'' ?>><?= epl_h($mp) ?></option>
@@ -379,25 +393,15 @@ if ($val['telefono']) {
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" for="talla">Talla de camiseta</label>
-            <select name="talla" id="talla" class="form-control">
-              <option value="">— No indicar —</option>
-              <?php foreach (['XS','S','M','L','XL','XXL','XXXL'] as $t): ?>
-                <option value="<?= $t ?>" <?= $val['talla']===$t?'selected':'' ?>><?= $t ?></option>
-              <?php endforeach; ?>
+            <label class="form-label" for="frecuencia_juego">Frecuencia de juego *</label>
+            <select name="frecuencia_juego" id="frecuencia_juego" class="form-control" required>
+              <option value="">— Selecciona —</option>
+              <option value="1_semana"  <?= $val['frecuencia_juego']==='1_semana' ?'selected':'' ?>>1 vez por semana</option>
+              <option value="2_semana"  <?= $val['frecuencia_juego']==='2_semana' ?'selected':'' ?>>2 veces por semana</option>
+              <option value="3_o_mas"   <?= $val['frecuencia_juego']==='3_o_mas'  ?'selected':'' ?>>3 o más por semana</option>
+              <option value="ocasional" <?= $val['frecuencia_juego']==='ocasional'?'selected':'' ?>>Ocasional</option>
             </select>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="frecuencia_juego">Frecuencia de juego</label>
-          <select name="frecuencia_juego" id="frecuencia_juego" class="form-control">
-            <option value="">— No indicar —</option>
-            <option value="1_semana"  <?= $val['frecuencia_juego']==='1_semana' ?'selected':'' ?>>1 vez por semana</option>
-            <option value="2_semana"  <?= $val['frecuencia_juego']==='2_semana' ?'selected':'' ?>>2 veces por semana</option>
-            <option value="3_o_mas"   <?= $val['frecuencia_juego']==='3_o_mas'  ?'selected':'' ?>>3 o más por semana</option>
-            <option value="ocasional" <?= $val['frecuencia_juego']==='ocasional'?'selected':'' ?>>Ocasional</option>
-          </select>
         </div>
 
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;font-size:1rem;padding:.85rem;margin-top:.75rem">
