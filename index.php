@@ -362,10 +362,10 @@ $stats = [
             </div>
 
             <div class="tt-grid mb-8">
-                <div><img src="<?= epl_url('assets/img/landing/tercer-tiempo-1.jpg') ?>" alt="Comunidad Elite Padel League compartiendo después del partido" loading="lazy"></div>
-                <div><img src="<?= epl_url('assets/img/landing/accion-padel.jpg') ?>" alt="Acción en cancha durante torneo EPL" loading="lazy"></div>
-                <div><img src="<?= epl_url('assets/img/landing/tercer-tiempo-2.jpg') ?>" alt="Tercer Tiempo Elite Padel League — networking en sede" loading="lazy"></div>
-                <div><img src="<?= epl_url('assets/img/landing/tercer-tiempo-3.jpg') ?>" alt="Brindis y celebración fin de fecha EPL" loading="lazy"></div>
+                <div><img src="<?= epl_url('assets/img/landing/tercer-tiempo-1.jpg?v=2') ?>" alt="Comunidad Elite Padel League compartiendo después del partido" loading="lazy"></div>
+                <div><img src="<?= epl_url('assets/img/landing/accion-padel.png?v=2') ?>" alt="Acción en cancha durante torneo EPL" loading="lazy"></div>
+                <div><img src="<?= epl_url('assets/img/landing/tercer-tiempo-2.png?v=2') ?>" alt="Tercer Tiempo Elite Padel League — networking en sede" loading="lazy"></div>
+                <div><img src="<?= epl_url('assets/img/landing/tercer-tiempo-3.png?v=2') ?>" alt="Brindis y celebración fin de fecha EPL" loading="lazy"></div>
             </div>
 
             <div class="text-center">

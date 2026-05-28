@@ -18,12 +18,19 @@ $totals = [
 
 $solicitudes = $db->query("
     SELECT sr.*, j.nombre AS sol_nombre, j.apellido AS sol_apellido,
-           el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+           el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+           p.fecha_programada, p.recinto_id, p.liga_id,
+           r.nombre AS recinto_nombre, rs.nombre AS recinto_sup,
+           r.contacto1_nombre, r.contacto1_telefono,
+           r.contacto2_nombre, r.contacto2_telefono,
+           r.contacto3_nombre, r.contacto3_telefono
     FROM solicitudes_reprogramacion sr
     JOIN jugadores j ON j.id = sr.solicitante_id
     JOIN partidos p  ON p.id = sr.partido_id
     JOIN equipos el  ON el.id = p.equipo_local_id
     JOIN equipos ev  ON ev.id = p.equipo_visitante_id
+    LEFT JOIN recintos r ON r.id = p.recinto_id
+    LEFT JOIN recintos rs ON rs.id = r.superior_id
     WHERE sr.estado = 'pendiente'
     ORDER BY sr.created_at DESC
 ")->fetchAll();
@@ -116,8 +123,9 @@ _flatRecSelect($_rec_roots, $_rec_children, 0, $recintos_select);
           Solicitudes de reprogramación <span style="color:var(--red)">(<?= count($solicitudes) ?>)</span>
         </h3>
       </div>
-      <div class="card-body">
-        <?php foreach ($solicitudes as $s): ?>
+              <?php foreach ($solicitudes as $s): 
+          $es_sin_fecha = empty($s['fecha_propuesta']) || $s['rival_no_responde'];
+        ?>
         <div style="padding:.85rem 0;border-bottom:1px solid var(--gray-100)">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
             <div>
@@ -129,15 +137,94 @@ _flatRecSelect($_rec_roots, $_rec_children, 0, $recintos_select);
                 Fecha propuesta: <?= $s['fecha_propuesta'] ? date('d/m/Y H:i', strtotime($s['fecha_propuesta'])) : '—' ?>
               </div>
               <div style="font-size:.78rem;color:var(--gray-600)">Motivo: <?= epl_h($s['motivo']) ?></div>
+              <?php if ($es_sin_fecha): ?>
+                <div style="margin-top:.45rem;padding:.45rem .75rem;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:4px;font-size:.75rem;color:#92400e;font-weight:600">
+                  ⚠️ Solicita reprogramar SIN FECHA. Se debe liberar la cancha original:
+                  <div style="margin-top:.2rem;font-weight:700;font-size:.72rem">
+                    <?php if ($s['fecha_programada']): ?>📅 <?= date('d/m/Y H:i', strtotime($s['fecha_programada'])) ?><?php endif; ?>
+                    <?php if ($s['recinto_nombre']): ?> · 🏟️ <?= epl_h($s['recinto_nombre']) ?><?php endif; ?>
+                  </div>
+                </div>
+                <?php
+                  $contactos = [];
+                  for ($i = 1; $i <= 3; $i++) {
+                      if (!empty($s["contacto{$i}_telefono"])) {
+                          $contactos[] = ['nombre' => $s["contacto{$i}_nombre"] ?? '', 'telefono' => $s["contacto{$i}_telefono"]];
+                      }
+                  }
+                  if (empty($contactos) && !empty($s['recinto_id'])) {
+                      $h = epl_recinto_contactos_jerarquico((int)$s['recinto_id']);
+                      if (!empty($h['contactos'])) {
+                          $contactos = $h['contactos'];
+                      }
+                  }
+                  if (empty($contactos) && !empty($s['liga_id'])) {
+                      $h = epl_recintos_recomendados_liga((int)$s['liga_id']);
+                      if (!empty($h['contactos'])) {
+                          $contactos = $h['contactos'];
+                      }
+                  }
+                  if (!empty($contactos)) {
+                      $fo_lbl = ($s['fecha_programada'] && date('Y-m-d', strtotime($s['fecha_programada'])) !== '2026-12-31') 
+                          ? date('d/m/Y H:i', strtotime($s['fecha_programada'])) 
+                          : null;
+                      $rec_orig = $s['recinto_nombre'];
+                      $rec_orig_sup = $s['recinto_sup'];
+                      $rec_orig_full = $rec_orig ? $rec_orig . ($rec_orig_sup ? " ($rec_orig_sup)" : '') : null;
+                      
+                      $wsp_msg = "Hola, te hablo de Elite Padel League.\n\n"
+                               . "Necesitamos DAR DE BAJA esta reserva porque el partido se reprogramó sin fecha:\n";
+                      if ($fo_lbl)        $wsp_msg .= "📅 $fo_lbl\n";
+                      if ($rec_orig_full) $wsp_msg .= "🏟️ $rec_orig_full\n";
+                      $wsp_msg .= "👥 {$s['local_nombre']} vs {$s['visitante_nombre']}\n\n"
+                                . "Por favor, confírmanos cuando esté liberada.\n\n¡Gracias!";
+                      
+                      echo '<div style="margin-top:.45rem;display:flex;flex-wrap:wrap;gap:.35rem">';
+                      foreach ($contactos as $c) {
+                          $tel = preg_replace('/[^0-9]/', '', $c['telefono']);
+                          if (!$tel) continue;
+                          if (substr($tel, 0, 2) !== '56') $tel = '56' . $tel;
+                          $wsp_url = "https://wa.me/{$tel}?text=" . rawurlencode($wsp_msg);
+                          ?>
+                          <a href="<?= $wsp_url ?>" target="_blank" rel="noopener"
+                             style="display:inline-flex;align-items:center;gap:.3rem;background:#25D366;color:#fff;padding:.3rem .6rem;border-radius:6px;font-size:.68rem;font-weight:800;text-decoration:none">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M17.6 6.32A7.85 7.85 0 0012.05 4a7.94 7.94 0 00-6.88 11.93L4 20l4.21-1.1a7.95 7.95 0 003.84.98h.01a7.94 7.94 0 005.54-13.56M12.05 18.5a6.62 6.62 0 01-3.36-.92l-.24-.14-2.5.66.67-2.44-.16-.25a6.59 6.59 0 0110.21-8.16 6.55 6.55 0 011.93 4.66 6.62 6.62 0 01-6.55 6.59"/></svg>
+                            <?= epl_h($c['nombre'] ?: 'WhatsApp') ?>
+                          </a>
+                          <?php
+                      }
+                      echo '</div>';
+                  } else {
+                      ?>
+                      <div style="font-size:.68rem;color:#dc2626;margin-top:.45rem;font-weight:700">
+                        ⚠️ Sin contactos del club configurados.
+                      </div>
+                      <?php
+                  }
+                ?>
+              <?php endif; ?>
             </div>
             <div style="display:flex;gap:.5rem;flex-shrink:0;flex-direction:column;align-items:flex-end">
               <?php if ($s['rival_no_responde']): ?>
                 <span class="badge badge-walkover" style="font-size:.65rem">⚠ Rival no respondió</span>
               <?php endif; ?>
               <div style="display:flex;gap:.4rem">
-                <button onclick="showAprobar(<?= $s['id'] ?>, '<?= epl_h($s['fecha_propuesta']) ?>')"
-                        class="btn btn-primary btn-sm">Aprobar</button>
-                <form method="post" action="api_reprogramacion.php" style="display:inline">
+                <?php if ($es_sin_fecha): ?>
+                  <form method="post" action="api_reprogramacion.php" style="display:inline"
+                        data-confirm="¿Aprobar esta reprogramación sin fecha? El partido quedará 'A coordinar' y se liberará la cancha original."
+                        data-confirm-ok="Sí, liberar cancha">
+                    <input type="hidden" name="id" value="<?= $s['id'] ?>">
+                    <input type="hidden" name="accion" value="aprobar">
+                    <input type="hidden" name="fecha_aprobada" value="">
+                    <button type="submit" class="btn btn-primary btn-sm" style="background:#d97706;border-color:#d97706;color:#fff;font-weight:700">Aprobar (Lib.)</button>
+                  </form>
+                <?php else: ?>
+                  <button onclick="showAprobar(<?= $s['id'] ?>, '<?= epl_h($s['fecha_propuesta']) ?>')"
+                          class="btn btn-primary btn-sm">Aprobar</button>
+                <?php endif; ?>
+                <form method="post" action="api_reprogramacion.php" style="display:inline"
+                      data-confirm="¿Rechazar la solicitud de reprogramación?"
+                      data-confirm-ok="Sí, rechazar">
                   <input type="hidden" name="id" value="<?= $s['id'] ?>">
                   <input type="hidden" name="accion" value="rechazar">
                   <button type="submit" class="btn btn-sm" style="border:2px solid var(--red);color:var(--red)">Rechazar</button>
@@ -145,7 +232,6 @@ _flatRecSelect($_rec_roots, $_rec_children, 0, $recintos_select);
               </div>
             </div>
           </div>
-        </div>
         <?php endforeach; ?>
       </div>
     </div>

@@ -146,8 +146,18 @@ require_once __DIR__ . '/includes/header.php';
               <div style="color:#475569;font-size:.85rem;margin-bottom:.4rem;line-height:1.45"><?= epl_h($n['mensaje']) ?></div>
               <div style="color:#94a3b8;font-size:.72rem"><?= date('d/m/Y H:i', strtotime($n['created_at'])) ?></div>
             </div>
-            <?php if ($n['url']): ?>
-              <a href="<?= epl_h($n['url']) ?>"
+            <?php if ($n['url']): 
+              $target_url = $n['url'];
+              if ($n['tipo'] === 'reprogramacion' || str_contains($target_url, 'reprogramar.php') || str_contains($target_url, 'mis_partidos.php') || (str_contains($target_url, 'mis_torneos.php') && (str_contains(strtolower($n['titulo']), 'reprogramaci') || str_contains(strtolower($n['mensaje']), 'reprogramaci')))) {
+                  $es_admin = ($jugador['rol'] ?? '') === 'admin';
+                  if ($es_admin) {
+                      $target_url = epl_url('admin/dashboard_repro.php?tab=solicitudes');
+                  } else {
+                      $target_url = epl_url('reprogramar.php#mis-reprogramaciones');
+                  }
+              }
+            ?>
+              <a href="<?= epl_h($target_url) ?>"
                  onclick="marcarLeida(<?= $n['id'] ?>)"
                  style="flex-shrink:0;background:#1C2F48;color:#C9A762;padding:.4rem .9rem;border-radius:8px;font-size:.75rem;font-weight:700;text-decoration:none;white-space:nowrap;align-self:flex-start">Ver →</a>
             <?php endif; ?>

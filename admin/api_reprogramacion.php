@@ -83,7 +83,7 @@ if ($accion === 'aprobar') {
         $msg = 'Tu partido fue reprogramado para el ' . $fecha_fmt;
         if ($cancha_aprobada) $msg .= ' en ' . $cancha_aprobada;
         $msg .= '. Revisa tus partidos para más detalles.';
-        epl_notif_crear((int)$j['id'], 'reprogramacion', '📅 Partido reprogramado', $msg, epl_url('mis_partidos.php'), true);
+        epl_notif_crear((int)$j['id'], 'reprogramacion', '📅 Partido reprogramado', $msg, epl_url('reprogramar.php#mis-reprogramaciones'), true);
         epl_mail_partido_visual(
             (int)$j['id'],
             epl_mail_asunto('📅 Partido reprogramado', $pnombres['local_nombre'] ?? null, $pnombres['visitante_nombre'] ?? null, $pnombres['jornada'] ?? null),
@@ -92,7 +92,7 @@ if ($accion === 'aprobar') {
             $filas_aprob,
             'El administrador aprobó la reprogramación.',
             '✅ Tu partido quedó confirmado para la nueva fecha. Recuerda llegar 10 minutos antes.',
-            epl_url('mis_partidos.php')
+            epl_url('reprogramar.php#mis-reprogramaciones')
         );
     }
 
@@ -109,7 +109,7 @@ if ($accion === 'aprobar') {
         epl_notif_crear((int)$sol['solicitante_id'], 'reprogramacion',
             '❌ Reprogramación no aprobada',
             'Tu solicitud de reprogramación no fue aprobada. Coordina directamente con tu rival.',
-            epl_url('mis_partidos.php')
+            epl_url('reprogramar.php#mis-reprogramaciones')
         );
     }
 

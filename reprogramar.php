@@ -267,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && ($_POST['action'] ?? '')
             : "{$solic_nombre} asignó una nueva fecha al partido: {$fecha_str}";
 
         epl_notif_partido($partido_id, 'reprogramacion', $titulo, $msg,
-            epl_url('mis_torneos.php'), true, [(int)$jugador['id']], true);
+            epl_url('reprogramar.php#mis-reprogramaciones'), true, [(int)$jugador['id']], true);
 
         epl_redirect_ok($auto_aprobada ? 'reprog_auto_ok' : 'fecha_asignada_ok',
             'reprogramar.php#mis-reprogramaciones');
@@ -390,7 +390,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
             $subtitulo    = 'El partido fue reprogramado por mutuo acuerdo.';
 
             epl_notif_partido($partido_id, 'reprogramacion', $titulo_notif, $msg_notif,
-                epl_url('mis_torneos.php'), true, [], true);
+                epl_url('reprogramar.php#mis-reprogramaciones'), true, [], true);
 
             $st_todos = $db->prepare("
                 SELECT DISTINCT j.id FROM partidos p
@@ -408,7 +408,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
             foreach ($ids_todos as $jid_r) {
                 epl_mail_partido_visual((int)$jid_r, $asunto_repr,
                     $partido['local_nombre'], $partido['visitante_nombre'],
-                    $filas_repr, $subtitulo, $tip_email, epl_url('mis_torneos.php'));
+                    $filas_repr, $subtitulo, $tip_email, epl_url('reprogramar.php#mis-reprogramaciones'));
             }
 
             epl_redirect_ok('reprog_auto_ok', 'reprogramar.php#mis-reprogramaciones');
@@ -418,7 +418,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 
             epl_notif_partido($partido_id, 'reprogramacion',
                 "📅 Solicitud de reprogramación: {$partido_str}", $mensaje_notif,
-                epl_url('mis_torneos.php'), true, [(int)$jugador['id']], true);
+                epl_url('reprogramar.php#mis-reprogramaciones'), true, [(int)$jugador['id']], true);
 
             $st_jug_repr = $db->prepare("
                 SELECT DISTINCT j.id FROM partidos p
@@ -438,7 +438,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
                     $partido['local_nombre'], $partido['visitante_nombre'],
                     $filas_repr, "{$solicitante_nombre} solicitó reprogramar el partido.",
                     '⏳ El administrador revisará la solicitud y confirmará la nueva fecha.',
-                    epl_url('mis_torneos.php'));
+                    epl_url('reprogramar.php#mis-reprogramaciones'));
             }
 
             epl_redirect_ok('solicitud_ok', 'reprogramar.php#mis-reprogramaciones');

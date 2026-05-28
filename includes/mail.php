@@ -176,12 +176,24 @@ function epl_mail_partido_visual(
     if (!epl_smtp_habilitado()) return;
 
     $db = epl_db();
-    $j  = $db->prepare('SELECT email, nombre, apellido FROM jugadores WHERE id = ?');
+    $j  = $db->prepare('SELECT email, nombre, apellido, rol FROM jugadores WHERE id = ?');
     $j->execute([$jugador_id]);
     $jug = $j->fetch(PDO::FETCH_ASSOC);
     if (!$jug || empty($jug['email'])) return;
 
     $nombre = htmlspecialchars(trim($jug['nombre'] . ' ' . $jug['apellido']), ENT_QUOTES, 'UTF-8');
+
+    // Auto-override URL for rescheduling in emails
+    if (str_contains(strtolower($asunto), 'reprogramar') || str_contains(strtolower($asunto), 'reprogramación') || str_contains(strtolower($asunto), 'reprogramado') || str_contains($url, 'reprogramar.php') || str_contains($url, 'mis_partidos.php')) {
+        if (($jug['rol'] ?? '') === 'admin') {
+            $url = 'admin/dashboard_repro.php?tab=solicitudes';
+            $btn_texto = 'Ver Solicitudes';
+        } else {
+            $url = 'reprogramar.php#mis-reprogramaciones';
+            $btn_texto = 'Ver Reprogramaciones';
+        }
+    }
+
     $link   = $url !== '' ? $url : epl_url('notificaciones.php');
     if ($link !== '' && !str_starts_with($link, 'http')) {
         $link = epl_url(ltrim($link, '/'));

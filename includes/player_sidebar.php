@@ -174,8 +174,32 @@ $_ranking = $_rk->fetch();
   </div>
 </nav>
 
+<style>
+/* Reset controls to prevent iOS Safari fixed position bug */
+.dash-bottom-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  z-index: 99999 !important;
+  transform: none !important;
+  -webkit-transform: none !important;
+  will-change: auto !important;
+  -webkit-backface-visibility: visible !important;
+  backface-visibility: visible !important;
+}
+</style>
+
 <script>
 (function(){
+  // FIX iOS: mover el bottom-nav directamente al <body> para que position:fixed funcione siempre
+  function moverAlBody() {
+    var nav = document.querySelector('.dash-bottom-nav:not(.dash-bottom-nav--admin)');
+    if (nav && nav.parentNode !== document.body) document.body.appendChild(nav);
+  }
+
   // Muestra badge "!" en App si notificaciones no están activadas o la app no está instalada
   function checkAppBadge() {
     var needsBadge = false;
@@ -194,10 +218,16 @@ $_ranking = $_rk->fetch();
       if (bb) bb.style.display = 'flex';
     }
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', checkAppBadge);
-  } else {
+
+  function init() {
+    moverAlBody();
     checkAppBadge();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();
 </script>

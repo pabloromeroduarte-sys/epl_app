@@ -668,6 +668,18 @@ function epl_notif_crear(int $jugador_id, string $tipo, string $titulo, string $
         epl_ensure_inscripciones_schema();
         $db = epl_db();
 
+        // Auto-override URL for rescheduling
+        if ($tipo === 'reprogramacion' || str_contains($url, 'reprogramar.php') || str_contains($url, 'mis_partidos.php') || (str_contains($url, 'mis_torneos.php') && (str_contains(strtolower($titulo), 'reprogramaci') || str_contains(strtolower($mensaje), 'reprogramaci')))) {
+            $stRol = $db->prepare("SELECT rol FROM jugadores WHERE id = ?");
+            $stRol->execute([$jugador_id]);
+            $recip_rol = $stRol->fetchColumn();
+            if ($recip_rol === 'admin') {
+                $url = epl_url('admin/dashboard_repro.php?tab=solicitudes');
+            } else {
+                $url = epl_url('reprogramar.php#mis-reprogramaciones');
+            }
+        }
+
         // ── Dedup: evitar notif idéntica al mismo jugador en los últimos 10 minutos ──
         // Previene que múltiples ediciones consecutivas envíen N notificaciones iguales
         $stDup = $db->prepare("

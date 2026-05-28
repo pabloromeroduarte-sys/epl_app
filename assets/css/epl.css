@@ -1298,17 +1298,16 @@ button { cursor: pointer; font-family: inherit; border: none; }
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid rgba(255,255,255,0.12);
-  z-index: 1000;
+  z-index: 99999;
   padding-bottom: env(safe-area-inset-bottom);
   display: none;
   box-shadow: 0 -4px 24px rgba(0,0,0,0.35);
-  /* Forzar capa propia para evitar bug iOS Safari con position:fixed */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  will-change: transform;
-  /* iOS PWA standalone: anclar al borde físico */
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
+  /* Reset controls to prevent iOS Safari fixed position bug */
+  -webkit-transform: none;
+  transform: none;
+  will-change: auto;
+  -webkit-backface-visibility: visible;
+  backface-visibility: visible;
 }
 @media (max-width: 992px) {
   .dash-layout { grid-template-columns: 1fr; }

@@ -258,6 +258,20 @@ function toggleTools() {
 
 <style>
 /* ═══════════════ Bottom nav simplificada ═══════════════ */
+.dash-bottom-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  z-index: 99999 !important;
+  transform: none !important;
+  -webkit-transform: none !important;
+  will-change: auto !important;
+  -webkit-backface-visibility: visible !important;
+  backface-visibility: visible !important;
+}
 .bn-inner {
   display: flex; align-items: stretch;
   padding: 0 .25rem;
