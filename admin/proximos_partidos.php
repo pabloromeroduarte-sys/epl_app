@@ -384,6 +384,9 @@ require_once '../includes/header.php';
       <a href="proximos_partidos.php" style="text-decoration:none;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:.5rem .9rem;border-radius:7px;transition:all .15s;display:inline-flex;align-items:center;gap:.35rem;<?= $cur==='proximos_partidos.php'?'background:#1c2f48;color:#fff;box-shadow:0 2px 6px rgba(28,47,72,.15)':'color:#64748b' ?>">
         🔜 Próximos Partidos
       </a>
+      <a href="cargar_resultados.php" style="text-decoration:none;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:.5rem .9rem;border-radius:7px;transition:all .15s;display:inline-flex;align-items:center;gap:.35rem;<?= $cur==='cargar_resultados.php'?'background:#1c2f48;color:#fff;box-shadow:0 2px 6px rgba(28,47,72,.15)':'color:#64748b' ?>">
+        📝 Registrar Resultados
+      </a>
     </div>
 
     <!-- ── FILTROS (colapsables en móvil) ───────── -->

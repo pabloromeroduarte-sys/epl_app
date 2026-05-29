@@ -22,19 +22,43 @@ $bloqueado_reprogs   = false;
 $partidos_reprogramados_actuales = []; // Para mostrar al usuario cuáles bloquean
 
 if ($equipo) {
+    // Consultar todos los partidos reprogramados del equipo, incluyendo quién lo solicitó
     $stCnt = $db->prepare("
         SELECT p.id, p.jornada, p.fecha_programada,
-               el.nombre AS local_nombre, ev.nombre AS visitante_nombre
+               el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+               sr.solicitante_id
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        LEFT JOIN solicitudes_reprogramacion sr ON sr.id = (
+            SELECT sr2.id 
+            FROM solicitudes_reprogramacion sr2
+            WHERE sr2.partido_id = p.id AND sr2.estado = 'aprobada'
+            ORDER BY sr2.id DESC LIMIT 1
+        )
         WHERE p.liga_id = ?
           AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
           AND p.estado = 'reprogramado'
         ORDER BY p.jornada ASC
     ");
     $stCnt->execute([$liga['id'], $equipo['id'], $equipo['id']]);
-    $partidos_reprogramados_actuales = $stCnt->fetchAll();
+    $todos_reprogramados = $stCnt->fetchAll();
+
+    // Filtrar solo los que fueron solicitados por nuestro equipo
+    $partidos_reprogramados_actuales = [];
+    foreach ($todos_reprogramados as $p) {
+        if (empty($p['solicitante_id'])) {
+            continue;
+        }
+        $solicitante = (int)$p['solicitante_id'];
+        $nuestro_jugador1 = (int)($equipo['jugador1_id'] ?? 0);
+        $nuestro_jugador2 = (int)($equipo['jugador2_id'] ?? 0);
+        
+        if ($solicitante === $nuestro_jugador1 || $solicitante === $nuestro_jugador2) {
+            $partidos_reprogramados_actuales[] = $p;
+        }
+    }
+
     $total_reprogramados = count($partidos_reprogramados_actuales);
     // Admins nunca quedan bloqueados (para demos y gestión)
     $es_admin = ($jugador['rol'] ?? '') === 'admin';
@@ -498,8 +522,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
           <div>
             <h3 style="font-family:var(--font-head);font-size:1.1rem;text-transform:uppercase;color:#991b1b;margin:0 0 .6rem">Límite de reprogramaciones alcanzado</h3>
             <p style="color:#7f1d1d;font-size:.9rem;line-height:1.55;margin:0 0 .75rem">
-              Tu equipo ya tiene <strong><?= $total_reprogramados ?> partido<?= $total_reprogramados > 1 ? 's' : '' ?> reprogramado<?= $total_reprogramados > 1 ? 's' : '' ?></strong>.
-              Según las bases del torneo, <strong>no está permitido reprogramar más de <?= $MAX_REPROGS ?> partidos por equipo</strong>.
+              Tu equipo ya tiene <strong><?= $total_reprogramados ?> partido<?= $total_reprogramados > 1 ? 's' : '' ?> reprogramado<?= $total_reprogramados > 1 ? 's' : '' ?> solicitado<?= $total_reprogramados > 1 ? 's' : '' ?> por ustedes</strong>.
+              Según las bases del torneo, <strong>no está permitido solicitar más de <?= $MAX_REPROGS ?> reprogramaciones por equipo</strong>.
             </p>
             <div style="background:#fee2e2;border-radius:10px;padding:.75rem 1rem;font-size:.82rem;color:#991b1b;font-weight:600;margin-bottom:1rem">
               📋 Si tienes algún inconveniente especial, contacta directamente al administrador del torneo.
@@ -693,7 +717,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
           🔄 Mis Reprogramaciones Activas (<?= $total_reprogramados ?>/<?= $MAX_REPROGS ?>)
         </h3>
         <p style="font-size:.8rem;color:var(--gray-500);margin-bottom:1rem">
-          Partidos de tu equipo que están en estado reprogramado. Deberán jugarse antes de poder reprogramar otros.
+          Partidos reprogramados solicitados por tu equipo. Deberán jugarse antes de poder solicitar nuevas reprogramaciones.
         </p>
         <div style="display:flex;flex-direction:column;gap:.6rem">
           <?php foreach ($partidos_reprogramados_actuales as $pr):
