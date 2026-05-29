@@ -16,6 +16,9 @@ $ok     = ($_flash && $_flash['tipo']==='ok');
 $error  = ($_flash && $_flash['tipo']==='error') ? $_flash['msg'] : '';
 
 $partidos_pendientes = [];
+$requested_partido_id = isset($_GET['partido_id']) ? (int)$_GET['partido_id'] : 0;
+$has_requested_in_list = false;
+
 if ($equipo) {
     $st = $db->prepare("
         SELECT p.*,
@@ -34,7 +37,17 @@ if ($equipo) {
     ");
     $st->execute([$liga['id'], $equipo['id'], $equipo['id']]);
     $partidos_pendientes = $st->fetchAll();
+
+    if ($requested_partido_id > 0) {
+        foreach ($partidos_pendientes as $p) {
+            if ((int)$p['id'] === $requested_partido_id) {
+                $has_requested_in_list = true;
+                break;
+            }
+        }
+    }
 }
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
     $partido_id   = (int)($_POST['partido_id'] ?? 0);
@@ -230,14 +243,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
       <?php foreach ($partidos_pendientes as $i => $p):
         $vencido = !empty($p['vencido']);
         $reprog  = ($p['estado'] === 'reprogramado');
-        $primero = ($i === 0);
+        $selected = $has_requested_in_list 
+            ? ((int)$p['id'] === $requested_partido_id) 
+            : ($i === 0);
       ?>
       <label class="ir-partido-option<?= $vencido ? ' ir-vencido' : '' ?>" for="p<?= $p['id'] ?>">
         <input type="radio" name="_partido_pick" id="p<?= $p['id'] ?>" value="<?= $p['id'] ?>"
                data-local="<?= epl_h($p['local_nombre']) ?>"
                data-visitante="<?= epl_h($p['visitante_nombre']) ?>"
                data-fecha="<?= epl_h($p['fecha_programada'] ?? '') ?>"
-               <?= $primero ? 'checked' : '' ?>
+               <?= $selected ? 'checked' : '' ?>
                onchange="seleccionarPartido(this)">
         <div class="ir-partido-content">
           <div class="ir-partido-fecha<?= $vencido ? ' ir-fecha-vencida' : '' ?>">
@@ -613,12 +628,12 @@ function setChip(setNum, local, visitante, btn) {
 function clearChip(setNum) {
   document.querySelectorAll('#chips_s'+setNum+' .ir-chip').forEach(c => c.classList.remove('active'));
 }
-// Auto-seleccionar el primer partido (más cercano / vencido)
+// Auto-seleccionar el partido correspondiente (o el primero si no hay pre-selección)
 document.addEventListener('DOMContentLoaded', function() {
-  const first = document.querySelector('#listaPartidos input[type=radio]');
-  if (first) {
-    first.checked = true;
-    seleccionarPartido(first);
+  const selected = document.querySelector('#listaPartidos input[type=radio]:checked') || document.querySelector('#listaPartidos input[type=radio]');
+  if (selected) {
+    selected.checked = true;
+    seleccionarPartido(selected);
   }
 });
 </script>

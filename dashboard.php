@@ -629,6 +629,9 @@ if ($equipo) {
               <?php if ($label_txt): ?>
                 <div class="sede-label" style="font-size:.55rem;margin-top:.2rem"><?= epl_h($label_txt) ?></div>
               <?php endif; ?>
+              <a href="<?= epl_url('ingresar_resultado.php?partido_id=' . $p['id']) ?>" class="btn btn-primary btn-sm" style="font-size:.62rem;padding:.2rem .5rem;margin-top:.45rem;border-radius:6px;font-weight:700">
+                + Resultado
+              </a>
             </div>
           </div>
           <?php endforeach; ?>
