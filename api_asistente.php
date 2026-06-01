@@ -65,7 +65,17 @@ if ($context === 'player' && isset($_POST['action']) && $_POST['action'] === 'su
     }
     
     // Validar partido
-    $stP = $db->prepare("SELECT * FROM partidos WHERE id=? AND (equipo_local_id=? OR equipo_visitante_id=?) AND estado IN ('pendiente','reprogramado')");
+    $stP = $db->prepare("
+        SELECT p.*,
+               el.nombre AS local_nombre,
+               ev.nombre AS visitante_nombre
+        FROM partidos p
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        WHERE p.id=? 
+          AND (p.equipo_local_id=? OR p.equipo_visitante_id=?) 
+          AND p.estado IN ('pendiente','reprogramado')
+    ");
     $stP->execute([$partido_id, $equipo['id'], $equipo['id']]);
     $partido = $stP->fetch();
     
@@ -192,7 +202,7 @@ if ($context === 'player' && isset($_POST['action']) && $_POST['action'] === 'su
     
     echo json_encode([
         'success' => true,
-        'respuesta' => "✅ **¡Marcador registrado con éxito por el chat!**\n\nHe anotado el partido contra **" . ($es_local ? $rival_nombre : $mi_nombre) . "** {$resultado_final_str} por **" . $resultado_sets . "**.",
+        'respuesta' => "✅ **¡Marcador registrado con éxito por el chat!**\n\nHe anotado el partido contra **" . $rival_nombre . "** {$resultado_final_str} por **" . $resultado_sets . "**.",
         'sugerencias' => ['¿Cómo veo la tabla de clasificación?', '¿Cuándo es mi próximo partido?']
     ], JSON_UNESCAPED_UNICODE);
     exit;
