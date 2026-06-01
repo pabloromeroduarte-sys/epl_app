@@ -52,7 +52,6 @@ if ($equipo) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
     $partido_id   = (int)($_POST['partido_id'] ?? 0);
-    $fecha_jugado = trim($_POST['fecha_jugado'] ?? '');
 
     epl_ensure_disputas_schema();
     $stP = $db->prepare("SELECT * FROM partidos WHERE id=? AND (equipo_local_id=? OR equipo_visitante_id=?) AND estado IN ('pendiente','reprogramado')");
@@ -105,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
                 $ganador_id = $sets_local > $sets_vis ? $partido['equipo_local_id'] : $partido['equipo_visitante_id'];
 
                 $ahora = date('Y-m-d H:i:s');
+                $fecha_jugado = $partido['fecha_programada'] ?: $ahora;
                 $db->prepare("
                     UPDATE partidos SET
                       estado='jugado', fecha_jugado=?,
@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
                       resultado_ingresado_at=?
                     WHERE id=?
                 ")->execute([
-                    $fecha_jugado ?: $ahora,
+                    $fecha_jugado,
                     $sets_local, $sets_vis,
                     $sets[0]['local'] ?? null, $sets[0]['visitante'] ?? null,
                     $sets[1]['local'] ?? null, $sets[1]['visitante'] ?? null,
@@ -385,12 +385,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
         <?php endfor; ?>
       </div>
 
-      <!-- Fecha -->
-      <div class="ir-fecha-card">
-        <p class="ir-step-label" style="margin-bottom:.75rem">Paso 3 — Fecha en que se jugó</p>
-        <input type="datetime-local" name="fecha_jugado" class="form-control"
-               value="<?= date('Y-m-d\TH:i') ?>" style="max-width:280px">
-      </div>
+
 
       <button type="submit" class="ir-submit-btn">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
