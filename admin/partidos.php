@@ -279,7 +279,15 @@ $where_p = "WHERE 1=1";
 $params_p = [];
 if ($liga_id) { $where_p .= " AND p.liga_id=?"; $params_p[] = $liga_id; }
 if ($f_fecha) { $where_p .= " AND p.nombre_fecha=?"; $params_p[] = $f_fecha; }
-if ($f_est)   { $where_p .= " AND p.estado=?"; $params_p[] = $f_est; }
+if ($f_est)   {
+    if ($f_est === 'atrasados') {
+        $where_p .= " AND p.estado NOT IN ('jugado', 'walkover', 'no_presentado') AND p.fecha_programada IS NOT NULL AND p.fecha_programada < ? AND DATE(p.fecha_programada) != '2026-12-31'";
+        $params_p[] = date('Y-m-d H:i:s');
+    } else {
+        $where_p .= " AND p.estado=?";
+        $params_p[] = $f_est;
+    }
+}
 if ($f_desde) { $where_p .= " AND p.fecha_programada >= ?"; $params_p[] = $f_desde . ' 00:00:00'; }
 if ($f_hasta) { $where_p .= " AND p.fecha_programada <= ?"; $params_p[] = $f_hasta . ' 23:59:59'; }
 
@@ -437,6 +445,7 @@ require_once '../includes/header.php';
           <label class="pf-label">Estado</label>
           <select name="estado_p" class="form-control">
             <option value="">Todos</option>
+            <option value="atrasados"     <?= $f_est==='atrasados'?'selected':'' ?>>⚠️ Atrasados (vencidos)</option>
             <option value="pendiente"     <?= $f_est==='pendiente'?'selected':'' ?>>Pendiente</option>
             <option value="jugado"        <?= $f_est==='jugado'?'selected':'' ?>>Jugado</option>
             <option value="reprogramado"  <?= $f_est==='reprogramado'?'selected':'' ?>>Reprogramado</option>
@@ -567,9 +576,10 @@ require_once '../includes/header.php';
                   'jugado' => 'Jugado', 'walkover' => 'W/O', 'no_presentado' => 'No pres.',
                   'reprogramado' => 'Reprog.', default => 'Pendiente',
               };
+              $_is_delayed = !in_array($p['estado'], ['jugado', 'walkover', 'no_presentado']) && !$_sin_fecha && strtotime($_fp) < time();
               $_data_json = epl_h(base64_encode((string)(json_encode($p, JSON_UNESCAPED_UNICODE) ?: '{}')));
             ?>
-            <tr id="p<?= $p['id'] ?>" class="pf-row" style="border-bottom:1px solid var(--gray-100)">
+            <tr id="p<?= $p['id'] ?>" class="pf-row" style="border-bottom:1px solid var(--gray-100)<?php if ($_is_delayed) echo ';background:#fff5f5'; ?>">
               <td style="padding:.6rem .75rem;text-align:center">
                 <input type="checkbox" name="partido_ids[]" value="<?= $p['id'] ?>" class="partido-check" data-group="<?= epl_h($grouping) ?>" form="bulkForm">
               </td>
@@ -577,9 +587,12 @@ require_once '../includes/header.php';
                 <?php if ($_sin_fecha): ?>
                   <span style="background:#fee2e2;color:#dc2626;padding:.1rem .4rem;border-radius:4px;font-size:.68rem;font-weight:700">Sin fecha</span>
                 <?php else: ?>
-                  <span style="color:var(--gray-700);font-weight:600"><?= $_fecha_lbl ?></span>
+                  <span style="<?php if ($_is_delayed) echo 'color:#dc2626;font-weight:800;'; else echo 'color:var(--gray-700);font-weight:600;'; ?>"><?= $_fecha_lbl ?></span>
                 <?php endif; ?>
                 <div style="margin-top:.25rem"><span class="badge <?= $_bc ?>" style="font-size:.6rem;padding:.15rem .4rem"><?= $_lbl ?></span></div>
+                <?php if ($_is_delayed): ?>
+                  <div style="margin-top:.2rem"><span class="badge" style="font-size:.6rem;padding:.1rem .35rem;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;font-weight:700">⚠️ Atrasado</span></div>
+                <?php endif; ?>
                 <?php if ($p['alerta_admin']): ?>
                   <div style="margin-top:.2rem"><span class="badge badge-walkover" style="font-size:.6rem;padding:.1rem .3rem"><?= epl_h($p['alerta_admin']) ?></span></div>
                 <?php endif; ?>
@@ -645,6 +658,7 @@ require_once '../includes/header.php';
                 'jugado' => 'Jugado', 'walkover' => 'W/O', 'no_presentado' => 'No pres.',
                 'reprogramado' => 'Reprog.', default => 'Pendiente',
             };
+            $_is_delayed_m = !in_array($p['estado'], ['jugado', 'walkover', 'no_presentado']) && !$_sf_m && strtotime($_fp_m) < time();
             if ($grouping_m !== $current_grouping_m):
               $current_grouping_m = $grouping_m;
           ?>
@@ -658,16 +672,19 @@ require_once '../includes/header.php';
               </div>
             </div>
           <?php endif; ?>
-            <div class="pf-card-partido" id="pm<?= $p['id'] ?>" data-pid="<?= $p['id'] ?>">
+            <div class="pf-card-partido" id="pm<?= $p['id'] ?>" data-pid="<?= $p['id'] ?>"<?php if ($_is_delayed_m) echo ' style="background:#fff5f5;border:1px solid #fca5a5"'; ?>>
               <input type="checkbox" name="partido_ids[]" value="<?= $p['id'] ?>" class="partido-check pf-card-check" data-group="<?= epl_h($grouping_m) ?>" form="bulkForm">
               <div class="pf-card-body">
                 <div class="pf-card-meta">
                   <?php if ($_sf_m): ?>
                     <span style="background:#fee2e2;color:#dc2626;padding:.1rem .4rem;border-radius:4px;font-size:.65rem;font-weight:700">Sin fecha</span>
                   <?php else: ?>
-                    <span style="font-size:.7rem;font-weight:700;color:var(--navy)"><?= date('d/m H:i', strtotime($_fp_m)) ?></span>
+                    <span style="font-size:.7rem;font-weight:700;color:<?= $_is_delayed_m ? '#dc2626' : 'var(--navy)' ?>"><?= date('d/m H:i', strtotime($_fp_m)) ?></span>
                   <?php endif; ?>
                   <span class="badge <?= $_bc_m ?>" style="font-size:.6rem;padding:.1rem .35rem"><?= $_lbl_m ?></span>
+                  <?php if ($_is_delayed_m): ?>
+                    <span class="badge" style="font-size:.6rem;padding:.1rem .35rem;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;font-weight:700">⚠️ Atrasado</span>
+                  <?php endif; ?>
                   <?php if ($p['alerta_admin']): ?>
                     <span class="badge badge-walkover" style="font-size:.55rem;padding:.1rem .3rem">⚠ <?= epl_h(mb_strimwidth($p['alerta_admin'],0,18,'…')) ?></span>
                   <?php endif; ?>

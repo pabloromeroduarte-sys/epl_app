@@ -538,7 +538,15 @@ $where_p = "WHERE p.liga_id=?";
 $params_p = [$id];
 
 if ($f_fecha) { $where_p .= " AND p.nombre_fecha=?"; $params_p[] = $f_fecha; }
-if ($f_est)   { $where_p .= " AND p.estado=?";        $params_p[] = $f_est;   }
+if ($f_est)   {
+    if ($f_est === 'atrasados') {
+        $where_p .= " AND p.estado NOT IN ('jugado', 'walkover', 'no_presentado') AND p.fecha_programada IS NOT NULL AND p.fecha_programada < ? AND DATE(p.fecha_programada) != '2026-12-31'";
+        $params_p[] = date('Y-m-d H:i:s');
+    } else {
+        $where_p .= " AND p.estado=?";
+        $params_p[] = $f_est;
+    }
+}
 if ($f_desde) { $where_p .= " AND p.fecha_programada >= ?"; $params_p[] = $f_desde . ' 00:00:00'; }
 if ($f_hasta) { $where_p .= " AND p.fecha_programada <= ?"; $params_p[] = $f_hasta . ' 23:59:59'; }
 
@@ -921,6 +929,7 @@ $total_equipos  = count($equipos_liga);
           <label style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--navy);display:block;margin-bottom:.25rem">Estado</label>
           <select name="estado_p" class="form-control">
             <option value="">Todos</option>
+            <option value="atrasados"     <?= $f_est==='atrasados'?'selected':'' ?>>⚠️ Atrasados (vencidos)</option>
             <option value="pendiente"    <?= $f_est==='pendiente'    ?'selected':'' ?>>Pendiente</option>
             <option value="jugado"       <?= $f_est==='jugado'       ?'selected':'' ?>>Jugado</option>
             <option value="reprogramado" <?= $f_est==='reprogramado' ?'selected':'' ?>>Reprogramado</option>
@@ -1036,18 +1045,21 @@ $total_equipos  = count($equipos_liga);
               </td>
             </tr>
             <?php endif; ?>
-            <tr id="p<?= $p['id'] ?>" style="border-bottom:1px solid var(--gray-100)">
+            <?php
+              $_fp = $p['fecha_programada'];
+              $_es_placeholder = $_fp && date('Y-m-d', strtotime($_fp)) === '2026-12-31';
+              $_sin_fecha = !$_fp || $_es_placeholder;
+              $_is_delayed = !in_array($p['estado'], ['jugado', 'walkover', 'no_presentado']) && !$_sin_fecha && strtotime($_fp) < time();
+            ?>
+            <tr id="p<?= $p['id'] ?>" style="border-bottom:1px solid var(--gray-100)<?php if ($_is_delayed) echo ';background:#fff5f5'; ?>">
               <td style="padding:.6rem .75rem;text-align:center">
                 <input type="checkbox" name="partido_ids[]" value="<?= $p['id'] ?>" class="partido-check" data-group="<?= epl_h($p['nombre_fecha']) ?>" form="bulkForm">
               </td>
               <td style="padding:.6rem .75rem;font-size:.75rem;color:var(--gray-500)">
-                <?php
-                  $_fp = $p['fecha_programada'];
-                  $_es_placeholder = $_fp && date('Y-m-d', strtotime($_fp)) === '2026-12-31';
-                  if (!$_fp || $_es_placeholder): ?>
+                <?php if ($_sin_fecha): ?>
                   <span style="background:#fee2e2;color:#dc2626;padding:.1rem .4rem;border-radius:4px;font-size:.68rem;font-weight:700">Sin fecha</span>
                 <?php else: ?>
-                  <?= date('d/m H:i', strtotime($_fp)) ?>
+                  <span style="<?php if ($_is_delayed) echo 'color:#dc2626;font-weight:800;'; ?>"><?= date('d/m H:i', strtotime($_fp)) ?></span>
                 <?php endif; ?>
                 <?php
                   $_bc = match($p['estado']) {
@@ -1065,6 +1077,9 @@ $total_equipos  = count($equipos_liga);
                   };
                 ?>
                 <div style="margin-top:.25rem"><span class="badge <?= $_bc ?>" style="font-size:.6rem;padding:.15rem .4rem"><?= $_lbl ?></span></div>
+                <?php if ($_is_delayed): ?>
+                  <div style="margin-top:.2rem"><span class="badge" style="font-size:.6rem;padding:.1rem .35rem;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;font-weight:700">⚠️ Atrasado</span></div>
+                <?php endif; ?>
                 <?php if ($p['alerta_admin']): ?>
                   <div style="margin-top:.2rem"><span class="badge badge-walkover" style="font-size:.6rem;padding:.1rem .3rem"><?= epl_h($p['alerta_admin']) ?></span></div>
                 <?php endif; ?>
