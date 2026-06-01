@@ -24,7 +24,7 @@ if ($equipo) {
         SELECT p.*,
                el.nombre AS local_nombre,
                ev.nombre AS visitante_nombre,
-               CASE WHEN p.fecha_programada < NOW() THEN 1 ELSE 0 END AS vencido
+               CASE WHEN p.fecha_programada IS NOT NULL AND p.fecha_programada < NOW() AND DATE(p.fecha_programada) != '2026-12-31' THEN 1 ELSE 0 END AS vencido
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
@@ -32,8 +32,9 @@ if ($equipo) {
           AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
           AND p.estado IN ('pendiente', 'reprogramado')
         ORDER BY
-            ABS(DATEDIFF(p.fecha_programada, CURDATE())) ASC,
-            p.fecha_programada ASC
+            vencido DESC,
+            p.fecha_programada ASC,
+            p.id ASC
     ");
     $st->execute([$liga['id'], $equipo['id'], $equipo['id']]);
     $partidos_pendientes = $st->fetchAll();

@@ -101,17 +101,22 @@ if ($context === 'player') {
                 exit;
             }
             
-            // Buscar partidos pendientes del equipo del jugador en la liga activa
+            // Buscar partidos pendientes del equipo del jugador en la liga activa ordenados por prioridad
             $stP = $db->prepare("
                 SELECT p.*,
                        el.nombre AS local_nombre,
-                       ev.nombre AS visitante_nombre
+                       ev.nombre AS visitante_nombre,
+                       CASE WHEN p.fecha_programada IS NOT NULL AND p.fecha_programada < NOW() AND DATE(p.fecha_programada) != '2026-12-31' THEN 1 ELSE 0 END AS vencido
                 FROM partidos p
                 JOIN equipos el ON el.id = p.equipo_local_id
                 JOIN equipos ev ON ev.id = p.equipo_visitante_id
                 WHERE p.liga_id = ?
                   AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
                   AND p.estado IN ('pendiente', 'reprogramado')
+                ORDER BY
+                    vencido DESC,
+                    p.fecha_programada ASC,
+                    p.id ASC
             ");
             $stP->execute([$liga['id'], $equipo['id'], $equipo['id']]);
             $partidos_pendientes = $stP->fetchAll(PDO::FETCH_ASSOC);
@@ -153,6 +158,9 @@ if ($context === 'player') {
                 
                 if ($max_score > 0) {
                     $partido_seleccionado = $mejor_coincidencia;
+                } else {
+                    // Si no coincide con ninguna mención, seleccionamos el más prioritario por defecto (atrasado o próximo)
+                    $partido_seleccionado = $partidos_pendientes[0];
                 }
             }
             
