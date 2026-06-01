@@ -257,6 +257,78 @@ if (!isset($chat_context)) {
   </div>
 </div>
 
+<!-- Modal de Asistente de Registro de Resultados -->
+<div id="epl-asist-modal" style="display:none;position:fixed;inset:0;background:rgba(10,20,33,.78);backdrop-filter:blur(6px);z-index:99999;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:#fff;border-radius:18px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;animation:ir-pop .3s ease both">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#1c2f48,#0f1e30);padding:1.1rem 1.4rem;color:#fff;display:flex;justify-content:space-between;align-items:center">
+      <h3 style="margin:0;font-family:'Anton',sans-serif;font-size:1.05rem;text-transform:uppercase;color:#C9A762;letter-spacing:.03em">📝 Registrar Marcador</h3>
+      <button onclick="window.closeAsistModal()" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:1.6rem;cursor:pointer;line-height:1;padding:0 .3rem">&times;</button>
+    </div>
+    
+    <!-- Form -->
+    <form id="epl-asist-form" onsubmit="window.submitAsistResult(event)" style="padding:1.25rem 1.4rem;display:flex;flex-direction:column;gap:1rem">
+      <div id="epl-asist-error" style="display:none;background:#fee2e2;border-left:4px solid #dc2626;padding:.65rem .85rem;border-radius:8px;font-size:.8rem;color:#991b1b;font-weight:700"></div>
+      
+      <!-- Match Selector inside Modal -->
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        <label style="font-size:.7rem;font-weight:800;text-transform:uppercase;color:#64748b;letter-spacing:.05em">Selecciona el Partido</label>
+        <select id="epl-asist-match-select" onchange="window.updateAsistModalTeams(this)" style="width:100%;border:1.5px solid #cbd5e1;border-radius:10px;padding:.55rem;font-size:.82rem;outline:none;font-weight:700;color:#1c2f48;background:#fff"></select>
+      </div>
+
+      <!-- Teams Display -->
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.75rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:.9rem 1.1rem;text-align:center">
+        <div id="epl-asist-local-name" style="font-weight:800;font-size:.82rem;color:#1c2f48;text-transform:uppercase;word-break:break-word">Local</div>
+        <div style="background:linear-gradient(135deg,#c9a762,#b8934f);color:#1c2f48;font-size:.58rem;font-weight:800;border-radius:12px;padding:.2rem .5rem">VS</div>
+        <div id="epl-asist-visitante-name" style="font-weight:800;font-size:.82rem;color:#1c2f48;text-transform:uppercase;word-break:break-word">Visitante</div>
+      </div>
+
+      <!-- Sets Inputs -->
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <label style="font-size:.7rem;font-weight:800;text-transform:uppercase;color:#64748b;letter-spacing:.05em">Marcador por Set</label>
+        
+        <!-- Set 1 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9;padding-bottom:.5rem">
+          <span style="font-size:.78rem;font-weight:800;color:#1c2f48;background:#f1f5f9;padding:.2rem .5rem;border-radius:6px">Set 1</span>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <input type="number" name="s1_local" id="asist_s1_local" min="0" max="7" placeholder="0" required style="width:50px;height:45px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:1.2rem;font-weight:700;text-align:center;color:#1c2f48">
+            <span style="color:#94a3b8;font-weight:800">—</span>
+            <input type="number" name="s1_visitante" id="asist_s1_visitante" min="0" max="7" placeholder="0" required style="width:50px;height:45px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:1.2rem;font-weight:700;text-align:center;color:#1c2f48">
+          </div>
+        </div>
+
+        <!-- Set 2 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9;padding-bottom:.5rem">
+          <span style="font-size:.78rem;font-weight:800;color:#1c2f48;background:#f1f5f9;padding:.2rem .5rem;border-radius:6px">Set 2</span>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <input type="number" name="s2_local" id="asist_s2_local" min="0" max="7" placeholder="0" required style="width:50px;height:45px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:1.2rem;font-weight:700;text-align:center;color:#1c2f48">
+            <span style="color:#94a3b8;font-weight:800">—</span>
+            <input type="number" name="s2_visitante" id="asist_s2_visitante" min="0" max="7" placeholder="0" required style="width:50px;height:45px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:1.2rem;font-weight:700;text-align:center;color:#1c2f48">
+          </div>
+        </div>
+
+        <!-- Set 3 -->
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:.35rem">
+            <span style="font-size:.78rem;font-weight:800;color:#1c2f48;background:#f1f5f9;padding:.2rem .5rem;border-radius:6px">Set 3</span>
+            <span style="font-size:.58rem;font-weight:700;color:#94a3b8;background:#f1f5f9;padding:.1rem .3rem;border-radius:4px;text-transform:uppercase">opcional</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <input type="number" name="s3_local" id="asist_s3_local" min="0" max="7" placeholder="0" style="width:50px;height:45px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:1.2rem;font-weight:700;text-align:center;color:#1c2f48">
+            <span style="color:#94a3b8;font-weight:800">—</span>
+            <input type="number" name="s3_visitante" id="asist_s3_visitante" min="0" max="7" placeholder="0" style="width:50px;height:45px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:1.2rem;font-weight:700;text-align:center;color:#1c2f48">
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button type="submit" id="epl-asist-submit-btn" style="width:100%;background:linear-gradient(135deg,#1c2f48,#1a3a64);color:#fff;border:none;border-radius:12px;padding:.85rem;font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;transition:all .2s;margin-top:.5rem;display:flex;align-items:center;justify-content:center;gap:.5rem">
+        ✓ Confirmar Marcador
+      </button>
+    </form>
+  </div>
+</div>
+
 <script>
 (function () {
   'use strict';
@@ -431,6 +503,10 @@ if (!isset($chat_context)) {
       .then(data => {
         hideTyping();
         addBotMsg(data.respuesta, data.link || null, data.sugerencias || []);
+        
+        if (data.action === 'show_result_modal') {
+          window.openAsistModal(data.partidos, data.default_partido_id);
+        }
       })
       .catch(() => {
         hideTyping();
@@ -453,6 +529,97 @@ if (!isset($chat_context)) {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 90) + 'px';
   });
+
+  // ── Modal Emergente de Resultados ──────────────────────────
+  window.openAsistModal = function(partidos, defaultPartidoId) {
+    const modal = document.getElementById('epl-asist-modal');
+    const select = document.getElementById('epl-asist-match-select');
+    const errorDiv = document.getElementById('epl-asist-error');
+    
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+    document.getElementById('epl-asist-form').reset();
+    
+    select.innerHTML = '';
+    partidos.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `F.${p.jornada} — vs ${p.local_nombre === p.visitante_nombre ? 'Mismo Equipo' : (p.local_nombre)} vs ${p.visitante_nombre} (${p.fecha_programada})`;
+      if (p.disabled) {
+        opt.disabled = true;
+        opt.textContent = `[🔒 Bloqueado] ` + opt.textContent;
+      }
+      opt.dataset.local = p.local_nombre;
+      opt.dataset.visitante = p.visitante_nombre;
+      select.appendChild(opt);
+    });
+    
+    select.value = defaultPartidoId;
+    window.updateAsistModalTeams(select);
+    modal.style.display = 'flex';
+  };
+
+  window.updateAsistModalTeams = function(select) {
+    const opt = select.options[select.selectedIndex];
+    if (opt) {
+      document.getElementById('epl-asist-local-name').textContent = opt.dataset.local;
+      document.getElementById('epl-asist-visitante-name').textContent = opt.dataset.visitante;
+    }
+  };
+
+  window.closeAsistModal = function() {
+    document.getElementById('epl-asist-modal').style.display = 'none';
+  };
+
+  window.submitAsistResult = function(event) {
+    event.preventDefault();
+    const btnSubmit = document.getElementById('epl-asist-submit-btn');
+    const errorDiv = document.getElementById('epl-asist-error');
+    
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = '⏳ Registrando resultado...';
+    errorDiv.style.display = 'none';
+    
+    const formData = new FormData(document.getElementById('epl-asist-form'));
+    formData.append('action', 'submit_result');
+    formData.append('context', 'player');
+    formData.append('partido_id', document.getElementById('epl-asist-match-select').value);
+    
+    fetch('/api_asistente.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        window.closeAsistModal();
+        if (typeof hideTyping === 'function') hideTyping();
+        if (typeof addBotMsg === 'function') {
+          addBotMsg(data.respuesta, null, data.sugerencias || []);
+        }
+        
+        const t = document.createElement('div');
+        t.textContent = '✅ Marcador registrado. Recargando página...';
+        t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-weight:700;font-size:.85rem;z-index:999999;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:90vw;text-align:center';
+        document.body.appendChild(t);
+        
+        setTimeout(() => {
+          location.reload();
+        }, 2200);
+      } else {
+        errorDiv.textContent = '❌ ' + (data.error || 'Hubo un error al registrar.');
+        errorDiv.style.display = 'block';
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = '✓ Confirmar Marcador';
+      }
+    })
+    .catch(err => {
+      errorDiv.textContent = '❌ Error de conexión al servidor.';
+      errorDiv.style.display = 'block';
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = '✓ Confirmar Marcador';
+    });
+  };
 
 })();
 </script>

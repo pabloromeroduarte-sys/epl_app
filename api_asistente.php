@@ -46,6 +46,158 @@ if ($context === 'admin') {
     }
 } // 'public' no requiere sesión
 
+// Procesar registro de resultado desde el modal del asistente
+if ($context === 'player' && isset($_POST['action']) && $_POST['action'] === 'submit_result') {
+    $jugador = epl_jugador_actual();
+    if (!$jugador) {
+        echo json_encode(['success' => false, 'error' => 'Sesión expirada.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    
+    $partido_id = (int)($_POST['partido_id'] ?? 0);
+    $db = epl_db();
+    $liga = epl_liga_activa();
+    $equipo = $liga ? epl_equipo_del_jugador($jugador['id'], $liga['id']) : null;
+    
+    if (!$equipo) {
+        echo json_encode(['success' => false, 'error' => 'No tienes un equipo activo.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    
+    // Validar partido
+    $stP = $db->prepare("SELECT * FROM partidos WHERE id=? AND (equipo_local_id=? OR equipo_visitante_id=?) AND estado IN ('pendiente','reprogramado')");
+    $stP->execute([$partido_id, $equipo['id'], $equipo['id']]);
+    $partido = $stP->fetch();
+    
+    if (!$partido) {
+        echo json_encode(['success' => false, 'error' => 'Partido no válido o ya registrado.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    
+    // Validar si tiene partidos vencidos
+    $stV = $db->prepare("
+        SELECT COUNT(*) 
+        FROM partidos 
+        WHERE liga_id = ? 
+          AND (equipo_local_id = ? OR equipo_visitante_id = ?)
+          AND estado IN ('pendiente', 'reprogramado')
+          AND fecha_programada IS NOT NULL 
+          AND fecha_programada < NOW() 
+          AND DATE(fecha_programada) != '2026-12-31'
+    ");
+    $stV->execute([$liga['id'], $equipo['id'], $equipo['id']]);
+    $num_vencidos = (int)$stV->fetchColumn();
+
+    $es_vencido = false;
+    if ($partido['fecha_programada']) {
+        $fecha_prog = strtotime($partido['fecha_programada']);
+        $es_vencido = ($fecha_prog < time() && date('Y-m-d', $fecha_prog) !== '2026-12-31');
+    }
+
+    if ($num_vencidos > 0 && !$es_vencido) {
+        echo json_encode(['success' => false, 'error' => 'Debes registrar primero los resultados de tus partidos vencidos/atrasados.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    
+    // Procesar sets
+    $sets = [];
+    for ($s = 1; $s <= 3; $s++) {
+        $gl = isset($_POST["s{$s}_local"])     ? (int)$_POST["s{$s}_local"]     : null;
+        $gv = isset($_POST["s{$s}_visitante"]) ? (int)$_POST["s{$s}_visitante"] : null;
+        if ($gl !== null && $gv !== null && ($gl > 0 || $gv > 0)) {
+            $sets[] = ['local' => $gl, 'visitante' => $gv];
+        }
+    }
+    
+    if (empty($sets)) {
+        echo json_encode(['success' => false, 'error' => 'Debes ingresar al menos un set.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    
+    $sets_local = 0; $sets_vis = 0;
+    foreach ($sets as $sv) {
+        if ($sv['local'] > $sv['visitante']) $sets_local++;
+        else $sets_vis++;
+    }
+    $ganador_id = $sets_local > $sets_vis ? $partido['equipo_local_id'] : $partido['equipo_visitante_id'];
+    
+    $ahora = date('Y-m-d H:i:s');
+    $fecha_jugado = $partido['fecha_programada'] ?: $ahora;
+    
+    $db->prepare("
+        UPDATE partidos SET
+          estado='jugado', fecha_jugado=?,
+          sets_local=?, sets_visitante=?,
+          games_s1_local=?, games_s1_visitante=?,
+          games_s2_local=?, games_s2_visitante=?,
+          games_s3_local=?, games_s3_visitante=?,
+          ganador_id=?, ingresado_por=?,
+          resultado_ingresado_at=?
+        WHERE id=?
+    ")->execute([
+        $fecha_jugado,
+        $sets_local, $sets_vis,
+        $sets[0]['local'] ?? null, $sets[0]['visitante'] ?? null,
+        $sets[1]['local'] ?? null, $sets[1]['visitante'] ?? null,
+        $sets[2]['local'] ?? null, $sets[2]['visitante'] ?? null,
+        $ganador_id, $jugador['id'], $ahora, $partido_id
+    ]);
+    
+    epl_recalcular_clasificacion($liga['id']);
+    
+    // Notificaciones
+    $es_local = ($partido['equipo_local_id'] == $equipo['id']);
+    $rival_id = $es_local ? $partido['equipo_visitante_id'] : $partido['equipo_local_id'];
+    $rival_nombre = $es_local ? $partido['visitante_nombre'] : $partido['local_nombre'];
+    $mi_nombre = $equipo['nombre'];
+    $resultado_sets = implode(' / ', array_map(fn($s) => "{$s['local']}-{$s['visitante']}", $sets));
+    
+    $asunto_res = epl_mail_asunto('⚽ Resultado ingresado', $partido['local_nombre'], $partido['visitante_nombre'], $partido['jornada'] ?? null);
+    $nombre_quien_ingresa = trim(($jugador['nombre'] ?? '') . ' ' . ($jugador['apellido'] ?? ''));
+    $texto_rival_subtitulo = "El jugador {$nombre_quien_ingresa} ingresó el resultado de tu partido {$partido['local_nombre']} vs {$partido['visitante_nombre']} (Jornada " . ($partido['jornada'] ?? '—') . ").";
+    $texto_rival_tip = "⚠️ En caso de tener algún problema con el resultado contáctate con los organizadores (tienes 24 horas para reclamar).";
+    $url_reclamar = epl_url("reclamar_resultado.php?partido_id={$partido_id}");
+    
+    $re_st = $db->prepare("SELECT jugador1_id, jugador2_id FROM equipos WHERE id = ?");
+    $re_st->execute([$rival_id]);
+    $re = $re_st->fetch(PDO::FETCH_ASSOC);
+    $rivales_ids = array_values(array_filter([ (int)($re['jugador1_id'] ?? 0), (int)($re['jugador2_id'] ?? 0) ]));
+    $ganador_nombre = ($ganador_id == $equipo['id']) ? $mi_nombre : $rival_nombre;
+    
+    foreach ($rivales_ids as $rival_jugador_id) {
+        epl_notif_crear($rival_jugador_id, 'resultado', $asunto_res, $texto_rival_subtitulo . ' ' . $texto_rival_tip, $url_reclamar, true);
+        epl_mail_partido_visual($rival_jugador_id, $asunto_res, $partido['local_nombre'], $partido['visitante_nombre'], [
+            ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
+            ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
+        ], $texto_rival_subtitulo, $texto_rival_tip, $url_reclamar, '⚠️ Reclamar Resultado');
+    }
+    
+    // Notificar admins
+    $admins_st = $db->query("SELECT id FROM jugadores WHERE rol = 'admin'");
+    $admins_ids = $admins_st->fetchAll(PDO::FETCH_COLUMN);
+    $fecha_hora_fmt = date('d/m/Y H:i', strtotime($ahora));
+    $texto_admin_subtitulo = "El jugador {$nombre_quien_ingresa} registró el resultado {$resultado_sets} del partido {$partido['local_nombre']} vs {$partido['visitante_nombre']} de la jornada " . ($partido['jornada'] ?? '—') . ".";
+    $texto_admin_tip = "Fecha y hora de registro: {$fecha_hora_fmt}";
+    $url_admin = epl_url("admin/partido_detalle.php?id={$partido_id}");
+    
+    foreach ($admins_ids as $admin_id) {
+        epl_notif_crear((int)$admin_id, 'resultado', $asunto_res, $texto_admin_subtitulo . ' ' . $texto_admin_tip, $url_admin, true);
+        epl_mail_partido_visual((int)$admin_id, $asunto_res, $partido['local_nombre'], $partido['visitante_nombre'], [
+            ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
+            ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
+        ], $texto_admin_subtitulo, $texto_admin_tip, $url_admin, '🔍 Ver Detalle');
+    }
+    
+    $resultado_final_str = ($ganador_id == $equipo['id']) ? "ganando" : "perdiendo";
+    
+    echo json_encode([
+        'success' => true,
+        'respuesta' => "✅ **¡Marcador registrado con éxito por el chat!**\n\nHe anotado el partido contra **" . ($es_local ? $rival_nombre : $mi_nombre) . "** {$resultado_final_str} por **" . $resultado_sets . "**.",
+        'sugerencias' => ['¿Cómo veo la tabla de clasificación?', '¿Cuándo es mi próximo partido?']
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $pregunta = trim($_POST['pregunta'] ?? '');
 if ($pregunta === '') {
     echo json_encode(['respuesta' => 'Escribe tu pregunta 😊', 'link' => null, 'sugerencias' => []]);
@@ -77,6 +229,102 @@ if ($context === 'player') {
         
         $has_score = !empty($set_matches) && count($set_matches) >= 1 && count($set_matches) <= 3;
         $is_intent = false;
+        
+        $keywords_modal = ['ingresar mi resultado', 'ingresar resultado', 'registrar mi resultado', 'registrar resultado', 'cargar resultado', 'cargar mi resultado', 'anotar mi resultado', 'anotar resultado'];
+        $is_modal_intent = false;
+        foreach ($keywords_modal as $kw) {
+            if (str_contains($preg_norm, $kw)) {
+                $is_modal_intent = true;
+                break;
+            }
+        }
+        if (str_contains($preg_norm, 'como registro un resultado')) {
+            $is_modal_intent = true;
+        }
+
+        if ($is_modal_intent && !$has_score) {
+            $db = epl_db();
+            $liga = epl_liga_activa();
+            $equipo = $liga ? epl_equipo_del_jugador($jugador['id'], $liga['id']) : null;
+            
+            if (!$equipo) {
+                echo json_encode([
+                    'respuesta' => 'Lo siento, no he podido registrar el resultado porque no tienes un equipo activo en la liga actual.',
+                    'link' => ['url' => '/inscribirse.php', 'texto' => '🏅 Ver Competiciones'],
+                    'sugerencias' => ['¿Cómo me inscribo a un torneo?', '¿Cómo me registro?']
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            
+            // Buscar partidos pendientes ordenados por prioridad (atrasados y próximos)
+            $stP = $db->prepare("
+                SELECT p.*,
+                       el.nombre AS local_nombre,
+                       ev.nombre AS visitante_nombre,
+                       CASE WHEN p.fecha_programada IS NOT NULL AND p.fecha_programada < NOW() AND DATE(p.fecha_programada) != '2026-12-31' THEN 1 ELSE 0 END AS vencido
+                FROM partidos p
+                JOIN equipos el ON el.id = p.equipo_local_id
+                JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                WHERE p.liga_id = ?
+                  AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
+                  AND p.estado IN ('pendiente', 'reprogramado')
+                ORDER BY
+                    vencido DESC,
+                    p.fecha_programada ASC,
+                    p.id ASC
+            ");
+            $stP->execute([$liga['id'], $equipo['id'], $equipo['id']]);
+            $partidos_pendientes = $stP->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (empty($partidos_pendientes)) {
+                echo json_encode([
+                    'respuesta' => 'No encontré ningún partido pendiente o reprogramado para tu equipo en la liga actual.',
+                    'link' => ['url' => '/dashboard.php', 'texto' => '🏠 Ir a Inicio'],
+                    'sugerencias' => ['¿Cómo veo mi clasificación?']
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            $partidos_data = [];
+            $tiene_vencidos = false;
+            foreach ($partidos_pendientes as $p) {
+                if (!empty($p['vencido'])) {
+                    $tiene_vencidos = true;
+                }
+            }
+            foreach ($partidos_pendientes as $p) {
+                $vencido = !empty($p['vencido']);
+                $partidos_data[] = [
+                    'id' => $p['id'],
+                    'local_nombre' => $p['local_nombre'],
+                    'visitante_nombre' => $p['visitante_nombre'],
+                    'jornada' => $p['jornada'],
+                    'fecha_programada' => $p['fecha_programada'] ? date('d/m/Y', strtotime($p['fecha_programada'])) : 'TBD',
+                    'vencido' => $vencido,
+                    'disabled' => ($tiene_vencidos && !$vencido)
+                ];
+            }
+            
+            $p_default = null;
+            foreach ($partidos_data as $pd) {
+                if (!$pd['disabled']) {
+                    $p_default = $pd;
+                    break;
+                }
+            }
+            if (!$p_default && !empty($partidos_data)) {
+                $p_default = $partidos_data[0];
+            }
+            
+            echo json_encode([
+                'respuesta' => "¡Claro! He detectado tus partidos pendientes. Te he abierto un asistente emergente (pop-up) en pantalla para ayudarte a registrar tu resultado de forma rápida sin salir del chat.",
+                'action' => 'show_result_modal',
+                'partidos' => $partidos_data,
+                'default_partido_id' => $p_default ? $p_default['id'] : 0,
+                'sugerencias' => []
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
         
         // Palabras clave que indican registro de marcador
         $keywords_reg = ['jugamos', 'jugue', 'ganamos', 'gane', 'perdimos', 'perdi', 'resultado', 'marcador', 'sets', 'score', 'anota', 'registra', 'cargue', 'cargar', 'anotar'];
@@ -257,7 +505,7 @@ if ($context === 'player') {
                   resultado_ingresado_at=?
                 WHERE id=?
             ")->execute([
-                $ahora,
+                $partido_seleccionado['fecha_programada'] ?: $ahora,
                 $sets_local, $sets_vis,
                 $games_s1_local, $games_s1_visitante,
                 $games_s2_local, $games_s2_visitante,
