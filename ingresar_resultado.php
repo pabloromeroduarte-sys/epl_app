@@ -62,139 +62,164 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
     if (!$partido) {
         $error = 'Partido no válido.';
     } else {
-        $sets = [];
-        for ($s = 1; $s <= 3; $s++) {
-            $gl = isset($_POST["s{$s}_local"])     ? (int)$_POST["s{$s}_local"]     : null;
-            $gv = isset($_POST["s{$s}_visitante"]) ? (int)$_POST["s{$s}_visitante"] : null;
-            if ($gl !== null && $gv !== null && ($gl > 0 || $gv > 0)) {
-                $sets[] = ['local' => $gl, 'visitante' => $gv];
-            }
+        // Validar si tiene partidos vencidos
+        $stV = $db->prepare("
+            SELECT COUNT(*) 
+            FROM partidos 
+            WHERE liga_id = ? 
+              AND (equipo_local_id = ? OR equipo_visitante_id = ?)
+              AND estado IN ('pendiente', 'reprogramado')
+              AND fecha_programada IS NOT NULL 
+              AND fecha_programada < NOW() 
+              AND DATE(fecha_programada) != '2026-12-31'
+        ");
+        $stV->execute([$liga['id'], $equipo['id'], $equipo['id']]);
+        $num_vencidos = (int)$stV->fetchColumn();
+
+        // Verificar si el partido seleccionado es vencido
+        $es_vencido = false;
+        if ($partido['fecha_programada']) {
+            $fecha_prog = strtotime($partido['fecha_programada']);
+            $es_vencido = ($fecha_prog < time() && date('Y-m-d', $fecha_prog) !== '2026-12-31');
         }
-        if (empty($sets)) {
-            $error = 'Debes ingresar al menos un set.';
+
+        if ($num_vencidos > 0 && !$es_vencido) {
+            $error = 'Debes registrar primero los resultados de tus partidos vencidos/atrasados.';
         } else {
-            $sets_local = 0; $sets_vis = 0;
-            foreach ($sets as $sv) {
-                if ($sv['local'] > $sv['visitante']) $sets_local++;
-                else $sets_vis++;
+            $sets = [];
+            for ($s = 1; $s <= 3; $s++) {
+                $gl = isset($_POST["s{$s}_local"])     ? (int)$_POST["s{$s}_local"]     : null;
+                $gv = isset($_POST["s{$s}_visitante"]) ? (int)$_POST["s{$s}_visitante"] : null;
+                if ($gl !== null && $gv !== null && ($gl > 0 || $gv > 0)) {
+                    $sets[] = ['local' => $gl, 'visitante' => $gv];
+                }
             }
-            $ganador_id = $sets_local > $sets_vis ? $partido['equipo_local_id'] : $partido['equipo_visitante_id'];
+            if (empty($sets)) {
+                $error = 'Debes ingresar al menos un set.';
+            } else {
+                $sets_local = 0; $sets_vis = 0;
+                foreach ($sets as $sv) {
+                    if ($sv['local'] > $sv['visitante']) $sets_local++;
+                    else $sets_vis++;
+                }
+                $ganador_id = $sets_local > $sets_vis ? $partido['equipo_local_id'] : $partido['equipo_visitante_id'];
 
-            $ahora = date('Y-m-d H:i:s');
-            $db->prepare("
-                UPDATE partidos SET
-                  estado='jugado', fecha_jugado=?,
-                  sets_local=?, sets_visitante=?,
-                  games_s1_local=?, games_s1_visitante=?,
-                  games_s2_local=?, games_s2_visitante=?,
-                  games_s3_local=?, games_s3_visitante=?,
-                  ganador_id=?, ingresado_por=?,
-                  resultado_ingresado_at=?
-                WHERE id=?
-            ")->execute([
-                $fecha_jugado ?: $ahora,
-                $sets_local, $sets_vis,
-                $sets[0]['local'] ?? null, $sets[0]['visitante'] ?? null,
-                $sets[1]['local'] ?? null, $sets[1]['visitante'] ?? null,
-                $sets[2]['local'] ?? null, $sets[2]['visitante'] ?? null,
-                $ganador_id, $jugador['id'], $ahora, $partido_id
-            ]);
+                $ahora = date('Y-m-d H:i:s');
+                $db->prepare("
+                    UPDATE partidos SET
+                      estado='jugado', fecha_jugado=?,
+                      sets_local=?, sets_visitante=?,
+                      games_s1_local=?, games_s1_visitante=?,
+                      games_s2_local=?, games_s2_visitante=?,
+                      games_s3_local=?, games_s3_visitante=?,
+                      ganador_id=?, ingresado_por=?,
+                      resultado_ingresado_at=?
+                    WHERE id=?
+                ")->execute([
+                    $fecha_jugado ?: $ahora,
+                    $sets_local, $sets_vis,
+                    $sets[0]['local'] ?? null, $sets[0]['visitante'] ?? null,
+                    $sets[1]['local'] ?? null, $sets[1]['visitante'] ?? null,
+                    $sets[2]['local'] ?? null, $sets[2]['visitante'] ?? null,
+                    $ganador_id, $jugador['id'], $ahora, $partido_id
+                ]);
 
-            epl_recalcular_clasificacion($liga['id']);
+                epl_recalcular_clasificacion($liga['id']);
 
-            // Notificar al equipo rival
-            $rival_id = $partido['equipo_local_id'] == $equipo['id']
-                ? $partido['equipo_visitante_id']
-                : $partido['equipo_local_id'];
-            $rival_nombre = $partido['equipo_local_id'] == $equipo['id']
-                ? $partido['visitante_nombre']
-                : $partido['local_nombre'];
-            $mi_nombre = $equipo['nombre'];
-            $resultado = "{$sets_local}-{$sets_vis}";
-            $gano = $ganador_id == $equipo['id'];
+                // Notificar al equipo rival
+                $rival_id = $partido['equipo_local_id'] == $equipo['id']
+                    ? $partido['equipo_visitante_id']
+                    : $partido['equipo_local_id'];
+                $rival_nombre = $partido['equipo_local_id'] == $equipo['id']
+                    ? $partido['visitante_nombre']
+                    : $partido['local_nombre'];
+                $mi_nombre = $equipo['nombre'];
+                $resultado = "{$sets_local}-{$sets_vis}";
+                $gano = $ganador_id == $equipo['id'];
 
-            // Notificar a jugadores del equipo rival
-            $asunto_res = epl_mail_asunto(
-                '⚽ Resultado ingresado',
-                $partido['local_nombre'],
-                $partido['visitante_nombre'],
-                $partido['jornada'] ?? null
-            );
-            $ganador_nombre  = $gano ? $mi_nombre : $rival_nombre;
-            $resultado_sets  = implode(' / ', array_map(fn($s) => "{$s['local']}-{$s['visitante']}", $sets));
-            $url_reclamar    = epl_url("reclamar_resultado.php?partido_id={$partido_id}");
-            
-            $nombre_quien_ingresa = trim(($jugador['nombre'] ?? '') . ' ' . ($jugador['apellido'] ?? ''));
-            $texto_rival_subtitulo = "El jugador {$nombre_quien_ingresa} ingresó el resultado de tu partido {$partido['local_nombre']} vs {$partido['visitante_nombre']} (Jornada " . ($partido['jornada'] ?? '—') . ").";
-            $texto_rival_tip = "⚠️ En caso de tener algún problema con el resultado contáctate con los organizadores (tienes 24 horas para reclamar).";
-
-            $re_st = $db->prepare("SELECT jugador1_id, jugador2_id FROM equipos WHERE id = ?");
-            $re_st->execute([$rival_id]);
-            $re = $re_st->fetch(PDO::FETCH_ASSOC);
-            $rivales_ids = array_values(array_filter([
-                (int)($re['jugador1_id'] ?? 0),
-                (int)($re['jugador2_id'] ?? 0),
-            ]));
-            foreach ($rivales_ids as $rival_jugador_id) {
-                epl_notif_crear(
-                    $rival_jugador_id,
-                    'resultado',
-                    $asunto_res,
-                    $texto_rival_subtitulo . ' ' . $texto_rival_tip,
-                    $url_reclamar,
-                    true // skip_email: enviamos visual por separado
-                );
-                epl_mail_partido_visual(
-                    $rival_jugador_id,
-                    $asunto_res,
+                // Notificar a jugadores del equipo rival
+                $asunto_res = epl_mail_asunto(
+                    '⚽ Resultado ingresado',
                     $partido['local_nombre'],
                     $partido['visitante_nombre'],
-                    [
-                        ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
-                        ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
-                    ],
-                    $texto_rival_subtitulo,
-                    $texto_rival_tip,
-                    $url_reclamar,
-                    '⚠️ Reclamar Resultado'
+                    $partido['jornada'] ?? null
                 );
+                $ganador_nombre  = $gano ? $mi_nombre : $rival_nombre;
+                $resultado_sets  = implode(' / ', array_map(fn($s) => "{$s['local']}-{$s['visitante']}", $sets));
+                $url_reclamar    = epl_url("reclamar_resultado.php?partido_id={$partido_id}");
+                
+                $nombre_quien_ingresa = trim(($jugador['nombre'] ?? '') . ' ' . ($jugador['apellido'] ?? ''));
+                $texto_rival_subtitulo = "El jugador {$nombre_quien_ingresa} ingresó el resultado de tu partido {$partido['local_nombre']} vs {$partido['visitante_nombre']} (Jornada " . ($partido['jornada'] ?? '—') . ").";
+                $texto_rival_tip = "⚠️ En caso de tener algún problema con el resultado contáctate con los organizadores (tienes 24 horas para reclamar).";
+
+                $re_st = $db->prepare("SELECT jugador1_id, jugador2_id FROM equipos WHERE id = ?");
+                $re_st->execute([$rival_id]);
+                $re = $re_st->fetch(PDO::FETCH_ASSOC);
+                $rivales_ids = array_values(array_filter([
+                    (int)($re['jugador1_id'] ?? 0),
+                    (int)($re['jugador2_id'] ?? 0),
+                ]));
+                foreach ($rivales_ids as $rival_jugador_id) {
+                    epl_notif_crear(
+                        $rival_jugador_id,
+                        'resultado',
+                        $asunto_res,
+                        $texto_rival_subtitulo . ' ' . $texto_rival_tip,
+                        $url_reclamar,
+                        true // skip_email: enviamos visual por separado
+                    );
+                    epl_mail_partido_visual(
+                        $rival_jugador_id,
+                        $asunto_res,
+                        $partido['local_nombre'],
+                        $partido['visitante_nombre'],
+                        [
+                            ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
+                            ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
+                        ],
+                        $texto_rival_subtitulo,
+                        $texto_rival_tip,
+                        $url_reclamar,
+                        '⚠️ Reclamar Resultado'
+                    );
+                }
+
+                // Notificar a los administradores
+                $admins_st = $db->query("SELECT id FROM jugadores WHERE rol = 'admin'");
+                $admins_ids = $admins_st->fetchAll(PDO::FETCH_COLUMN);
+                $fecha_hora_fmt = date('d/m/Y H:i', strtotime($ahora));
+                
+                $texto_admin_subtitulo = "El jugador {$nombre_quien_ingresa} registró el resultado {$resultado_sets} del partido {$partido['local_nombre']} vs {$partido['visitante_nombre']} de la jornada " . ($partido['jornada'] ?? '—') . ".";
+                $texto_admin_tip = "Fecha y hora de registro: {$fecha_hora_fmt}";
+                $url_admin = epl_url("admin/partido_detalle.php?id={$partido_id}");
+
+                foreach ($admins_ids as $admin_id) {
+                    epl_notif_crear(
+                        (int)$admin_id,
+                        'resultado',
+                        $asunto_res,
+                        $texto_admin_subtitulo . ' ' . $texto_admin_tip,
+                        $url_admin,
+                        true // skip_email
+                    );
+                    epl_mail_partido_visual(
+                        (int)$admin_id,
+                        $asunto_res,
+                        $partido['local_nombre'],
+                        $partido['visitante_nombre'],
+                        [
+                            ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
+                            ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
+                        ],
+                        $texto_admin_subtitulo,
+                        $texto_admin_tip,
+                        $url_admin,
+                        'Ver en panel admin'
+                    );
+                }
+
+                epl_redirect_ok('resultado_ok');
             }
-
-            // Notificar a los administradores
-            $admins_st = $db->query("SELECT id FROM jugadores WHERE rol = 'admin'");
-            $admins_ids = $admins_st->fetchAll(PDO::FETCH_COLUMN);
-            $fecha_hora_fmt = date('d/m/Y H:i', strtotime($ahora));
-            
-            $texto_admin_subtitulo = "El jugador {$nombre_quien_ingresa} registró el resultado {$resultado_sets} del partido {$partido['local_nombre']} vs {$partido['visitante_nombre']} de la jornada " . ($partido['jornada'] ?? '—') . ".";
-            $texto_admin_tip = "Fecha y hora de registro: {$fecha_hora_fmt}";
-            $url_admin = epl_url("admin/partido_detalle.php?id={$partido_id}");
-
-            foreach ($admins_ids as $admin_id) {
-                epl_notif_crear(
-                    (int)$admin_id,
-                    'resultado',
-                    $asunto_res,
-                    $texto_admin_subtitulo . ' ' . $texto_admin_tip,
-                    $url_admin,
-                    true // skip_email
-                );
-                epl_mail_partido_visual(
-                    (int)$admin_id,
-                    $asunto_res,
-                    $partido['local_nombre'],
-                    $partido['visitante_nombre'],
-                    [
-                        ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
-                        ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
-                    ],
-                    $texto_admin_subtitulo,
-                    $texto_admin_tip,
-                    $url_admin,
-                    'Ver en panel admin'
-                );
-            }
-
-            epl_redirect_ok('resultado_ok');
         }
     }
 }
@@ -236,24 +261,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
   </div>
 
   <?php else: ?>
+  <?php
+    $tiene_vencidos = false;
+    foreach ($partidos_pendientes as $p) {
+        if (!empty($p['vencido'])) {
+            $tiene_vencidos = true;
+            break;
+        }
+    }
+  ?>
 
   <!-- Selector de partido -->
   <div class="ir-selector-card">
     <p class="ir-step-label">Paso 1 — Selecciona el partido</p>
+    <?php if ($tiene_vencidos): ?>
+      <div style="background:#fee2e2;border-left:4px solid #dc2626;padding:.75rem 1rem;border-radius:8px;font-size:.85rem;color:#991b1b;margin-top:.75rem;font-weight:700">
+        ⚠️ Tienes partidos vencidos pendientes de registrar. Debes ingresar sus resultados para poder registrar otros partidos.
+      </div>
+    <?php endif; ?>
     <div class="ir-partidos-list" id="listaPartidos">
       <?php foreach ($partidos_pendientes as $i => $p):
         $vencido = !empty($p['vencido']);
         $reprog  = ($p['estado'] === 'reprogramado');
+        $disabled = ($tiene_vencidos && !$vencido);
         $selected = $has_requested_in_list 
             ? ((int)$p['id'] === $requested_partido_id) 
             : ($i === 0);
+        if ($disabled) {
+            $selected = false;
+        }
       ?>
-      <label class="ir-partido-option<?= $vencido ? ' ir-vencido' : '' ?>" for="p<?= $p['id'] ?>">
+      <label class="ir-partido-option<?= $vencido ? ' ir-vencido' : '' ?><?= $disabled ? ' ir-disabled' : '' ?>" for="p<?= $p['id'] ?>">
         <input type="radio" name="_partido_pick" id="p<?= $p['id'] ?>" value="<?= $p['id'] ?>"
                data-local="<?= epl_h($p['local_nombre']) ?>"
                data-visitante="<?= epl_h($p['visitante_nombre']) ?>"
                data-fecha="<?= epl_h($p['fecha_programada'] ?? '') ?>"
                <?= $selected ? 'checked' : '' ?>
+               <?= $disabled ? 'disabled' : '' ?>
                onchange="seleccionarPartido(this)">
         <div class="ir-partido-content">
           <div class="ir-partido-fecha<?= $vencido ? ' ir-fecha-vencida' : '' ?>">
@@ -273,10 +317,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             <div class="ir-partido-jornada">F.<?= $p['jornada'] ?? '—' ?></div>
             <?php if ($vencido): ?>
               <span style="font-size:.55rem;font-weight:800;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">Vencido</span>
+            <?php elseif ($disabled): ?>
+              <span style="font-size:.55rem;font-weight:800;color:#64748b;background:#e2e8f0;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">Bloqueado</span>
             <?php elseif ($reprog): ?>
               <span style="font-size:.55rem;font-weight:800;color:#d97706;background:#fef3c7;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">Reprog.</span>
             <?php endif; ?>
-            <?php if ($primero): ?>
+            <?php if (!$tiene_vencidos && $i === 0): ?>
               <span style="font-size:.55rem;font-weight:800;color:#16a34a;background:#dcfce7;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">⭐ Próximo</span>
             <?php endif; ?>
           </div>
@@ -408,6 +454,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
 .ir-fecha-vencida { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }
 .ir-fecha-vencida .ir-dia { color: #dc2626 !important; }
 .ir-fecha-vencida .ir-mes { color: #ef4444 !important; }
+.ir-partido-option.ir-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: #f9fafb !important;
+  border-color: #e5e7eb !important;
+}
+.ir-partido-option.ir-disabled * {
+  cursor: not-allowed;
+}
 .ir-partido-option {
   display: flex; align-items: center; gap: 1rem;
   border: 1.5px solid var(--gray-100); border-radius: 14px;
@@ -631,7 +687,7 @@ function clearChip(setNum) {
 }
 // Auto-seleccionar el partido correspondiente (o el primero si no hay pre-selección)
 document.addEventListener('DOMContentLoaded', function() {
-  const selected = document.querySelector('#listaPartidos input[type=radio]:checked') || document.querySelector('#listaPartidos input[type=radio]');
+  const selected = document.querySelector('#listaPartidos input[type=radio]:checked:not([disabled])') || document.querySelector('#listaPartidos input[type=radio]:not([disabled])');
   if (selected) {
     selected.checked = true;
     seleccionarPartido(selected);

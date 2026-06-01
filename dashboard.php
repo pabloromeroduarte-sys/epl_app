@@ -72,9 +72,9 @@ if ($equipo) {
         LEFT JOIN recintos r ON r.id = p.recinto_id
         WHERE (p.equipo_local_id=? OR p.equipo_visitante_id=?)
           AND (
-            (p.estado IN ('pendiente','reprogramado') AND p.fecha_programada IS NOT NULL AND p.fecha_programada < ?)
+            (p.estado IN ('pendiente','reprogramado') AND p.fecha_programada IS NOT NULL AND p.fecha_programada < ? AND DATE(p.fecha_programada) != '2026-12-31')
           )
-        ORDER BY p.fecha_programada DESC
+        ORDER BY p.fecha_programada ASC
     ");
     $stA->execute([$equipo['id'], $equipo['id'], $hoy]);
     $atrasados = $stA->fetchAll();
