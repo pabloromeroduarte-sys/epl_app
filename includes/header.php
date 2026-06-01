@@ -22,7 +22,18 @@ $og_type          = $og_type          ?? 'website';
 $_proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $_host  = $_SERVER['HTTP_HOST'] ?? 'epleague.cl';
 $_uri   = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
-$canonical_url = $canonical_url ?? ($_proto . '://' . $_host . $_uri);
+
+// Conservar parámetros esenciales para SEO (id de torneo/jugador, liga de clasificación)
+$_allowed_params = [];
+if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+    $_allowed_params['id'] = (int)$_GET['id'];
+}
+if (isset($_GET['liga']) && is_numeric($_GET['liga'])) {
+    $_allowed_params['liga'] = (int)$_GET['liga'];
+}
+$_query = !empty($_allowed_params) ? '?' . http_build_query($_allowed_params) : '';
+
+$canonical_url = $canonical_url ?? ($_proto . '://' . $_host . $_uri . $_query);
 
 // Site URL absoluto para schema
 $site_url = $_proto . '://' . $_host;
