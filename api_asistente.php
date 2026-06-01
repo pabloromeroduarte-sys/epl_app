@@ -67,6 +67,256 @@ function asist_tokens(string $s): array {
     return array_values(array_filter(preg_split('/[\s\W]+/u', asist_norm($s))));
 }
 
+// Interceptar si el usuario intenta registrar un resultado conversacionalmente
+if ($context === 'player') {
+    $jugador = epl_jugador_actual();
+    if ($jugador) {
+        $preg_norm = asist_norm($pregunta);
+        // Buscar sets en el texto (ej: 6-3 6-4, 7-6 2-6 6-3)
+        preg_match_all('/(\d+)\s*[-–/]\s*(\d+)/', $pregunta, $set_matches, PREG_SET_ORDER);
+        
+        $has_score = !empty($set_matches) && count($set_matches) >= 1 && count($set_matches) <= 3;
+        $is_intent = false;
+        
+        // Palabras clave que indican registro de marcador
+        $keywords_reg = ['jugamos', 'jugue', 'ganamos', 'gane', 'perdimos', 'perdi', 'resultado', 'marcador', 'sets', 'score', 'anota', 'registra', 'cargue', 'cargar', 'anotar'];
+        foreach ($keywords_reg as $kw) {
+            if (str_contains($preg_norm, $kw)) {
+                $is_intent = true;
+                break;
+            }
+        }
+        
+        if ($has_score && $is_intent) {
+            $db = epl_db();
+            $liga = epl_liga_activa();
+            $equipo = $liga ? epl_equipo_del_jugador($jugador['id'], $liga['id']) : null;
+            
+            if (!$equipo) {
+                echo json_encode([
+                    'respuesta' => 'Lo siento, no he podido registrar el resultado porque no tienes un equipo activo en la liga actual.',
+                    'link' => ['url' => '/inscribirse.php', 'texto' => '🏅 Ver Competiciones'],
+                    'sugerencias' => ['¿Cómo me inscribo a un torneo?', '¿Cómo me registro?']
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            
+            // Buscar partidos pendientes del equipo del jugador en la liga activa
+            $stP = $db->prepare("
+                SELECT p.*,
+                       el.nombre AS local_nombre,
+                       ev.nombre AS visitante_nombre
+                FROM partidos p
+                JOIN equipos el ON el.id = p.equipo_local_id
+                JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                WHERE p.liga_id = ?
+                  AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
+                  AND p.estado IN ('pendiente', 'reprogramado')
+            ");
+            $stP->execute([$liga['id'], $equipo['id'], $equipo['id']]);
+            $partidos_pendientes = $stP->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (empty($partidos_pendientes)) {
+                echo json_encode([
+                    'respuesta' => 'No encontré ningún partido pendiente o reprogramado para tu equipo en la liga actual.',
+                    'link' => ['url' => '/dashboard.php', 'texto' => '🏠 Ir a Inicio'],
+                    'sugerencias' => ['¿Cómo veo mis próximos partidos?', '¿Cómo veo la tabla de clasificación?']
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            
+            $partido_seleccionado = null;
+            
+            if (count($partidos_pendientes) === 1) {
+                $partido_seleccionado = $partidos_pendientes[0];
+            } else {
+                // Si hay múltiples, buscar coincidencia por nombre/apellido del rival
+                $mejor_coincidencia = null;
+                $max_score = 0;
+                
+                foreach ($partidos_pendientes as $p) {
+                    $op_nombre = ($p['equipo_local_id'] == $equipo['id']) ? $p['visitante_nombre'] : $p['local_nombre'];
+                    $op_tokens = asist_tokens($op_nombre);
+                    
+                    $score_op = 0;
+                    foreach ($op_tokens as $t) {
+                        if (str_contains($preg_norm, $t)) {
+                            $score_op++;
+                        }
+                    }
+                    
+                    if ($score_op > $max_score) {
+                        $max_score = $score_op;
+                        $mejor_coincidencia = $p;
+                    }
+                }
+                
+                if ($max_score > 0) {
+                    $partido_seleccionado = $mejor_coincidencia;
+                }
+            }
+            
+            if (!$partido_seleccionado) {
+                // Listar rivales posibles
+                $oponentes = [];
+                foreach ($partidos_pendientes as $p) {
+                    $op_n = ($p['equipo_local_id'] == $equipo['id']) ? $p['visitante_nombre'] : $p['local_nombre'];
+                    $oponentes[] = "• **" . $op_n . "**";
+                }
+                echo json_encode([
+                    'respuesta' => "Encontré múltiples partidos pendientes para tu equipo. 😅 ¿Contra cuál de estas parejas jugaste?\n\n" . implode("\n", $oponentes) . "\n\nPor favor, repítemelo indicando el rival (ej: *\"jugamos contra " . strip_tags($partidos_pendientes[0]['local_nombre']) . " y ganamos 6-3 6-4\"*).",
+                    'link' => ['url' => '/ingresar_resultado.php', 'texto' => '🏆 Ingresar Marcador Manual'],
+                    'sugerencias' => []
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            
+            // Determinar si el usuario ganó o perdió
+            $gano = null;
+            if (str_contains($preg_norm, 'ganamos') || str_contains($preg_norm, 'gane') || str_contains($preg_norm, 'victoria') || str_contains($preg_norm, 'vencimos')) {
+                $gano = true;
+            } elseif (str_contains($preg_norm, 'perdimos') || str_contains($preg_norm, 'perdi') || str_contains($preg_norm, 'derrota')) {
+                $gano = false;
+            }
+            
+            // Contar sets de izquierda/derecha para validar intención
+            $left_won = 0; $right_won = 0;
+            foreach ($set_matches as $m) {
+                if ((int)$m[1] > (int)$m[2]) $left_won++; else $right_won++;
+            }
+            
+            if ($gano === null) {
+                $gano = ($left_won > $right_won);
+            }
+            
+            // Mapear scores (izq es del usuario si coinciden intenciones de victoria)
+            $sets_usuario = [];
+            $sets_rival = [];
+            $izq_es_usuario = ($gano && $left_won >= $right_won) || (!$gano && $left_won <= $right_won);
+            
+            foreach ($set_matches as $m) {
+                $g1 = (int)$m[1];
+                $g2 = (int)$m[2];
+                if ($izq_es_usuario) {
+                    $sets_usuario[] = $g1;
+                    $sets_rival[] = $g2;
+                } else {
+                    $sets_usuario[] = $g2;
+                    $sets_rival[] = $g1;
+                }
+            }
+            
+            $es_local = ($partido_seleccionado['equipo_local_id'] == $equipo['id']);
+            
+            $games_s1_local = null; $games_s1_visitante = null;
+            $games_s2_local = null; $games_s2_visitante = null;
+            $games_s3_local = null; $games_s3_visitante = null;
+            
+            if ($es_local) {
+                $games_s1_local = $sets_usuario[0] ?? null; $games_s1_visitante = $sets_rival[0] ?? null;
+                $games_s2_local = $sets_usuario[1] ?? null; $games_s2_visitante = $sets_rival[1] ?? null;
+                $games_s3_local = $sets_usuario[2] ?? null; $games_s3_visitante = $sets_rival[2] ?? null;
+            } else {
+                $games_s1_local = $sets_rival[0] ?? null; $games_s1_visitante = $sets_usuario[0] ?? null;
+                $games_s2_local = $sets_rival[1] ?? null; $games_s2_visitante = $sets_usuario[1] ?? null;
+                $games_s3_local = $sets_rival[2] ?? null; $games_s3_visitante = $sets_usuario[2] ?? null;
+            }
+            
+            // Calcular sets totales
+            $sets_local = 0; $sets_vis = 0;
+            if ($games_s1_local !== null && $games_s1_visitante !== null) {
+                if ($games_s1_local > $games_s1_visitante) $sets_local++; else $sets_vis++;
+            }
+            if ($games_s2_local !== null && $games_s2_visitante !== null) {
+                if ($games_s2_local > $games_s2_visitante) $sets_local++; else $sets_vis++;
+            }
+            if ($games_s3_local !== null && $games_s3_visitante !== null) {
+                if ($games_s3_local > $games_s3_visitante) $sets_local++; else $sets_vis++;
+            }
+            
+            $ganador_id = ($sets_local > $sets_vis) ? $partido_seleccionado['equipo_local_id'] : $partido_seleccionado['equipo_visitante_id'];
+            $ahora = date('Y-m-d H:i:s');
+            
+            // Guardar resultado
+            $db->prepare("
+                UPDATE partidos SET
+                  estado='jugado', fecha_jugado=?,
+                  sets_local=?, sets_visitante=?,
+                  games_s1_local=?, games_s1_visitante=?,
+                  games_s2_local=?, games_s2_visitante=?,
+                  games_s3_local=?, games_s3_visitante=?,
+                  ganador_id=?, ingresado_por=?,
+                  resultado_ingresado_at=?
+                WHERE id=?
+            ")->execute([
+                $ahora,
+                $sets_local, $sets_vis,
+                $games_s1_local, $games_s1_visitante,
+                $games_s2_local, $games_s2_visitante,
+                $games_s3_local, $games_s3_visitante,
+                $ganador_id, $jugador['id'], $ahora, $partido_seleccionado['id']
+            ]);
+            
+            // Recalcular clasificación
+            epl_recalcular_clasificacion($liga['id']);
+            
+            // Notificaciones
+            $rival_id = $es_local ? $partido_seleccionado['equipo_visitante_id'] : $partido_seleccionado['equipo_local_id'];
+            $rival_nombre = $es_local ? $partido_seleccionado['visitante_nombre'] : $partido_seleccionado['local_nombre'];
+            $mi_nombre = $equipo['nombre'];
+            $resultado_sets = implode(' / ', array_filter(array_map(function($u, $r) {
+                return ($u !== null && $r !== null) ? "{$u}-{$r}" : null;
+            }, $sets_usuario, $sets_rival)));
+            
+            $asunto_res = epl_mail_asunto('⚽ Resultado ingresado', $partido_seleccionado['local_nombre'], $partido_seleccionado['visitante_nombre'], $partido_seleccionado['jornada'] ?? null);
+            $nombre_quien_ingresa = trim(($jugador['nombre'] ?? '') . ' ' . ($jugador['apellido'] ?? ''));
+            $texto_rival_subtitulo = "El jugador {$nombre_quien_ingresa} ingresó el resultado de tu partido {$partido_seleccionado['local_nombre']} vs {$partido_seleccionado['visitante_nombre']} (Jornada " . ($partido_seleccionado['jornada'] ?? '—') . ").";
+            $texto_rival_tip = "⚠️ En caso de tener algún problema con el resultado contáctate con los organizadores (tienes 24 horas para reclamar).";
+            $url_reclamar = epl_url("reclamar_resultado.php?partido_id={$partido_seleccionado['id']}");
+            
+            // Notificar rivales
+            $re_st = $db->prepare("SELECT jugador1_id, jugador2_id FROM equipos WHERE id = ?");
+            $re_st->execute([$rival_id]);
+            $re = $re_st->fetch(PDO::FETCH_ASSOC);
+            $rivales_ids = array_values(array_filter([ (int)($re['jugador1_id'] ?? 0), (int)($re['jugador2_id'] ?? 0) ]));
+            $ganador_nombre = ($ganador_id == $equipo['id']) ? $mi_nombre : $rival_nombre;
+            
+            foreach ($rivales_ids as $rival_jugador_id) {
+                epl_notif_crear($rival_jugador_id, 'resultado', $asunto_res, $texto_rival_subtitulo . ' ' . $texto_rival_tip, $url_reclamar, true);
+                epl_mail_partido_visual($rival_jugador_id, $asunto_res, $partido_seleccionado['local_nombre'], $partido_seleccionado['visitante_nombre'], [
+                    ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
+                    ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
+                ], $texto_rival_subtitulo, $texto_rival_tip, $url_reclamar, '⚠️ Reclamar Resultado');
+            }
+            
+            // Notificar admins
+            $admins_st = $db->query("SELECT id FROM jugadores WHERE rol = 'admin'");
+            $admins_ids = $admins_st->fetchAll(PDO::FETCH_COLUMN);
+            $fecha_hora_fmt = date('d/m/Y H:i', strtotime($ahora));
+            $texto_admin_subtitulo = "El jugador {$nombre_quien_ingresa} registró el resultado {$resultado_sets} del partido {$partido_seleccionado['local_nombre']} vs {$partido_seleccionado['visitante_nombre']} de la jornada " . ($partido_seleccionado['jornada'] ?? '—') . ".";
+            $texto_admin_tip = "Fecha y hora de registro: {$fecha_hora_fmt}";
+            $url_admin = epl_url("admin/partido_detalle.php?id={$partido_seleccionado['id']}");
+            
+            foreach ($admins_ids as $admin_id) {
+                epl_notif_crear((int)$admin_id, 'resultado', $asunto_res, $texto_admin_subtitulo . ' ' . $texto_admin_tip, $url_admin, true);
+                epl_mail_partido_visual((int)$admin_id, $asunto_res, $partido_seleccionado['local_nombre'], $partido_seleccionado['visitante_nombre'], [
+                    ['icon' => '🏆', 'label' => 'Ganador',   'valor' => $ganador_nombre],
+                    ['icon' => '🎾', 'label' => 'Resultado', 'valor' => $resultado_sets],
+                ], $texto_admin_subtitulo, $texto_admin_tip, $url_admin, '🔍 Ver Detalle');
+            }
+            
+            $resultado_final_str = ($ganador_id == $equipo['id']) ? "ganando" : "perdiendo";
+            
+            echo json_encode([
+                'respuesta' => "✅ **¡Marcador registrado con éxito por el chat!**\n\nHe anotado el partido contra **" . ($es_local ? $partido_seleccionado['visitante_nombre'] : $partido_seleccionado['local_nombre']) . "** {$resultado_final_str} por **" . implode(" / ", array_map(function($u, $r) { return "{$u}-{$r}"; }, $sets_usuario, $sets_rival)) . "**.\n\nTu rival ha recibido la notificación y tiene 24 horas para disputar el marcador si hay algún error.",
+                'link' => ['url' => '/dashboard.php', 'texto' => '🏠 Ir a Inicio'],
+                'sugerencias' => ['¿Cómo veo la tabla de clasificación?', '¿Cuándo es mi próximo partido?']
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+}
+
 // ── Intents para ADMIN ────────────────────────────────────────
 $intents_admin = [
     [
