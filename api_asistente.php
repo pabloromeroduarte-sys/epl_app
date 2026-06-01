@@ -336,6 +336,100 @@ if ($context === 'player') {
             exit;
         }
         
+        $keywords_proximo = ['proximo partido', 'proximo juego', 'cuando juego', 'cuando es mi proximo', 'cuando es mi partido', 'mi proximo partido', 'cuando juego proximo', 'proxima fecha', 'mis partidos'];
+        $is_proximo_intent = false;
+        foreach ($keywords_proximo as $kw) {
+            if (str_contains($preg_norm, $kw)) {
+                $is_proximo_intent = true;
+                break;
+            }
+        }
+
+        if ($is_proximo_intent) {
+            $db = epl_db();
+            $liga = epl_liga_activa();
+            $equipo = $liga ? epl_equipo_del_jugador($jugador['id'], $liga['id']) : null;
+            
+            if ($equipo) {
+                $stP = $db->prepare("
+                    SELECT p.*,
+                           el.nombre AS local_nombre,
+                           ev.nombre AS visitante_nombre,
+                           r.nombre AS recinto_nombre,
+                           rs.nombre AS recinto_superior_nombre,
+                           ra.nombre AS recinto_abuelo_nombre
+                    FROM partidos p
+                    JOIN equipos el ON el.id = p.equipo_local_id
+                    JOIN equipos ev ON ev.id = p.equipo_visitante_id
+                    LEFT JOIN recintos r ON r.id = p.recinto_id
+                    LEFT JOIN recintos rs ON rs.id = r.padre_id
+                    LEFT JOIN recintos ra ON ra.id = rs.padre_id
+                    WHERE p.liga_id = ?
+                      AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
+                      AND p.estado IN ('pendiente', 'reprogramado')
+                    ORDER BY 
+                      CASE WHEN p.fecha_programada IS NOT NULL AND p.fecha_programada >= NOW() THEN 0 ELSE 1 END ASC,
+                      p.fecha_programada ASC,
+                      p.id ASC
+                    LIMIT 1
+                ");
+                $stP->execute([$liga['id'], $equipo['id'], $equipo['id']]);
+                $proximo = $stP->fetch(PDO::FETCH_ASSOC);
+
+                if ($proximo) {
+                    $es_local = ($proximo['equipo_local_id'] == $equipo['id']);
+                    $rival = $es_local ? $proximo['visitante_nombre'] : $proximo['local_nombre'];
+                    $condicion = $es_local ? 'Local' : 'Visitante';
+                    
+                    $fecha_fmt = 'TBD';
+                    if ($proximo['fecha_programada']) {
+                        $time = strtotime($proximo['fecha_programada']);
+                        $dias_semana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+                        $meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+                        
+                        $dia_nombre = $dias_semana[date('w', $time)];
+                        $dia_num = date('d', $time);
+                        $mes_nombre = $meses[date('n', $time) - 1];
+                        $hora = date('H:i', $time);
+                        
+                        $fecha_fmt = "{$dia_nombre} {$dia_num} de {$mes_nombre} a las {$hora} hrs";
+                    }
+                    
+                    $recinto_str = 'TBD';
+                    $r_nombre = $proximo['recinto_nombre'] ?? '';
+                    $r_sup    = $proximo['recinto_superior_nombre'] ?? '';
+                    $r_abu    = $proximo['recinto_abuelo_nombre'] ?? '';
+                    $cancha   = $proximo['cancha'] ?? '';
+                    if ($r_abu) {
+                        $recinto_str = $r_abu . ($r_nombre ? ' - ' . $r_nombre : '');
+                    } elseif ($r_sup) {
+                        $recinto_str = $r_sup . ($r_nombre ? ' - ' . $r_nombre : '');
+                    } elseif ($r_nombre) {
+                        $recinto_str = $r_nombre;
+                    }
+                    if ($cancha) {
+                        $recinto_str .= " (Cancha {$cancha})";
+                    }
+                    
+                    $reprogr_label = ($proximo['estado'] === 'reprogramado') ? " 🔄 *[Reprogramado]*" : "";
+                    
+                    $respuesta = "🏆 **Tu próximo partido programado:**\n\n" .
+                                 "🆚 **Rival:** {$rival}\n" .
+                                 "📅 **Fecha:** {$fecha_fmt}{$reprogr_label}\n" .
+                                 "📍 **Sede:** {$recinto_str}\n" .
+                                 "🏠 **Condición:** {$condicion}\n" .
+                                 "🔢 **Jornada:** Jornada " . ($proximo['jornada'] ?? '—');
+                                 
+                    echo json_encode([
+                        'respuesta' => $respuesta,
+                        'link' => ['url' => '/reprogramar.php', 'texto' => '📅 Reprogramar Partido'],
+                        'sugerencias' => ['¿Cómo registro un resultado?', '¿Cómo veo la clasificación?']
+                    ], JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+            }
+        }
+
         // Palabras clave que indican registro de marcador
         $keywords_reg = ['jugamos', 'jugue', 'ganamos', 'gane', 'perdimos', 'perdi', 'resultado', 'marcador', 'sets', 'score', 'anota', 'registra', 'cargue', 'cargar', 'anotar'];
         foreach ($keywords_reg as $kw) {
