@@ -132,8 +132,88 @@ foreach ($ventanas as [$horas, $tolerancia, $etiqueta]) {
             $enviados_total += $enviados;
 
             echo "    -> Jugador #{$jid}: notif + email + {$enviados} push\n";
-        }
     }
+}
+
+// ── ALERTA DE PARTIDOS ATRASADOS (12h sin resultado para Administradores) ──
+try {
+    echo "[{$now->format('Y-m-d H:i:s')}] Ejecutando comprobación de partidos atrasados...\n";
+    $limite_tiempo = $now->modify('-12 hours')->format('Y-m-d H:i:s');
+    
+    // Obtener partidos que pasaron su fecha hace más de 12 horas y no tienen marcador
+    $stAtrasados = $db->prepare("
+        SELECT
+            p.id,
+            p.fecha_programada,
+            p.jornada,
+            el.nombre  AS local_nombre,
+            ev.nombre  AS visitante_nombre,
+            lg.nombre  AS liga_nombre
+        FROM partidos p
+        JOIN equipos el  ON el.id = p.equipo_local_id
+        JOIN equipos ev  ON ev.id = p.equipo_visitante_id
+        LEFT JOIN ligas lg ON lg.id = p.liga_id
+        WHERE p.estado NOT IN ('jugado', 'walkover', 'no_presentado')
+          AND p.fecha_programada IS NOT NULL
+          AND DATE(p.fecha_programada) != '2026-12-31'
+          AND p.fecha_programada <= ?
+        ORDER BY p.fecha_programada ASC
+    ");
+    $stAtrasados->execute([$limite_tiempo]);
+    $partidos_atrasados = $stAtrasados->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!empty($partidos_atrasados)) {
+        echo "  [Atrasados] Se encontraron " . count($partidos_atrasados) . " partidos atrasados.\n";
+        
+        // Obtener administradores activos
+        $stAdms = $db->query("SELECT id FROM jugadores WHERE rol = 'admin' AND estado = 'activo'");
+        $admins = $stAdms->fetchAll(PDO::FETCH_COLUMN);
+
+        if (!empty($admins)) {
+            foreach ($partidos_atrasados as $pa) {
+                $pa_id      = (int)$pa['id'];
+                $pa_local   = trim($pa['local_nombre']);
+                $pa_vis     = trim($pa['visitante_nombre']);
+                $pa_liga    = trim($pa['liga_nombre'] ?? 'Elite Padel League');
+                $pa_jornada = $pa['jornada'] ? "Jornada {$pa['jornada']}" : '';
+                
+                $pa_fecha_dt  = new DateTimeImmutable($pa['fecha_programada'], new DateTimeZone('America/Santiago'));
+                $pa_fecha_str = $pa_fecha_dt->format('d/m/Y H:i');
+
+                $titulo_adm  = "⚠️ Partido atrasado sin resultado (12h)";
+                $dedup_mark_adm = "[atrasado_12h_partido_{$pa_id}]";
+                $mensaje_adm = "El partido {$pa_local} vs {$pa_vis} ({$pa_liga} " . ($pa_jornada ? "· {$pa_jornada}" : "") . ") programado para el {$pa_fecha_str} lleva más de 12 horas sin marcador. {$dedup_mark_adm}";
+                $url_adm     = epl_url("admin/partidos.php?search=" . urlencode($pa_local));
+
+                foreach ($admins as $aid) {
+                    $aid = (int)$aid;
+                    
+                    // Verificar si ya se le notificó a este admin
+                    $check_adm = $db->prepare("
+                        SELECT 1 FROM notificaciones 
+                        WHERE jugador_id = ? 
+                          AND tipo = 'admin_alerta' 
+                          AND mensaje LIKE ? 
+                        LIMIT 1
+                    ");
+                    $check_adm->execute([$aid, "%[atrasado_12h_partido_{$pa_id}]%"]);
+                    
+                    if ($check_adm->fetchColumn()) {
+                        continue;
+                    }
+
+                    // Enviar notificaciones (BD, OneSignal Web Push, Email)
+                    epl_notif_crear($aid, 'admin_alerta', $titulo_adm, $mensaje_adm, $url_adm, false);
+                    echo "    -> Alerta enviada al Admin #{$aid} para el partido {$pa_local} vs {$pa_vis}\n";
+                }
+            }
+        }
+    } else {
+        echo "  [Atrasados] Sin partidos atrasados.\n";
+    }
+} catch (Throwable $e) {
+    echo "  [Atrasados] ERROR: " . $e->getMessage() . "\n";
+    error_log("cron_recordatorio_partidos - alerta atrasados error: " . $e->getMessage());
 }
 
 echo "[" . date('Y-m-d H:i:s') . "] Fin. Push enviados: {$enviados_total}\n";
