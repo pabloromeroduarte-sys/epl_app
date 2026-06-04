@@ -377,6 +377,30 @@ function toggleTools() {
   padding: .05rem .35rem;
   min-width: 15px; text-align: center;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FIX DEFINITIVO iOS Safari — barra inferior que se "despega" al scrollear
+   Causa: cuando el documento raíz scrollea, Safari colapsa/expande su barra
+   de herramientas y el viewport cambia; el position:fixed queda flotando.
+   Solución: el scroll NO ocurre en <html>/<body> sino dentro de .dash-main.
+   Así la barra de Safari nunca colapsa y el bottom-nav queda clavado abajo.
+   Acotado con :has() para afectar SOLO páginas admin (no rompe lo demás).
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 992px) {
+  html:has(.dash-bottom-nav--admin),
+  body:has(.dash-bottom-nav--admin) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior-y: none;
+  }
+  body:has(.dash-bottom-nav--admin) .dash-main {
+    height: calc(100vh - 90px);      /* fallback navegadores viejos */
+    height: calc(100dvh - 90px);     /* viewport dinámico real (iOS 15.4+) */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
 </style>
 
 <script>
