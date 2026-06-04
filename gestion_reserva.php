@@ -189,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['baja_confirm
         $msg_adm = "El club confirmó la baja de la reserva del partido $local vs $visita.";
         if ($quien) $msg_adm .= " Confirmó: $quien.";
         foreach (epl_admins_ids() as $aid) {
-            epl_notif_crear((int)$aid, 'admin', '✅ Baja confirmada', $msg_adm, $url_admin, true);
+            epl_notif_crear((int)$aid, 'admin', '✅ Baja confirmada', $msg_adm, $url_admin, false);
         }
     } catch (Throwable $e) {}
 

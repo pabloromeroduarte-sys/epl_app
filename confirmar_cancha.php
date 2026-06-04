@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['cancha_confi
                 (int)$partido['jv1_id'], (int)$partido['jv2_id'],
             ]);
             foreach (array_unique($jugadores) as $jid) {
-                if ($jid) epl_notif_crear($jid, 'partido', $titulo_notif, $msg_notif, epl_url('dashboard.php'), true);
+                if ($jid) epl_notif_crear($jid, 'partido', $titulo_notif, $msg_notif, epl_url('dashboard.php'), false);
             }
         } catch (Throwable $e) {}
 
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['cancha_confi
             $msg_admin = "El club confirmó la cancha «{$cancha_elegida}» para {$partido['local_nombre']} vs {$partido['visitante_nombre']} ({$fecha_lbl}).";
             if ($quien) $msg_admin .= " Confirmó: $quien.";
             foreach (epl_admins_ids() as $admin_id) {
-                epl_notif_crear((int)$admin_id, 'admin', $titulo_notif, $msg_admin, $url_notif, true);
+                epl_notif_crear((int)$admin_id, 'admin', $titulo_notif, $msg_admin, $url_notif, false);
             }
         } catch (Throwable $e) {}
 

@@ -28,7 +28,7 @@ function adm_link(string $href, string $cur_file, $active_files, string $icon, s
     <?php
 }
 
-$_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notificaciones.php','configuracion.php','erp_financiero.php','recintos.php','diagnostico_push.php','diagnostico_mail.php','cumpleanos.php']);
+$_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notificaciones.php','configuracion.php','erp_financiero.php','recintos.php','diagnostico_push.php','diagnostico_mail.php','cumpleanos.php','alertas.php']);
 ?>
 <aside class="dash-sidebar dash-sidebar--admin">
   <div class="adm-brand">
@@ -62,6 +62,7 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
     </button>
     <div id="tools-menu" class="adm-tools-menu <?= $_in_tools ? 'open' : '' ?>">
       <?php adm_link('erp_financiero.php',   $cur, 'erp_financiero.php',   '💰', 'ERP Financiero'); ?>
+      <?php adm_link('alertas.php',          $cur, 'alertas.php',          '🔔', 'Alertas y avisos'); ?>
       <?php adm_link('notificaciones.php',   $cur, 'notificaciones.php',   '✉️', 'Mensajería'); ?>
       <?php adm_link('diagnostico_push.php', $cur, 'diagnostico_push.php', '🔔', 'Diagnóstico Push'); ?>
       <?php adm_link('diagnostico_mail.php', $cur, 'diagnostico_mail.php', '📬', 'Diagnóstico Mail'); ?>
@@ -216,6 +217,10 @@ function toggleTools() {
       <a href="erp_financiero.php" class="bn-tile <?= $cur==='erp_financiero.php'?'active':'' ?>">
         <span class="bn-tile-icon">💰</span>
         <span>ERP</span>
+      </a>
+      <a href="alertas.php" class="bn-tile <?= $cur==='alertas.php'?'active':'' ?>">
+        <span class="bn-tile-icon">🔔</span>
+        <span>Alertas</span>
       </a>
       <a href="notificaciones.php" class="bn-tile <?= $cur==='notificaciones.php'?'active':'' ?>">
         <span class="bn-tile-icon">✉️</span>

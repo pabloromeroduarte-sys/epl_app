@@ -11,6 +11,9 @@ $db      = epl_db();
 $liga    = epl_liga_activa();
 $equipo  = $liga ? epl_equipo_del_jugador($jugador['id'], $liga['id']) : null;
 
+// Horas mínimas de anticipación para reprogramar (configurable en admin/alertas.php)
+$REPROG_LOCK_HORAS = epl_notif_reprog_lock_horas();
+
 $_flash = epl_flash_get();
 $ok     = ($_flash && $_flash['tipo']==='ok');
 $error  = ($_flash && $_flash['tipo']==='error') ? $_flash['msg'] : '';
@@ -86,7 +89,7 @@ if ($equipo && !$bloqueado_reprogs) {
           AND (
             p.fecha_programada IS NULL
             OR p.fecha_programada < NOW()
-            OR p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 24 HOUR)
+            OR p.fecha_programada >= DATE_ADD(NOW(), INTERVAL {$REPROG_LOCK_HORAS} HOUR)
           )
         ORDER BY p.fecha_programada ASC
     ");
@@ -324,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
           AND (
             p.fecha_programada IS NULL
             OR p.fecha_programada < NOW()
-            OR p.fecha_programada >= DATE_ADD(NOW(), INTERVAL 24 HOUR)
+            OR p.fecha_programada >= DATE_ADD(NOW(), INTERVAL {$REPROG_LOCK_HORAS} HOUR)
           )
     ");
     $stVal->execute([$partido_id, $equipo['id'], $equipo['id']]);

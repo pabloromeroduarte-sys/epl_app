@@ -17,12 +17,8 @@ $db  = epl_db();
 $now = new DateTimeImmutable('now', new DateTimeZone('America/Santiago'));
 echo "[{$now->format('Y-m-d H:i:s')}] Cron recordatorio partidos\n";
 
-// Ventanas: [horas_antes, tolerancia_minutos, etiqueta]
-$ventanas = [
-    [24, 30, '24 horas'],
-    [12, 30, '12 horas'],
-    [ 3, 30,  '3 horas'],
-];
+// Ventanas: [horas_antes, tolerancia_minutos, etiqueta] — configurables desde admin/alertas.php
+$ventanas = epl_notif_recordatorio_ventanas();
 
 $enviados_total = 0;
 
@@ -132,13 +128,15 @@ foreach ($ventanas as [$horas, $tolerancia, $etiqueta]) {
             $enviados_total += $enviados;
 
             echo "    -> Jugador #{$jid}: notif + email + {$enviados} push\n";
-    }
-}
+        } // fin foreach jugador_ids
+    } // fin foreach partidos
+} // fin foreach ventanas
 
-// ── ALERTA DE PARTIDOS ATRASADOS (12h sin resultado para Administradores) ──
+// ── ALERTA DE PARTIDOS ATRASADOS (sin resultado para Administradores) ──
 try {
-    echo "[{$now->format('Y-m-d H:i:s')}] Ejecutando comprobación de partidos atrasados...\n";
-    $limite_tiempo = $now->modify('-12 hours')->format('Y-m-d H:i:s');
+    $atrasado_horas = epl_notif_tiempos()['atrasado_horas'];
+    echo "[{$now->format('Y-m-d H:i:s')}] Ejecutando comprobación de partidos atrasados ({$atrasado_horas}h)...\n";
+    $limite_tiempo = $now->modify("-{$atrasado_horas} hours")->format('Y-m-d H:i:s');
     
     // Obtener partidos que pasaron su fecha hace más de 12 horas y no tienen marcador
     $stAtrasados = $db->prepare("
@@ -180,9 +178,9 @@ try {
                 $pa_fecha_dt  = new DateTimeImmutable($pa['fecha_programada'], new DateTimeZone('America/Santiago'));
                 $pa_fecha_str = $pa_fecha_dt->format('d/m/Y H:i');
 
-                $titulo_adm  = "⚠️ Partido atrasado sin resultado (12h)";
-                $dedup_mark_adm = "[atrasado_12h_partido_{$pa_id}]";
-                $mensaje_adm = "El partido {$pa_local} vs {$pa_vis} ({$pa_liga} " . ($pa_jornada ? "· {$pa_jornada}" : "") . ") programado para el {$pa_fecha_str} lleva más de 12 horas sin marcador. {$dedup_mark_adm}";
+                $titulo_adm  = "⚠️ Partido atrasado sin resultado ({$atrasado_horas}h)";
+                $dedup_mark_adm = "[atrasado_12h_partido_{$pa_id}]"; // marca estable (no re-disparar al cambiar config)
+                $mensaje_adm = "El partido {$pa_local} vs {$pa_vis} ({$pa_liga} " . ($pa_jornada ? "· {$pa_jornada}" : "") . ") programado para el {$pa_fecha_str} lleva más de {$atrasado_horas} horas sin marcador. {$dedup_mark_adm}";
                 $url_adm     = epl_url("admin/partidos.php?search=" . urlencode($pa_local));
 
                 foreach ($admins as $aid) {

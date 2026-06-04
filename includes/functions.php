@@ -797,6 +797,8 @@ function epl_notif_icono(string $tipo): string {
         'inscripcion'    => '✅',
         'liga'           => '🏆',
         'admin'          => '📢',
+        'admin_alerta'   => '🕐',
+        'partido'        => '🎾',
         'mensaje'        => '💬',
         'recordatorio'   => '⏰',
         'anuncio'        => '📣',
@@ -812,12 +814,70 @@ function epl_notif_tipo_label(string $tipo): string {
         'inscripcion'    => 'Inscripción',
         'liga'           => 'Liga',
         'admin'          => 'Comunicado',
+        'admin_alerta'   => 'Alerta admin',
+        'partido'        => 'Partido',
         'mensaje'        => 'Mensaje',
         'recordatorio'   => 'Recordatorio',
         'anuncio'        => 'Anuncio',
         'suplente'       => 'Equipo',
     ];
     return $labels[$tipo] ?? ucfirst($tipo);
+}
+
+// -------------------------------------------------------
+// Tiempos de notificaciones (configurables desde admin/alertas.php)
+// -------------------------------------------------------
+
+/** Valores por defecto de los tiempos de alertas. */
+function epl_notif_tiempos_default(): array {
+    return [
+        'recordatorio_horas'       => '72,24,3', // horas antes del partido (coma-separadas)
+        'recordatorio_tol_min'     => 30,        // tolerancia en minutos de la ventana del cron
+        'atrasado_horas'           => 12,        // alerta a admins si pasa N horas sin resultado
+        'reprog_lock_horas'        => 24,        // no se puede reprogramar con menos de N horas
+    ];
+}
+
+/** Devuelve los tiempos actuales (config + defaults). */
+function epl_notif_tiempos(): array {
+    $d = epl_notif_tiempos_default();
+    return [
+        'recordatorio_horas'   => epl_config_get('notif_recordatorio_horas',   (string)$d['recordatorio_horas']),
+        'recordatorio_tol_min' => max(5, (int)epl_config_get('notif_recordatorio_tol_min', (string)$d['recordatorio_tol_min'])),
+        'atrasado_horas'       => max(1, (int)epl_config_get('notif_atrasado_horas',       (string)$d['atrasado_horas'])),
+        'reprog_lock_horas'    => max(0, (int)epl_config_get('notif_reprog_lock_horas',    (string)$d['reprog_lock_horas'])),
+    ];
+}
+
+/**
+ * Ventanas de recordatorio para el cron: [[horas, tolerancia_min, etiqueta], ...]
+ * Ordenadas de mayor a menor.
+ */
+function epl_notif_recordatorio_ventanas(): array {
+    $t   = epl_notif_tiempos();
+    $tol = (int)$t['recordatorio_tol_min'];
+    $horas = array_filter(array_map('intval', explode(',', $t['recordatorio_horas'])), fn($h) => $h > 0);
+    $horas = array_values(array_unique($horas));
+    rsort($horas);
+    $out = [];
+    foreach ($horas as $h) {
+        if ($h > 24 && $h % 24 === 0) {
+            $dias = intdiv($h, 24);
+            $lbl  = $dias === 1 ? '1 día' : "{$dias} días";
+        } else {
+            $lbl = $h === 1 ? '1 hora' : "{$h} horas";
+        }
+        $out[] = [$h, $tol, $lbl];
+    }
+    if (empty($out)) {
+        $out = [[24, $tol, '24 horas'], [12, $tol, '12 horas'], [3, $tol, '3 horas']];
+    }
+    return $out;
+}
+
+/** Horas mínimas de anticipación para reprogramar (lock). */
+function epl_notif_reprog_lock_horas(): int {
+    return (int)epl_notif_tiempos()['reprog_lock_horas'];
 }
 
 // -------------------------------------------------------
