@@ -640,7 +640,7 @@ function epl_vincular_partner_por_token_capitan(string $token_capitan, int $juga
         $stMe->execute([$jugador_id]);
         $me_ape = $stMe->fetchColumn() ?: 'Partner';
         $db->prepare("INSERT INTO equipos (nombre, jugador1_id, jugador2_id) VALUES (?,?,?)")
-           ->execute([$cap_ape . ' / ' . $me_ape, $cap_id, $jugador_id]);
+           ->execute([$cap_ape . ' - ' . $me_ape, $cap_id, $jugador_id]);
         $equipo_id = (int)$db->lastInsertId();
         $db->prepare("UPDATE inscripciones SET equipo_id = ? WHERE id = ?")->execute([$equipo_id, $cap['id']]);
     }

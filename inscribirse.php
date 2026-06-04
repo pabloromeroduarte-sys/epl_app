@@ -368,7 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['epl_inscribir'] ?? '')) {
                     $stP = $db->prepare("SELECT nombre, apellido FROM jugadores WHERE id=?");
                     $stP->execute([$partner_id]);
                     $partner_row   = $stP->fetch();
-                    $nombre_equipo = $jugador['apellido'] . ' / ' . ($partner_row['apellido'] ?? 'Compañero');
+                    $nombre_equipo = $jugador['apellido'] . ' - ' . ($partner_row['apellido'] ?? 'Compañero');
                     $db->prepare("INSERT INTO equipos (nombre, jugador1_id, jugador2_id) VALUES (?,?,?)")
                        ->execute([$nombre_equipo, $jugador['id'], $partner_id]);
                     $equipo_id = (int)$db->lastInsertId();
