@@ -21,7 +21,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS presupuestos (
 $db->exec("CREATE TABLE IF NOT EXISTS presupuesto_items (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     presupuesto_id  INT            NOT NULL,
-    tipo            ENUM('ingreso','egreso') NOT NULL,
+    tipo            ENUM('ingreso','egreso','fase') NOT NULL,
     categoria       VARCHAR(100)   NOT NULL DEFAULT '',
     descripcion     VARCHAR(200)   NOT NULL DEFAULT '',
     cantidad        DECIMAL(10,2)  NOT NULL DEFAULT 1,

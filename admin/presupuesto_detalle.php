@@ -15,13 +15,17 @@ $db->exec("CREATE TABLE IF NOT EXISTS presupuestos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 $db->exec("CREATE TABLE IF NOT EXISTS presupuesto_items (
     id INT AUTO_INCREMENT PRIMARY KEY, presupuesto_id INT NOT NULL,
-    tipo ENUM('ingreso','egreso') NOT NULL, categoria VARCHAR(100) NOT NULL DEFAULT '',
+    tipo ENUM('ingreso','egreso','fase') NOT NULL, categoria VARCHAR(100) NOT NULL DEFAULT '',
     descripcion VARCHAR(200) NOT NULL DEFAULT '',
     cantidad DECIMAL(10,2) NOT NULL DEFAULT 1,
     valor_unitario DECIMAL(12,2) NOT NULL DEFAULT 0,
     orden INT NOT NULL DEFAULT 0,
     INDEX idx_pres (presupuesto_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+// Migración: agregar 'fase' al enum si no existe
+try {
+    $db->exec("ALTER TABLE presupuesto_items MODIFY tipo ENUM('ingreso','egreso','fase') NOT NULL");
+} catch (Throwable $e) { /* ya existe */ }
 
 $pid   = (int)($_GET['id'] ?? 0);
 $isPdf = isset($_GET['pdf']);
@@ -61,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pid = (int)$db->lastInsertId();
         }
 
-        // Reemplazar items
+        // Reemplazar items (ingresos, egresos y fases)
         $db->prepare("DELETE FROM presupuesto_items WHERE presupuesto_id=?")->execute([$pid]);
         $tipos  = $_POST['item_tipo']  ?? [];
         $cats   = $_POST['item_cat']   ?? [];
@@ -85,6 +89,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $st->execute([$pid, $t, trim($cats[$i]??''), $desc, $cant, $val, $i]);
         }
 
+        // Guardar fases de partidos (tipo='fase', categoria=nombre fase, cantidad=partidos, valor_unitario=duracion_min)
+        $fases_nombre   = $_POST['fase_nombre']   ?? [];
+        $fases_partidos = $_POST['fase_partidos'] ?? [];
+        $fases_canchas  = $_POST['fase_canchas']  ?? [];
+        $fases_duracion = $_POST['fase_duracion'] ?? [];
+        $stF = $db->prepare("INSERT INTO presupuesto_items (presupuesto_id,tipo,categoria,descripcion,cantidad,valor_unitario,orden) VALUES (?,?,?,?,?,?,?)");
+        foreach ($fases_nombre as $i => $fnombre) {
+            $fnombre = trim($fnombre);
+            if (!$fnombre) continue;
+            $fp = max(0, (int)($fases_partidos[$i] ?? 1));
+            $fc = max(1, (int)($fases_canchas[$i]  ?? 1));
+            $fd = max(0, (int)($fases_duracion[$i] ?? 90));
+            // descripcion: "N canchas simultáneas"
+            $stF->execute([$pid, 'fase', $fnombre, "{$fc} cancha(s) simultánea(s)", $fp, $fd, $i]);
+        }
+
         epl_redirect_ok('Presupuesto guardado correctamente.', "presupuesto_detalle.php?id={$pid}");
     }
 }
@@ -93,6 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($isPdf && $pres) {
     $ingresos = array_filter($items, fn($i) => $i['tipo']==='ingreso');
     $egresos  = array_filter($items, fn($i) => $i['tipo']==='egreso');
+    $fases    = array_values(array_filter($items, fn($i) => $i['tipo']==='fase'));
     $tot_ing  = array_sum(array_map(fn($i) => $i['cantidad']*$i['valor_unitario'], $ingresos));
     $tot_egr  = array_sum(array_map(fn($i) => $i['cantidad']*$i['valor_unitario'], $egresos));
     $ganancia = $tot_ing - $tot_egr;
@@ -203,6 +224,51 @@ $itemsJson = json_encode($items ?: [
       <div class="pb-sum-card" id="sumGanCard" style="background:#f0fdf4;border:1.5px solid #bbf7d0">
         <div class="pb-sum-num" id="sumGan" style="color:#16a34a">$0</div>
         <div class="pb-sum-lbl" id="sumGanLbl" style="color:#15803d">Ganancia neta</div>
+      </div>
+    </div>
+
+    <!-- ══ Planificación de partidos ══ -->
+    <div class="pb-section" style="border-color:#c7d2fe">
+      <div class="pb-section-head" style="background:#eef2ff">
+        <span class="pb-section-title" style="color:#4338ca">🎾 Planificación de partidos</span>
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:#4338ca;font-weight:700">
+            <span>Total partidos:</span>
+            <span id="ptTotalPartidos" style="font-family:var(--font-head);font-size:1rem">0</span>
+            &nbsp;·&nbsp;
+            <span>Horas cancha:</span>
+            <span id="ptTotalHoras" style="font-family:var(--font-head);font-size:1rem">0</span>
+          </div>
+          <button type="button" class="btn-add-row" style="color:#4338ca;border-color:#a5b4fc" onclick="addFase()">+ Agregar fase</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="pb-table">
+          <thead><tr>
+            <th style="width:32px;text-align:center;color:#94a3b8">#</th>
+            <th style="width:22%">Fase</th>
+            <th style="text-align:right;width:11%">Partidos</th>
+            <th style="text-align:right;width:15%">Canchas simult.</th>
+            <th style="text-align:right;width:14%">Duración (min)</th>
+            <th style="text-align:right;width:16%">Horas cancha</th>
+            <th style="text-align:right;width:14%">Total partidos</th>
+            <th style="width:36px"></th>
+          </tr></thead>
+          <tbody id="tbodyFases"></tbody>
+          <tfoot><tr class="pb-total-row">
+            <td colspan="2" style="text-align:right;padding-right:1rem">Totales</td>
+            <td style="text-align:right" id="footPtPartidos">0</td>
+            <td></td>
+            <td></td>
+            <td style="text-align:right;color:#4338ca" id="footPtHoras">0 h</td>
+            <td style="text-align:right;color:#4338ca;font-weight:900" id="footPtTotalPart">0</td>
+            <td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div style="padding:.6rem 1.1rem;background:#eef2ff;border-top:1px solid #c7d2fe;font-size:.75rem;color:#4338ca;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+        <span>💡</span>
+        <span>Usá estos datos para completar el costo de canchas en la sección de costos.</span>
       </div>
     </div>
 
@@ -450,6 +516,121 @@ function recalc() {
     tebody.appendChild(makeRow('egreso', {}));
   }
   recalc();
+})();
+
+// ══════════ PLANIFICACIÓN DE PARTIDOS ══════════
+var FASES_DEFAULT = ['Grupos','Octavos de final','Cuartos de final','Semifinal','Final','Fase única','Otro'];
+
+function makeFaseRow(data) {
+  data = data || {};
+  var tr = document.createElement('tr');
+
+  var faseOpts = FASES_DEFAULT.map(function(f) {
+    return '<option value="'+f+'"'+(data.fase===f?' selected':'')+'>'+f+'</option>';
+  }).join('');
+  var faseVal = data.fase || '';
+  var faseIsCustom = faseVal && FASES_DEFAULT.indexOf(faseVal) < 0;
+
+  var faseSelect = '<select class="pb-input" onchange="recalcFases()" style="min-width:130px">'
+    + faseOpts
+    + '<option value="__custom__"'+(faseIsCustom?' selected':'')+'>Personalizado…</option>'
+    + '</select>';
+  var faseInput = '<input type="text" class="pb-input fase-custom-inp" placeholder="Nombre de fase" value="'+(faseIsCustom?escHtml(faseVal):'')+'" oninput="recalcFases()" style="margin-top:.3rem;display:'+(faseIsCustom?'block':'none')+'">';
+  var faseNombreHidden = '<input type="hidden" name="fase_nombre[]" class="fase-nombre-val" value="'+escHtml(faseVal||FASES_DEFAULT[0])+'">';
+
+  var partidos  = data.partidos  || 1;
+  var canchas   = data.canchas   || 1;
+  var duracion  = data.duracion  || 90;
+
+  var numCell = '<td class="fase-num" style="text-align:center;color:#94a3b8;font-size:.75rem;font-weight:700">—</td>';
+  var faseCell = '<td><div style="display:flex;flex-direction:column;gap:.2rem">'+faseNombreHidden+faseSelect+faseInput+'</div></td>';
+  var partCell = '<td style="text-align:right"><input type="number" class="pb-input num fase-partidos" name="fase_partidos[]" min="1" step="1" value="'+partidos+'" oninput="recalcFases()" style="max-width:60px"></td>';
+  var cancCell = '<td style="text-align:right"><input type="number" class="pb-input num fase-canchas" name="fase_canchas[]" min="1" step="1" value="'+canchas+'" oninput="recalcFases()" style="max-width:60px"></td>';
+  var durCell  = '<td style="text-align:right"><input type="number" class="pb-input num fase-duracion" name="fase_duracion[]" min="15" step="15" value="'+duracion+'" oninput="recalcFases()" style="max-width:70px"></td>';
+  var horasCell= '<td style="text-align:right;font-weight:700;color:#4338ca" class="fase-horas">0 h</td>';
+  var totPCell = '<td style="text-align:right;font-weight:700" class="fase-tot-partidos">0</td>';
+  var delCell  = '<td><button type="button" onclick="this.closest(\'tr\').remove();recalcFases()" style="background:#fef2f2;color:#dc2626;border:none;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center">×</button></td>';
+
+  tr.innerHTML = numCell + faseCell + partCell + cancCell + durCell + horasCell + totPCell + delCell;
+
+  // Manejar "Personalizado"
+  var sel = tr.querySelector('select');
+  var inp = tr.querySelector('.fase-custom-inp');
+  var hid = tr.querySelector('.fase-nombre-val');
+  sel.addEventListener('change', function() {
+    if (sel.value === '__custom__') {
+      inp.style.display = 'block';
+      inp.focus();
+      hid.value = inp.value || '';
+    } else {
+      inp.style.display = 'none';
+      hid.value = sel.value;
+    }
+    recalcFases();
+  });
+  inp.addEventListener('input', function() { hid.value = inp.value; });
+
+  return tr;
+}
+
+function addFase() {
+  document.getElementById('tbodyFases').appendChild(makeFaseRow({}));
+  recalcFases();
+}
+
+function recalcFases() {
+  var rows = document.querySelectorAll('#tbodyFases tr');
+  var totalPartidos = 0, totalHoras = 0;
+
+  rows.forEach(function(tr, i) {
+    var num   = tr.querySelector('.fase-num');
+    if (num) num.textContent = (i+1);
+
+    var p = parseInt(tr.querySelector('.fase-partidos').value) || 0;
+    var c = parseInt(tr.querySelector('.fase-canchas').value)  || 1;
+    var d = parseInt(tr.querySelector('.fase-duracion').value) || 0;
+
+    var totPart = p;       // total partidos de esta fase
+    var horas   = (p * d) / 60;  // horas totales de cancha (p partidos × d min / 60)
+
+    tr.querySelector('.fase-horas').textContent = horas % 1 === 0 ? horas + ' h' : horas.toFixed(1) + ' h';
+    tr.querySelector('.fase-tot-partidos').textContent = totPart;
+
+    totalPartidos += totPart;
+    totalHoras    += horas;
+  });
+
+  var horasStr = totalHoras % 1 === 0 ? totalHoras + ' h' : totalHoras.toFixed(1) + ' h';
+  document.getElementById('ptTotalPartidos').textContent = totalPartidos;
+  document.getElementById('ptTotalHoras').textContent    = horasStr;
+  document.getElementById('footPtPartidos').textContent  = totalPartidos;
+  document.getElementById('footPtHoras').textContent     = horasStr;
+  document.getElementById('footPtTotalPart').textContent = totalPartidos;
+}
+
+// Fases iniciales (fases guardadas en DB vienen por JSON embebido en PHP)
+var INIT_FASES = <?= json_encode(
+  $pid ? array_map(function($r){ return [
+    'fase'     => $r['categoria'],
+    'partidos' => (int)$r['cantidad'],
+    'canchas'  => 1,
+    'duracion' => (int)$r['valor_unitario'],
+  ]; }, array_filter($items, fn($r)=>$r['tipo']==='fase')) : [],
+  JSON_UNESCAPED_UNICODE) ?>;
+
+(function(){
+  var tbody = document.getElementById('tbodyFases');
+  if (INIT_FASES.length) {
+    INIT_FASES.forEach(function(f){ tbody.appendChild(makeFaseRow(f)); });
+  } else {
+    // Fases de ejemplo para nuevo presupuesto
+    [
+      {fase:'Grupos',    partidos:6, canchas:2, duracion:90},
+      {fase:'Semifinal', partidos:2, canchas:1, duracion:90},
+      {fase:'Final',     partidos:1, canchas:1, duracion:90},
+    ].forEach(function(f){ tbody.appendChild(makeFaseRow(f)); });
+  }
+  recalcFases();
 })();
 </script>
 

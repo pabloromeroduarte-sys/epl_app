@@ -92,6 +92,46 @@
 <?php endif; ?>
 
 <!-- Ingresos -->
+<?php if (!empty($fases)):
+  $tot_partidos_pdf = array_sum(array_column($fases, 'cantidad'));
+  $tot_horas_pdf = array_sum(array_map(fn($f)=>($f['cantidad']*$f['valor_unitario'])/60, $fases));
+?>
+<div class="section-title" style="background:#e0e7ff;color:#3730a3">🎾 Planificación de partidos</div>
+<table>
+  <thead><tr>
+    <th style="width:32px;text-align:center">#</th>
+    <th>Fase</th>
+    <th class="num">Partidos</th>
+    <th class="num">Canchas simult.</th>
+    <th class="num">Duración (min)</th>
+    <th class="num">Horas cancha</th>
+  </tr></thead>
+  <tbody>
+    <?php foreach ($fases as $idx => $f):
+      $hf = ($f['cantidad'] * $f['valor_unitario']) / 60;
+      // extraer canchas del campo descripcion "N cancha(s) simultánea(s)"
+      preg_match('/^(\d+)/', $f['descripcion'], $m);
+      $nc = $m[1] ?? 1;
+    ?>
+    <tr>
+      <td style="text-align:center;color:#94a3b8"><?= $idx+1 ?></td>
+      <td><?= htmlspecialchars($f['categoria']) ?></td>
+      <td class="num bold"><?= (int)$f['cantidad'] ?></td>
+      <td class="num"><?= $nc ?></td>
+      <td class="num"><?= (int)$f['valor_unitario'] ?> min</td>
+      <td class="num bold" style="color:#3730a3"><?= $hf == floor($hf) ? (int)$hf : number_format($hf,1,',','.') ?> h</td>
+    </tr>
+    <?php endforeach; ?>
+  </tbody>
+  <tfoot><tr class="total-row">
+    <td colspan="2" class="num">Totales</td>
+    <td class="num" style="color:#3730a3"><?= $tot_partidos_pdf ?> partidos</td>
+    <td></td><td></td>
+    <td class="num" style="color:#3730a3"><?= $tot_horas_pdf == floor($tot_horas_pdf) ? (int)$tot_horas_pdf : number_format($tot_horas_pdf,1,',','.') ?> h</td>
+  </tr></tfoot>
+</table>
+<?php endif; ?>
+
 <div class="section-title ing-title">💚 Ingresos</div>
 <table>
   <thead><tr>
