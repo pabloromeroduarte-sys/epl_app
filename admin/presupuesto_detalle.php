@@ -255,6 +255,26 @@ $itemsJson = json_encode($items ?: [
       </div>
     </div>
 
+    <!-- Resultado final -->
+    <div id="resultadoFinal" style="background:linear-gradient(135deg,#1C2F48,#2a4365);border-radius:16px;padding:1.25rem 1.5rem;margin-bottom:1.25rem">
+      <div style="font-family:var(--font-head);font-size:.75rem;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#C9A762;margin-bottom:.9rem">📊 Resultado final</div>
+      <div style="display:grid;gap:.5rem;max-width:360px;margin-left:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem;color:rgba(255,255,255,.75)">
+          <span>Total ingresos</span>
+          <span style="font-weight:700;color:#4ade80" id="rfIng">$0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem;color:rgba(255,255,255,.75)">
+          <span>Total costos</span>
+          <span style="font-weight:700;color:#f87171" id="rfEgr">$0</span>
+        </div>
+        <div style="border-top:1px solid rgba(255,255,255,.2);margin:.2rem 0"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:var(--font-head);font-size:.8rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#C9A762" id="rfLabel">Utilidad neta</span>
+          <span style="font-family:var(--font-head);font-size:1.6rem;font-weight:900;color:#fff" id="rfUti">$0</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Botón guardar -->
     <div style="display:flex;gap:.75rem;justify-content:flex-end;padding-top:.5rem">
       <a href="presupuestos.php" class="btn" style="background:#f1f5f9;color:#475569;font-weight:700">Cancelar</a>
@@ -363,6 +383,19 @@ function recalc() {
     card.style.borderColor  = '#fecaca';
     el.textContent  = '-' + fmtCLP(Math.abs(gan));
   }
+
+  // Resultado final (bloque oscuro)
+  var rfI = document.getElementById('rfIng');
+  var rfE = document.getElementById('rfEgr');
+  var rfU = document.getElementById('rfUti');
+  var rfL = document.getElementById('rfLabel');
+  if (rfI) rfI.textContent = fmtCLP(totIng);
+  if (rfE) rfE.textContent = fmtCLP(totEgr);
+  if (rfU) {
+    rfU.textContent = (gan < 0 ? '-' : '') + fmtCLP(Math.abs(gan));
+    rfU.style.color = gan >= 0 ? '#fff' : '#f87171';
+  }
+  if (rfL) rfL.textContent = gan >= 0 ? 'Utilidad neta' : '⚠ Pérdida';
 }
 
 // Inicializar con items existentes
