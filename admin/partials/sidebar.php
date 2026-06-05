@@ -28,7 +28,7 @@ function adm_link(string $href, string $cur_file, $active_files, string $icon, s
     <?php
 }
 
-$_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notificaciones.php','configuracion.php','erp_financiero.php','recintos.php','diagnostico_push.php','diagnostico_mail.php','cumpleanos.php','alertas.php']);
+$_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notificaciones.php','configuracion.php','erp_financiero.php','recintos.php','diagnostico_push.php','diagnostico_mail.php','cumpleanos.php','alertas.php','presupuestos.php','presupuesto_detalle.php']);
 ?>
 <aside class="dash-sidebar dash-sidebar--admin">
   <div class="adm-brand">
@@ -61,7 +61,8 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
       <svg class="tools-arrow" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
     </button>
     <div id="tools-menu" class="adm-tools-menu <?= $_in_tools ? 'open' : '' ?>">
-      <?php adm_link('erp_financiero.php',   $cur, 'erp_financiero.php',   '💰', 'ERP Financiero'); ?>
+      <?php adm_link('erp_financiero.php',   $cur, 'erp_financiero.php',         '💰', 'ERP Financiero'); ?>
+      <?php adm_link('presupuestos.php',     $cur, ['presupuestos.php','presupuesto_detalle.php'], '📊', 'Presupuestos'); ?>
       <?php adm_link('alertas.php',          $cur, 'alertas.php',          '🔔', 'Alertas y avisos'); ?>
       <?php adm_link('notificaciones.php',   $cur, 'notificaciones.php',   '✉️', 'Mensajería'); ?>
       <?php adm_link('diagnostico_push.php', $cur, 'diagnostico_push.php', '🔔', 'Diagnóstico Push'); ?>
@@ -217,6 +218,10 @@ function toggleTools() {
       <a href="erp_financiero.php" class="bn-tile <?= $cur==='erp_financiero.php'?'active':'' ?>">
         <span class="bn-tile-icon">💰</span>
         <span>ERP</span>
+      </a>
+      <a href="presupuestos.php" class="bn-tile <?= in_array($cur,['presupuestos.php','presupuesto_detalle.php'])?'active':'' ?>">
+        <span class="bn-tile-icon">📊</span>
+        <span>Presup.</span>
       </a>
       <a href="alertas.php" class="bn-tile <?= $cur==='alertas.php'?'active':'' ?>">
         <span class="bn-tile-icon">🔔</span>
