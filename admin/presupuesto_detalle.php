@@ -215,16 +215,17 @@ $itemsJson = json_encode($items ?: [
       <div style="overflow-x:auto">
         <table class="pb-table">
           <thead><tr>
-            <th style="width:22%">Categoría</th>
+            <th style="width:32px;text-align:center;color:#94a3b8">#</th>
+            <th style="width:20%">Categoría</th>
             <th>Descripción</th>
-            <th style="width:10%;text-align:right">Cantidad</th>
-            <th style="width:18%;text-align:right">Valor unit.</th>
-            <th style="width:18%;text-align:right">Total</th>
+            <th style="width:9%;text-align:right">Cantidad</th>
+            <th style="width:17%;text-align:right">Valor unit.</th>
+            <th style="width:17%;text-align:right">Total</th>
             <th style="width:40px"></th>
           </tr></thead>
           <tbody id="tbodyIngreso"></tbody>
           <tfoot><tr class="pb-total-row">
-            <td colspan="4" style="text-align:right;padding-right:1rem">Total ingresos</td>
+            <td colspan="5" style="text-align:right;padding-right:1rem">Total ingresos</td>
             <td style="text-align:right;color:#16a34a" id="footIng">$0</td>
             <td></td>
           </tr></tfoot>
@@ -241,16 +242,17 @@ $itemsJson = json_encode($items ?: [
       <div style="overflow-x:auto">
         <table class="pb-table">
           <thead><tr>
-            <th style="width:22%">Categoría</th>
+            <th style="width:32px;text-align:center;color:#94a3b8">#</th>
+            <th style="width:20%">Categoría</th>
             <th>Descripción</th>
-            <th style="width:10%;text-align:right">Cantidad</th>
-            <th style="width:18%;text-align:right">Valor unit.</th>
-            <th style="width:18%;text-align:right">Total</th>
+            <th style="width:9%;text-align:right">Cantidad</th>
+            <th style="width:17%;text-align:right">Valor unit.</th>
+            <th style="width:17%;text-align:right">Total</th>
             <th style="width:40px"></th>
           </tr></thead>
           <tbody id="tbodyEgreso"></tbody>
           <tfoot><tr class="pb-total-row">
-            <td colspan="4" style="text-align:right;padding-right:1rem">Total costos</td>
+            <td colspan="5" style="text-align:right;padding-right:1rem">Total costos</td>
             <td style="text-align:right;color:#dc2626" id="footEgr">$0</td>
             <td></td>
           </tr></tfoot>
@@ -357,7 +359,8 @@ function makeRow(tipo, data) {
   // Botón eliminar
   var del = '<button type="button" onclick="this.closest(\'tr\').remove();recalc()" style="background:#fef2f2;color:#dc2626;border:none;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center">×</button>';
 
-  tr.innerHTML = '<td>'+hidTipo+catSel+'</td><td>'+desc+'</td><td style="text-align:right">'+cant+'</td><td style="text-align:right">'+val+'</td><td style="text-align:right">'+tot+'</td><td>'+del+'</td>';
+  var numCell = '<td class="row-num" style="text-align:center;color:#94a3b8;font-size:.75rem;font-weight:700;width:32px">—</td>';
+  tr.innerHTML = numCell+'<td>'+hidTipo+catSel+'</td><td>'+desc+'</td><td style="text-align:right">'+cant+'</td><td style="text-align:right">'+val+'</td><td style="text-align:right">'+tot+'</td><td>'+del+'</td>';
   return tr;
 }
 
@@ -365,13 +368,25 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function renumber() {
+  ['Ingreso','Egreso'].forEach(function(sec) {
+    var rows = document.querySelectorAll('#tbody'+sec+' tr');
+    rows.forEach(function(tr, i) {
+      var cell = tr.querySelector('.row-num');
+      if (cell) cell.textContent = (i + 1);
+    });
+  });
+}
+
 function addRow(tipo) {
   var tbody = document.getElementById('tbody' + (tipo==='ingreso'?'Ingreso':'Egreso'));
   tbody.appendChild(makeRow(tipo, {}));
+  renumber();
   recalc();
 }
 
 function recalc() {
+  renumber();
   var totIng = 0, totEgr = 0;
   document.querySelectorAll('#tbodyIngreso tr, #tbodyEgreso tr').forEach(function(tr) {
     var tipo = tr.dataset.tipo;
