@@ -12,6 +12,24 @@ $err    = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
+    if ($action === 'eliminar') {
+        $eid = (int)($_POST['equipo_id'] ?? 0);
+        if ($eid) {
+            // Verificar que no tiene partidos asociados
+            $np = (int)$db->query("SELECT COUNT(*) FROM partidos WHERE equipo_local_id={$eid} OR equipo_visitante_id={$eid}")->fetchColumn();
+            if ($np > 0) {
+                $err = "No se puede eliminar: el equipo tiene {$np} partido(s) asociado(s).";
+            } else {
+                $db->prepare("DELETE FROM clasificacion  WHERE equipo_id=?")->execute([$eid]);
+                $db->prepare("DELETE FROM liga_equipos   WHERE equipo_id=?")->execute([$eid]);
+                $db->prepare("DELETE FROM suplentes      WHERE equipo_id=?")->execute([$eid]);
+                $db->prepare("DELETE FROM inscripciones  WHERE equipo_id=?")->execute([$eid]);
+                $db->prepare("DELETE FROM equipos        WHERE id=?")->execute([$eid]);
+                epl_redirect_ok('Equipo eliminado correctamente.');
+            }
+        }
+    }
+
     if ($action === 'crear') {
         $nombre = trim($_POST['nombre'] ?? '');
         $j1     = (int)($_POST['jugador1_id'] ?? 0);
@@ -68,16 +86,35 @@ $jugadores = $db->query("SELECT id,nombre,apellido FROM jugadores WHERE estado='
               <th class="hide-mobile" style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Jugador 1</th>
               <th class="hide-mobile" style="padding:.7rem 1rem;text-align:left;font-size:.72rem;text-transform:uppercase">Jugador 2</th>
               <th style="padding:.7rem 1rem;text-align:center;font-size:.72rem;text-transform:uppercase">Estado</th>
+              <th style="padding:.7rem 1rem;text-align:center;font-size:.72rem;text-transform:uppercase"></th>
             </tr>
           </thead>
           <tbody>
-            <?php foreach ($equipos as $e): ?>
+            <?php foreach ($equipos as $e):
+              $n_partidos = (int)$db->query("SELECT COUNT(*) FROM partidos WHERE equipo_local_id={$e['id']} OR equipo_visitante_id={$e['id']}")->fetchColumn();
+            ?>
             <tr style="border-bottom:1px solid var(--gray-100)">
-              <td data-label="Equipo" style="padding:.7rem 1rem;font-weight:700;color:var(--navy)"><?= epl_h($e['nombre']) ?></td>
+              <td data-label="Equipo" style="padding:.7rem 1rem;font-weight:700;color:var(--navy)">
+                <?= epl_h($e['nombre']) ?>
+                <?php if (strpos($e['nombre'], '/') !== false): ?>
+                  <span style="font-size:.65rem;font-weight:700;background:#fef2f2;color:#dc2626;padding:.1rem .4rem;border-radius:4px;margin-left:.4rem">⚠ nombre inusual</span>
+                <?php endif; ?>
+              </td>
               <td data-label="Jugador 1" class="hide-mobile" style="padding:.7rem 1rem"><?= epl_h($e['j1n'].' '.$e['j1a']) ?></td>
               <td data-label="Jugador 2" class="hide-mobile" style="padding:.7rem 1rem"><?= epl_h($e['j2n'].' '.$e['j2a']) ?></td>
               <td data-label="Estado" style="padding:.7rem 1rem;text-align:center">
                 <span class="badge <?= $e['estado']==='activo'?'badge-jugado':'badge-walkover' ?>"><?= $e['estado'] ?></span>
+              </td>
+              <td style="padding:.7rem 1rem;text-align:center">
+                <?php if ($n_partidos === 0): ?>
+                  <form method="POST" onsubmit="return confirm('⚠ Eliminar equipo «<?= epl_h(addslashes($e['nombre'])) ?>»?\nEsta acción no se puede deshacer.')">
+                    <input type="hidden" name="action"    value="eliminar">
+                    <input type="hidden" name="equipo_id" value="<?= (int)$e['id'] ?>">
+                    <button type="submit" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:7px;padding:.3rem .6rem;font-size:.78rem;font-weight:700;cursor:pointer" title="Eliminar equipo">🗑</button>
+                  </form>
+                <?php else: ?>
+                  <span style="font-size:.72rem;color:#94a3b8" title="Tiene <?= $n_partidos ?> partido(s)"><?= $n_partidos ?> part.</span>
+                <?php endif; ?>
               </td>
             </tr>
             <?php endforeach; ?>
