@@ -597,6 +597,22 @@ button { cursor: pointer; font-family: inherit; border: none; }
   box-shadow: var(--shadow-sm);
   text-align: center;
 }
+.stat-card--link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: box-shadow .15s, transform .12s, border-color .15s;
+  border: 1.5px solid transparent;
+}
+.stat-card--link:hover {
+  box-shadow: 0 4px 18px rgba(28,47,72,.13);
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  text-decoration: none;
+  color: inherit;
+}
+.stat-card--link:active { transform: translateY(0); }
 .stat-value {
   font-family: var(--font-head);
   font-size: 2rem;

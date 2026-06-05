@@ -65,34 +65,34 @@ _flatRecSelect($_rec_roots, $_rec_children, 0, $recintos_select);
 
     <!-- Stats -->
     <div class="stats-grid">
-      <div class="stat-card">
+      <a href="jugadores.php?estado=activo" class="stat-card stat-card--link">
         <div class="stat-value"><?= $totals['jugadores'] ?></div>
         <div class="stat-label">Jugadores activos</div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a href="equipos.php" class="stat-card stat-card--link">
         <div class="stat-value"><?= $totals['equipos'] ?></div>
         <div class="stat-label">Equipos</div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a href="partidos.php" class="stat-card stat-card--link">
         <div class="stat-value"><?= $totals['partidos'] ?></div>
         <div class="stat-label">Total partidos</div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a href="partidos.php?estado_p=jugado" class="stat-card stat-card--link">
         <div class="stat-value" style="color:var(--green)"><?= $totals['jugados'] ?></div>
         <div class="stat-label">Jugados</div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a href="partidos.php?estado_p=pendiente" class="stat-card stat-card--link">
         <div class="stat-value" style="color:var(--gold)"><?= $totals['pendientes'] ?></div>
         <div class="stat-label">Pendientes</div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a href="dashboard_repro.php?tab=solicitudes" class="stat-card stat-card--link">
         <div class="stat-value" style="color:var(--red)"><?= $totals['reprog'] ?></div>
         <div class="stat-label">Reprog. pendientes</div>
-      </div>
-      <div class="stat-card">
+      </a>
+      <a href="inscripciones.php?estado=pendiente" class="stat-card stat-card--link">
         <div class="stat-value" style="color:var(--gold)"><?= $totals['inscripciones'] ?></div>
         <div class="stat-label">Inscripciones pend.</div>
-      </div>
+      </a>
     </div>
 
     <!-- Test de notificaciones -->
