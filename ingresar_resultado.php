@@ -54,7 +54,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
     $partido_id   = (int)($_POST['partido_id'] ?? 0);
 
     epl_ensure_disputas_schema();
-    $stP = $db->prepare("SELECT * FROM partidos WHERE id=? AND (equipo_local_id=? OR equipo_visitante_id=?) AND estado IN ('pendiente','reprogramado')");
+    $stP = $db->prepare("
+        SELECT p.*,
+               el.nombre AS local_nombre,
+               ev.nombre AS visitante_nombre
+        FROM partidos p
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        WHERE p.id=? 
+          AND (p.equipo_local_id=? OR p.equipo_visitante_id=?) 
+          AND p.estado IN ('pendiente','reprogramado')
+    ");
     $stP->execute([$partido_id, $equipo['id'], $equipo['id']]);
     $partido = $stP->fetch();
 
