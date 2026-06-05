@@ -151,6 +151,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         header('Location: dashboard_resultados.php'); exit;
     }
+
+    // ── Revertir resultado ─────────────────────────────────────────────────────
+    if ($action === 'revertir_resultado') {
+        $pid = (int)($_POST['partido_id'] ?? 0);
+        if ($pid) {
+            // Obtener liga_id antes de borrar
+            $st = $db->prepare("SELECT liga_id, equipo_local_id, equipo_visitante_id FROM partidos WHERE id=?");
+            $st->execute([$pid]);
+            $pdata = $st->fetch(PDO::FETCH_ASSOC);
+
+            // Borrar resultado del partido
+            $db->prepare("UPDATE partidos SET
+                estado            = 'pendiente',
+                sets_local        = NULL, sets_visitante     = NULL,
+                games_s1_local    = NULL, games_s1_visitante = NULL,
+                games_s2_local    = NULL, games_s2_visitante = NULL,
+                games_s3_local    = NULL, games_s3_visitante = NULL,
+                ganador_id        = NULL,
+                fecha_jugado      = NULL,
+                ingresado_por     = NULL,
+                resultado_ingresado_at = NULL
+            WHERE id = ?")->execute([$pid]);
+
+            // Recalcular clasificación de la liga
+            if ($pdata && $pdata['liga_id']) {
+                epl_recalcular_clasificacion((int)$pdata['liga_id']);
+            }
+
+            $_SESSION['_epl_flash'] = ['tipo' => 'ok', 'msg' => 'Resultado revertido. El partido vuelve a estado pendiente.'];
+        }
+        header('Location: dashboard_resultados.php'); exit;
+    }
 }
 
 // Obtener todos los partidos jugados (con resultado)
@@ -348,6 +380,14 @@ function render_resultado_row($p, $for_list = false) {
             </button>
         </form>
         <a href="partido_detalle.php?id=<?= $p['id'] ?>" class="btn-gestionar" style="text-align:center;background:#1e293b;color:#fff">Ver Partido</a>
+        <form method="post" style="margin:0"
+              onsubmit="return confirm('⚠ ¿Revertir el resultado de <?= epl_h(addslashes($p['local_nombre'])) ?> vs <?= epl_h(addslashes($p['visitante_nombre'])) ?>?\n\nEl partido volverá a estado PENDIENTE y el marcador se borrará. Esta acción no se puede deshacer.')">
+            <input type="hidden" name="action"     value="revertir_resultado">
+            <input type="hidden" name="partido_id" value="<?= $p['id'] ?>">
+            <button type="submit" class="btn-gestionar" style="width:100%;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-weight:800">
+                🔄 Revertir resultado
+            </button>
+        </form>
       </div>
       <?php endif; ?>
     </div>
