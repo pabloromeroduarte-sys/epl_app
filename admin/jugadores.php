@@ -154,20 +154,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $rol       = in_array($_POST['rol']??'jugador',['jugador','admin']) ? $_POST['rol'] : 'jugador';
         $estado    = in_array($_POST['estado']??'activo',['activo','inactivo','suspendido']) ? $_POST['estado'] : 'activo';
 
+        $email_nuevo = strtolower(trim($_POST['email_editar'] ?? ''));
+
         if (!$nombre) { $err = 'El nombre es obligatorio.'; }
-        else {
-            $db->prepare("UPDATE jugadores SET
-                nombre=?,apellido=?,alias=?,rut=?,telefono=?,
-                fecha_nacimiento=?,sexo=?,comuna=?,profesion=?,
-                nivel=?,lado=?,pala=?,talla=?,frecuencia_juego=?,
-                rol=?,estado=? WHERE id=?")
-               ->execute([
-                   $nombre,$apellido,$alias?:null,$rut?:null,$telefono?:null,
-                   $fnac,$sexo,$comuna?:null,$profesion?:null,
-                   $nivel,$lado,$pala?:null,$talla?:null,$frec,
-                   $rol,$estado,$id
-               ]);
-            epl_redirect_ok('Jugador actualizado.');
+        elseif ($email_nuevo && !filter_var($email_nuevo, FILTER_VALIDATE_EMAIL)) {
+            $err = 'El email no es válido.';
+        } else {
+            // Verificar que el email nuevo no esté en uso por otro jugador
+            if ($email_nuevo) {
+                $dup = $db->prepare("SELECT id FROM jugadores WHERE email=? AND id!=?");
+                $dup->execute([$email_nuevo, $id]);
+                if ($dup->fetchColumn()) { $err = 'Ese email ya está en uso por otro jugador.'; }
+            }
+            if (!$err) {
+                $sets = "nombre=?,apellido=?,alias=?,rut=?,telefono=?,
+                    fecha_nacimiento=?,sexo=?,comuna=?,profesion=?,
+                    nivel=?,lado=?,pala=?,talla=?,frecuencia_juego=?,
+                    rol=?,estado=?";
+                $params = [
+                    $nombre,$apellido,$alias?:null,$rut?:null,$telefono?:null,
+                    $fnac,$sexo,$comuna?:null,$profesion?:null,
+                    $nivel,$lado,$pala?:null,$talla?:null,$frec,
+                    $rol,$estado
+                ];
+                if ($email_nuevo) {
+                    $sets .= ",email=?";
+                    $params[] = $email_nuevo;
+                }
+                $params[] = $id;
+                $db->prepare("UPDATE jugadores SET {$sets} WHERE id=?")->execute($params);
+                epl_redirect_ok('Jugador actualizado.' . ($email_nuevo ? ' Email cambiado a ' . $email_nuevo . '.' : ''));
+            }
         }
 
     } elseif ($action === 'mail_reset_masivo') {
@@ -489,10 +506,26 @@ $jugadores = $st->fetchAll();
         <input type="hidden" name="action" value="editar">
         <input type="hidden" name="id" id="editarId">
 
-        <!-- Email (solo lectura) -->
+        <!-- Email editable -->
         <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" id="editarEmailDisplay" class="form-control" disabled style="background:var(--gray-100);color:var(--gray-400)">
+          <label class="form-label" style="display:flex;align-items:center;justify-content:space-between">
+            Email
+            <button type="button" id="btnCambiarEmail" onclick="toggleEmailEdit()"
+              style="font-size:.72rem;font-weight:700;color:#2563eb;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0">
+              ✏ Cambiar
+            </button>
+          </label>
+          <!-- Vista solo lectura -->
+          <div id="emailReadRow" style="display:flex;align-items:center;gap:.5rem">
+            <input type="email" id="editarEmailDisplay" class="form-control" disabled style="background:var(--gray-100);color:var(--gray-500);flex:1">
+          </div>
+          <!-- Vista edición -->
+          <div id="emailEditRow" style="display:none">
+            <input type="email" name="email_editar" id="editarEmailNuevo" class="form-control"
+              placeholder="nuevo@correo.com" autocomplete="off"
+              style="border-color:#2563eb">
+            <p style="font-size:.72rem;color:#64748b;margin:.3rem 0 0">Dejá vacío para no cambiar el email actual. Si el jugador tiene contraseña provisoria, deberá usar el nuevo email para ingresar.</p>
+          </div>
         </div>
 
         <!-- Nombre / Apellido -->
@@ -655,7 +688,31 @@ function showEditar(j) {
   document.getElementById('editarFrecuencia').value    = j.frecuencia_juego || '';
   document.getElementById('editarRol').value           = j.rol          || 'jugador';
   document.getElementById('editarEstado').value        = j.estado       || 'activo';
+  // Reset estado email al abrir
+  document.getElementById('emailReadRow').style.display = 'flex';
+  document.getElementById('emailEditRow').style.display = 'none';
+  var inp = document.getElementById('editarEmailNuevo');
+  if (inp) inp.value = '';
   document.getElementById('modalEditar').style.display = 'flex';
+}
+
+function toggleEmailEdit() {
+  var readRow = document.getElementById('emailReadRow');
+  var editRow = document.getElementById('emailEditRow');
+  var inp     = document.getElementById('editarEmailNuevo');
+  var showing = editRow.style.display !== 'none';
+  if (showing) {
+    // cancelar
+    readRow.style.display = 'flex';
+    editRow.style.display = 'none';
+    if (inp) inp.value = '';
+    document.getElementById('btnCambiarEmail').textContent = '✏ Cambiar';
+  } else {
+    readRow.style.display = 'none';
+    editRow.style.display = 'block';
+    if (inp) inp.focus();
+    document.getElementById('btnCambiarEmail').textContent = '✕ Cancelar';
+  }
 }
 </script>
 
