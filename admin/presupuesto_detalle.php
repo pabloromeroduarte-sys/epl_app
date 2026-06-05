@@ -73,8 +73,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!in_array($t, ['ingreso','egreso'])) continue;
             $desc = trim($descs[$i] ?? '');
             if ($desc === '') continue;
-            $cant = max(0, (float)str_replace(',','.', $cants[$i] ?? 1));
-            $val  = max(0, (float)str_replace(',','.', str_replace('.', '', $vals[$i] ?? 0)));
+            // Parsear número: soporta "25000", "25000.50", "25.000" (miles CLP), "25.000,50"
+            $cant_raw = trim((string)($cants[$i] ?? '1'));
+            $val_raw  = trim((string)($vals[$i]  ?? '0'));
+            // Si tiene punto de miles X.XXX sin coma → eliminar punto de miles
+            $val_raw  = preg_replace('/^(\d{1,3})\.(\d{3})$/', '$1$2', $val_raw);
+            $val_raw  = str_replace(',', '.', $val_raw);
+            $cant_raw = str_replace(',', '.', $cant_raw);
+            $cant = max(0, (float)$cant_raw);
+            $val  = max(0, (float)$val_raw);
             $st->execute([$pid, $t, trim($cats[$i]??''), $desc, $cant, $val, $i]);
         }
 
@@ -297,7 +304,21 @@ function fmtCLP(n) {
   return '$' + Math.round(n).toLocaleString('es-CL');
 }
 function parseCLP(s) {
-  return parseFloat(String(s).replace(/\./g,'').replace(',','.')) || 0;
+  var str = String(s).trim();
+  // "25.000,50" → tiene ambos → punto=miles, coma=decimal
+  if (/\d\.\d{3}/.test(str) && str.indexOf(',') !== -1) {
+    return parseFloat(str.replace(/\./g,'').replace(',','.')) || 0;
+  }
+  // "25.000" → punto como miles (exactamente 3 dígitos tras el punto al final)
+  if (/^\d{1,3}(\.\d{3})+$/.test(str)) {
+    return parseFloat(str.replace(/\./g,'')) || 0;
+  }
+  // "25000,50" → coma como decimal
+  if (str.indexOf(',') !== -1) {
+    return parseFloat(str.replace(',','.')) || 0;
+  }
+  // "25000" o "25000.50" → punto como decimal (caso normal)
+  return parseFloat(str) || 0;
 }
 
 function makeRow(tipo, data) {
@@ -317,10 +338,15 @@ function makeRow(tipo, data) {
   var desc = '<input type="text" class="pb-input" name="item_desc[]" placeholder="Descripción" value="'+escHtml(data.descripcion||'')+'" oninput="recalc()" required>';
 
   // Cantidad
-  var cant = '<input type="number" class="pb-input num" name="item_cant[]" min="0" step="0.01" value="'+(data.cantidad||1)+'" oninput="recalc()" style="max-width:70px">';
+  var cantNum = parseFloat(data.cantidad || 1);
+  var cantStr = Number.isInteger(cantNum) ? String(cantNum) : String(cantNum);
+  var cant = '<input type="number" class="pb-input num" name="item_cant[]" min="0" step="1" value="'+cantStr+'" oninput="recalc()" style="max-width:70px">';
 
   // Valor
-  var val = '<input type="text" class="pb-input num" name="item_val[]" placeholder="0" value="'+(data.valor_unitario||'')+'" oninput="recalc()" style="max-width:110px">';
+  // Mostrar valor sin decimales si es entero (evita "25000.00")
+  var valNum = parseFloat(data.valor_unitario || 0);
+  var valStr = valNum > 0 ? (Number.isInteger(valNum) ? String(valNum) : String(valNum)) : '';
+  var val = '<input type="text" class="pb-input num" name="item_val[]" placeholder="0" value="'+valStr+'" oninput="recalc()" style="max-width:110px">';
 
   // Total
   var tot = '<span class="row-total" style="font-weight:700">$0</span>';
