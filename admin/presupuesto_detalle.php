@@ -29,8 +29,6 @@ $pres  = null;
 $items = [];
 
 if ($pid) {
-    $pres = $db->prepare("SELECT * FROM presupuestos WHERE id=?")->execute([$pid]) ?
-            $db->prepare("SELECT * FROM presupuestos WHERE id=?")->execute([$pid]) ? null : null : null;
     $st = $db->prepare("SELECT * FROM presupuestos WHERE id=?");
     $st->execute([$pid]);
     $pres = $st->fetch(PDO::FETCH_ASSOC);
@@ -80,9 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $st->execute([$pid, $t, trim($cats[$i]??''), $desc, $cant, $val, $i]);
         }
 
-        epl_flash(['tipo'=>'ok','msg'=>'Presupuesto guardado.']);
-        header("Location: presupuesto_detalle.php?id={$pid}");
-        exit;
+        epl_redirect_ok('Presupuesto guardado correctamente.', "presupuesto_detalle.php?id={$pid}");
     }
 }
 
