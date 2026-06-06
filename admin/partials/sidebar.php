@@ -43,6 +43,7 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
     <!-- ── DIARIO ── -->
     <div class="adm-group-label">Diario</div>
     <?php adm_link('index.php',           $cur, 'index.php',                            '🏠', 'Inicio'); ?>
+    <?php adm_link('bi.php',              $cur, 'bi.php',                               '📊', 'Dashboard BI'); ?>
     <?php adm_link('partidos.php',        $cur, ['partidos.php', 'proximos_partidos.php', 'cargar_resultados.php'], '🎾', 'Partidos'); ?>
     <?php adm_link('dashboard_repro.php', $cur, 'dashboard_repro.php',                  '📅', 'Reprogramaciones', $_repro_count, '#ea580c'); ?>
     <?php adm_link('inscripciones.php',   $cur, 'inscripciones.php',                    '📋', 'Inscripciones', $_insc_count, '#2563eb'); ?>
@@ -198,8 +199,12 @@ function toggleTools() {
         <span class="bn-tile-icon">🏆</span>
         <span>Ligas</span>
       </a>
-      <a href="dashboard_resultados.php" class="bn-tile <?= $cur==='dashboard_resultados.php'?'active':'' ?>">
+      <a href="bi.php" class="bn-tile <?= $cur==='bi.php'?'active':'' ?>">
         <span class="bn-tile-icon">📊</span>
+        <span>Dashboard BI</span>
+      </a>
+      <a href="dashboard_resultados.php" class="bn-tile <?= $cur==='dashboard_resultados.php'?'active':'' ?>">
+        <span class="bn-tile-icon">📋</span>
         <span>Resultados</span>
       </a>
       <a href="jugadores.php" class="bn-tile <?= $cur==='jugadores.php'?'active':'' ?>">
