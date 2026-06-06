@@ -64,6 +64,45 @@ $stRes = $db->prepare("
 $stRes->execute();
 $resultados = $stRes->fetchAll(PDO::FETCH_ASSOC);
 
+// ── Equipos con partidos pendientes (pendiente + reprogramado, sin resultado) ─
+$stEq = $db->prepare("
+    SELECT p.id, p.jornada, p.fecha_programada, p.estado,
+           p.equipo_local_id, p.equipo_visitante_id,
+           el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+           l.nombre AS liga_nombre
+    FROM partidos p
+    JOIN equipos el ON el.id = p.equipo_local_id
+    JOIN equipos ev ON ev.id = p.equipo_visitante_id
+    JOIN ligas l ON l.id = p.liga_id
+    WHERE p.estado IN ('pendiente','reprogramado')
+      " . ($f_liga ? " AND p.liga_id = {$f_liga} " : "") . "
+    ORDER BY (p.fecha_programada IS NULL) ASC, p.fecha_programada ASC
+");
+$stEq->execute();
+$equipos_pend = []; // equipo_id => [nombre, total, reprog, vencidos, partidos[]]
+foreach ($stEq->fetchAll(PDO::FETCH_ASSOC) as $p) {
+    $vencido = !empty($p['fecha_programada']) && strtotime($p['fecha_programada']) < time();
+    foreach ([
+        ['id'=>$p['equipo_local_id'],     'nombre'=>$p['local_nombre'],     'rival'=>$p['visitante_nombre']],
+        ['id'=>$p['equipo_visitante_id'], 'nombre'=>$p['visitante_nombre'], 'rival'=>$p['local_nombre']],
+    ] as $eq) {
+        $eid = (int)$eq['id'];
+        if (!isset($equipos_pend[$eid])) {
+            $equipos_pend[$eid] = ['nombre'=>$eq['nombre'], 'total'=>0, 'reprog'=>0, 'vencidos'=>0, 'partidos'=>[]];
+        }
+        $equipos_pend[$eid]['total']++;
+        if ($p['estado'] === 'reprogramado') $equipos_pend[$eid]['reprog']++;
+        if ($vencido) $equipos_pend[$eid]['vencidos']++;
+        $equipos_pend[$eid]['partidos'][] = [
+            'id'=>$p['id'], 'rival'=>$eq['rival'], 'liga'=>$p['liga_nombre'],
+            'jornada'=>$p['jornada'], 'estado'=>$p['estado'],
+            'fecha'=>$p['fecha_programada'], 'vencido'=>$vencido,
+        ];
+    }
+}
+// Ordenar por cantidad de pendientes (desc)
+uasort($equipos_pend, fn($a,$b) => $b['total'] <=> $a['total']);
+
 // ── Ritmo: partidos jugados por semana (últimas 10) ──────────────────────────
 $ritmo = $db->query("
     SELECT DATE_FORMAT(p.fecha_jugado, '%x-%v') AS sem,
@@ -148,6 +187,18 @@ $total_jug = bi_count($db, "SELECT COUNT(*) FROM jugadores p WHERE p.estado='act
 .bi-pill { font-size:.68rem;font-weight:800;padding:.18rem .5rem;border-radius:999px;white-space:nowrap }
 .bi-link { font-size:.8rem;font-weight:700;color:#1e40af;text-decoration:none }
 @media(max-width:600px){ .bi-row{flex-wrap:wrap;gap:.4rem} }
+/* Desplegable equipos */
+.bi-equipo { border-bottom:1px solid #f1f5f9 }
+.bi-equipo:last-child { border-bottom:none }
+.bi-equipo summary { display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.7rem 1.25rem;cursor:pointer;list-style:none;user-select:none;transition:background .12s }
+.bi-equipo summary::-webkit-details-marker { display:none }
+.bi-equipo summary:hover { background:#f8fafc }
+.bi-equipo[open] summary { background:#f1f5f9 }
+.bi-chev { color:#94a3b8;transition:transform .18s;flex-shrink:0 }
+.bi-equipo[open] .bi-chev { transform:rotate(90deg) }
+.bi-equipo-body { background:#fafbfc;padding:.25rem 0 }
+.bi-equipo-partido { display:flex;align-items:center;gap:.65rem;padding:.55rem 1.25rem .55rem 2.5rem;border-top:1px solid #f1f5f9;font-size:.84rem }
+@media(max-width:600px){ .bi-equipo-partido{flex-wrap:wrap;gap:.4rem;padding-left:1.5rem} }
 </style>
 
 <div class="dash-layout">
@@ -272,6 +323,62 @@ $total_jug = bi_count($db, "SELECT COUNT(*) FROM jugadores p WHERE p.estado='act
         </div>
       </div>
 
+      </div>
+    </div>
+
+    <!-- ══ Equipos con partidos pendientes ══ -->
+    <div class="bi-section">
+      <div class="bi-section-head">
+        <span class="bi-section-title">📋 Equipos con partidos por jugar
+          <span style="font-weight:600;color:#94a3b8;font-size:.8rem">(<?= count($equipos_pend) ?> equipos)</span>
+        </span>
+        <span style="font-size:.74rem;color:#94a3b8">Tocá un equipo para ver sus partidos</span>
+      </div>
+      <div style="max-height:560px;overflow-y:auto">
+        <?php if (empty($equipos_pend)): ?>
+          <div style="padding:2rem;text-align:center;color:#94a3b8;font-size:.85rem">🎉 Ningún equipo tiene partidos pendientes.</div>
+        <?php else: foreach ($equipos_pend as $eid => $eq): ?>
+        <details class="bi-equipo">
+          <summary>
+            <span style="display:flex;align-items:center;gap:.6rem;flex:1;min-width:0">
+              <svg class="bi-chev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+              <span style="font-weight:700;color:#1C2F48;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?= epl_h($eq['nombre']) ?></span>
+            </span>
+            <span style="display:flex;align-items:center;gap:.4rem;flex-shrink:0">
+              <?php if ($eq['vencidos'] > 0): ?>
+                <span class="bi-pill" style="background:#fef2f2;color:#dc2626" title="Vencidos sin resultado">⚠ <?= $eq['vencidos'] ?></span>
+              <?php endif; ?>
+              <?php if ($eq['reprog'] > 0): ?>
+                <span class="bi-pill" style="background:#fff7ed;color:#ea580c" title="Reprogramados">🔁 <?= $eq['reprog'] ?></span>
+              <?php endif; ?>
+              <span class="bi-pill" style="background:#1C2F48;color:#fff;min-width:24px;text-align:center"><?= $eq['total'] ?></span>
+            </span>
+          </summary>
+          <div class="bi-equipo-body">
+            <?php foreach ($eq['partidos'] as $pt):
+              $sinFecha = empty($pt['fecha']);
+              $fechaStr = $sinFecha ? 'Sin fecha' : date('d/m/Y H:i', strtotime($pt['fecha']));
+            ?>
+            <div class="bi-equipo-partido">
+              <div style="flex:1;min-width:0">
+                <span style="color:#94a3b8;font-size:.78rem">vs</span>
+                <span style="font-weight:600;color:#1C2F48"><?= epl_h($pt['rival']) ?></span>
+                <div style="font-size:.7rem;color:#94a3b8;margin-top:.1rem">
+                  <?= epl_h($pt['liga']) ?><?= $pt['jornada'] ? ' · J'.$pt['jornada'] : '' ?>
+                </div>
+              </div>
+              <?php if ($pt['estado'] === 'reprogramado'): ?>
+                <span class="bi-pill" style="background:#fff7ed;color:#ea580c">Reprog.</span>
+              <?php endif; ?>
+              <span class="bi-pill" style="background:<?= $pt['vencido']?'#fef2f2':($sinFecha?'#fffbeb':'#eff6ff') ?>;color:<?= $pt['vencido']?'#dc2626':($sinFecha?'#92400e':'#1e40af') ?>">
+                <?= $fechaStr ?>
+              </span>
+              <a href="partido_detalle.php?id=<?= $pt['id'] ?>" class="bi-link" style="font-size:.74rem">Gestionar</a>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        </details>
+        <?php endforeach; endif; ?>
       </div>
     </div>
 
