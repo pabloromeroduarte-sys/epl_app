@@ -75,6 +75,10 @@ $stEq = $db->prepare("
     JOIN equipos ev ON ev.id = p.equipo_visitante_id
     JOIN ligas l ON l.id = p.liga_id
     WHERE p.estado IN ('pendiente','reprogramado')
+      AND (
+            p.estado = 'reprogramado'
+            OR (p.fecha_programada IS NOT NULL AND p.fecha_programada < NOW())
+          )
       " . ($f_liga ? " AND p.liga_id = {$f_liga} " : "") . "
     ORDER BY (p.fecha_programada IS NULL) ASC, p.fecha_programada ASC
 ");
@@ -329,10 +333,10 @@ $total_jug = bi_count($db, "SELECT COUNT(*) FROM jugadores p WHERE p.estado='act
     <!-- ══ Equipos con partidos pendientes ══ -->
     <div class="bi-section">
       <div class="bi-section-head">
-        <span class="bi-section-title">📋 Equipos con partidos por jugar
+        <span class="bi-section-title">📋 Equipos con partidos atrasados / reprogramados
           <span style="font-weight:600;color:#94a3b8;font-size:.8rem">(<?= count($equipos_pend) ?> equipos)</span>
         </span>
-        <span style="font-size:.74rem;color:#94a3b8">Tocá un equipo para ver sus partidos</span>
+        <span style="font-size:.74rem;color:#94a3b8">Reprogramados + vencidos sin resultado · tocá para ver detalle</span>
       </div>
       <div style="max-height:560px;overflow-y:auto">
         <?php if (empty($equipos_pend)): ?>
