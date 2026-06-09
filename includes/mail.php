@@ -201,9 +201,11 @@ function epl_mail_partido_visual(
 
     $fila_fn = fn(string $icon, string $label, string $valor) =>
         '<tr>
-          <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;width:36px;font-size:18px;text-align:center">' . $icon . '</td>
-          <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">' . $label . '</td>
-          <td style="padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:700;color:#1c2f48">' . htmlspecialchars($valor, ENT_QUOTES, 'UTF-8') . '</td>
+          <td style="padding:11px 14px;border-bottom:1px solid #f1f5f9;vertical-align:top;width:44%">
+            <span style="font-size:15px;display:inline-block;vertical-align:middle;margin-right:6px">' . $icon . '</span>
+            <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;vertical-align:middle">' . $label . '</span>
+          </td>
+          <td style="padding:11px 14px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:700;color:#1c2f48;text-align:right;vertical-align:top;word-break:break-word">' . htmlspecialchars($valor, ENT_QUOTES, 'UTF-8') . '</td>
         </tr>';
 
     // VS header (opcional)

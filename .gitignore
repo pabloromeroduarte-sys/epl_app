@@ -13,3 +13,7 @@ sitemap.xml
 
 # Claude Code — muchos ficheros aquí pueden colgar watchers del IDE (p. ej. Antigravity)
 .claude/
+
+# Archivos temporales/diagnóstico (prefijo _) — nunca subir
+/_*.php
+/_*.html
