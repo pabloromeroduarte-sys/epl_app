@@ -909,7 +909,7 @@ document.addEventListener('DOMContentLoaded', function() {
     minuteIncrement: 15,
     defaultHour: 21,
     defaultMinute: 0,
-    disableMobile: false,
+    disableMobile: true,   // calendario de Flatpickr también en móvil
     position: 'auto center'
   });
 });

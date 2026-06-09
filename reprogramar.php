@@ -1982,7 +1982,7 @@ document.addEventListener('DOMContentLoaded', function() {
     minuteIncrement: 15,
     defaultHour: 21,
     defaultMinute: 0,
-    disableMobile: false,
+    disableMobile: true,   // fuerza el calendario de Flatpickr también en móvil (no el picker nativo de ruedas)
     position: 'auto center'
   };
 
