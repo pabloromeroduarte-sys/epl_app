@@ -128,6 +128,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+    // ── Editar equipo (reemplazar jugadores / nombre) ───────
+    } elseif ($action === 'editar_equipo') {
+        $eid    = (int)($_POST['equipo_id'] ?? 0);
+        $j1     = (int)($_POST['jugador1_id'] ?? 0);
+        $j2     = (int)($_POST['jugador2_id'] ?? 0);
+        $nombre = trim($_POST['nombre_equipo'] ?? '');
+        // El equipo debe pertenecer a esta liga
+        $chk = $db->prepare("SELECT e.id FROM equipos e JOIN liga_equipos le ON le.equipo_id=e.id WHERE e.id=? AND le.liga_id=?");
+        $chk->execute([$eid, $id]);
+        if (!$eid || !$chk->fetch()) { ld_redirect($id, 'equipos', '', 'Equipo no válido.'); }
+        elseif (!$j1 || !$j2 || $j1 === $j2) { ld_redirect($id, 'equipos', '', 'Selecciona dos jugadores distintos.'); }
+        else {
+            // Evitar que la nueva pareja choque con otro equipo de la misma liga
+            $dup = $db->prepare("SELECT e.id FROM equipos e JOIN liga_equipos le ON le.equipo_id=e.id WHERE le.liga_id=? AND e.id<>? AND ((e.jugador1_id=? AND e.jugador2_id=?) OR (e.jugador1_id=? AND e.jugador2_id=?))");
+            $dup->execute([$id, $eid, $j1, $j2, $j2, $j1]);
+            if ($dup->fetch()) { ld_redirect($id, 'equipos', '', 'Ya existe otro equipo con esa pareja en esta liga.'); }
+            else {
+                if (!$nombre) {
+                    $r1 = $db->prepare("SELECT apellido FROM jugadores WHERE id=?"); $r1->execute([$j1]);
+                    $r2 = $db->prepare("SELECT apellido FROM jugadores WHERE id=?"); $r2->execute([$j2]);
+                    $nombre = ($r1->fetchColumn() ?: 'J1') . ' - ' . ($r2->fetchColumn() ?: 'J2');
+                }
+                // Solo se cambian jugadores y nombre: el equipo conserva posición, puntos e historial
+                $db->prepare("UPDATE equipos SET nombre=?, jugador1_id=?, jugador2_id=? WHERE id=?")->execute([$nombre, $j1, $j2, $eid]);
+                ld_redirect($id, 'equipos', 'Equipo <strong>'.htmlspecialchars($nombre).'</strong> actualizado.');
+            }
+        }
+
     // ── Bulk Actions Partidos ─────────────────────────────────
     } elseif ($action === 'bulk_partidos') {
         $partido_ids = $_POST['partido_ids'] ?? [];
@@ -759,11 +787,15 @@ $total_equipos  = count($equipos_liga);
 
     <?php if ($tab === 'equipos'): ?>
     <!-- ══════════════ TAB EQUIPOS ═══════════════════════ -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;gap:.75rem;flex-wrap:wrap">
       <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy);margin:0">
         Equipos (<?= $total_equipos ?>)
       </h3>
       <button onclick="document.getElementById('modalAgregarEquipo').style.display='flex'" class="btn btn-primary btn-sm">+ Agregar equipo</button>
+    </div>
+    <div class="card mb-3" style="padding:.6rem 1rem">
+      <input type="text" id="buscarEquipo" class="form-control" placeholder="🔍 Buscar por nombre de equipo o jugador..." oninput="filtrarEquipos(this.value)" autocomplete="off">
+      <p id="buscarEquipoVacio" style="display:none;margin:.6rem 0 0;font-size:.82rem;color:var(--gray-400)">Sin equipos que coincidan con la búsqueda.</p>
     </div>
 
     <div class="card">
@@ -785,7 +817,7 @@ $total_equipos  = count($equipos_liga);
           </thead>
           <tbody>
             <?php foreach ($equipos_liga as $e): ?>
-            <tr style="border-bottom:1px solid var(--gray-100)">
+            <tr class="equipo-row" data-search="<?= epl_h(mb_strtolower($e['nombre'].' '.$e['j1n'].' '.$e['j1a'].' '.$e['j2n'].' '.$e['j2a'])) ?>" style="border-bottom:1px solid var(--gray-100)">
               <td style="padding:.65rem 1rem;font-weight:700;color:var(--navy)"><?= epl_h($e['nombre']) ?></td>
               <td style="padding:.65rem 1rem">
                 <div style="display:flex;align-items:center;gap:.4rem">
@@ -803,7 +835,10 @@ $total_equipos  = count($equipos_liga);
               <td style="padding:.65rem .75rem;text-align:center;color:#dc2626"><?= $e['pp']??0 ?></td>
               <td style="padding:.65rem .75rem;text-align:center;font-size:.78rem"><?= ($e['games_favor']??0) ?>/<?= ($e['games_contra']??0) ?></td>
               <td style="padding:.65rem .75rem;text-align:center;font-weight:700"><?= $e['pts_tabla']??0 ?></td>
-              <td style="padding:.65rem .75rem;text-align:center">
+              <td style="padding:.65rem .75rem;text-align:center;white-space:nowrap">
+                <a href="equipo_detalle.php?id=<?= $e['id'] ?>&liga=<?= $id ?>" class="btn btn-sm" style="border:1px solid var(--navy);color:var(--navy);font-size:.68rem">👁 Ver</a>
+                <button type="button" class="btn btn-sm" style="border:1px solid var(--gold);color:#a07d2c;font-size:.68rem"
+                        onclick="abrirEditarEquipo(<?= $e['id'] ?>, <?= (int)$e['jugador1_id'] ?>, <?= (int)$e['jugador2_id'] ?>, <?= htmlspecialchars(json_encode($e['nombre']), ENT_QUOTES) ?>)">✏ Editar</button>
                 <form method="post" style="display:inline">
                   <input type="hidden" name="action" value="quitar_equipo">
                   <input type="hidden" name="equipo_id" value="<?= $e['id'] ?>">
@@ -824,7 +859,7 @@ $total_equipos  = count($equipos_liga);
           <p style="padding:2rem;text-align:center;color:var(--gray-400)">Sin equipos inscritos.</p>
         <?php endif; ?>
         <?php foreach ($equipos_liga as $e): ?>
-        <div style="border-bottom:1px solid var(--gray-100);padding:.85rem 1rem">
+        <div class="equipo-card" data-search="<?= epl_h(mb_strtolower($e['nombre'].' '.$e['j1n'].' '.$e['j1a'].' '.$e['j2n'].' '.$e['j2a'])) ?>" style="border-bottom:1px solid var(--gray-100);padding:.85rem 1rem">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;color:var(--navy);font-size:.9rem;margin-bottom:.4rem"><?= epl_h($e['nombre']) ?></div>
@@ -842,18 +877,21 @@ $total_equipos  = count($equipos_liga);
               <div style="font-size:.6rem;text-transform:uppercase;color:var(--gray-400)">Pos</div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:.6rem">
-            <div style="display:flex;gap:1rem;font-size:.78rem">
-              <span>PJ <strong><?= $e['pj']??0 ?></strong></span>
-              <span style="color:#16a34a">PG <strong><?= $e['pg']??0 ?></strong></span>
-              <span style="color:#dc2626">PP <strong><?= $e['pp']??0 ?></strong></span>
-              <span>Pts <strong style="color:var(--navy)"><?= $e['pts_tabla']??0 ?></strong></span>
-            </div>
+          <div style="display:flex;gap:1rem;font-size:.78rem;margin-top:.6rem">
+            <span>PJ <strong><?= $e['pj']??0 ?></strong></span>
+            <span style="color:#16a34a">PG <strong><?= $e['pg']??0 ?></strong></span>
+            <span style="color:#dc2626">PP <strong><?= $e['pp']??0 ?></strong></span>
+            <span>Pts <strong style="color:var(--navy)"><?= $e['pts_tabla']??0 ?></strong></span>
+          </div>
+          <div style="display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap">
+            <a href="equipo_detalle.php?id=<?= $e['id'] ?>&liga=<?= $id ?>" class="btn btn-sm" style="border:1px solid var(--navy);color:var(--navy);font-size:.65rem;padding:.2rem .5rem">👁 Ver</a>
+            <button type="button" class="btn btn-sm" style="border:1px solid var(--gold);color:#a07d2c;font-size:.65rem;padding:.2rem .5rem"
+                    onclick="abrirEditarEquipo(<?= $e['id'] ?>, <?= (int)$e['jugador1_id'] ?>, <?= (int)$e['jugador2_id'] ?>, <?= htmlspecialchars(json_encode($e['nombre']), ENT_QUOTES) ?>)">✏ Editar</button>
             <form method="post" style="display:inline">
               <input type="hidden" name="action" value="quitar_equipo">
               <input type="hidden" name="equipo_id" value="<?= $e['id'] ?>">
               <button type="submit" class="btn btn-sm" style="border:1px solid #dc2626;color:#dc2626;font-size:.65rem;padding:.2rem .5rem"
-                      onclick="return confirm('¿Quitar este equipo?')">Quitar</button>
+                      data-confirm="¿Quitar este equipo?" data-confirm-ok="Quitar">Quitar</button>
             </form>
           </div>
         </div>
@@ -1339,6 +1377,61 @@ $total_equipos  = count($equipos_liga);
     </div>
   </div>
 </div>
+
+<!-- Modal editar equipo (reemplazar jugadores / nombre) -->
+<div id="modalEditarEquipo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;padding:1rem">
+  <div class="card" style="width:100%;max-width:480px">
+    <div class="card-head">
+      <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)">Editar equipo</h3>
+      <button onclick="document.getElementById('modalEditarEquipo').style.display='none'" style="background:none;font-size:1.5rem;color:var(--gray-400)">×</button>
+    </div>
+    <div class="card-body">
+      <p style="font-size:.78rem;color:var(--gray-500);margin:0 0 1rem;line-height:1.4">Reemplazá uno o ambos jugadores y/o cambiá el nombre. El equipo <strong>mantiene su posición, puntos e historial de partidos</strong> — la pareja nueva continúa con lo que llevaba el equipo.</p>
+      <form method="post">
+        <input type="hidden" name="action" value="editar_equipo">
+        <input type="hidden" name="equipo_id" id="ee_equipo_id">
+        <div class="form-group"><label class="form-label">Nombre del equipo</label><input type="text" name="nombre_equipo" id="ee_nombre" class="form-control" placeholder="Se genera automático si está vacío"></div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Jugador 1 *</label>
+            <select name="jugador1_id" id="ee_j1" class="form-control" required>
+              <option value="">— Selecciona —</option>
+              <?php foreach ($todos_jugadores as $j): ?><option value="<?= $j['id'] ?>"><?= epl_h($j['apellido'].', '.$j['nombre']) ?></option><?php endforeach; ?>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jugador 2 *</label>
+            <select name="jugador2_id" id="ee_j2" class="form-control" required>
+              <option value="">— Selecciona —</option>
+              <?php foreach ($todos_jugadores as $j): ?><option value="<?= $j['id'] ?>"><?= epl_h($j['apellido'].', '.$j['nombre']) ?></option><?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Guardar cambios</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function abrirEditarEquipo(eid, j1, j2, nombre) {
+  document.getElementById('ee_equipo_id').value = eid;
+  document.getElementById('ee_nombre').value = nombre || '';
+  var s1 = document.getElementById('ee_j1'); var s2 = document.getElementById('ee_j2');
+  s1.value = j1; s2.value = j2;
+  document.getElementById('modalEditarEquipo').style.display = 'flex';
+}
+function filtrarEquipos(q) {
+  q = (q || '').trim().toLowerCase();
+  var visibles = 0;
+  document.querySelectorAll('.equipo-row, .equipo-card').forEach(function(el){
+    var match = !q || (el.getAttribute('data-search') || '').indexOf(q) !== -1;
+    el.style.display = match ? '' : 'none';
+    if (match) visibles++;
+  });
+  var vacio = document.getElementById('buscarEquipoVacio');
+  if (vacio) vacio.style.display = (q && visibles === 0) ? 'block' : 'none';
+}
+</script>
 
 <!-- Modal crear partido -->
 <div id="modalCrearPartido" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;padding:1rem">

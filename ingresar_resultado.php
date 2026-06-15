@@ -24,7 +24,9 @@ if ($equipo) {
         SELECT p.*,
                el.nombre AS local_nombre,
                ev.nombre AS visitante_nombre,
-               CASE WHEN p.fecha_programada IS NOT NULL AND p.fecha_programada < NOW() AND DATE(p.fecha_programada) != '2026-12-31' THEN 1 ELSE 0 END AS vencido
+               CASE WHEN p.fecha_programada IS NOT NULL AND p.fecha_programada < NOW() AND DATE(p.fecha_programada) != '2026-12-31' THEN 1 ELSE 0 END AS vencido,
+               CASE WHEN p.fecha_programada IS NOT NULL AND DATE(p.fecha_programada) > DATE(NOW() + INTERVAL 1 DAY) AND DATE(p.fecha_programada) != '2026-12-31' THEN 1 ELSE 0 END AS futuro,
+               CASE WHEN p.fecha_programada IS NULL OR DATE(p.fecha_programada) = '2026-12-31' THEN 1 ELSE 0 END AS sin_fecha
         FROM partidos p
         JOIN equipos el ON el.id = p.equipo_local_id
         JOIN equipos ev ON ev.id = p.equipo_visitante_id
@@ -92,7 +94,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             $es_vencido = ($fecha_prog < time() && date('Y-m-d', $fecha_prog) !== '2026-12-31');
         }
 
-        if ($num_vencidos > 0 && !$es_vencido) {
+        // Verificar si el partido es a futuro (más de 1 día adelante): todavía no se puede registrar
+        $es_futuro = false;
+        if ($partido['fecha_programada']) {
+            $fecha_part = date('Y-m-d', strtotime($partido['fecha_programada']));
+            $es_futuro  = ($fecha_part > date('Y-m-d', strtotime('+1 day')) && $fecha_part !== '2026-12-31');
+        }
+
+        // Sin fecha definida (NULL) o placeholder por reprogramar (2026-12-31): tampoco se puede registrar
+        $es_sin_fecha = empty($partido['fecha_programada'])
+            || date('Y-m-d', strtotime($partido['fecha_programada'])) === '2026-12-31';
+
+        if ($es_futuro) {
+            $error = 'Todavía no puedes registrar este partido: está programado para más adelante. Podrás hacerlo desde el día anterior a la fecha del partido.';
+        } elseif ($es_sin_fecha) {
+            $error = 'Este partido aún no tiene una nueva fecha asignada (pendiente de reprogramar). No puedes registrar el resultado hasta que se fije la fecha.';
+        } elseif ($num_vencidos > 0 && !$es_vencido) {
             $error = 'Debes registrar primero los resultados de tus partidos vencidos/atrasados.';
         } else {
             $sets = [];
@@ -292,8 +309,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
     <div class="ir-partidos-list" id="listaPartidos">
       <?php foreach ($partidos_pendientes as $i => $p):
         $vencido = !empty($p['vencido']);
+        $futuro  = !empty($p['futuro']);
+        $sin_fecha = !empty($p['sin_fecha']);
         $reprog  = ($p['estado'] === 'reprogramado');
-        $disabled = ($tiene_vencidos && !$vencido);
+        $disabled = ($tiene_vencidos && !$vencido) || $futuro || $sin_fecha;
         $selected = $has_requested_in_list 
             ? ((int)$p['id'] === $requested_partido_id) 
             : ($i === 0);
@@ -311,7 +330,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
                onchange="seleccionarPartido(this)">
         <div class="ir-partido-content">
           <div class="ir-partido-fecha<?= $vencido ? ' ir-fecha-vencida' : '' ?>">
-            <?php if ($p['fecha_programada']): ?>
+            <?php if (!$sin_fecha && $p['fecha_programada']): ?>
               <span class="ir-dia"><?= date('d', strtotime($p['fecha_programada'])) ?></span>
               <span class="ir-mes"><?= strtoupper(date('M', strtotime($p['fecha_programada']))) ?></span>
             <?php else: ?>
@@ -327,12 +346,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo) {
             <div class="ir-partido-jornada">F.<?= $p['jornada'] ?? '—' ?></div>
             <?php if ($vencido): ?>
               <span style="font-size:.55rem;font-weight:800;color:#dc2626;background:#fee2e2;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">Vencido</span>
+            <?php elseif ($futuro): ?>
+              <span style="font-size:.55rem;font-weight:800;color:#2563eb;background:#dbeafe;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">Próximamente</span>
+            <?php elseif ($sin_fecha): ?>
+              <span style="font-size:.55rem;font-weight:800;color:#7c3aed;background:#ede9fe;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">Sin fecha</span>
             <?php elseif ($disabled): ?>
               <span style="font-size:.55rem;font-weight:800;color:#64748b;background:#e2e8f0;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">Bloqueado</span>
             <?php elseif ($reprog): ?>
               <span style="font-size:.55rem;font-weight:800;color:#d97706;background:#fef3c7;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">Reprog.</span>
             <?php endif; ?>
-            <?php if (!$tiene_vencidos && $i === 0): ?>
+            <?php if (!$tiene_vencidos && $i === 0 && !$futuro && !$sin_fecha): ?>
               <span style="font-size:.55rem;font-weight:800;color:#16a34a;background:#dcfce7;border-radius:4px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em">⭐ Próximo</span>
             <?php endif; ?>
           </div>

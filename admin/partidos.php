@@ -304,6 +304,80 @@ if ($f_search) {
     }
 }
 
+// ── Exportar a Excel/CSV: todos los partidos del filtro actual ──
+if (($_GET['export'] ?? '') === 'excel') {
+    $stEx = $db->prepare("
+        SELECT p.jornada, p.nombre_fecha, p.fecha_programada, p.estado,
+               el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+               p.sets_local, p.sets_visitante,
+               p.games_s1_local, p.games_s1_visitante,
+               p.games_s2_local, p.games_s2_visitante,
+               p.games_s3_local, p.games_s3_visitante,
+               r.nombre AS recinto_nombre,
+               l.nombre AS liga_nombre,
+               sr.motivo
+        FROM partidos p
+        JOIN ligas l ON l.id = p.liga_id
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        LEFT JOIN jugadores jl1 ON jl1.id = el.jugador1_id
+        LEFT JOIN jugadores jl2 ON jl2.id = el.jugador2_id
+        LEFT JOIN jugadores jv1 ON jv1.id = ev.jugador1_id
+        LEFT JOIN jugadores jv2 ON jv2.id = ev.jugador2_id
+        LEFT JOIN recintos r ON r.id = p.recinto_id
+        LEFT JOIN solicitudes_reprogramacion sr ON sr.id = (
+            SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
+            WHERE sr2.partido_id = p.id AND sr2.estado != 'rechazada'
+        )
+        $where_p
+        ORDER BY l.id DESC, p.fecha_programada IS NULL ASC, p.fecha_programada ASC, p.id ASC
+    ");
+    $stEx->execute($params_p);
+    $rows = $stEx->fetchAll();
+
+    $suf = $liga_sel ? '_' . preg_replace('/[^a-zA-Z0-9]+/', '_', $liga_sel['nombre']) : '';
+    $nombre_archivo = 'partidos' . $suf . '_' . date('Ymd_His') . '.csv';
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $nombre_archivo . '"');
+    header('Cache-Control: no-cache');
+    $out = fopen('php://output', 'w');
+    fputs($out, "\xEF\xBB\xBF"); // BOM UTF-8 para que Excel abra bien los acentos
+    fputcsv($out, ['Liga','Jornada','Nombre Fecha','Fecha Programada','Hora','Local','Visitante','Sets Local','Sets Visitante','S1 (L-V)','S2 (L-V)','S3 (L-V)','Estado','Cancha','Motivo Reprog.'], ';');
+    foreach ($rows as $r) {
+        $fp = $r['fecha_programada'];
+        $es_ph = $fp && date('Y-m-d', strtotime($fp)) === '2026-12-31';
+        $fecha_fmt = (!$fp || $es_ph) ? 'Sin fecha' : date('d/m/Y', strtotime($fp));
+        $hora_fmt  = (!$fp || $es_ph) ? '' : date('H:i', strtotime($fp));
+        $estado_label = match($r['estado']) {
+            'jugado' => 'Jugado','pendiente' => 'Pendiente','reprogramado' => 'Reprogramado',
+            'walkover' => 'Walkover','no_presentado' => 'No presentado', default => $r['estado'],
+        };
+        $s1 = ($r['games_s1_local'] !== null) ? $r['games_s1_local'].'-'.$r['games_s1_visitante'] : '';
+        $s2 = ($r['games_s2_local'] !== null) ? $r['games_s2_local'].'-'.$r['games_s2_visitante'] : '';
+        $s3 = ($r['games_s3_local'] !== null) ? $r['games_s3_local'].'-'.$r['games_s3_visitante'] : '';
+        fputcsv($out, [
+            $r['liga_nombre'], $r['jornada'] ? 'J'.$r['jornada'] : '',
+            $r['nombre_fecha'] ?? '', $fecha_fmt, $hora_fmt,
+            $r['local_nombre'], $r['visitante_nombre'],
+            $r['sets_local'] ?? '', $r['sets_visitante'] ?? '',
+            $s1, $s2, $s3, $estado_label, $r['recinto_nombre'] ?? '', $r['motivo'] ?? '',
+        ], ';');
+    }
+    fclose($out);
+    exit;
+}
+
+// URL de exportación con los filtros activos (para el botón)
+$export_url = 'partidos.php?' . http_build_query(array_filter([
+    'liga'     => $liga_id ?: null,
+    'fecha'    => $f_fecha ?: null,
+    'estado_p' => $f_est ?: null,
+    'search'   => $f_search ?: null,
+    'desde'    => $f_desde ?: null,
+    'hasta'    => $f_hasta ?: null,
+    'export'   => 'excel',
+]));
+
 // Asegurar columnas originales
 epl_ensure_partidos_columnas_originales();
 
@@ -382,7 +456,10 @@ require_once '../includes/header.php';
           <h1 class="dash-title" style="color:#fff;margin:.2rem 0 .15rem;font-size:clamp(1.3rem,5vw,1.9rem);font-family:'Anton',sans-serif;text-transform:uppercase;line-height:1">Gestión de <span style="color:#C9A762">Partidos</span></h1>
           <p style="color:rgba(255,255,255,.7);margin-top:.15rem;font-size:.75rem;line-height:1.3"><?= count($partidos) ?> partido<?= count($partidos)!==1?'s':'' ?> · <?= $liga_sel ? epl_h($liga_sel['nombre']) : 'Todas las ligas' ?></p>
         </div>
-        <button onclick="document.getElementById('modalCrearPartido').style.display='flex'" class="btn-nuevo-partido" style="background:var(--gold);color:var(--navy);font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:.65rem 1rem;border-radius:10px;border:none;font-size:.72rem;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Nuevo</button>
+        <div style="display:flex;gap:.5rem;flex-shrink:0;flex-wrap:wrap">
+          <a href="<?= epl_h($export_url) ?>" class="btn-nuevo-partido" title="Descargar partidos en Excel (.csv) con los filtros actuales" style="background:#059669;color:#fff;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:.65rem 1rem;border-radius:10px;border:none;font-size:.72rem;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center">⬇ Excel</a>
+          <button onclick="document.getElementById('modalCrearPartido').style.display='flex'" class="btn-nuevo-partido" style="background:var(--gold);color:var(--navy);font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:.65rem 1rem;border-radius:10px;border:none;font-size:.72rem;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Nuevo</button>
+        </div>
       </div>
     </div>
 

@@ -82,6 +82,17 @@ if ($Desplegar) {
     if (-not $token) {
         Write-Error "DEPLOY_TOKEN no encontrado. Añádelo en .env o variable de entorno DEPLOY_TOKEN."
     }
+    # Windows PowerShell 5.1 no negocia TLS 1.2 por defecto; forzarlo y confiar en el cert del propio VPS.
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    if (-not ("TrustAllEPL" -as [type])) {
+        Add-Type @"
+using System.Net; using System.Security.Cryptography.X509Certificates;
+public class TrustAllEPL : ICertificatePolicy {
+  public bool CheckValidationResult(ServicePoint sp, X509Certificate cert, WebRequest req, int problem) { return true; }
+}
+"@
+    }
+    [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllEPL
     $urls = @(
         "https://padel.207.246.68.77.nip.io/deploy_webhook.php?token=$token",
         "https://207.246.68.77/deploy_webhook.php?token=$token"
