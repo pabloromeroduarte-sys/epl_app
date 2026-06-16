@@ -38,11 +38,17 @@ foreach ($ventanas as [$horas, $tolerancia, $etiqueta]) {
             el.jugador2_id AS jl2_id,
             ev.jugador1_id AS jv1_id,
             ev.jugador2_id AS jv2_id,
-            lg.nombre  AS liga_nombre
+            lg.nombre  AS liga_nombre,
+            r.nombre  AS recinto_nombre,
+            s.nombre  AS recinto_superior_nombre,
+            ss.nombre AS recinto_abuelo_nombre
         FROM partidos p
         JOIN equipos el  ON el.id = p.equipo_local_id
         JOIN equipos ev  ON ev.id = p.equipo_visitante_id
         LEFT JOIN ligas lg ON lg.id = p.liga_id
+        LEFT JOIN recintos r  ON r.id  = p.recinto_id
+        LEFT JOIN recintos s  ON s.id  = r.superior_id
+        LEFT JOIN recintos ss ON ss.id = s.superior_id
         WHERE p.estado IN ('pendiente','reprogramado')
           AND p.fecha_programada BETWEEN ? AND ?
     ");
@@ -60,7 +66,25 @@ foreach ($ventanas as [$horas, $tolerancia, $etiqueta]) {
         $fecha_dt  = new DateTimeImmutable($p['fecha_programada'], new DateTimeZone('America/Santiago'));
         $dia       = $fecha_dt->format('d/m/Y');
         $hora      = $fecha_dt->format('H:i');
-        $cancha    = !empty($p['cancha']) ? trim($p['cancha']) : 'Por confirmar';
+        $r_nombre = !empty($p['recinto_nombre']) ? trim($p['recinto_nombre']) : '';
+        $r_sup    = !empty($p['recinto_superior_nombre']) ? trim($p['recinto_superior_nombre']) : '';
+        $r_abu    = !empty($p['recinto_abuelo_nombre']) ? trim($p['recinto_abuelo_nombre']) : '';
+        $c_campo  = !empty($p['cancha']) ? trim($p['cancha']) : '';
+
+        if ($r_nombre) {
+            if ($r_abu && $r_sup) {
+                $cancha = "{$r_abu} {$r_sup} - {$r_nombre}";
+            } elseif ($r_sup) {
+                $cancha = "{$r_sup} - {$r_nombre}";
+            } else {
+                $cancha = $r_nombre;
+            }
+            if ($c_campo && !str_contains(strtolower($cancha), strtolower($c_campo))) {
+                $cancha .= " ({$c_campo})";
+            }
+        } else {
+            $cancha = $c_campo ?: 'Por confirmar';
+        }
         $liga      = !empty($p['liga_nombre']) ? trim($p['liga_nombre']) : 'Elite Padel League';
         $jornada   = !empty($p['jornada']) ? 'Jornada ' . $p['jornada'] : '';
         $local     = trim($p['local_nombre']);

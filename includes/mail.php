@@ -233,7 +233,7 @@ function epl_mail_partido_visual(
         : '';
 
     $subtitulo_html = $subtitulo
-        ? '<p style="margin:0 0 1.25rem;font-size:14px;color:#64748b">' . nl2br(htmlspecialchars($subtitulo, ENT_QUOTES)) . '</p>'
+        ? '<p style="margin:0 0 1.25rem;font-size:14px;color:#64748b">' . str_replace(['&lt;strong&gt;', '&lt;/strong&gt;'], ['<strong>', '</strong>'], nl2br(htmlspecialchars($subtitulo, ENT_QUOTES, 'UTF-8'))) . '</p>'
         : '';
 
     $tip_html = $tip
@@ -244,7 +244,7 @@ function epl_mail_partido_visual(
     <p style="margin:0 0 1.25rem;font-size:15px;color:#334155">Hola <strong>' . $nombre . '</strong>,</p>
     ' . $subtitulo_html . $vs_html . $tabla_html . $tip_html . '
     <p style="margin:0;text-align:center">
-      <a href="' . htmlspecialchars($link, ENT_QUOTES) . '" style="display:inline-block;background:#C9A762;color:#1c2f48;font-weight:900;font-size:13px;text-decoration:none;padding:.75rem 2rem;border-radius:8px;text-transform:uppercase;letter-spacing:.05em">' . htmlspecialchars($btn_texto, ENT_QUOTES) . '</a>
+      <a href="' . htmlspecialchars($link, ENT_QUOTES) . '" style="display:inline-block;background:#C9A762;color:#1c2f48;font-weight:900;font-size:13px;line-height:1.2;text-decoration:none;padding:14px 28px;border-radius:8px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;mso-line-height-rule:exactly">' . htmlspecialchars($btn_texto, ENT_QUOTES) . '</a>
     </p>';
 
     $html = epl_mail_plantilla($asunto, $body);
