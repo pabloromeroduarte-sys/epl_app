@@ -225,10 +225,10 @@ function epl_partidos_club(array $liga_ids, ?string $desde = null, ?string $hast
         SELECT p.*, l.nombre AS liga_nombre,
                el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
                r.nombre AS recinto_nombre, s.nombre AS recinto_superior_nombre, ss.nombre AS recinto_abuelo_nombre,
-               jl1.nombre AS jl1_n, jl1.apellido AS jl1_a,
-               jl2.nombre AS jl2_n, jl2.apellido AS jl2_a,
-               jv1.nombre AS jv1_n, jv1.apellido AS jv1_a,
-               jv2.nombre AS jv2_n, jv2.apellido AS jv2_a
+               jl1.nombre AS jl1_n, jl1.apellido AS jl1_a, jl1.telefono AS jl1_t,
+               jl2.nombre AS jl2_n, jl2.apellido AS jl2_a, jl2.telefono AS jl2_t,
+               jv1.nombre AS jv1_n, jv1.apellido AS jv1_a, jv1.telefono AS jv1_t,
+               jv2.nombre AS jv2_n, jv2.apellido AS jv2_a, jv2.telefono AS jv2_t
         FROM partidos p
         JOIN ligas l ON l.id = p.liga_id
         JOIN equipos el ON el.id = p.equipo_local_id

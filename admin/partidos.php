@@ -17,6 +17,12 @@ function partidos_redirect(string $msg = '', string $err = '', array $extra = []
         if ($err) $_SESSION['_epl_flash'] = ['tipo'=>'error', 'msg'=>$err];
     }
 
+    // Volver al calendario admin si la edición vino de ahí
+    if (!empty($_POST['return_to']) && preg_match('#^calendario\.php(\?[\w=&\-]*)?$#', $_POST['return_to'])) {
+        header('Location: ' . epl_url('admin/' . $_POST['return_to']));
+        exit;
+    }
+
     $params = [];
     // Filtros desde POST hidden inputs
     foreach (['_f_liga'=>'liga','_f_fecha'=>'fecha','_f_estado_p'=>'estado_p','_f_search'=>'search','_f_desde'=>'desde','_f_hasta'=>'hasta'] as $post_k => $get_k) {

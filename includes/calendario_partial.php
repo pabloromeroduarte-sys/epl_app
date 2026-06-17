@@ -26,6 +26,7 @@ if (!function_exists('cal_pareja')) {
 
 $cal_liga_ids       = array_values(array_map('intval', $cal_liga_ids ?? []));
 $cal_ligas_opciones = $cal_ligas_opciones ?? [];
+$cal_editable       = $cal_editable ?? false; // true en admin: muestra botón Editar partido
 
 // Filtro por liga
 $liga_sel = isset($_GET['liga']) ? (int)$_GET['liga'] : 0;
@@ -58,7 +59,7 @@ foreach ($partidos as $p) {
     $jugado = $p['estado'] === 'jugado';
     $sets = [];
     for ($s=1;$s<=3;$s++){ $gl=$p["games_s{$s}_local"]; $gv=$p["games_s{$s}_visitante"]; if($gl!==null) $sets[]="$gl-$gv"; }
-    $detalle[$d][] = [
+    $item = [
         'hora'      => date('H:i', strtotime($p['fecha_programada'])),
         'liga'      => $p['liga_nombre'],
         'cancha'    => cal_recinto($p),
@@ -70,6 +71,10 @@ foreach ($partidos as $p) {
         'resultado' => $jugado ? ((int)$p['sets_local'] . '–' . (int)$p['sets_visitante']) : '',
         'sets'      => $sets ? implode(' · ', $sets) : '',
     ];
+    if ($cal_editable) {
+        $item['edit'] = base64_encode(json_encode($p, JSON_UNESCAPED_UNICODE) ?: '{}');
+    }
+    $detalle[$d][] = $item;
 }
 ?>
 <style>
@@ -143,6 +148,7 @@ function abrirDia(fecha){
          + '<div style="font-size:.8rem;color:var(--navy);font-weight:700;margin-bottom:.2rem">'+esc(p.local)+' <span style="color:#cbd5e1">vs</span> '+esc(p.visitante)+'</div>'
          + '<div style="font-size:.74rem;color:#64748b;line-height:1.5">👥 '+esc(p.jug_local)+'  <span style="color:#cbd5e1">|</span>  '+esc(p.jug_vis)+'</div>'
          + '<div style="font-size:.74rem;color:#64748b;margin-top:.2rem">📍 '+esc(p.cancha)+'  ·  🏆 '+esc(p.liga)+'</div>'
+         + (p.edit ? '<div style="margin-top:.55rem;text-align:right"><button type="button" class="btn btn-sm" style="border:1px solid var(--navy);color:var(--navy);font-size:.7rem;font-weight:700" data-partido="'+p.edit+'" onclick="window.editarPartido(this)">✏ Editar / ver info</button></div>' : '')
          + '</div>';
   });
   html += '</div>';
