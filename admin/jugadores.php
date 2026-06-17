@@ -5,9 +5,17 @@ require_once '../includes/functions.php';
 epl_require_admin();
 
 $db     = epl_db();
+epl_ensure_club_schema();
 $_flash = epl_flash_get();
 $ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
 $err    = '';
+
+// Ligas para asignar a clubes + asignaciones actuales (club_id => [liga_id])
+$ligas_all = $db->query("SELECT id, nombre FROM ligas ORDER BY id DESC")->fetchAll();
+$club_ligas_map = [];
+foreach ($db->query("SELECT club_id, liga_id FROM club_ligas")->fetchAll() as $cl) {
+    $club_ligas_map[(int)$cl['club_id']][] = (int)$cl['liga_id'];
+}
 
 // Migración: columna must_change_password
 try { $db->exec("ALTER TABLE jugadores ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0"); } catch (Throwable $e) {}
@@ -42,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email    = strtolower(trim($_POST['email']    ?? ''));
         $nombre   = trim($_POST['nombre']   ?? '');
         $apellido = trim($_POST['apellido'] ?? '');
-        $rol      = in_array($_POST['rol']??'jugador',['jugador','admin']) ? $_POST['rol'] : 'jugador';
+        $rol      = in_array($_POST['rol']??'jugador',['jugador','admin','club']) ? $_POST['rol'] : 'jugador';
         $pass_raw = trim($_POST['password'] ?? '');
         $telefono = trim($_POST['telefono'] ?? '');
         $nivel    = (int)($_POST['nivel'] ?? 5);
@@ -52,6 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $db->prepare("INSERT INTO jugadores (email,password,nombre,apellido,rol,telefono,nivel) VALUES (?,?,?,?,?,?,?)")
                    ->execute([$email, epl_hash_password($pass_raw), $nombre, $apellido, $rol, $telefono?:null, $nivel]);
+                if ($rol === 'club') {
+                    $nuevo_id = (int)$db->lastInsertId();
+                    foreach (array_map('intval', $_POST['club_ligas'] ?? []) as $lid) {
+                        if ($lid > 0) $db->prepare("INSERT IGNORE INTO club_ligas (club_id,liga_id) VALUES (?,?)")->execute([$nuevo_id,$lid]);
+                    }
+                }
                 epl_redirect_ok("Jugador {$nombre} {$apellido} creado.");
             } catch (PDOException $e) {
                 $err = $e->getCode() == 23000 ? 'Ese email ya existe.' : 'Error al crear.';
@@ -151,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pala      = trim($_POST['pala']       ?? '');
         $talla     = trim($_POST['talla']      ?? '');
         $frec      = in_array($_POST['frecuencia_juego']??'',['1_semana','2_semana','3_o_mas','ocasional']) ? $_POST['frecuencia_juego'] : null;
-        $rol       = in_array($_POST['rol']??'jugador',['jugador','admin']) ? $_POST['rol'] : 'jugador';
+        $rol       = in_array($_POST['rol']??'jugador',['jugador','admin','club']) ? $_POST['rol'] : 'jugador';
         $estado    = in_array($_POST['estado']??'activo',['activo','inactivo','suspendido']) ? $_POST['estado'] : 'activo';
 
         $email_nuevo = strtolower(trim($_POST['email_editar'] ?? ''));
@@ -183,6 +197,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $params[] = $id;
                 $db->prepare("UPDATE jugadores SET {$sets} WHERE id=?")->execute($params);
+                $db->prepare("DELETE FROM club_ligas WHERE club_id=?")->execute([$id]);
+                if ($rol === 'club') {
+                    foreach (array_map('intval', $_POST['club_ligas'] ?? []) as $lid) {
+                        if ($lid > 0) $db->prepare("INSERT IGNORE INTO club_ligas (club_id,liga_id) VALUES (?,?)")->execute([$id,$lid]);
+                    }
+                }
                 epl_redirect_ok('Jugador actualizado.' . ($email_nuevo ? ' Email cambiado a ' . $email_nuevo . '.' : ''));
             }
         }
@@ -298,6 +318,7 @@ $jugadores = $st->fetchAll();
             <option value="">Todos</option>
             <option value="jugador" <?= $f_rol==='jugador'?'selected':'' ?>>Jugador</option>
             <option value="admin"   <?= $f_rol==='admin'?'selected':'' ?>>Admin</option>
+            <option value="club"    <?= $f_rol==='club'?'selected':'' ?>>Club</option>
           </select>
         </div>
         <button type="submit" class="btn btn-navy btn-sm">Filtrar</button>
@@ -486,7 +507,18 @@ $jugadores = $st->fetchAll();
         </div>
         <div class="form-group">
           <label class="form-label">Rol</label>
-          <select name="rol" class="form-control"><option value="jugador">Jugador</option><option value="admin">Admin</option></select>
+          <select name="rol" class="form-control" onchange="toggleCrearLigas(this.value)"><option value="jugador">Jugador</option><option value="admin">Admin</option><option value="club">Club</option></select>
+        </div>
+        <div class="form-group" id="crearLigasBox" style="display:none">
+          <label class="form-label">Ligas asignadas al club</label>
+          <div style="max-height:160px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:8px;padding:.5rem .75rem">
+            <?php foreach ($ligas_all as $l): ?>
+              <label style="display:flex;align-items:center;gap:.5rem;padding:.2rem 0;font-size:.85rem;cursor:pointer">
+                <input type="checkbox" name="club_ligas[]" value="<?= $l['id'] ?>"> <?= epl_h($l['nombre']) ?>
+              </label>
+            <?php endforeach; ?>
+            <?php if (empty($ligas_all)): ?><span style="color:var(--gray-400);font-size:.8rem">No hay ligas creadas.</span><?php endif; ?>
+          </div>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Crear jugador</button>
       </form>
@@ -620,9 +652,10 @@ $jugadores = $st->fetchAll();
         <div class="grid-2">
           <div class="form-group">
             <label class="form-label">Rol</label>
-            <select name="rol" id="editarRol" class="form-control">
+            <select name="rol" id="editarRol" class="form-control" onchange="toggleEditarLigas(this.value)">
               <option value="jugador">Jugador</option>
               <option value="admin">Admin</option>
+              <option value="club">Club</option>
             </select>
           </div>
           <div class="form-group">
@@ -632,6 +665,18 @@ $jugadores = $st->fetchAll();
               <option value="inactivo">Inactivo</option>
               <option value="suspendido">Suspendido</option>
             </select>
+          </div>
+        </div>
+
+        <div class="form-group" id="editarLigasBox" style="display:none">
+          <label class="form-label">Ligas asignadas al club</label>
+          <div style="max-height:160px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:8px;padding:.5rem .75rem">
+            <?php foreach ($ligas_all as $l): ?>
+              <label style="display:flex;align-items:center;gap:.5rem;padding:.2rem 0;font-size:.85rem;cursor:pointer">
+                <input type="checkbox" class="editarLigaChk" name="club_ligas[]" value="<?= $l['id'] ?>"> <?= epl_h($l['nombre']) ?>
+              </label>
+            <?php endforeach; ?>
+            <?php if (empty($ligas_all)): ?><span style="color:var(--gray-400);font-size:.8rem">No hay ligas creadas.</span><?php endif; ?>
           </div>
         </div>
 
@@ -663,6 +708,9 @@ $jugadores = $st->fetchAll();
 </div>
 
 <script>
+var CLUB_LIGAS = <?= json_encode($club_ligas_map, JSON_UNESCAPED_UNICODE) ?: '{}' ?>;
+function toggleCrearLigas(v){ var b=document.getElementById('crearLigasBox'); if(b) b.style.display=(v==='club')?'block':'none'; }
+function toggleEditarLigas(v){ var b=document.getElementById('editarLigasBox'); if(b) b.style.display=(v==='club')?'block':'none'; }
 function showResetPass(id, nombre) {
   document.getElementById('resetPassId').value = id;
   document.getElementById('resetPassTitle').textContent = 'Reset — ' + nombre;
@@ -693,6 +741,10 @@ function showEditar(j) {
   document.getElementById('emailEditRow').style.display = 'none';
   var inp = document.getElementById('editarEmailNuevo');
   if (inp) inp.value = '';
+  // Ligas asignadas al club
+  var _lg = (CLUB_LIGAS && CLUB_LIGAS[j.id]) ? CLUB_LIGAS[j.id] : [];
+  document.querySelectorAll('.editarLigaChk').forEach(function(chk){ chk.checked = _lg.indexOf(parseInt(chk.value,10)) !== -1; });
+  toggleEditarLigas(j.rol || 'jugador');
   document.getElementById('modalEditar').style.display = 'flex';
 }
 

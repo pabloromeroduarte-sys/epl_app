@@ -197,6 +197,14 @@ function epl_require_login(): void {
             exit;
         }
     }
+    // Un club no usa el área de jugador → llevarlo a su panel
+    if (($sess['rol'] ?? '') === 'club') {
+        $cur = basename((string)($_SERVER['PHP_SELF'] ?? ''));
+        if (!in_array($cur, ['cambiar_password.php', 'logout.php'], true)) {
+            header('Location: ' . epl_url('club/resultados.php'));
+            exit;
+        }
+    }
 }
 
 function epl_require_admin(): void {
@@ -205,6 +213,29 @@ function epl_require_admin(): void {
         http_response_code(403);
         header('Location: ' . epl_url('dashboard.php'));
         exit;
+    }
+}
+
+/** Solo deja pasar al rol 'club'. Resto → su área correspondiente o login. */
+function epl_require_club(): void {
+    $j = epl_jugador_actual();
+    if (!$j) {
+        $back = urlencode($_SERVER['REQUEST_URI']);
+        header('Location: ' . epl_url("login.php?back=$back"));
+        exit;
+    }
+    if (($j['rol'] ?? '') !== 'club') {
+        header('Location: ' . epl_url(($j['rol'] ?? '') === 'admin' ? 'admin/index.php' : 'dashboard.php'));
+        exit;
+    }
+    epl_sync_jugador_sesion();
+    $sess = epl_jugador_actual();
+    if (!empty($sess['must_change_password'])) {
+        $cur = basename((string)($_SERVER['PHP_SELF'] ?? ''));
+        if (!in_array($cur, ['cambiar_password.php', 'logout.php'], true)) {
+            header('Location: ' . epl_url('cambiar_password.php'));
+            exit;
+        }
     }
 }
 

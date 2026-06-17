@@ -175,6 +175,78 @@ function epl_partidos_liga(int $liga_id, string $estado = ''): array {
     return $st->fetchAll();
 }
 
+// ── Rol "Club": esquema, ligas asignadas y partidos ──────
+function epl_ensure_club_schema(): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        $db = epl_db();
+        // Ampliar ENUM de rol con 'club' (solo si falta)
+        $col = $db->query("SHOW COLUMNS FROM jugadores LIKE 'rol'")->fetch(PDO::FETCH_ASSOC);
+        if ($col && stripos($col['Type'], "'club'") === false) {
+            $db->exec("ALTER TABLE jugadores MODIFY rol ENUM('jugador','admin','club') NOT NULL DEFAULT 'jugador'");
+        }
+        // Tabla de asignación club ↔ ligas
+        $db->exec("CREATE TABLE IF NOT EXISTS club_ligas (
+            club_id INT UNSIGNED NOT NULL,
+            liga_id INT UNSIGNED NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (club_id, liga_id),
+            KEY idx_liga (liga_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    } catch (Throwable $e) {
+        error_log('epl_ensure_club_schema: ' . $e->getMessage());
+    }
+}
+
+/** @return int[] ids de ligas asignadas al club */
+function epl_club_ligas(int $club_id): array {
+    epl_ensure_club_schema();
+    $st = epl_db()->prepare("SELECT liga_id FROM club_ligas WHERE club_id=? ORDER BY liga_id DESC");
+    $st->execute([$club_id]);
+    return array_map('intval', array_column($st->fetchAll(), 'liga_id'));
+}
+
+function epl_club_puede_liga(int $club_id, int $liga_id): bool {
+    return in_array($liga_id, epl_club_ligas($club_id), true);
+}
+
+/** Partidos de un conjunto de ligas, con equipos, recinto (jerarquía) y los 4 jugadores. */
+function epl_partidos_club(array $liga_ids, ?string $desde = null, ?string $hasta = null): array {
+    $liga_ids = array_values(array_unique(array_map('intval', $liga_ids)));
+    if (!$liga_ids) return [];
+    $in = implode(',', array_fill(0, count($liga_ids), '?'));
+    $params = $liga_ids;
+    $extra = '';
+    if ($desde) { $extra .= " AND p.fecha_programada >= ?"; $params[] = $desde; }
+    if ($hasta) { $extra .= " AND p.fecha_programada <= ?"; $params[] = $hasta; }
+    $st = epl_db()->prepare("
+        SELECT p.*, l.nombre AS liga_nombre,
+               el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+               r.nombre AS recinto_nombre, s.nombre AS recinto_superior_nombre, ss.nombre AS recinto_abuelo_nombre,
+               jl1.nombre AS jl1_n, jl1.apellido AS jl1_a,
+               jl2.nombre AS jl2_n, jl2.apellido AS jl2_a,
+               jv1.nombre AS jv1_n, jv1.apellido AS jv1_a,
+               jv2.nombre AS jv2_n, jv2.apellido AS jv2_a
+        FROM partidos p
+        JOIN ligas l ON l.id = p.liga_id
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        LEFT JOIN jugadores jl1 ON jl1.id = el.jugador1_id
+        LEFT JOIN jugadores jl2 ON jl2.id = el.jugador2_id
+        LEFT JOIN jugadores jv1 ON jv1.id = ev.jugador1_id
+        LEFT JOIN jugadores jv2 ON jv2.id = ev.jugador2_id
+        LEFT JOIN recintos r  ON r.id  = p.recinto_id
+        LEFT JOIN recintos s  ON s.id  = r.superior_id
+        LEFT JOIN recintos ss ON ss.id = s.superior_id
+        WHERE p.liga_id IN ($in) $extra
+        ORDER BY p.fecha_programada ASC, p.jornada ASC, p.id ASC
+    ");
+    $st->execute($params);
+    return $st->fetchAll();
+}
+
 function epl_partidos_equipo(int $equipo_id): array {
     $db = epl_db();
     $st = $db->prepare("
