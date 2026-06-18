@@ -223,6 +223,58 @@ if ($liga) {
     }
 }
 
+// ── Equipos disponibles para adelantar fecha ─────────────────────────────────
+// Criterios: tienen un partido reprogramado (libre) + tengo un pendiente contra ellos
+// Excluye: rivales de MIS propios partidos reprogramados (ya los estoy coordinando)
+$disponibles_adelantar = [];
+if ($equipo && $liga) {
+    $eid = (int)$equipo['id'];
+    $lid = (int)$liga['id'];
+    $stAdel = $db->prepare("
+        SELECT DISTINCT
+            rival.id     AS rival_id,
+            rival.nombre AS rival_nombre,
+            jr1.nombre AS r1n, jr1.apellido AS r1a, jr1.telefono AS r1t,
+            jr2.nombre AS r2n, jr2.apellido AS r2a, jr2.telefono AS r2t,
+            mp.id         AS partido_id,
+            mp.jornada,
+            mp.nombre_fecha,
+            mp.fecha_programada,
+            el_mp.nombre  AS mp_local,
+            ev_mp.nombre  AS mp_visitante
+        FROM equipos rival
+        JOIN partidos p_repr
+            ON (p_repr.equipo_local_id = rival.id OR p_repr.equipo_visitante_id = rival.id)
+           AND p_repr.liga_id = ?
+           AND p_repr.estado = 'reprogramado'
+        JOIN partidos mp
+            ON mp.liga_id = ?
+           AND mp.estado IN ('pendiente','reprogramado')
+           AND (
+               (mp.equipo_local_id = ? AND mp.equipo_visitante_id = rival.id)
+            OR (mp.equipo_visitante_id = ? AND mp.equipo_local_id = rival.id)
+           )
+        JOIN equipos el_mp ON el_mp.id = mp.equipo_local_id
+        JOIN equipos ev_mp ON ev_mp.id = mp.equipo_visitante_id
+        LEFT JOIN jugadores jr1 ON jr1.id = rival.jugador1_id
+        LEFT JOIN jugadores jr2 ON jr2.id = rival.jugador2_id
+        WHERE rival.id != ?
+          AND rival.id NOT IN (
+              SELECT CASE WHEN pm.equipo_local_id = ?
+                          THEN pm.equipo_visitante_id
+                          ELSE pm.equipo_local_id END
+              FROM partidos pm
+              WHERE pm.liga_id = ?
+                AND (pm.equipo_local_id = ? OR pm.equipo_visitante_id = ?)
+                AND pm.estado = 'reprogramado'
+          )
+        ORDER BY mp.jornada ASC
+    ");
+    $stAdel->execute([$lid, $lid, $eid, $eid, $eid, $eid, $lid, $eid, $eid]);
+    $disponibles_adelantar = $stAdel->fetchAll();
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 $WA_SVG = '<svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.404c0 6.556-5.332 11.888-11.888 11.888-2.003 0-3.963-.505-5.698-1.465l-6.305 1.693zm6.443-4.045c1.474.873 3.103 1.332 4.775 1.332 5.054 0 9.163-4.109 9.163-9.163s-4.109-9.163-9.163-9.163-9.163 4.109-9.163 9.163c0 1.95.623 3.856 1.799 5.437l-1.002 3.659 3.743-.999zm10.742-5.466c-.303-.151-1.788-.882-2.067-.981-.278-.099-.481-.151-.683.151-.202.303-.783.981-.96 1.183-.177.202-.354.227-.657.076-.303-.151-1.28-.471-2.438-1.504-.901-.803-1.508-1.796-1.685-2.098-.177-.302-.019-.465.132-.615.136-.135.303-.354.455-.53.151-.177.202-.303.303-.505.101-.202.051-.379-.025-.53-.076-.151-.683-1.643-.935-2.249-.245-.59-.495-.51-.683-.52l-.582-.01c-.202 0-.531.076-.809.379-.278.303-1.062 1.037-1.062 2.529 0 1.492 1.087 2.932 1.239 3.134.151.202 2.14 3.268 5.184 4.582.724.312 1.29.499 1.731.639.727.231 1.388.199 1.911.121.582-.087 1.788-.731 2.041-1.439.253-.708.253-1.313.177-1.439-.076-.126-.278-.202-.581-.353z"/></svg>';
 
 // ─── NUEVA ACCIÓN: Asignar fecha a un partido reprogramado SIN fecha ───
@@ -508,6 +560,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
       <span>🏆</span> <span class="rp-tab-text">Todos<span class="rp-tab-text-long"> los Reprogramados</span></span>
       <?php if (count($otros_reprogramados) > 0): ?>
         <span class="rp-tab-badge" style="background:#0369a1"><?= count($otros_reprogramados) ?></span>
+      <?php endif; ?>
+    </button>
+    <button type="button" class="rp-tab-btn" data-tab="adelantar-fecha" onclick="rpSwitchTab('adelantar-fecha')">
+      <span>⚡</span> <span class="rp-tab-text">Adelantar<span class="rp-tab-text-long"> Fecha</span></span>
+      <?php if (count($disponibles_adelantar) > 0): ?>
+        <span class="rp-tab-badge" style="background:#16a34a"><?= count($disponibles_adelantar) ?></span>
       <?php endif; ?>
     </button>
   </div>
@@ -1005,6 +1063,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
         </div>
       </div>
       <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+  </div>
+
+  <!-- Pestaña 4: Adelantar Fecha -->
+  <div id="tab-adelantar-fecha" class="rp-tab-panel" style="display:none">
+    <div style="margin-bottom:1.5rem">
+      <h3 style="font-family:var(--font-head);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy);margin-bottom:.5rem">
+        ⚡ Disponibles para adelantar fecha
+      </h3>
+      <p style="color:var(--gray-500);font-size:.8rem;line-height:1.4">
+        Equipos que tienen un partido reprogramado (están disponibles) <strong>y</strong> tienen un partido pendiente contra ti.
+        Contáctalos para coordinar y jugar antes de la fecha original.
+      </p>
+    </div>
+
+    <?php if (!$equipo): ?>
+      <div class="alert alert-info">No estás inscrito en ningún equipo activo en esta liga.</div>
+    <?php elseif (empty($disponibles_adelantar)): ?>
+      <div class="rp-empty">
+        <div style="font-size:2.5rem;margin-bottom:.75rem">⚡</div>
+        <h3>Sin opciones disponibles</h3>
+        <p>No hay equipos con partido reprogramado con los que tengas un partido pendiente, o ya estás coordinando con ellos.</p>
+      </div>
+    <?php else: ?>
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <?php foreach ($disponibles_adelantar as $d):
+          $sin_fecha = !$d['fecha_programada'] || date('Y-m-d', strtotime($d['fecha_programada'])) === '2026-12-31';
+          $fecha_pendiente = !$sin_fecha ? date('d/m/Y H:i', strtotime($d['fecha_programada'])) : null;
+          $jornada_str = $d['jornada'] ? 'Jornada '.$d['jornada'] : '';
+          if ($d['nombre_fecha']) $jornada_str .= ($jornada_str ? ' — ' : '') . $d['nombre_fecha'];
+        ?>
+        <div class="rp-card-otro" style="border-left:4px solid #16a34a">
+          <div class="rp-otro-header">
+            <div style="flex:1">
+              <div class="rp-otro-teams">
+                <span style="font-family:var(--font-head);font-weight:800;color:var(--navy);font-size:.92rem"><?= epl_h($d['rival_nombre']) ?></span>
+                <span style="background:#dcfce7;color:#15803d;font-size:.62rem;font-weight:800;padding:.15rem .45rem;border-radius:6px;border:1px solid #bbf7d0;white-space:nowrap">⚡ Libre para jugar</span>
+              </div>
+              <div class="rp-otro-fecha" style="margin-top:.3rem">
+                🎾 Partido pendiente: <strong><?= epl_h($d['mp_local']) ?> vs <?= epl_h($d['mp_visitante']) ?></strong>
+              </div>
+              <?php if ($jornada_str || $fecha_pendiente): ?>
+              <div class="rp-otro-fecha" style="margin-top:.2rem">
+                <?php if ($jornada_str): ?><span>📋 <?= epl_h($jornada_str) ?></span><?php endif; ?>
+                <?php if ($fecha_pendiente): ?><span<?= $jornada_str ? ' style="margin-left:.6rem"' : '' ?>>📅 <strong><?= $fecha_pendiente ?></strong></span><?php endif; ?>
+              </div>
+              <?php endif; ?>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:.5rem">
+            <div style="font-size:.72rem;font-weight:800;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em">
+              Jugadores de <?= epl_h($d['rival_nombre']) ?>
+            </div>
+            <?php
+              $jrs = [
+                ['n' => $d['r1n'], 'a' => $d['r1a'], 't' => $d['r1t']],
+                ['n' => $d['r2n'], 'a' => $d['r2a'], 't' => $d['r2t']],
+              ];
+              foreach ($jrs as $jr):
+                if (empty($jr['n'])) continue;
+                $tel   = preg_replace('/\D/', '', $jr['t'] ?? '');
+                $clean = str_starts_with($tel, '56') ? $tel : '56' . $tel;
+                $texto_match = $d['mp_local'] . ' vs ' . $d['mp_visitante'];
+                $msg   = rawurlencode("Hola {$jr['n']}, soy de la Elite Padel League. Vi que tienen un partido reprogramado y nosotros también tenemos el match {$texto_match} pendiente. ¿Les interesa adelantarlo?");
+                $wsp   = $tel ? "https://wa.me/{$clean}?text={$msg}" : null;
+                $ini   = mb_strtoupper(mb_substr($jr['n'], 0, 1) . mb_substr($jr['a'] ?? '', 0, 1));
+            ?>
+            <div class="rp-otro-player-row" style="background:#f0fdf4;border:1px solid #bbf7d0">
+              <div class="rp-otro-player-avatar" style="background:linear-gradient(135deg,#16a34a,#15803d)"><?= $ini ?></div>
+              <div class="rp-otro-player-info">
+                <span class="rp-otro-player-name"><?= epl_h($jr['n'] . ' ' . ($jr['a'] ?? '')) ?></span>
+              </div>
+              <?php if ($wsp): ?>
+                <a href="<?= $wsp ?>" target="_blank" class="rp-otro-contact-btn wsp" title="Contactar por WhatsApp">
+                  <?= $WA_SVG ?>
+                </a>
+              <?php else: ?>
+                <span class="rp-otro-no-contact">Sin tel.</span>
+              <?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <?php endforeach; ?>
       </div>
     <?php endif; ?>
   </div>
@@ -1850,7 +1994,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inicialización de pestañas al cargar
   let defaultTab = 'solicitar';
   const hash = window.location.hash.replace('#', '');
-  if (hash && ['solicitar', 'mis-reprogramaciones', 'otros-reprogramados'].includes(hash)) {
+  if (hash && ['solicitar', 'mis-reprogramaciones', 'otros-reprogramados', 'adelantar-fecha'].includes(hash)) {
     defaultTab = hash;
   }
   rpSwitchTab(defaultTab);
