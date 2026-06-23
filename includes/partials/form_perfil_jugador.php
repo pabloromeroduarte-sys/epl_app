@@ -68,7 +68,7 @@ $list_palas   = 'lista_palas_' . $pf_prefix;
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">
     <label class="<?= $lbl ?>" for="<?= $id('rut') ?>">RUT</label>
     <input type="text" name="rut" id="<?= $id('rut') ?>" value="<?= $pf_h('rut') ?>"
-           placeholder="11.111.111-1" maxlength="12" inputmode="numeric" autocomplete="off"
+           placeholder="11.111.111-1" maxlength="12" autocomplete="off"
            class="<?= $pf_compact ? '' : 'form-control' ?>" style="<?= $pf_compact ? $inp : '' ?>">
   </div>
   <div class="<?= $wrap ?>" style="<?= $pf_compact ? 'margin:0' : '' ?>">

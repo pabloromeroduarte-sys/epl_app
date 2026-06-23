@@ -310,7 +310,7 @@ if ($val['telefono']) {
             <label class="form-label" for="rut">RUT</label>
             <input type="text" name="rut" id="rut" class="form-control"
                    value="<?= epl_h($val['rut']) ?>" placeholder="11.111.111-1"
-                   maxlength="12" autocomplete="off" inputmode="numeric">
+                   maxlength="12" autocomplete="off">
           </div>
         </div>
 
