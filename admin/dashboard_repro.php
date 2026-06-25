@@ -606,7 +606,7 @@ require_once '../includes/header.php';
           </div>
           <div class="sec-body">
             <?php foreach ($solicitudes_pendientes as $s):
-              $es_sin_fecha = empty($s['fecha_propuesta']) || $s['rival_no_responde'];
+              $sol_sin_fecha = empty($s['fecha_propuesta']) || $s['rival_no_responde'];
               $fecha_pp = $s['fecha_propuesta']
                   ? date('d/m/Y H:i', strtotime($s['fecha_propuesta']))
                   : 'Sin fecha propuesta';
@@ -644,7 +644,7 @@ require_once '../includes/header.php';
                   <?php if (!empty($s['motivo'])): ?>
                     <span class="extra-item motivo">"<?= epl_h(mb_strimwidth($s['motivo'], 0, 80, '…')) ?>"</span>
                   <?php endif; ?>
-                  <?php if ($es_sin_fecha): ?>
+                  <?php if ($sol_sin_fecha): ?>
                     <div style="margin-top:.45rem;padding:.45rem .75rem;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:4px;font-size:.75rem;color:#92400e;font-weight:600;line-height:1.4">
                       ⚠️ Solicita reprogramar SIN FECHA. Se debe liberar la cancha original:
                       <div style="margin-top:.2rem;font-weight:700;font-size:.72rem">
@@ -713,7 +713,7 @@ require_once '../includes/header.php';
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;gap:.35rem;align-items:stretch">
-                <?php if ($es_sin_fecha): ?>
+                <?php if ($sol_sin_fecha): ?>
                   <form method="post" action="api_reprogramacion.php" style="margin:0"
                         data-confirm="¿Aprobar esta reprogramación sin fecha? El partido quedará 'A coordinar' y se liberará la cancha original."
                         data-confirm-ok="Sí, liberar cancha">
