@@ -243,15 +243,23 @@ foreach ($partidos_open as $p) {
 uasort($por_equipo, fn($a,$b) => count($b['partidos']) - count($a['partidos']));
 
 // Función de fila partido (reutilizable)
-function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
+function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resuelto = false, string $tag_html = ''): string {
+    $cls = 'partido-row';
+    if ($resuelto) $cls .= ' pr-resuelto';
+    elseif ($vencido) $cls .= ' pr-vencido';
+    elseif ($sin_fecha) $cls .= ' pr-urgente';
+    if ($tag_html === '' && $resuelto) {
+        $tag_html = '<span class="partido-tag" style="background:#dcfce7;color:#15803d">✅ Resuelto</span>';
+    }
     ob_start(); ?>
-    <div class="partido-row" data-sf="<?= $sin_fecha?'1':'0' ?>" data-venc="<?= $vencido?'1':'0' ?>" data-est="<?= epl_h($p['estado']) ?>" data-eq="<?= $p['local_id'] ?>,<?= $p['visitante_id'] ?>" data-search="<?= epl_h(strtolower($p['local_nombre'].' '.$p['visitante_nombre'].' '.$p['liga_nombre'])) ?>">
+    <div class="<?= $cls ?>" data-sf="<?= $sin_fecha?'1':'0' ?>" data-venc="<?= $vencido?'1':'0' ?>" data-resuelto="<?= $resuelto?'1':'0' ?>" data-est="<?= epl_h($p['estado']) ?>" data-eq="<?= $p['local_id'] ?>,<?= $p['visitante_id'] ?>" data-search="<?= epl_h(strtolower($p['local_nombre'].' '.$p['visitante_nombre'].' '.$p['liga_nombre'])) ?>">
       <div class="partido-row-main">
         <div class="partido-meta">
           <span class="partido-liga"><?= epl_h($p['liga_nombre']) ?></span>
           <?php if ($p['jornada']): ?>
             <span class="partido-jornada">J<?= $p['jornada'] ?></span>
           <?php endif; ?>
+          <?= $tag_html ?>
           <?php if ($p['rival_no_responde']): ?>
             <span class="partido-tag tag-norespon">⚠ Rival no responde</span>
           <?php endif; ?>
@@ -425,22 +433,20 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido): string {
           </div>
         <?php endif; ?>
       </div>
-      <div style="display:flex;flex-direction:column;gap:.35rem;align-items:stretch">
+      <div class="partido-actions">
         <a href="partido_detalle.php?id=<?= $p['id'] ?>" class="btn-gestionar">Gestionar</a>
         <?php if ($_confirmada && $p['recinto_id']): ?>
-          <button type="button" class="btn-gestionar" onclick="reenviarNotifCancha(<?= $p['id'] ?>, this)"
-                  style="width:100%;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;font-size:.65rem;padding:.35rem .6rem">
-            📢 Reenviar Notif.
+          <button type="button" class="btn-sec" onclick="reenviarNotifCancha(<?= $p['id'] ?>, this)">
+            📢 Reenviar notif.
           </button>
         <?php endif; ?>
         <form method="post" style="margin:0">
           <input type="hidden" name="action" value="reset_reprog">
           <input type="hidden" name="partido_id" value="<?= $p['id'] ?>">
-          <button type="submit" class="btn-gestionar"
-                  style="width:100%;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:.65rem;padding:.35rem .6rem"
+          <button type="submit" class="btn-text-danger"
                   data-confirm="¿Borrar la reprogramación de <?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?>? El partido vuelve a Pendiente con la fecha original."
                   data-confirm-ok="Sí, borrar">
-            🗑 Borrar reprog.
+            🗑 Borrar reprogramación
           </button>
         </form>
       </div>
@@ -555,13 +561,9 @@ require_once '../includes/header.php';
             }
             $sf = $es_sin_fecha($p);
             $vc = $es_vencido($p);
+            $_tag_html = '<span class="partido-tag" style="background:'.$_tag_bg.';color:'.$_tag_color.'">'.$_tag.'</span>';
           ?>
-          <div style="position:relative">
-            <span style="position:absolute;top:.65rem;right:3.5rem;background:<?= $_tag_bg ?>;color:<?= $_tag_color ?>;font-size:.62rem;font-weight:900;padding:.22rem .6rem;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;z-index:1;white-space:nowrap">
-              <?= $_tag ?>
-            </span>
-            <?= repro_fila_partido($p, $sf, $vc) ?>
-          </div>
+          <?= repro_fila_partido($p, $sf, $vc, false, $_tag_html) ?>
           <?php endforeach; ?>
         </div>
       </section>
@@ -801,15 +803,10 @@ require_once '../includes/header.php';
               $diff = (new DateTime())->diff(new DateTime($p['fecha_solicitud']));
               $hace = $diff->h > 0 ? "hace {$diff->h}h" : "hace {$diff->i}m";
           }
+          $_resuelto_nueva = !$necesita_gestion($p);
+          $_tag_html_nueva = $hace ? '<span class="partido-tag" style="background:#8b5cf6;color:#fff">🆕 '.$hace.'</span>' : '';
         ?>
-        <div style="position:relative">
-          <?php if ($hace): ?>
-            <span style="position:absolute;top:.65rem;right:3.5rem;background:#8b5cf6;color:#fff;font-size:.6rem;font-weight:900;padding:.2rem .55rem;border-radius:999px;text-transform:uppercase;letter-spacing:.05em;z-index:1">
-              🆕 <?= $hace ?>
-            </span>
-          <?php endif; ?>
-          <?= repro_fila_partido($p, $sf, $vc) ?>
-        </div>
+        <?= repro_fila_partido($p, $sf, $vc, $_resuelto_nueva, $_tag_html_nueva) ?>
         <?php endforeach; ?>
       </div>
     </section>
@@ -845,6 +842,11 @@ require_once '../includes/header.php';
         <svg width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         <input type="text" id="buscar" placeholder="Buscar partido, equipo o liga…" oninput="aplicarFiltros()">
       </div>
+      <div class="estado-filtro">
+        <button class="estado-btn active" data-estado="all" onclick="filtrarEstado('all', this)">Todos</button>
+        <button class="estado-btn" data-estado="pendiente" onclick="filtrarEstado('pendiente', this)">⏳ Pendientes</button>
+        <button class="estado-btn" data-estado="resuelto" onclick="filtrarEstado('resuelto', this)">✅ Resueltos</button>
+      </div>
       <div id="filtroActivoMsg" class="filtro-activo" style="display:none"></div>
       <button id="btnLimpiar" class="btn-limpiar" onclick="limpiarFiltro()" style="display:none">✕ Limpiar</button>
     </div>
@@ -861,7 +863,7 @@ require_once '../includes/header.php';
       </div>
       <div class="sec-body">
         <?php foreach ($sin_fecha as $p): ?>
-          <?= repro_fila_partido($p, true, false) ?>
+          <?= repro_fila_partido($p, true, false, !$necesita_gestion($p)) ?>
         <?php endforeach; ?>
       </div>
     </section>
@@ -879,7 +881,7 @@ require_once '../includes/header.php';
       </div>
       <div class="sec-body">
         <?php foreach ($vencidos as $p): ?>
-          <?= repro_fila_partido($p, false, true) ?>
+          <?= repro_fila_partido($p, false, true, !$necesita_gestion($p)) ?>
         <?php endforeach; ?>
       </div>
     </section>
@@ -920,7 +922,7 @@ require_once '../includes/header.php';
             <span class="dia-count"><?= count($ps) ?> <?= count($ps)===1?'partido':'partidos' ?></span>
           </div>
           <?php foreach ($ps as $p): ?>
-            <?= repro_fila_partido($p, false, false) ?>
+            <?= repro_fila_partido($p, false, false, !$necesita_gestion($p)) ?>
           <?php endforeach; ?>
         </div>
         <?php endforeach; ?>
@@ -1016,6 +1018,14 @@ require_once '../includes/header.php';
                font-weight:700; cursor:pointer; font-family:inherit; }
 .btn-limpiar:hover { background:#e2e8f0; }
 
+/* ── Filtro de estado (pendiente/resuelto) ───────────────── */
+.estado-filtro { display:flex; gap:.4rem; background:#f1f5f9; border-radius:10px; padding:.25rem; }
+.estado-btn { background:transparent; border:none; padding:.5rem .9rem; border-radius:8px;
+              font-size:.78rem; font-weight:700; color:#64748b; cursor:pointer;
+              font-family:inherit; transition:all .15s; white-space:nowrap; }
+.estado-btn:hover { color:var(--navy); }
+.estado-btn.active { background:#fff; color:var(--navy); box-shadow:0 1px 4px rgba(0,0,0,.1); }
+
 /* ── Sección Card ────────────────────────────────────── */
 .sec-card { background:#fff; border-radius:18px; border:1px solid #e2e8f0;
             box-shadow:0 4px 20px rgba(0,0,0,.03); margin-bottom:1.25rem; overflow:hidden; }
@@ -1045,32 +1055,52 @@ require_once '../includes/header.php';
 
 /* ── Partido row ──────────────────────────────────────── */
 .partido-row {
-  display:flex; align-items:center; justify-content:space-between; gap:1rem;
-  padding:.85rem 1rem; margin:.25rem .5rem; background:#fafbfc;
-  border-radius:10px; border:1px solid transparent; transition:all .15s ease;
+  display:flex; align-items:center; justify-content:space-between; gap:1.25rem;
+  padding:1rem 1.25rem; margin:.4rem .5rem; background:#fafbfc;
+  border-radius:12px; border:1px solid #eef1f5; border-left:3px solid transparent;
+  transition:all .15s ease;
 }
 .partido-row:hover { background:#fff; border-color:#e2e8f0; box-shadow:0 2px 12px rgba(0,0,0,.05); }
-.partido-row-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:.3rem; }
+.pr-urgente  { border-left-color:#dc2626; }
+.pr-vencido  { border-left-color:#ea580c; }
+.pr-resuelto { border-left-color:#10b981; }
+.partido-row-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:.45rem; }
 .partido-meta { display:flex; gap:.4rem; flex-wrap:wrap; align-items:center; }
 .partido-liga { font-size:.66rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:.08em; }
 .partido-jornada { background:#e0e7ff; color:#3730a3; font-size:.62rem; font-weight:800;
                     border-radius:5px; padding:.1rem .4rem; }
-.partido-tag { font-size:.62rem; font-weight:800; border-radius:5px; padding:.1rem .45rem; }
+.partido-tag { font-size:.62rem; font-weight:800; border-radius:999px; padding:.18rem .55rem;
+               text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
 .tag-reprog   { background:#fef3c7; color:#92400e; }
 .tag-norespon { background:#fee2e2; color:#991b1b; }
-.partido-equipos { font-size:.92rem; color:var(--navy); }
-.partido-equipos .vs { color:#94a3b8; margin:0 .35rem; font-weight:500; }
-.partido-extra { display:flex; gap:1rem; flex-wrap:wrap; font-size:.72rem; color:#64748b; margin-top:.2rem; }
+.partido-equipos { font-size:1rem; font-weight:700; color:var(--navy); }
+.partido-equipos .vs { color:#94a3b8; margin:0 .4rem; font-weight:500; font-size:.85rem; }
+.partido-extra { display:flex; gap:1rem; flex-wrap:wrap; font-size:.74rem; color:#64748b; }
 .extra-item { display:inline-flex; align-items:center; gap:.3rem; }
 .extra-item.motivo { color:#94a3b8; font-style:italic; max-width:260px; overflow:hidden;
                      text-overflow:ellipsis; white-space:nowrap; }
 .btn-gestionar {
   background:var(--navy); color:#C9A762; padding:.55rem 1.1rem;
   border-radius:8px; font-size:.72rem; font-weight:900; text-decoration:none;
-  text-transform:uppercase; letter-spacing:.08em; flex-shrink:0;
+  text-transform:uppercase; letter-spacing:.08em; flex-shrink:0; text-align:center;
   transition:all .15s; white-space:nowrap;
 }
 .btn-gestionar:hover { background:#C9A762; color:var(--navy); transform:translateY(-1px); }
+
+/* ── Acciones de la fila (Gestionar + secundarias) ───────── */
+.partido-actions { display:flex; flex-direction:column; gap:.4rem; align-items:stretch; min-width:155px; flex-shrink:0; }
+.btn-sec {
+  background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-size:.68rem;
+  padding:.45rem .65rem; border-radius:7px; font-weight:700; text-align:center;
+  cursor:pointer; font-family:inherit; white-space:nowrap;
+}
+.btn-sec:hover { background:#dbeafe; }
+.btn-text-danger {
+  background:transparent; border:none; color:#94a3b8; font-size:.68rem; font-weight:600;
+  cursor:pointer; padding:.3rem; text-align:center; font-family:inherit;
+  text-decoration:underline; text-decoration-color:transparent; transition:color .15s;
+}
+.btn-text-danger:hover { color:#dc2626; text-decoration-color:#dc2626; }
 
 /* ── Equipos grid ─────────────────────────────────────── */
 .equipos-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
@@ -1094,6 +1124,7 @@ require_once '../includes/header.php';
 @media (max-width:640px) {
   .partido-row { flex-direction:column; align-items:flex-start; }
   .btn-gestionar { width:100%; text-align:center; }
+  .partido-actions { width:100%; min-width:0; }
 }
 
 /* ── Tabs ─────────────────────────────────────────────── */
@@ -1167,6 +1198,13 @@ function cambiarTab(tab) {
 }
 
 let filtroActual = null;
+let filtroEstado = 'all';
+
+function filtrarEstado(tipo, btn) {
+  filtroEstado = tipo;
+  document.querySelectorAll('.estado-btn').forEach(b => b.classList.toggle('active', b.dataset.estado === tipo));
+  aplicarFiltros();
+}
 
 function aplicarFiltros() {
   const q = (document.getElementById('buscar').value || '').toLowerCase().trim();
@@ -1183,7 +1221,7 @@ function aplicarFiltros() {
     sec.style.display = mostrarSec ? '' : 'none';
   });
 
-  // Filtrar filas por búsqueda o equipo
+  // Filtrar filas por búsqueda, equipo o estado (pendiente/resuelto)
   document.querySelectorAll('.partido-row').forEach(row => {
     let show = true;
     if (q) {
@@ -1194,6 +1232,8 @@ function aplicarFiltros() {
       const eqs = (row.dataset.eq || '').split(',');
       if (eqs.indexOf(eqId) === -1) show = false;
     }
+    if (filtroEstado === 'pendiente' && row.dataset.resuelto === '1') show = false;
+    if (filtroEstado === 'resuelto'  && row.dataset.resuelto === '0') show = false;
     row.style.display = show ? '' : 'none';
     if (show) totalVisibles++;
   });
@@ -1253,8 +1293,10 @@ function filtrar(tipo, btn) {
 function limpiarFiltro() {
   document.getElementById('buscar').value = '';
   filtroActual = null;
+  filtroEstado = 'all';
   document.querySelectorAll('.kpi').forEach(k => k.classList.remove('activo'));
   document.querySelectorAll('.equipo-card').forEach(e => e.classList.remove('activo'));
+  document.querySelectorAll('.estado-btn').forEach(b => b.classList.toggle('active', b.dataset.estado === 'all'));
   aplicarFiltros();
 }
 </script>
