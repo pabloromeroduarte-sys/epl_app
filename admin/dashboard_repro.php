@@ -521,16 +521,23 @@ require_once '../includes/header.php';
     <!-- ═══════════════════ TAB SOLICITUDES ═══════════════════ -->
     <div id="tab-solicitudes" class="tab-content" style="display:<?= $tab_inicial==='solicitudes'?'block':'none' ?>">
 
-      <!-- Toggle Pendientes / Gestionados -->
-      <div class="estado-filtro" style="margin-bottom:1.25rem;display:inline-flex">
-        <button class="estado-btn active" data-solfiltro="pendientes" onclick="filtrarSolicitudes('pendientes', this)">
-          ⏳ Pendientes
-          <?php if (($n_pendientes_gestion + $n_solicitudes) > 0): ?><span class="tab-badge" style="background:#f59e0b"><?= $n_pendientes_gestion + $n_solicitudes ?></span><?php endif; ?>
-        </button>
-        <button class="estado-btn" data-solfiltro="gestionados" onclick="filtrarSolicitudes('gestionados', this)">
-          ✅ Gestionados
-          <?php if ($n_gestionados > 0): ?><span class="tab-badge" style="background:#10b981"><?= $n_gestionados ?></span><?php endif; ?>
-        </button>
+      <!-- Buscador + Toggle Todos / Pendientes / Gestionados -->
+      <div class="filtros-bar">
+        <div class="busqueda">
+          <svg width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="buscarSol" placeholder="Buscar pareja, partido o liga…" oninput="buscarSolicitudes(this.value)">
+        </div>
+        <div class="estado-filtro">
+          <button class="estado-btn" data-solfiltro="todos" onclick="filtrarSolicitudes('todos', this)">Todos</button>
+          <button class="estado-btn active" data-solfiltro="pendientes" onclick="filtrarSolicitudes('pendientes', this)">
+            ⏳ Pendientes
+            <?php if (($n_pendientes_gestion + $n_solicitudes) > 0): ?><span class="tab-badge" style="background:#f59e0b"><?= $n_pendientes_gestion + $n_solicitudes ?></span><?php endif; ?>
+          </button>
+          <button class="estado-btn" data-solfiltro="gestionados" onclick="filtrarSolicitudes('gestionados', this)">
+            ✅ Gestionados
+            <?php if ($n_gestionados > 0): ?><span class="tab-badge" style="background:#10b981"><?= $n_gestionados ?></span><?php endif; ?>
+          </button>
+        </div>
       </div>
 
       <!-- ═════════════ GRUPO: PENDIENTES ═════════════ -->
@@ -1076,11 +1083,28 @@ function cambiarTab(tab) {
   window.history.replaceState({}, '', url);
 }
 
-// Toggle Pendientes / Gestionados dentro de la pestaña Solicitudes
+// Toggle Todos / Pendientes / Gestionados dentro de la pestaña Solicitudes
 function filtrarSolicitudes(grupo, btn) {
   document.querySelectorAll('[data-solfiltro]').forEach(b => b.classList.toggle('active', b.dataset.solfiltro === grupo));
   document.querySelectorAll('[data-sol-grupo]').forEach(g => {
-    g.style.display = (g.dataset.solGrupo === grupo) ? '' : 'none';
+    g.style.display = (grupo === 'todos' || g.dataset.solGrupo === grupo) ? '' : 'none';
+  });
+}
+
+// Buscar dentro de la pestaña Solicitudes (pareja, partido o liga) sobre el texto visible de cada fila
+function buscarSolicitudes(q) {
+  q = (q || '').toLowerCase().trim();
+  const cont = document.getElementById('tab-solicitudes');
+  if (!cont) return;
+  cont.querySelectorAll('.partido-row').forEach(row => {
+    row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
+  });
+  // ocultar secciones que quedaron sin filas visibles (sin tocar las tarjetas de estado vacío)
+  cont.querySelectorAll('section.sec-card').forEach(sec => {
+    const rows = sec.querySelectorAll('.partido-row');
+    if (!rows.length) return;
+    const visible = [...rows].some(r => r.style.display !== 'none');
+    sec.style.display = (!q || visible) ? '' : 'none';
   });
 }
 
