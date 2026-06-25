@@ -18,6 +18,16 @@ exec("git config --global --add safe.directory $dir 2>&1", $output, $code);
 // Pull
 exec("GIT_TERMINAL_PROMPT=0 git -C $dir pull origin main 2>&1", $output, $code);
 
+// Limpiar OPcache: PHP-FPM cachea el bytecode y, tras el pull, los workers
+// pueden seguir sirviendo la versión vieja (se ve "horrible/desactualizado" en
+// el VPS aunque el archivo ya esté nuevo). Reseteamos para forzar recompilación.
+if (function_exists('opcache_reset')) {
+    $opc = opcache_reset() ? 'OPcache reseteado.' : 'OPcache no se pudo resetear.';
+} else {
+    $opc = 'OPcache no disponible.';
+}
+$output[] = $opc;
+
 header('Content-Type: text/plain');
 echo implode("\n", $output) . "\n";
 echo "Exit code: $code\n";
