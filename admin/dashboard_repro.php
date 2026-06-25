@@ -165,6 +165,16 @@ usort($pendientes_gestion, function($a, $b) {
     return $sb <=> $sa;
 });
 $n_pendientes_gestion = count($pendientes_gestion);
+
+// Reprogramados YA GESTIONADOS (no requieren más acción) — para el toggle de la pestaña SOLICITUDES
+$gestionados = array_values(array_filter($partidos_open, fn($p) => !$necesita_gestion($p)));
+usort($gestionados, function($a, $b) {
+    $ta = !empty($a['fecha_programada']) ? strtotime($a['fecha_programada']) : PHP_INT_MAX;
+    $tb = !empty($b['fecha_programada']) ? strtotime($b['fecha_programada']) : PHP_INT_MAX;
+    return $ta <=> $tb;
+});
+$n_gestionados = count($gestionados);
+
 // Ordenar recientes: más nuevas primero
 usort($recientes, fn($a,$b) => strtotime($b['fecha_solicitud']) - strtotime($a['fecha_solicitud']));
 $n_recientes = count($recientes);
@@ -510,6 +520,21 @@ require_once '../includes/header.php';
 
     <!-- ═══════════════════ TAB SOLICITUDES ═══════════════════ -->
     <div id="tab-solicitudes" class="tab-content" style="display:<?= $tab_inicial==='solicitudes'?'block':'none' ?>">
+
+      <!-- Toggle Pendientes / Gestionados -->
+      <div class="estado-filtro" style="margin-bottom:1.25rem;display:inline-flex">
+        <button class="estado-btn active" data-solfiltro="pendientes" onclick="filtrarSolicitudes('pendientes', this)">
+          ⏳ Pendientes
+          <?php if (($n_pendientes_gestion + $n_solicitudes) > 0): ?><span class="tab-badge" style="background:#f59e0b"><?= $n_pendientes_gestion + $n_solicitudes ?></span><?php endif; ?>
+        </button>
+        <button class="estado-btn" data-solfiltro="gestionados" onclick="filtrarSolicitudes('gestionados', this)">
+          ✅ Gestionados
+          <?php if ($n_gestionados > 0): ?><span class="tab-badge" style="background:#10b981"><?= $n_gestionados ?></span><?php endif; ?>
+        </button>
+      </div>
+
+      <!-- ═════════════ GRUPO: PENDIENTES ═════════════ -->
+      <div data-sol-grupo="pendientes">
       <?php if (empty($solicitudes_pendientes) && empty($solicitudes_procesadas)): ?>
         <section class="sec-card">
           <div style="padding:3rem;text-align:center;color:var(--gray-400)">
@@ -780,6 +805,35 @@ require_once '../includes/header.php';
       <?php endif; ?>
 
       <?php endif; ?>
+      </div><!-- /grupo pendientes -->
+
+      <!-- ═════════════ GRUPO: GESTIONADOS ═════════════ -->
+      <div data-sol-grupo="gestionados" style="display:none">
+        <?php if (empty($gestionados)): ?>
+          <section class="sec-card">
+            <div style="padding:3rem;text-align:center;color:var(--gray-400)">
+              <div style="font-size:3rem">📭</div>
+              <p style="font-weight:700;margin-top:.5rem">Todavía no hay reprogramados gestionados</p>
+              <p style="font-size:.85rem">Cuando resuelvas un partido (fecha + cancha asignada), aparecerá acá.</p>
+            </div>
+          </section>
+        <?php else: ?>
+          <section class="sec-card" style="border-left:5px solid #10b981">
+            <div class="sec-head">
+              <div>
+                <h2 class="sec-title" style="color:#15803d">✅ Reprogramados gestionados</h2>
+                <p class="sec-sub">Ya tienen todo resuelto (fecha y cancha). Quedan acá como referencia hasta que se jueguen.</p>
+              </div>
+              <div class="sec-count" style="background:#dcfce7;color:#15803d"><?= $n_gestionados ?></div>
+            </div>
+            <div class="sec-body">
+              <?php foreach ($gestionados as $p): ?>
+                <?= repro_fila_partido($p, $es_sin_fecha($p), $es_vencido($p), true) ?>
+              <?php endforeach; ?>
+            </div>
+          </section>
+        <?php endif; ?>
+      </div><!-- /grupo gestionados -->
     </div>
 
     <!-- ═══════════════════ TAB INFORME ═══════════════════ -->
@@ -846,7 +900,7 @@ require_once '../includes/header.php';
       <div class="estado-filtro">
         <button class="estado-btn active" data-estado="all" onclick="filtrarEstado('all', this)">Todos</button>
         <button class="estado-btn" data-estado="pendiente" onclick="filtrarEstado('pendiente', this)">⏳ Pendientes</button>
-        <button class="estado-btn" data-estado="resuelto" onclick="filtrarEstado('resuelto', this)">✅ Resueltos</button>
+        <button class="estado-btn" data-estado="resuelto" onclick="filtrarEstado('resuelto', this)">✅ Gestionados</button>
       </div>
       <div id="filtroActivoMsg" class="filtro-activo" style="display:none"></div>
       <button id="btnLimpiar" class="btn-limpiar" onclick="limpiarFiltro()" style="display:none">✕ Limpiar</button>
@@ -1020,6 +1074,14 @@ function cambiarTab(tab) {
   const url = new URL(window.location.href);
   url.searchParams.set('tab', tab);
   window.history.replaceState({}, '', url);
+}
+
+// Toggle Pendientes / Gestionados dentro de la pestaña Solicitudes
+function filtrarSolicitudes(grupo, btn) {
+  document.querySelectorAll('[data-solfiltro]').forEach(b => b.classList.toggle('active', b.dataset.solfiltro === grupo));
+  document.querySelectorAll('[data-sol-grupo]').forEach(g => {
+    g.style.display = (g.dataset.solGrupo === grupo) ? '' : 'none';
+  });
 }
 
 let filtroActual = null;
