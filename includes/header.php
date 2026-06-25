@@ -224,6 +224,17 @@ $site_url = $_proto . '://' . $_host;
   <link rel="stylesheet" href="<?= epl_url("assets/css/tailwind.min.css?v={$tw_ver}") ?>">
   <!-- Estilos propios del proyecto -->
   <link rel="stylesheet" href="<?= epl_url("assets/css/epl.css?v={$css_ver}") ?>">
+  <?php
+  // CSS específico de página: la página define $page_css = 'nombre' ANTES de incluir el header.
+  // Se carga desde el <head> (los <style> dentro del <body> no se aplican en el VPS).
+  if (!empty($page_css)):
+      $_pc_name = preg_replace('/[^a-z0-9_-]/i', '', (string)$page_css);
+      $_pc_file = dirname(__DIR__) . "/assets/css/{$_pc_name}.css";
+      if ($_pc_name && file_exists($_pc_file)):
+          $_pc_ver = filemtime($_pc_file);
+  ?>
+  <link rel="stylesheet" href="<?= epl_url("assets/css/{$_pc_name}.css?v={$_pc_ver}") ?>">
+  <?php endif; endif; ?>
 
   <style>
       /* RESET Y CONTENEDOR (Header) */
