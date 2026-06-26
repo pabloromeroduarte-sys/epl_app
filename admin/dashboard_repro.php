@@ -142,7 +142,7 @@ $necesita_gestion = function(array $p): bool {
     if (!empty($p['baja_solicitada_at']) && empty($p['baja_confirmada_at'])) return true;
 
     // 3) Post-aprobado (con snapshot) y la baja todavía no fue resuelta
-    if (!empty($p['fecha_original']) && empty($p['baja_confirmada_at'])) return true;
+    if (!empty($p['fecha_original']) && empty($p['baja_confirmada_at']) && (($p['sol_estado'] ?? 'aprobada') !== 'pendiente')) return true;
 
     // 4) Hay fecha nueva pero falta asignar cancha
     if ($tiene_fecha_nueva && empty($p['cancha_confirmada_at']) && empty($p['recinto_id'])) return true;
@@ -302,11 +302,11 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
         </div>
         <?php
           // ── Datos del partido ───────────────────────────────────────
-          $_es_post        = !empty($p['fecha_original']);
-          $_fo             = $_es_post ? $p['fecha_original'] : $p['fecha_programada'];
+          $_es_post        = !empty($p['fecha_original']) && ($p['sol_estado'] ?? 'aprobada') !== 'pendiente';
+          $_fo             = $p['fecha_original'] ?: $p['fecha_programada'];
           $_fo_lbl         = ($_fo && date('Y-m-d', strtotime($_fo)) !== '2026-12-31') ? date('d/m/Y H:i', strtotime($_fo)) : null;
-          $_rec_orig       = $_es_post ? ($p['recinto_original_nombre'] ?? null) : ($p['recinto_nombre'] ?? null);
-          $_rec_orig_sup   = $_es_post ? ($p['recinto_original_sup'] ?? null) : ($p['recinto_sup'] ?? null);
+          $_rec_orig       = $p['recinto_original_nombre'] ?: ($p['recinto_nombre'] ?? null);
+          $_rec_orig_sup   = $p['recinto_original_sup'] ?: ($p['recinto_sup'] ?? null);
           // "Cancha 12 (Santa Blanca)"
           $_rec_orig_full  = $_rec_orig ? $_rec_orig . ($_rec_orig_sup ? " ($_rec_orig_sup)" : '') : null;
           $_rec_actual_full = $_es_post ? ($p['recinto_nombre']

@@ -499,7 +499,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
         // ─── NUEVA REGLA: el partido NO cambia fecha hasta que el admin apruebe ───
         // Solo se marca como 'reprogramado' y se resetean tokens viejos de baja/cancha.
         // La fecha propuesta vive en solicitudes_reprogramacion.fecha_propuesta hasta que admin apruebe.
-        $db->prepare("UPDATE partidos SET estado='reprogramado',
+        $db->prepare("UPDATE partidos SET 
+                        estado='reprogramado',
+                        fecha_original = IFNULL(fecha_original, fecha_programada),
+                        recinto_original_id = IFNULL(recinto_original_id, recinto_id),
+                        fecha_programada = NULL,
                         baja_token=NULL, baja_solicitada_at=NULL, baja_confirmada_at=NULL, baja_confirmada_por=NULL,
                         cancha_token=NULL, cancha_solicitada_at=NULL, cancha_confirmada_at=NULL, cancha_confirmada_por=NULL
                       WHERE id=?")->execute([$partido_id]);

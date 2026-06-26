@@ -49,7 +49,7 @@ foreach ($ventanas as [$horas, $tolerancia, $etiqueta]) {
         LEFT JOIN recintos r  ON r.id  = p.recinto_id
         LEFT JOIN recintos s  ON s.id  = r.superior_id
         LEFT JOIN recintos ss ON ss.id = s.superior_id
-        WHERE p.estado IN ('pendiente','reprogramado')
+        WHERE (p.estado = 'pendiente' OR (p.estado = 'reprogramado' AND p.fecha_original IS NOT NULL))
           AND p.fecha_programada BETWEEN ? AND ?
     ");
     $st->execute([$desde, $hasta]);
