@@ -18,21 +18,18 @@ cd C:\xampp\htdocs\elitepadelleague
 
 (Sin `-Aprobado` si solo pide GitHub. Con `-Aprobado` si también toca el servidor.)
 
-### 2) Actualizar el sitio en Vultr
+### 2) Actualizar el sitio (DigitalOcean)
 
-Decile al usuario que abra **my.vultr.com** → su servidor → **View Console** y pegue **solo esta línea**:
+El paso 1 con `-Aprobado` ya despliega solo (webhook → `git pull` + reset de OPcache en el servidor). No hay que hacer nada más.
 
-```bash
-git -C /home/elitepadel/htdocs/padel.207.246.68.77.nip.io pull origin main
-```
-
-Si sale error de permisos, que pegue antes:
+Si el webhook falla, el manual es por SSH:
 
 ```bash
-sudo chown -R elitepadel:elitepadel /home/elitepadel/htdocs/padel.207.246.68.77.nip.io
+ssh root@165.227.109.215
+git -C /var/www/elitepadelleague pull origin main
 ```
 
-y vuelva a hacer el `git pull`.
+(El servidor viejo de Vultr `207.246.68.77` quedó como respaldo; no se toca.)
 
 ### 3) Listo
 

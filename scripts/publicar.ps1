@@ -94,8 +94,8 @@ public class TrustAllEPL : ICertificatePolicy {
     }
     [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllEPL
     $urls = @(
-        "https://padel.207.246.68.77.nip.io/deploy_webhook.php?token=$token",
-        "https://207.246.68.77/deploy_webhook.php?token=$token"
+        "https://epleague.cl/deploy_webhook.php?token=$token",
+        "https://padel.165.227.109.215.nip.io/deploy_webhook.php?token=$token"
     )
     $ok = $false
     foreach ($url in $urls) {
