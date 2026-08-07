@@ -130,6 +130,214 @@ require_once __DIR__ . '/../includes/header.php';
       <?php endif;?>
     </section>
 
+    <!-- ═══════════ TUTORIAL VISUAL PASO A PASO ═══════════ -->
+    <section class="gpt-tut">
+      <header class="gpt-tut-head">
+        <span class="mcp-eyebrow">PASO A PASO CON PANTALLAS</span>
+        <h2>Cómo crear el GPT en ChatGPT</h2>
+        <p>Se hace <strong>una sola vez</strong>, desde ChatGPT en el <strong>computador</strong> (chatgpt.com). Toma unos 5 minutos. Todos los valores que necesitás están acá con botón de <strong>Copiar</strong>.</p>
+      </header>
+
+      <?php $tvClient = $gptClient ? (string)$gptClient['client_id'] : 'Generá las credenciales arriba (botón “Generar credenciales GPT”)'; ?>
+
+      <!-- PASO 1 -->
+      <article class="gpt-tut-step">
+        <div class="gpt-tut-info">
+          <div class="gpt-tut-num">1</div>
+          <div>
+            <h3>Abrí el creador de GPT</h3>
+            <p>Entrá a <strong>chatgpt.com</strong> con tu cuenta. En el menú de la izquierda tocá <strong>Explorar GPT</strong> y después el botón <strong>+ Crear</strong> (arriba a la derecha).</p>
+            <a class="gpt-tut-link" href="https://chatgpt.com/gpts/editor" target="_blank" rel="noopener">Abrir el creador de GPT ↗</a>
+          </div>
+        </div>
+        <div class="gpt-tut-shot">
+          <div class="mock mock-web">
+            <div class="mock-top"><i></i><i></i><i></i><span>chatgpt.com</span></div>
+            <div class="mock-web-body">
+              <div class="mock-rail">
+                <div class="mock-rail-item">＋ Nuevo chat</div>
+                <div class="mock-rail-item on">🔍 Explorar GPT</div>
+                <div class="mock-rail-item">🕘 Historial</div>
+              </div>
+              <div class="mock-web-main">
+                <div class="mock-row-end"><span class="mock-cta">＋ Crear</span></div>
+                <div class="mock-card-lg"></div>
+                <div class="mock-card-lg short"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- PASO 2 -->
+      <article class="gpt-tut-step">
+        <div class="gpt-tut-info">
+          <div class="gpt-tut-num">2</div>
+          <div>
+            <h3>Ponele nombre</h3>
+            <p>Andá a la pestaña <strong>Configurar</strong> (arriba). En <strong>Nombre</strong> escribí:</p>
+            <div class="gpt-val"><code id="tvName">Elite Padel League</code><button type="button" onclick="copyMcpValue('tvName',this)">Copiar</button></div>
+            <p class="gpt-tut-mini">La descripción y el ícono son opcionales.</p>
+          </div>
+        </div>
+        <div class="gpt-tut-shot">
+          <div class="mock mock-web">
+            <div class="mock-top"><i></i><i></i><i></i><span>Crear GPT</span></div>
+            <div class="mock-tabs"><span class="on">Configurar</span><span>Vista previa</span></div>
+            <div class="mock-form">
+              <label>Nombre</label>
+              <div class="mock-input filled">Elite Padel League</div>
+              <label>Descripción</label>
+              <div class="mock-input"></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- PASO 3 -->
+      <article class="gpt-tut-step">
+        <div class="gpt-tut-info">
+          <div class="gpt-tut-num">3</div>
+          <div>
+            <h3>Creá la acción e importá el esquema</h3>
+            <p>Más abajo, en <strong>Acciones</strong>, tocá <strong>Crear nueva acción</strong>. En el editor tocá <strong>Importar desde URL</strong> y pegá:</p>
+            <div class="gpt-val"><code id="tvSchema"><?=epl_h(epl_gpt_url('openapi.php'))?></code><button type="button" onclick="copyMcpValue('tvSchema',this)">Copiar</button></div>
+            <p class="gpt-tut-mini">Se cargan solas las 8 acciones (ver perfil, partidos, reprogramaciones, etc.).</p>
+          </div>
+        </div>
+        <div class="gpt-tut-shot">
+          <div class="mock mock-web">
+            <div class="mock-top"><i></i><i></i><i></i><span>Añadir acciones</span></div>
+            <div class="mock-form">
+              <label>Esquema</label>
+              <div class="mock-import"><span class="mock-cta sm">Importar desde URL</span></div>
+              <div class="mock-input filled small"><?=epl_h(epl_gpt_url('openapi.php'))?></div>
+              <div class="mock-action-list"><span>✓ obtenerMiPerfilEPL</span><span>✓ buscarPartidosEPL</span><span>✓ verReprogramacionesEPL</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- PASO 4 -->
+      <article class="gpt-tut-step">
+        <div class="gpt-tut-info">
+          <div class="gpt-tut-num">4</div>
+          <div>
+            <h3>Configurá la Autenticación (OAuth)</h3>
+            <p>En la acción, en <strong>Autenticación</strong> elegí <strong>OAuth</strong> y completá con estos valores exactos:</p>
+            <div class="gpt-val"><small>Client ID</small><code id="tvClientId"><?=epl_h($tvClient)?></code><?php if($gptClient):?><button type="button" onclick="copyMcpValue('tvClientId',this)">Copiar</button><?php endif;?></div>
+            <div class="gpt-val"><small>Client Secret</small><code>el que copiaste al generar las credenciales</code></div>
+            <div class="gpt-val"><small>Authorization URL</small><code id="tvAuth"><?=epl_h(epl_gpt_url('oauth/authorize.php'))?></code><button type="button" onclick="copyMcpValue('tvAuth',this)">Copiar</button></div>
+            <div class="gpt-val"><small>Token URL</small><code id="tvToken"><?=epl_h(epl_gpt_url('oauth/token.php'))?></code><button type="button" onclick="copyMcpValue('tvToken',this)">Copiar</button></div>
+            <div class="gpt-val"><small>Scope</small><code id="tvScope">epl.read epl.write</code><button type="button" onclick="copyMcpValue('tvScope',this)">Copiar</button></div>
+            <div class="gpt-val"><small>Token Exchange Method</small><code>POST</code></div>
+          </div>
+        </div>
+        <div class="gpt-tut-shot">
+          <div class="mock mock-web">
+            <div class="mock-top"><i></i><i></i><i></i><span>Autenticación</span></div>
+            <div class="mock-form">
+              <div class="mock-choice"><span>Ninguna</span><span>API Key</span><span class="on">OAuth</span></div>
+              <label>Client ID</label><div class="mock-input filled small"><?=epl_h($gptClient?substr($tvClient,0,22).'…':'epl_gpt_…')?></div>
+              <label>Authorization URL</label><div class="mock-input filled small">…/oauth/authorize.php</div>
+              <label>Token URL</label><div class="mock-input filled small">…/oauth/token.php</div>
+              <div class="mock-two"><div><label>Scope</label><div class="mock-input filled small">epl.read epl.write</div></div><div><label>Método</label><div class="mock-input filled small">POST</div></div></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- PASO 5 -->
+      <article class="gpt-tut-step">
+        <div class="gpt-tut-info">
+          <div class="gpt-tut-num">5</div>
+          <div>
+            <h3>Pegá la política de privacidad</h3>
+            <p>Todavía en la configuración de la acción, en el campo <strong>Política de privacidad</strong> pegá:</p>
+            <div class="gpt-val"><code id="tvPriv"><?=epl_h(epl_url('privacidad_ia.php'))?></code><button type="button" onclick="copyMcpValue('tvPriv',this)">Copiar</button></div>
+            <p class="gpt-tut-mini">ChatGPT lo pide para poder compartir el GPT.</p>
+          </div>
+        </div>
+        <div class="gpt-tut-shot">
+          <div class="mock mock-web">
+            <div class="mock-top"><i></i><i></i><i></i><span>Política de privacidad</span></div>
+            <div class="mock-form">
+              <label>URL de la política de privacidad</label>
+              <div class="mock-input filled small"><?=epl_h(epl_url('privacidad_ia.php'))?></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- PASO 6 -->
+      <article class="gpt-tut-step">
+        <div class="gpt-tut-info">
+          <div class="gpt-tut-num">6</div>
+          <div>
+            <h3>Copiá el Callback y guardalo acá</h3>
+            <p>Al guardar la autenticación, ChatGPT te muestra un <strong>callback URL</strong> (empieza con <code>https://chatgpt.com/aip/…</code>). Copialo y pegalo <strong>arriba en esta página</strong>, en el campo <strong>“Callback entregado por ChatGPT”</strong> → <strong>Guardar callback</strong>.</p>
+            <p class="gpt-tut-mini">Sin este paso la conexión falla: es lo que autoriza a ChatGPT a volver a EPL.</p>
+          </div>
+        </div>
+        <div class="gpt-tut-shot">
+          <div class="mock mock-web">
+            <div class="mock-top"><i></i><i></i><i></i><span>Callback</span></div>
+            <div class="mock-form">
+              <label>URL de devolución de llamada</label>
+              <div class="mock-input filled small copyish">https://chatgpt.com/aip/g-abc.../oauth/callback <b>⧉</b></div>
+              <div class="mock-arrow">↓ pegar en “Callback entregado por ChatGPT” (arriba)</div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- PASO 7 -->
+      <article class="gpt-tut-step">
+        <div class="gpt-tut-info">
+          <div class="gpt-tut-num">7</div>
+          <div>
+            <h3>Probalo: “¿Quién soy?”</h3>
+            <p>En la <strong>Vista previa</strong> (derecha) escribí <em>“¿Quién soy?”</em>. La primera vez ChatGPT te va a pedir <strong>iniciar sesión con EPL</strong>: entrás con tu cuenta y tocás <strong>Conectar</strong>. Debería responder con tu perfil real.</p>
+          </div>
+        </div>
+        <div class="gpt-tut-shot">
+          <div class="mock mock-web">
+            <div class="mock-top"><i></i><i></i><i></i><span>Vista previa</span></div>
+            <div class="mock-chat">
+              <div class="mock-bubble me">¿Quién soy?</div>
+              <div class="mock-auth">🔐 Iniciar sesión con <b>Elite Padel League</b><span class="mock-cta sm">Conectar</span></div>
+              <div class="mock-bubble bot">Sos <b>Pablo Romero</b> · rol admin. Tu próximo partido es…</div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- PASO 8 -->
+      <article class="gpt-tut-step">
+        <div class="gpt-tut-info">
+          <div class="gpt-tut-num">8</div>
+          <div>
+            <h3>Compartilo y usalo en el teléfono</h3>
+            <p>Arriba a la derecha tocá <strong>Crear/Guardar</strong> → <strong>Cualquiera con el enlace</strong> → <strong>Copiar enlace</strong>. Pegá ese enlace <strong>acá arriba</strong> en <strong>“Enlace para instalarlo en Android”</strong>. Después, desde la app de ChatGPT en el celular, abrís ese link y ya podés preguntar.</p>
+            <div class="gpt-tut-examples"><span>“¿Cuándo juego?”</span><span>“¿Qué reprogramaciones hay pendientes?”</span><span>“Partidos de la liga 5ta”</span></div>
+          </div>
+        </div>
+        <div class="gpt-tut-shot">
+          <div class="mock mock-phone">
+            <div class="mock-notch"></div>
+            <div class="mock-phone-top">Elite Padel League</div>
+            <div class="mock-chat">
+              <div class="mock-bubble me">¿Cuándo es mi próximo partido?</div>
+              <div class="mock-bubble bot">🎾 Sábado 12/07 21:00 · Cancha 10.<br>Rival: Ponce - Unda.</div>
+              <div class="mock-bubble me">¿Y las reprogramaciones pendientes?</div>
+              <div class="mock-bubble bot">Hay 7 pendientes. La más urgente…</div>
+            </div>
+            <div class="mock-phone-bar">Escribí un mensaje…</div>
+          </div>
+        </div>
+      </article>
+    </section>
+
     <section class="mcp-url-box">
       <div><small>URL MCP para Claude y Gemini</small><code id="adminMcpUrl"><?=epl_h(epl_mcp_base_url().'/')?></code></div>
       <button type="button" onclick="copyAdminMcp(this)">Copiar URL</button>
