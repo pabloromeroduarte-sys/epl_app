@@ -126,7 +126,7 @@ require_once __DIR__ . '/../includes/header.php';
           <div class="gpt-builder-actions"><button type="button" onclick="copyMcpValue('gptInstructions',this)">Copiar instrucciones</button><a href="https://chatgpt.com/gpts/editor" target="_blank" rel="noopener">Abrir creador de GPT</a></div>
         </details>
 
-        <form method="post" class="gpt-regenerate" data-confirm="Regenerar las credenciales desconectará el GPT configurado actualmente. ¿Continuar?"><input type="hidden" name="csrf" value="<?=epl_h($_SESSION['mcp_admin_csrf'])?>"><input type="hidden" name="action" value="gpt_generate"><button type="submit">Regenerar credenciales</button></form>
+        <form method="post" class="gpt-regenerate"><input type="hidden" name="csrf" value="<?=epl_h($_SESSION['mcp_admin_csrf'])?>"><input type="hidden" name="action" value="gpt_generate"><button type="submit" data-confirm="Regenerar las credenciales desconectará el GPT configurado actualmente. ¿Continuar?" data-confirm-ok="Sí, regenerar">Regenerar credenciales</button></form>
       <?php endif;?>
     </section>
 
