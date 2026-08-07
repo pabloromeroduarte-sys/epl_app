@@ -84,7 +84,7 @@ $doc = [
             ]]]],'responses'=>['200'=>$okResponse,'400'=>$errorResponse,'401'=>$errorResponse]
         ]],
     ],
-    'components' => ['securitySchemes' => ['eplOAuth' => [
+    'components' => ['schemas' => new stdClass(), 'securitySchemes' => ['eplOAuth' => [
         'type'=>'oauth2','flows'=>['authorizationCode'=>[
             'authorizationUrl'=>epl_gpt_url('oauth/authorize.php'),
             'tokenUrl'=>epl_gpt_url('oauth/token.php'),
