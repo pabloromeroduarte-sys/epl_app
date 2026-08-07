@@ -46,6 +46,7 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
     <?php adm_link('bi.php',              $cur, 'bi.php',                               '📊', 'Dashboard BI'); ?>
     <?php adm_link('partidos.php',        $cur, ['partidos.php', 'proximos_partidos.php', 'cargar_resultados.php'], '🎾', 'Partidos'); ?>
     <?php adm_link('calendario.php',      $cur, 'calendario.php',                      '🗓️', 'Calendario'); ?>
+    <?php adm_link('mcp.php',             $cur, 'mcp.php',                             '🤖', 'Acceso MCP'); ?>
     <?php adm_link('dashboard_repro.php', $cur, 'dashboard_repro.php',                  '📅', 'Reprogramaciones', $_repro_count, '#ea580c'); ?>
     <?php adm_link('inscripciones.php',   $cur, 'inscripciones.php',                    '📋', 'Inscripciones', $_insc_count, '#2563eb'); ?>
     <?php adm_link('disputas.php',        $cur, 'disputas.php',                         '⚠️', 'Disputas', $_disp_count); ?>
