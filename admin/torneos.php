@@ -25,8 +25,9 @@ require_once __DIR__ . '/../includes/header.php';
         <button type="button" class="trn-fmt-btn" data-g="4" onclick="trnSet(4)">4 grupos · 16</button>
       </div>
 
-      <div style="display:flex;justify-content:flex-end;margin-top:.75rem">
-        <button type="button" class="trn-pdf-btn" id="trnPdfBtn" onclick="trnPDF()">📄 Descargar PDF</button>
+      <div style="display:flex;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;margin-top:.75rem">
+        <button type="button" class="trn-pdf-btn" onclick="trnPDF(false)">📄 Descargar PDF</button>
+        <button type="button" class="trn-pdf-btn trn-pdf-btn2" onclick="trnPDF(true)">🔒 Descarga interna</button>
       </div>
 
       <!-- ESQUEMA VISUAL (para presentar) -->
@@ -136,8 +137,8 @@ function trnRender(){
   trnScheme(f);
 }
 
-function trnPDF(){
-  const f = TRN[trnG], iva = 1 + trnV('trnIva')/100;
+function trnPDF(interna){
+  const f = TRN[trnG], iva = 1 + trnV('trnIva')/100, ivaPct = trnV('trnIva');
   const galv = trnV('trnGalvano')*iva*2, med = trnV('trnMedalla')*iva*6, prizes = galv + med;
   const auto = document.getElementById('trnAuto').checked;
   const blocks = auto ? (f.gb + f.fb) : trnV('trnBlocks');
@@ -157,7 +158,25 @@ function trnPDF(){
   const money = [['Cuota mínima por pareja',per],['Precio de cobranza por pareja',precio],['Ingresos totales',ingresos],['Costo total del torneo',total]];
   const rows = money.map(r => '<div class="r"><span>'+r[0]+'</span><b>'+trnMoney(r[1])+'</b></div>').join('');
 
-  const doc = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Torneo Copa · '+f.pairs+' parejas</title>'
+  let detalle = '';
+  if (interna){
+    const galvNetoT = trnV('trnGalvano')*2, medNetoT = trnV('trnMedalla')*6;
+    const galvIva = galvNetoT*(iva-1), medIva = medNetoT*(iva-1), ivaTot = galvIva + medIva;
+    const netoTot = court + galvNetoT + medNetoT;
+    function drow(l, neto, ivaAmt, tot){ return '<tr><td>'+l+'</td><td>'+trnMoney(neto)+'</td><td>'+(ivaAmt>0?trnMoney(ivaAmt):'—')+'</td><td>'+trnMoney(tot)+'</td></tr>'; }
+    detalle = '<div class="sec">Detalle de gastos · uso interno</div>'
+      + '<table class="tbl"><thead><tr><th>Ítem</th><th>Neto</th><th>IVA '+ivaPct+'%</th><th>Total</th></tr></thead><tbody>'
+      + drow('Canchas · '+blocks+' bloques de 1h30 (× '+trnMoney(trnV('trnBloque'))+')', court, 0, court)
+      + drow('Galvanos CR 005 · 2 unidades', galvNetoT, galvIva, galv)
+      + drow('Medallas · 6 unidades (1º a 3º)', medNetoT, medIva, med)
+      + '</tbody><tfoot><tr><td>Costo total</td><td>'+trnMoney(netoTot)+'</td><td>'+trnMoney(ivaTot)+'</td><td>'+trnMoney(total)+'</td></tr></tfoot></table>'
+      + '<div class="mini">Ingresos '+trnMoney(ingresos)+' · Ganancia '+trnMoney(ganancia)+' · Margen por pareja '+trnMoney(ganancia/f.pairs)+' · IVA que no se recupera (en negro): '+trnMoney(ivaTot)+'</div>';
+  }
+
+  const titulo = interna ? 'Torneo Copa INTERNO · '+f.pairs+' parejas' : 'Torneo Copa · '+f.pairs+' parejas';
+  const marca = interna ? ' · <b style="color:#fca5a5">USO INTERNO</b>' : '';
+
+  const doc = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>'+titulo+'</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">'
     + '<style>'
     + '@page{size:A4;margin:12mm}*{margin:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
@@ -178,14 +197,22 @@ function trnPDF(){
     + '.r{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px}.r span{color:#64748b}'
     + '.gan{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;margin-top:12px;background:'+navy+';border-radius:10px;color:#fff}'
     + '.gan b{font-family:Anton,sans-serif;font-size:22px;color:'+(ganancia>=0?'#0fae74':'#dc2626')+'}'
+    + '.tbl{width:100%;border-collapse:collapse;font-size:11px}'
+    + '.tbl th{text-align:right;padding:6px 8px;background:#f1f5f9;color:#475569;font-weight:800;font-size:10px}'
+    + '.tbl th:first-child{text-align:left}'
+    + '.tbl td{padding:6px 8px;border-bottom:1px solid #f1f5f9;text-align:right}'
+    + '.tbl td:first-child{text-align:left;color:#334155}'
+    + '.tbl tfoot td{font-weight:800;border-top:1.5px solid #e2e8f0;border-bottom:none;color:'+navy+'}'
+    + '.mini{font-size:11px;color:#475569;margin-top:8px;font-weight:600;line-height:1.5}'
     + '.ft{margin-top:14px;font-size:10px;color:#94a3b8;line-height:1.5}'
     + '</style></head><body>'
-    + '<div class="hd"><div class="eb">ELITE PADEL LEAGUE</div><h1>TORNEO COPA</h1><div class="sub">'+f.pairs+' parejas · '+f.groups.length+' grupos · '+(f.gm+f.fm)+' partidos · '+f.days+' días · '+new Date().toLocaleDateString('es-CL')+'</div></div>'
+    + '<div class="hd"><div class="eb">ELITE PADEL LEAGUE</div><h1>TORNEO COPA</h1><div class="sub">'+f.pairs+' parejas · '+f.groups.length+' grupos · '+(f.gm+f.fm)+' partidos · '+f.days+' días · '+new Date().toLocaleDateString('es-CL')+marca+'</div></div>'
     + '<div class="sec">Fase de grupos</div><div class="groups">'+groupsHtml+'</div>'
     + '<div class="sec">Llave final</div><div class="br">'+bracket+'</div>'
     + '<div class="sec">Números</div>'+rows
     + '<div class="gan"><span>Tu ganancia estimada</span><b>'+trnMoney(ganancia)+'</b></div>'
-    + '<div class="ft">Costos: canchas '+trnMoney(court)+' ('+blocks+' bloques de 1h30) · galvanos '+trnMoney(galv)+' (Trofeos Premium CR 005) · medallas '+trnMoney(med)+'. Valores con IVA incluido. · epleague.cl</div>'
+    + detalle
+    + '<div class="ft">Galvanos: Trofeos Premium, modelo CR 005. · epleague.cl</div>'
     + '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},450);};<\/scr'+'ipt>'
     + '</body></html>';
 

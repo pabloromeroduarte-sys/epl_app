@@ -101,5 +101,7 @@
   display: inline-flex; align-items: center; gap: .45rem; transition: background .15s; }
 .trn-pdf-btn:hover { background: #12324f; }
 .trn-pdf-btn:disabled { opacity: .6; cursor: default; }
+.trn-pdf-btn2 { background: var(--gold); color: var(--navy); }
+.trn-pdf-btn2:hover { background: #b8933f; }
 
 @media (max-width: 640px) { .trn-money-grid { grid-template-columns: 1fr; } }
