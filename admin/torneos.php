@@ -25,6 +25,10 @@ require_once __DIR__ . '/../includes/header.php';
         <button type="button" class="trn-fmt-btn" data-g="4" onclick="trnSet(4)">4 grupos · 16</button>
       </div>
 
+      <div style="display:flex;justify-content:flex-end;margin-top:.75rem">
+        <button type="button" class="trn-pdf-btn" id="trnPdfBtn" onclick="trnPDF()">📄 Descargar PDF</button>
+      </div>
+
       <!-- ESQUEMA VISUAL (para presentar) -->
       <section class="trn-scheme">
         <div class="trn-scheme-h">Fase de grupos</div>
@@ -130,6 +134,80 @@ function trnRender(){
     .map((r,i) => '<div class="trn-row'+(i===3?' total':'')+'"><span>'+r[0]+'</span><span>'+trnMoney(r[1])+'</span></div>').join('');
 
   trnScheme(f);
+}
+
+function trnEnsureLib(cb){
+  if (window.html2pdf) return cb();
+  const btn = document.getElementById('trnPdfBtn');
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+  s.onload = cb;
+  s.onerror = function(){ if(btn){btn.disabled=false;btn.textContent='📄 Descargar PDF';} alert('No se pudo cargar el generador de PDF. Revisá tu conexión.'); };
+  document.head.appendChild(s);
+}
+
+function trnPDF(){
+  const btn = document.getElementById('trnPdfBtn');
+  if (btn){ btn.disabled = true; btn.textContent = '⏳ Generando…'; }
+  trnEnsureLib(function(){
+    const f = TRN[trnG], iva = 1 + trnV('trnIva')/100;
+    const galv = trnV('trnGalvano')*iva*2, med = trnV('trnMedalla')*iva*6, prizes = galv + med;
+    const auto = document.getElementById('trnAuto').checked;
+    const blocks = auto ? (f.gb + f.fb) : trnV('trnBlocks');
+    const court = blocks*trnV('trnBloque'), total = court + prizes, per = total / f.pairs;
+    const precio = trnV('trnPrecio'), ingresos = precio*f.pairs, ganancia = ingresos - total;
+    const navy = '#0a1f38', gold = '#c9a762';
+
+    const groupsHtml = f.groups.map(L => '<div style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden">'
+      + '<div style="background:'+navy+';color:'+gold+';font-family:Anton,sans-serif;font-size:15px;padding:6px 10px">Grupo '+L+'</div>'
+      + [1,2,3,4].map(i => '<div style="font-size:12px;color:#334155;padding:6px 10px;border-top:1px solid #f1f5f9;font-weight:600">Pareja '+i+'</div>').join('')
+      + '</div>').join('');
+
+    function pm(m){ return '<div style="border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#fafbfc">'
+      + '<div style="font-size:12px;padding:5px 8px;font-weight:600;color:#334155">'+m[0]+'</div>'
+      + '<div style="text-align:center;font-size:9px;color:#94a3b8;background:#f1f5f9;padding:1px">vs</div>'
+      + '<div style="font-size:12px;padding:5px 8px;font-weight:600;color:#334155">'+m[1]+'</div></div>'; }
+    function pcol(t, ms){ return '<div style="min-width:148px;margin-right:14px">'
+      + '<div style="font-size:10px;font-weight:800;color:#3730a3;text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-bottom:6px">'+t+'</div>'
+      + ms.map(pm).join('') + '</div>'; }
+    let bracket = '';
+    if (f.qf.length) bracket += pcol('Cuartos de final', f.qf);
+    bracket += pcol('Semifinales', f.sf);
+    bracket += pcol('Final', [['Ganador SF1','Ganador SF2']]);
+    bracket += pcol('3º y 4º puesto', [['Perdedor SF1','Perdedor SF2']]);
+
+    const money = [['Cuota mínima por pareja',per],['Precio de cobranza por pareja',precio],['Ingresos totales',ingresos],['Costo total del torneo',total]];
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:#fff;font-family:Montserrat,Arial,sans-serif;color:#0f172a';
+    wrap.innerHTML =
+      '<div style="background:'+navy+';padding:22px 28px">'
+        + '<div style="color:'+gold+';font-size:12px;letter-spacing:.16em;font-weight:800">ELITE PADEL LEAGUE</div>'
+        + '<div style="font-family:Anton,sans-serif;color:#fff;font-size:32px;letter-spacing:.02em;margin-top:2px">TORNEO COPA</div>'
+        + '<div style="color:#9fb0c3;font-size:12px;margin-top:6px">'+f.pairs+' parejas · '+f.groups.length+' grupos · '+(f.gm+f.fm)+' partidos · '+f.days+' días · '+new Date().toLocaleDateString('es-CL')+'</div>'
+      + '</div>'
+      + '<div style="padding:22px 28px">'
+        + '<div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Fase de grupos</div>'
+        + '<div style="display:grid;grid-template-columns:repeat('+f.groups.length+',1fr);gap:10px;margin-bottom:20px">'+groupsHtml+'</div>'
+        + '<div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Llave final</div>'
+        + '<div style="display:flex;align-items:flex-start;margin-bottom:22px">'+bracket+'</div>'
+        + '<div style="font-size:12px;font-weight:800;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Números</div>'
+        + money.map(r => '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:13px"><span style="color:#64748b">'+r[0]+'</span><span style="font-weight:700">'+trnMoney(r[1])+'</span></div>').join('')
+        + '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;margin-top:14px;background:'+navy+';border-radius:12px;color:#fff"><span>Tu ganancia estimada</span><span style="font-family:Anton,sans-serif;font-size:24px;color:'+(ganancia>=0?'#7ee2b8':'#fca5a5')+'">'+trnMoney(ganancia)+'</span></div>'
+        + '<div style="font-size:11px;color:#94a3b8;margin-top:14px;line-height:1.5">Costos: canchas '+trnMoney(court)+' ('+blocks+' bloques de 1h30) · galvanos '+trnMoney(galv)+' (Trofeos Premium CR 005) · medallas '+trnMoney(med)+'. Valores con IVA incluido.</div>'
+      + '</div>'
+      + '<div style="padding:12px 28px;border-top:1px solid #eef2f6;color:#94a3b8;font-size:11px">Elite Padel League · epleague.cl</div>';
+    document.body.appendChild(wrap);
+
+    const done = function(){ wrap.remove(); if(btn){btn.disabled=false;btn.textContent='📄 Descargar PDF';} };
+    html2pdf().set({
+      margin: 0,
+      filename: 'torneo-copa-'+f.pairs+'-parejas.pdf',
+      image: { type:'jpeg', quality:.95 },
+      html2canvas: { scale:2, backgroundColor:'#ffffff' },
+      jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+    }).from(wrap).save().then(done).catch(done);
+  });
 }
 trnSet(2);
 </script>

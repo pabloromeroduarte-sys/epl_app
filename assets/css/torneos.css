@@ -96,4 +96,10 @@
 .trn-auto { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: #475569; font-weight: 600; margin-top: .3rem; }
 .trn-auto input { width: auto; }
 
+.trn-pdf-btn { cursor: pointer; background: var(--navy); color: var(--gold); border: none; border-radius: 10px;
+  padding: .6rem 1.1rem; font-family: inherit; font-size: .82rem; font-weight: 800;
+  display: inline-flex; align-items: center; gap: .45rem; transition: background .15s; }
+.trn-pdf-btn:hover { background: #12324f; }
+.trn-pdf-btn:disabled { opacity: .6; cursor: default; }
+
 @media (max-width: 640px) { .trn-money-grid { grid-template-columns: 1fr; } }
