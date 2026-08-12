@@ -60,3 +60,40 @@
 .trn-costs input:focus { outline: none; border-color: var(--gold); }
 
 .trn-fine { font-size: .72rem; color: #94a3b8; margin-top: .75rem; line-height: 1.5; }
+
+/* ── Esquema visual: grupos + llave (para presentar) ── */
+.trn-scheme { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem 1.3rem; margin: 1.1rem 0; }
+.trn-scheme-h { font-size: .72rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .06em; margin-bottom: .8rem; }
+.trn-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .7rem; margin-bottom: 1.3rem; }
+.trn-group { border: 1.5px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+.trn-group-h { background: var(--navy); color: var(--gold); font-family: 'Anton', sans-serif; font-size: .9rem; letter-spacing: .04em; padding: .4rem .7rem; }
+.trn-slot { font-size: .76rem; color: #334155; padding: .4rem .7rem; border-top: 1px solid #f1f5f9; background: #fff; font-weight: 600; }
+.trn-bracket-wrap { overflow-x: auto; padding-bottom: .3rem; }
+.trn-bracket { display: flex; gap: 1.1rem; align-items: stretch; min-width: min-content; }
+.trn-col { display: flex; flex-direction: column; justify-content: center; gap: .7rem; min-width: 155px; }
+.trn-col-h { font-size: .64rem; font-weight: 800; color: #3730a3; text-transform: uppercase; letter-spacing: .06em; text-align: center; }
+.trn-match { border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #fafbfc; }
+.trn-match .trn-slot { border-top: none; background: transparent; }
+.trn-match .trn-slot + .trn-slot { border-top: 1px solid #eef2f6; }
+.trn-vs { text-align: center; font-size: .58rem; color: #94a3b8; font-weight: 700; padding: 1px 0; background: #f1f5f9; }
+.trn-third { margin-top: 1rem; max-width: 230px; }
+.trn-third .trn-col-h { color: #b45309; }
+.trn-rule-line { font-size: .82rem; color: #475569; margin-top: 1rem; }
+.trn-rule-line b { color: var(--navy); }
+
+/* ── Precio de cobranza + ganancia ── */
+.trn-money-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; margin: 1.1rem 0; }
+.trn-mcard { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 1rem 1.2rem; }
+.trn-mcard small { display: block; font-size: .72rem; color: #64748b; font-weight: 700; margin-bottom: .35rem; }
+.trn-min { font-family: 'Anton', sans-serif; font-size: 2rem; color: #b8860b; line-height: 1; }
+.trn-mcard input { width: 100%; border: 1.5px solid #e2e8f0; border-radius: 9px; padding: .55rem .7rem; font-size: 1.15rem; font-family: inherit; font-weight: 800; color: var(--navy); }
+.trn-mcard input:focus { outline: none; border-color: var(--gold); }
+.trn-profit { background: linear-gradient(130deg, #071b33, #163f68); border-radius: 16px; padding: 1.1rem 1.4rem; margin: 1.1rem 0; color: #fff; display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; justify-content: space-between; align-items: center; }
+.trn-profit .p-item small { display: block; font-size: .72rem; color: #9fb0c3; font-weight: 600; }
+.trn-profit .p-item b { font-size: 1.05rem; font-weight: 800; }
+.trn-profit .p-gan b { font-family: 'Anton', sans-serif; font-size: 2.2rem; line-height: 1; }
+
+.trn-auto { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: #475569; font-weight: 600; margin-top: .3rem; }
+.trn-auto input { width: auto; }
+
+@media (max-width: 640px) { .trn-money-grid { grid-template-columns: 1fr; } }
