@@ -46,7 +46,7 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
     <?php adm_link('bi.php',              $cur, 'bi.php',                               '📊', 'Dashboard BI'); ?>
     <?php adm_link('partidos.php',        $cur, ['partidos.php', 'proximos_partidos.php', 'cargar_resultados.php'], '🎾', 'Partidos'); ?>
     <?php adm_link('calendario.php',      $cur, 'calendario.php',                      '🗓️', 'Calendario'); ?>
-    <?php adm_link('mcp.php',             $cur, 'mcp.php',                             '🤖', 'Acceso MCP'); ?>
+    <?php adm_link('mcp.php',             $cur, 'mcp.php',                             '🤖', 'Acceso IA'); ?>
     <?php adm_link('dashboard_repro.php', $cur, 'dashboard_repro.php',                  '📅', 'Reprogramaciones', $_repro_count, '#ea580c'); ?>
     <?php adm_link('inscripciones.php',   $cur, 'inscripciones.php',                    '📋', 'Inscripciones', $_insc_count, '#2563eb'); ?>
     <?php adm_link('disputas.php',        $cur, 'disputas.php',                         '⚠️', 'Disputas', $_disp_count); ?>
@@ -54,6 +54,7 @@ $_in_tools = in_array($cur, ['automatizaciones.php','content_studio.php','notifi
     <!-- ── COMPETENCIA ── -->
     <div class="adm-group-label">Competencia</div>
     <?php adm_link('ligas.php',           $cur, ['ligas.php','liga_detalle.php'],       '🏆', 'Ligas / Torneos'); ?>
+    <?php adm_link('torneos.php',         $cur, 'torneos.php',                          '🥇', 'Torneo Copa'); ?>
     <?php adm_link('dashboard_resultados.php', $cur, 'dashboard_resultados.php', '📊', 'Resultados'); ?>
     <?php adm_link('jugadores.php',       $cur, 'jugadores.php',                        '👥', 'Jugadores'); ?>
     <?php adm_link('suplentes.php',       $cur, 'suplentes.php',                        '🔄', 'Suplentes'); ?>
@@ -208,6 +209,10 @@ function toggleTools() {
       <a href="dashboard_resultados.php" class="bn-tile <?= $cur==='dashboard_resultados.php'?'active':'' ?>">
         <span class="bn-tile-icon">📋</span>
         <span>Resultados</span>
+      </a>
+      <a href="mcp.php" class="bn-tile <?= $cur==='mcp.php'?'active':'' ?>">
+        <span class="bn-tile-icon">🤖</span>
+        <span>Acceso IA</span>
       </a>
       <a href="jugadores.php" class="bn-tile <?= $cur==='jugadores.php'?'active':'' ?>">
         <span class="bn-tile-icon">👥</span>

@@ -1,0 +1,62 @@
+/* Torneo Copa — simulador (admin/torneos.php).
+   CSS externo cargado desde el <head> vía $page_css (en el VPS los <style>
+   del body no aplican si algo corta el render). */
+
+.torneo-main { max-width: none; }
+
+.torneo-hero {
+  background: linear-gradient(130deg, #071b33, #163f68);
+  border-radius: 20px; padding: 1.6rem 1.8rem; color: #fff; margin-bottom: 1.25rem;
+  box-shadow: 0 16px 42px rgba(7,27,51,.18);
+}
+.torneo-hero .eyebrow { color: #d7ae42; font-size: .67rem; font-weight: 900;
+  letter-spacing: .14em; text-transform: uppercase; }
+.torneo-hero h1 { font-family: 'Anton', sans-serif; text-transform: uppercase;
+  letter-spacing: .02em; font-size: clamp(1.5rem, 3vw, 2.2rem); margin: .35rem 0 .3rem; }
+.torneo-hero p { color: #d5e0eb; margin: 0; font-size: .85rem; max-width: 720px; line-height: 1.5; }
+
+.trn-wrap { max-width: 820px; }
+
+.trn-label { font-size: .72rem; font-weight: 800; color: #64748b; text-transform: uppercase;
+  letter-spacing: .06em; margin: 1.25rem 0 .5rem; }
+
+.trn-fmt { display: flex; gap: .6rem; flex-wrap: wrap; }
+.trn-fmt-btn { cursor: pointer; border: 1.5px solid #e2e8f0; background: #fff; border-radius: 12px;
+  padding: .7rem 1.1rem; font-family: inherit; font-size: .85rem; font-weight: 800;
+  color: var(--navy); transition: all .15s; }
+.trn-fmt-btn:hover { border-color: var(--navy); }
+.trn-fmt-btn.active { background: var(--navy); color: var(--gold); border-color: var(--navy); }
+
+.trn-result { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 16px;
+  padding: 1.1rem 1.4rem; margin: 1.1rem 0; display: flex; align-items: baseline;
+  justify-content: space-between; gap: 1rem; box-shadow: 0 6px 22px rgba(0,0,0,.05); }
+.trn-result span { font-size: .9rem; color: #64748b; font-weight: 600; }
+.trn-result b { font-family: 'Anton', sans-serif; font-size: 2.4rem; color: #b8860b; line-height: 1; }
+
+.trn-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: .75rem; margin-bottom: 1.1rem; }
+.trn-metric { background: #f8fafc; border: 1px solid #eef2f6; border-radius: 12px; padding: .9rem 1rem; }
+.trn-metric small { display: block; font-size: .68rem; color: #64748b; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em; }
+.trn-metric b { font-family: 'Anton', sans-serif; font-size: 1.7rem; color: var(--navy); line-height: 1.1; }
+
+.trn-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+  padding: 1rem 1.3rem; margin-bottom: 1.1rem; }
+.trn-row { display: flex; justify-content: space-between; padding: .45rem 0; font-size: .86rem; }
+.trn-row span:first-child { color: #64748b; }
+.trn-row.total { border-top: 1px solid #e2e8f0; margin-top: .3rem; padding-top: .7rem;
+  font-weight: 800; color: var(--navy); }
+.trn-row.total span:first-child { color: var(--navy); }
+
+.trn-rule { font-size: .9rem; font-weight: 800; color: var(--navy); }
+.trn-rounds { margin-top: .5rem; display: flex; flex-wrap: wrap; gap: .4rem; }
+.trn-round { background: #eef4ff; color: #1e40af; border-radius: 999px; padding: .3rem .7rem;
+  font-size: .74rem; font-weight: 700; }
+
+.trn-costs { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .85rem; margin-top: .5rem; }
+.trn-costs label { display: block; font-size: .7rem; color: #64748b; font-weight: 700; margin-bottom: .3rem; }
+.trn-costs input { width: 100%; border: 1.5px solid #e2e8f0; border-radius: 9px; padding: .6rem .7rem;
+  font-size: .9rem; font-family: inherit; background: #fff; }
+.trn-costs input:focus { outline: none; border-color: var(--gold); }
+
+.trn-fine { font-size: .72rem; color: #94a3b8; margin-top: .75rem; line-height: 1.5; }
