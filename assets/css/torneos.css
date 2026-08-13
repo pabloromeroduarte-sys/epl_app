@@ -104,4 +104,14 @@
 .trn-pdf-btn2 { background: var(--gold); color: var(--navy); }
 .trn-pdf-btn2:hover { background: #b8933f; }
 
+/* ── Estructura de canchas (mín / máx) ── */
+.trn-estr { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; margin-bottom: 1.1rem; }
+.trn-estr-card { border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 1rem 1.2rem; background: #fff; }
+.trn-estr-card.max { border-left: 5px solid #059669; }
+.trn-estr-card.min { border-left: 5px solid #2563eb; }
+.trn-estr-tag { font-size: .66rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+.trn-estr-card b { display: block; font-family: 'Anton', sans-serif; font-size: 1.8rem; color: var(--navy); line-height: 1.1; margin: .15rem 0; }
+.trn-estr-card small { font-size: .74rem; color: #94a3b8; }
+@media (max-width: 640px) { .trn-estr { grid-template-columns: 1fr; } }
+
 @media (max-width: 640px) { .trn-money-grid { grid-template-columns: 1fr; } }
