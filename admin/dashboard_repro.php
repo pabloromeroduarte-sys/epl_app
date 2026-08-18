@@ -292,6 +292,25 @@ $solicitudes_procesadas = array_values(array_filter(
 ));
 $n_procesadas = count($solicitudes_procesadas);
 
+// Árbol de recintos para reutilizar la misma ficha editable de Gestión de Partidos.
+$_modal_recintos_raw = $db->query("SELECT id, nombre, superior_id FROM recintos ORDER BY nombre")->fetchAll();
+$_modal_rec_roots = []; $_modal_rec_children = [];
+foreach ($_modal_recintos_raw as $_modal_recinto) {
+    if (!$_modal_recinto['superior_id']) $_modal_rec_roots[] = $_modal_recinto;
+    else $_modal_rec_children[$_modal_recinto['superior_id']][] = $_modal_recinto;
+}
+$todos_recintos = [];
+function _flattenRecintosRepro(array $nodes, array $children, int $depth, array &$out): void {
+    foreach ($nodes as $node) {
+        $prefix = $depth === 0 ? '🏛 ' : ($depth === 1 ? '   📍 ' : '      🎾 ');
+        $out[] = ['id' => $node['id'], 'label' => $prefix . $node['nombre']];
+        if (isset($children[$node['id']])) {
+            _flattenRecintosRepro($children[$node['id']], $children, $depth + 1, $out);
+        }
+    }
+}
+_flattenRecintosRepro($_modal_rec_roots, $_modal_rec_children, 0, $todos_recintos);
+
 // Los badges cuentan partidos únicos y no la suma de dos listas que pueden
 // representar distintas etapas del mismo flujo.
 $ids_pendientes = array_unique(array_merge(
@@ -512,7 +531,10 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
         <?php endif; ?>
       </div>
       <div class="partido-actions">
-        <a href="partido_detalle.php?id=<?= $p['id'] ?>" class="btn-gestionar">👁 Ver partido</a>
+        <button type="button" class="btn-gestionar"
+                data-partido-id="<?= $p['id'] ?>"
+                data-return-to="dashboard_repro.php?tab=<?= epl_h($return_tab) ?>"
+                onclick="abrirFichaPartido(this)">⚙ Gestionar</button>
         <?php if ($_confirmada && $p['recinto_id']): ?>
           <button type="button" class="btn-sec" onclick="reenviarNotifCancha(<?= $p['id'] ?>, this)">
             📢 Reenviar notif.
@@ -779,8 +801,11 @@ require_once '../includes/header.php';
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;gap:.35rem;align-items:stretch">
-                <a href="partido_detalle.php?id=<?= $s['partido_id'] ?>" class="btn-gestionar"
-                   style="width:100%;text-align:center">👁 Ver partido</a>
+                <button type="button" class="btn-gestionar"
+                        data-partido-id="<?= $s['partido_id'] ?>"
+                        data-return-to="dashboard_repro.php?tab=solicitudes"
+                        onclick="abrirFichaPartido(this)"
+                        style="width:100%;text-align:center">⚙ Gestionar</button>
                 <?php if ($sol_sin_fecha): ?>
                   <form method="post" action="api_reprogramacion.php" style="margin:0"
                         data-confirm="¿Aprobar esta reprogramación sin fecha? El partido quedará 'A coordinar' y se liberará la cancha original."
@@ -883,7 +908,11 @@ require_once '../includes/header.php';
                 </div>
               </div>
               <div class="partido-actions">
-                <a href="partido_detalle.php?id=<?= $s['partido_id'] ?>" class="btn-gestionar" style="background:#94a3b8;color:#fff">👁 Ver partido</a>
+                <button type="button" class="btn-gestionar"
+                        data-partido-id="<?= $s['partido_id'] ?>"
+                        data-return-to="dashboard_repro.php?tab=solicitudes"
+                        onclick="abrirFichaPartido(this)"
+                        style="background:#94a3b8;color:#fff">⚙ Gestionar</button>
                 <form method="post" style="margin:0"
                       data-confirm="¿Eliminar esta gestión de <?= epl_h($s['local_nombre']) ?> vs <?= epl_h($s['visitante_nombre']) ?>? Solo se borrará la solicitud; el partido mantendrá su estado, fecha y recinto actuales."
                       data-confirm-ok="Sí, eliminar gestión">
@@ -1124,7 +1153,43 @@ require_once '../includes/header.php';
   </main>
 </div>
 
+<?php
+$modal_return_to = 'dashboard_repro.php?tab=' . ($tab_inicial === 'informe' ? 'informe' : 'solicitudes');
+include __DIR__ . '/../includes/modal_editar_partido.php';
+?>
+
 <script>
+async function abrirFichaPartido(btn) {
+  const partidoId = Number(btn.dataset.partidoId || 0);
+  if (!partidoId) return;
+
+  const textoAnterior = btn.innerHTML;
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  btn.textContent = 'Cargando…';
+
+  try {
+    const respuesta = await fetch('api_partido.php?id=' + encodeURIComponent(partidoId), {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
+    const data = await respuesta.json();
+    if (!respuesta.ok || !data.ok || !data.partido) {
+      throw new Error(data.error || 'No se pudo cargar el partido.');
+    }
+    if (typeof window.editarPartidoDatos !== 'function') {
+      throw new Error('La ficha del partido no está disponible.');
+    }
+    window.editarPartidoDatos(data.partido, btn.dataset.returnTo || 'dashboard_repro.php?tab=solicitudes');
+  } catch (error) {
+    alert(error.message || 'No se pudo abrir la ficha del partido.');
+  } finally {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    btn.innerHTML = textoAnterior;
+  }
+}
+
 function reenviarNotifCancha(partidoId, btn) {
   if (!confirm('¿Reenviar notificaciones de cancha a los jugadores y administradores?')) return;
   const prevText = btn.textContent;

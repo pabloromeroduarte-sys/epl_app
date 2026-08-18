@@ -86,7 +86,7 @@ $modal_return_to = $modal_return_to ?? '';
 
         <details style="margin-top:.85rem;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:.6rem .85rem">
           <summary style="cursor:pointer;font-size:.75rem;font-weight:800;color:#92400e;list-style:none">🏟️ Reserva ORIGINAL a dar de baja (opcional)</summary>
-          <p style="font-size:.72rem;color:#92400e;margin:.5rem 0">Si fue reprogramado, anotá acá qué fecha/cancha tenía antes para saber qué reserva cancelar en el club.</p>
+          <p style="font-size:.72rem;color:#92400e;margin:.5rem 0">Si fue reprogramado, anota aquí qué fecha y cancha tenía antes para saber qué reserva cancelar en el club.</p>
           <div class="grid-2">
             <div class="form-group" style="margin-bottom:.5rem">
               <label class="form-label" style="font-size:.65rem">Fecha original</label>
@@ -116,17 +116,13 @@ $modal_return_to = $modal_return_to ?? '';
 </div>
 
 <script>
-window.editarPartido = function (btn) {
+window.editarPartidoDatos = function (p, returnTo) {
   var modal = document.getElementById('modalEditarPartido');
   if (!modal) return;
-  var raw = btn.getAttribute('data-partido');
-  if (!raw) return;
-  var bin = atob(raw);
-  var bytes = new Uint8Array(bin.length);
-  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  var p = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+  if (!p) return;
   function setVal(sel, v) { var el = modal.querySelector(sel); if (el) el.value = v; }
   modal.querySelector('input[name="partido_id"]').value = p.id;
+  if (returnTo) setVal('input[name="return_to"]', returnTo);
   document.getElementById('editPartidoTitle').textContent = p.local_nombre + ' vs ' + p.visitante_nombre;
   setVal('input[name="nombre_fecha"]', p.nombre_fecha || '');
   setVal('input[name="jornada"]', p.jornada || '');
@@ -170,5 +166,15 @@ window.editarPartido = function (btn) {
   });
 
   modal.style.display = 'flex';
+};
+
+window.editarPartido = function (btn) {
+  var raw = btn.getAttribute('data-partido');
+  if (!raw) return;
+  var bin = atob(raw);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  var p = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+  window.editarPartidoDatos(p, btn.getAttribute('data-return-to') || '');
 };
 </script>

@@ -105,11 +105,12 @@
                      text-overflow:ellipsis; white-space:nowrap; }
 .btn-gestionar {
   background:var(--navy); color:#C9A762; padding:.55rem 1.1rem;
-  border-radius:8px; font-size:.72rem; font-weight:900; text-decoration:none;
+  border:0; border-radius:8px; font-size:.72rem; font-weight:900; text-decoration:none;
   text-transform:uppercase; letter-spacing:.08em; flex-shrink:0; text-align:center;
-  transition:all .15s; white-space:nowrap;
+  transition:all .15s; white-space:nowrap; cursor:pointer; font-family:inherit;
 }
 .btn-gestionar:hover { background:#C9A762; color:var(--navy); transform:translateY(-1px); }
+.btn-gestionar:disabled { opacity:.65; cursor:wait; transform:none; }
 
 /* ── Acciones de la fila (Gestionar + secundarias) ───────── */
 .partido-actions { display:flex; flex-direction:column; gap:.4rem; align-items:stretch; min-width:155px; flex-shrink:0; }

@@ -17,9 +17,10 @@ function partidos_redirect(string $msg = '', string $err = '', array $extra = []
         if ($err) $_SESSION['_epl_flash'] = ['tipo'=>'error', 'msg'=>$err];
     }
 
-    // Volver al calendario admin si la edición vino de ahí
-    if (!empty($_POST['return_to']) && preg_match('#^calendario\.php(\?[\w=&\-]*)?$#', $_POST['return_to'])) {
-        header('Location: ' . epl_url('admin/' . $_POST['return_to']));
+    // Volver a una pantalla admin autorizada cuando la edición vino desde un modal reutilizable.
+    $return_to = trim($_POST['return_to'] ?? '');
+    if ($return_to !== '' && preg_match('#^(?:calendario\.php(?:\?[\w=&\-]*)?|dashboard_repro\.php(?:\?tab=(?:solicitudes|informe))?)$#D', $return_to)) {
+        header('Location: ' . epl_url('admin/' . $return_to));
         exit;
     }
 
@@ -185,8 +186,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nombre_f    = trim($_POST['nombre_fecha'] ?? '') ?: null;
         $recinto_id  = (int)($_POST['recinto_id'] ?? 0) ?: null;
 
-        if (!$liga_id_post)                            partidos_redirect('', 'Seleccioná una liga.');
-        if (!$local_id || !$vis_id || $local_id === $vis_id) partidos_redirect('', 'Seleccioná equipos distintos.');
+        if (!$liga_id_post)                            partidos_redirect('', 'Selecciona una liga.');
+        if (!$local_id || !$vis_id || $local_id === $vis_id) partidos_redirect('', 'Selecciona equipos distintos.');
 
         $db->prepare("INSERT INTO partidos (liga_id,equipo_local_id,equipo_visitante_id,jornada,nombre_fecha,recinto_id,fecha_programada) VALUES (?,?,?,?,?,?,?)")
            ->execute([$liga_id_post, $local_id, $vis_id, $jornada, $nombre_f, $recinto_id, $fecha]);
@@ -832,7 +833,7 @@ require_once '../includes/header.php';
         <div class="form-group">
           <label class="form-label">Liga / Torneo *</label>
           <select name="liga_id" class="form-control" required onchange="this.form.action='partidos.php?liga='+this.value;">
-            <option value="">— Seleccioná una liga —</option>
+            <option value="">— Selecciona una liga —</option>
             <?php foreach ($ligas as $l): ?>
               <option value="<?= $l['id'] ?>" <?= $l['id']==$liga_id?'selected':'' ?>><?= epl_h($l['nombre']) ?></option>
             <?php endforeach; ?>
@@ -857,14 +858,14 @@ require_once '../includes/header.php';
         <div class="form-group">
           <label class="form-label">Equipo local *</label>
           <select name="equipo_local_id" class="form-control" required>
-            <option value="">— Seleccioná —</option>
+            <option value="">— Selecciona —</option>
             <?php foreach ($equipos_modal as $e): ?><option value="<?= $e['id'] ?>"><?= epl_h($e['nombre']) ?></option><?php endforeach; ?>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Equipo visitante *</label>
           <select name="equipo_visitante_id" class="form-control" required>
-            <option value="">— Seleccioná —</option>
+            <option value="">— Selecciona —</option>
             <?php foreach ($equipos_modal as $e): ?><option value="<?= $e['id'] ?>"><?= epl_h($e['nombre']) ?></option><?php endforeach; ?>
           </select>
         </div>
@@ -973,7 +974,7 @@ require_once '../includes/header.php';
         <!-- Reserva ORIGINAL (la que hay que dar de baja en el club) -->
         <details style="margin-top:.85rem;background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:.6rem .85rem">
           <summary style="cursor:pointer;font-size:.75rem;font-weight:800;color:#92400e;list-style:none">🏟️ Reserva ORIGINAL a dar de baja (opcional)</summary>
-          <p style="font-size:.72rem;color:#92400e;margin:.5rem 0">Si fue reprogramado, anotá acá qué fecha/cancha tenía antes para saber qué reserva cancelar en el club.</p>
+          <p style="font-size:.72rem;color:#92400e;margin:.5rem 0">Si fue reprogramado, anota aquí qué fecha y cancha tenía antes para saber qué reserva cancelar en el club.</p>
           <div class="grid-2">
             <div class="form-group" style="margin-bottom:.5rem">
               <label class="form-label" style="font-size:.65rem">Fecha original</label>
