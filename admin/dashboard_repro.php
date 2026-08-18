@@ -23,39 +23,34 @@ $db->query("
       AND recinto_id IS NOT NULL
 ");
 
-// ── POST: borrar reprogramación (solo demo) ──────────────────────────────────
+// ── POST: acciones administrativas de reprogramación ─────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    if ($action === 'reset_reprog') {
-        $pid = (int)($_POST['partido_id'] ?? 0);
-        if ($pid) {
-            // Restaurar fecha_programada desde fecha_original si existe
-            $row = $db->prepare("SELECT fecha_original, recinto_original_id FROM partidos WHERE id=?");
-            $row->execute([$pid]);
-            $orig = $row->fetch(PDO::FETCH_ASSOC);
+    if ($action === 'eliminar_solicitud_sin_cambios') {
+        $sid = (int)($_POST['solicitud_id'] ?? 0);
+        $return_tab = ($_POST['return_tab'] ?? '') === 'informe' ? 'informe' : 'solicitudes';
 
-            $sets  = "estado='pendiente', fecha_original=NULL, recinto_original_id=NULL,
-                       baja_solicitada_at=NULL, baja_confirmada_at=NULL, baja_confirmada_por=NULL, baja_token=NULL,
-                       cancha_token=NULL, cancha_solicitada_at=NULL, cancha_confirmada_at=NULL, cancha_confirmada_por=NULL";
-            // Si había fecha original guardada, restaurarla como fecha_programada
-            if (!empty($orig['fecha_original'])) {
-                $sets .= ", fecha_programada=" . $db->quote($orig['fecha_original']);
+        if ($sid) {
+            $sol_st = $db->prepare("SELECT id FROM solicitudes_reprogramacion WHERE id=?");
+            $sol_st->execute([$sid]);
+
+            if ($sol_st->fetchColumn()) {
+                // Esta acción solo elimina la solicitud administrativa. No modifica
+                // estado, fecha, recinto ni ningún otro dato del partido.
+                $db->prepare("DELETE FROM solicitudes_reprogramacion WHERE id=?")->execute([$sid]);
+                $_SESSION['_epl_flash'] = [
+                    'tipo' => 'ok',
+                    'msg' => 'Gestión eliminada. El partido mantuvo su estado, fecha y recinto sin cambios.',
+                ];
+            } else {
+                $_SESSION['_epl_flash'] = ['tipo' => 'error', 'msg' => 'La gestión ya no existe.'];
             }
-            // Si había recinto original, restaurarlo
-            if (!empty($orig['recinto_original_id'])) {
-                $sets .= ", recinto_id=" . (int)$orig['recinto_original_id'];
-            }
-            $db->exec("UPDATE partidos SET $sets WHERE id=$pid");
-
-            // Rechazar solicitudes pendientes
-            $db->prepare("UPDATE solicitudes_reprogramacion SET estado='rechazada' WHERE partido_id=? AND estado='pendiente'")
-               ->execute([$pid]);
-
-            if (session_status() === PHP_SESSION_NONE) session_start();
-            $_SESSION['_epl_flash'] = ['tipo' => 'ok', 'msg' => 'Reprogramación eliminada. Partido vuelto a Pendiente.'];
+        } else {
+            $_SESSION['_epl_flash'] = ['tipo' => 'error', 'msg' => 'No se pudo identificar la gestión.'];
         }
-        header('Location: dashboard_repro.php?tab=informe'); exit;
+
+        header('Location: dashboard_repro.php?tab=' . $return_tab); exit;
     }
 
     if ($action === 'rechazar_solicitud') {
@@ -122,7 +117,7 @@ $partidos_open = $db->query("
            ro.contacto1_nombre, ro.contacto1_telefono,
            ro.contacto2_nombre, ro.contacto2_telefono,
            ro.contacto3_nombre, ro.contacto3_telefono,
-           sr.motivo, sr.rival_no_responde, sr.created_at AS fecha_solicitud,
+           sr.id AS solicitud_id, sr.motivo, sr.rival_no_responde, sr.created_at AS fecha_solicitud,
            sr.estado AS sol_estado, sr.mutuo_acuerdo AS sol_mutuo, sr.fecha_propuesta
     FROM partidos p
     JOIN ligas l ON l.id = p.liga_id
@@ -326,7 +321,7 @@ foreach ($partidos_open as $p) {
 uasort($por_equipo, fn($a,$b) => count($b['partidos']) - count($a['partidos']));
 
 // Función de fila partido (reutilizable)
-function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resuelto = false, string $tag_html = ''): string {
+function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resuelto = false, string $tag_html = '', string $return_tab = 'solicitudes'): string {
     $cls = 'partido-row';
     if ($resuelto) $cls .= ' pr-resuelto';
     elseif ($vencido) $cls .= ' pr-vencido';
@@ -452,11 +447,11 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
           }
           if ($_link) {
               if ($_necesita_cancha && $_tiene_original) {
-                  $_msg .= "\nDesde este link confirmás la baja Y elegís la cancha para la nueva fecha:\n$_link\n(¡Solo tocás la cancha y queda todo listo!)";
+                  $_msg .= "\nDesde este enlace confirmas la baja y eliges la cancha para la nueva fecha:\n$_link\n(¡Solo toca la cancha y queda todo listo!)";
               } elseif ($_necesita_cancha) {
-                  $_msg .= "\nElegí la cancha para la nueva fecha desde acá:\n$_link\n(¡Solo tocás la cancha y queda confirmada!)";
+                  $_msg .= "\nElige la cancha para la nueva fecha desde acá:\n$_link\n(¡Solo toca la cancha y queda confirmada!)";
               } else {
-                  $_msg .= "\nConfirmá la baja desde este link:\n$_link";
+                  $_msg .= "\nConfirma la baja desde este enlace:\n$_link";
               }
           }
           $_msg .= "\n\n¡Gracias!";
@@ -510,28 +505,33 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
               </div>
             <?php else: ?>
               <div style="font-size:.68rem;margin-top:.25rem;opacity:.75">
-                ⚠ Sin contactos — agregalos en <a href="recintos.php" style="color:inherit;font-weight:700">Recintos</a>
+                ⚠ Sin contactos — agrégalos en <a href="recintos.php" style="color:inherit;font-weight:700">Recintos</a>
               </div>
             <?php endif; ?>
           </div>
         <?php endif; ?>
       </div>
       <div class="partido-actions">
-        <a href="partido_detalle.php?id=<?= $p['id'] ?>" class="btn-gestionar">Gestionar</a>
+        <a href="partido_detalle.php?id=<?= $p['id'] ?>" class="btn-gestionar">👁 Ver partido</a>
         <?php if ($_confirmada && $p['recinto_id']): ?>
           <button type="button" class="btn-sec" onclick="reenviarNotifCancha(<?= $p['id'] ?>, this)">
             📢 Reenviar notif.
           </button>
         <?php endif; ?>
-        <form method="post" style="margin:0">
-          <input type="hidden" name="action" value="reset_reprog">
-          <input type="hidden" name="partido_id" value="<?= $p['id'] ?>">
+        <?php if (!empty($p['solicitud_id'])): ?>
+        <form method="post" style="margin:0"
+              data-confirm="¿Eliminar esta gestión de <?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?>? Solo se borrará la solicitud; el partido mantendrá su estado, fecha y recinto actuales."
+              data-confirm-ok="Sí, eliminar gestión">
+          <input type="hidden" name="action" value="eliminar_solicitud_sin_cambios">
+          <input type="hidden" name="solicitud_id" value="<?= $p['solicitud_id'] ?>">
+          <input type="hidden" name="return_tab" value="<?= epl_h($return_tab) ?>">
           <button type="submit" class="btn-text-danger"
-                  data-confirm="¿Borrar la reprogramación de <?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?>? El partido vuelve a Pendiente con la fecha original."
-                  data-confirm-ok="Sí, borrar">
-            🗑 Borrar reprogramación
+                  data-confirm="¿Eliminar esta gestión de <?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?>? Solo se borrará la solicitud; el partido mantendrá su estado, fecha y recinto actuales."
+                  data-confirm-ok="Sí, eliminar gestión">
+            🗑 Eliminar gestión
           </button>
         </form>
+        <?php endif; ?>
       </div>
     </div>
     <?php
@@ -779,6 +779,8 @@ require_once '../includes/header.php';
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;gap:.35rem;align-items:stretch">
+                <a href="partido_detalle.php?id=<?= $s['partido_id'] ?>" class="btn-gestionar"
+                   style="width:100%;text-align:center">👁 Ver partido</a>
                 <?php if ($sol_sin_fecha): ?>
                   <form method="post" action="api_reprogramacion.php" style="margin:0"
                         data-confirm="¿Aprobar esta reprogramación sin fecha? El partido quedará 'A coordinar' y se liberará la cancha original."
@@ -791,8 +793,6 @@ require_once '../includes/header.php';
                       Aprobar (Lib.)
                     </button>
                   </form>
-                <?php else: ?>
-                  <a href="partido_detalle.php?id=<?= $s['partido_id'] ?>" class="btn-gestionar">Revisar</a>
                 <?php endif; ?>
                 <form method="post" style="margin:0"
                       data-confirm="¿Rechazar la solicitud de <?= epl_h($s['local_nombre']) ?> vs <?= epl_h($s['visitante_nombre']) ?>?"
@@ -804,6 +804,19 @@ require_once '../includes/header.php';
                           data-confirm="¿Rechazar la solicitud de <?= epl_h($s['local_nombre']) ?> vs <?= epl_h($s['visitante_nombre']) ?>?"
                           data-confirm-ok="Sí, rechazar">
                     🗑 Rechazar
+                  </button>
+                </form>
+                <form method="post" style="margin:0"
+                      data-confirm="¿Eliminar esta gestión de <?= epl_h($s['local_nombre']) ?> vs <?= epl_h($s['visitante_nombre']) ?>? Solo se borrará la solicitud; el partido mantendrá su estado, fecha y recinto actuales."
+                      data-confirm-ok="Sí, eliminar gestión">
+                  <input type="hidden" name="action" value="eliminar_solicitud_sin_cambios">
+                  <input type="hidden" name="solicitud_id" value="<?= $s['solicitud_id'] ?>">
+                  <input type="hidden" name="return_tab" value="solicitudes">
+                  <button type="submit" class="btn-gestionar"
+                          style="width:100%;background:#fff;color:#991b1b;border:1px solid #fca5a5;font-size:.65rem;padding:.35rem .6rem"
+                          data-confirm="¿Eliminar esta gestión de <?= epl_h($s['local_nombre']) ?> vs <?= epl_h($s['visitante_nombre']) ?>? Solo se borrará la solicitud; el partido mantendrá su estado, fecha y recinto actuales."
+                          data-confirm-ok="Sí, eliminar gestión">
+                    🗑 Eliminar gestión
                   </button>
                 </form>
               </div>
@@ -869,7 +882,19 @@ require_once '../includes/header.php';
                   <span class="extra-item" style="color:#94a3b8">solicitado <?= $fecha_solicitud ?></span>
                 </div>
               </div>
-              <a href="partido_detalle.php?id=<?= $s['partido_id'] ?>" class="btn-gestionar" style="background:#94a3b8;color:#fff">Ver</a>
+              <div class="partido-actions">
+                <a href="partido_detalle.php?id=<?= $s['partido_id'] ?>" class="btn-gestionar" style="background:#94a3b8;color:#fff">👁 Ver partido</a>
+                <form method="post" style="margin:0"
+                      data-confirm="¿Eliminar esta gestión de <?= epl_h($s['local_nombre']) ?> vs <?= epl_h($s['visitante_nombre']) ?>? Solo se borrará la solicitud; el partido mantendrá su estado, fecha y recinto actuales."
+                      data-confirm-ok="Sí, eliminar gestión">
+                  <input type="hidden" name="action" value="eliminar_solicitud_sin_cambios">
+                  <input type="hidden" name="solicitud_id" value="<?= $s['solicitud_id'] ?>">
+                  <input type="hidden" name="return_tab" value="solicitudes">
+                  <button type="submit" class="btn-text-danger"
+                          data-confirm="¿Eliminar esta gestión de <?= epl_h($s['local_nombre']) ?> vs <?= epl_h($s['visitante_nombre']) ?>? Solo se borrará la solicitud; el partido mantendrá su estado, fecha y recinto actuales."
+                          data-confirm-ok="Sí, eliminar gestión">🗑 Eliminar gestión</button>
+                </form>
+              </div>
             </div>
             <?php endforeach; ?>
           </div>
@@ -911,7 +936,7 @@ require_once '../includes/header.php';
     <section class="sec-card" style="border-left:5px solid #8b5cf6;margin-bottom:1.25rem;background:linear-gradient(135deg,#faf5ff,#f5f3ff)">
       <div class="sec-head" style="background:transparent">
         <div>
-          <h2 class="sec-title" style="color:#6d28d9">🆕 Nuevas — últimas 48 hs</h2>
+          <h2 class="sec-title" style="color:#6d28d9">🆕 Nuevas — últimas 48 horas</h2>
           <p class="sec-sub">Recién llegadas, todavía no gestionadas</p>
         </div>
         <div class="sec-count" style="background:#ede9fe;color:#6d28d9"><?= $n_recientes ?></div>
@@ -928,7 +953,7 @@ require_once '../includes/header.php';
           $_resuelto_nueva = !$necesita_gestion($p);
           $_tag_html_nueva = $hace ? '<span class="partido-tag" style="background:#8b5cf6;color:#fff">🆕 '.$hace.'</span>' : '';
         ?>
-        <?= repro_fila_partido($p, $sf, $vc, $_resuelto_nueva, $_tag_html_nueva) ?>
+        <?= repro_fila_partido($p, $sf, $vc, $_resuelto_nueva, $_tag_html_nueva, 'informe') ?>
         <?php endforeach; ?>
       </div>
     </section>
@@ -979,13 +1004,13 @@ require_once '../includes/header.php';
       <div class="sec-head">
         <div>
           <h2 class="sec-title">⚠ Sin fecha asignada</h2>
-          <p class="sec-sub">Resolvé estos primero — los equipos están esperando que se agende</p>
+          <p class="sec-sub">Resuelve estos primero — los equipos están esperando que se agende</p>
         </div>
         <div class="sec-count danger"><?= count($sin_fecha) ?></div>
       </div>
       <div class="sec-body">
         <?php foreach ($sin_fecha as $p): ?>
-          <?= repro_fila_partido($p, true, false, !$necesita_gestion($p)) ?>
+          <?= repro_fila_partido($p, true, false, !$necesita_gestion($p), '', 'informe') ?>
         <?php endforeach; ?>
       </div>
     </section>
@@ -1003,7 +1028,7 @@ require_once '../includes/header.php';
       </div>
       <div class="sec-body">
         <?php foreach ($vencidos as $p): ?>
-          <?= repro_fila_partido($p, false, true, !$necesita_gestion($p)) ?>
+          <?= repro_fila_partido($p, false, true, !$necesita_gestion($p), '', 'informe') ?>
         <?php endforeach; ?>
       </div>
     </section>
@@ -1044,7 +1069,7 @@ require_once '../includes/header.php';
             <span class="dia-count"><?= count($ps) ?> <?= count($ps)===1?'partido':'partidos' ?></span>
           </div>
           <?php foreach ($ps as $p): ?>
-            <?= repro_fila_partido($p, false, false, !$necesita_gestion($p)) ?>
+            <?= repro_fila_partido($p, false, false, !$necesita_gestion($p), '', 'informe') ?>
           <?php endforeach; ?>
         </div>
         <?php endforeach; ?>

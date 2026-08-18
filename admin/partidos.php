@@ -286,7 +286,9 @@ $params_p = [];
 if ($liga_id) { $where_p .= " AND p.liga_id=?"; $params_p[] = $liga_id; }
 if ($f_fecha) { $where_p .= " AND p.nombre_fecha=?"; $params_p[] = $f_fecha; }
 if ($f_est)   {
-    if ($f_est === 'atrasados') {
+    if ($f_est === 'sin_fecha') {
+        $where_p .= " AND (p.fecha_programada IS NULL OR DATE(p.fecha_programada) = '2026-12-31')";
+    } elseif ($f_est === 'atrasados') {
         $where_p .= " AND p.estado NOT IN ('jugado', 'walkover', 'no_presentado') AND p.fecha_programada IS NOT NULL AND p.fecha_programada < ? AND DATE(p.fecha_programada) != '2026-12-31'";
         $params_p[] = date('Y-m-d H:i:s');
     } else {
@@ -528,6 +530,7 @@ require_once '../includes/header.php';
           <label class="pf-label">Estado</label>
           <select name="estado_p" class="form-control">
             <option value="">Todos</option>
+            <option value="sin_fecha"     <?= $f_est==='sin_fecha'?'selected':'' ?>>📅 Sin fecha</option>
             <option value="atrasados"     <?= $f_est==='atrasados'?'selected':'' ?>>⚠️ Atrasados (vencidos)</option>
             <option value="pendiente"     <?= $f_est==='pendiente'?'selected':'' ?>>Pendiente</option>
             <option value="jugado"        <?= $f_est==='jugado'?'selected':'' ?>>Jugado</option>
