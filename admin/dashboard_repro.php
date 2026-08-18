@@ -61,10 +61,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'rechazar_solicitud') {
         $sid = (int)($_POST['solicitud_id'] ?? 0);
         if ($sid) {
+            // Obtener el partido_id y solicitante_id de la solicitud
+            $sol_st = $db->prepare("SELECT partido_id, solicitante_id FROM solicitudes_reprogramacion WHERE id=?");
+            $sol_st->execute([$sid]);
+            $sol = $sol_st->fetch(PDO::FETCH_ASSOC);
+
             $db->prepare("UPDATE solicitudes_reprogramacion SET estado='rechazada' WHERE id=?")
                ->execute([$sid]);
+
+            if ($sol) {
+                $pid = (int)$sol['partido_id'];
+                // Restaurar partido a pendiente con su fecha/cancha original
+                $row = $db->prepare("SELECT fecha_original, recinto_original_id FROM partidos WHERE id=?");
+                $row->execute([$pid]);
+                $orig = $row->fetch(PDO::FETCH_ASSOC);
+
+                $sets = "estado='pendiente', fecha_original=NULL, recinto_original_id=NULL";
+                if ($orig && !empty($orig['fecha_original'])) {
+                    $sets .= ", fecha_programada=" . $db->quote($orig['fecha_original']);
+                }
+                if ($orig && !empty($orig['recinto_original_id'])) {
+                    $sets .= ", recinto_id=" . (int)$orig['recinto_original_id'];
+                }
+                $db->exec("UPDATE partidos SET $sets WHERE id=$pid");
+
+                // Notificar al solicitante que fue rechazada (para que esté al tanto)
+                if ($sol['solicitante_id']) {
+                    try {
+                        epl_notif_crear((int)$sol['solicitante_id'], 'reprogramacion',
+                            '❌ Reprogramación no aprobada',
+                            'Tu solicitud de reprogramación no fue aprobada. Coordina directamente con tu rival.',
+                            epl_url('reprogramar.php#mis-reprogramaciones'), true
+                        );
+                    } catch (Throwable $e) {}
+                }
+            }
+
             if (session_status() === PHP_SESSION_NONE) session_start();
-            $_SESSION['_epl_flash'] = ['tipo' => 'ok', 'msg' => 'Solicitud rechazada.'];
+            $_SESSION['_epl_flash'] = ['tipo' => 'ok', 'msg' => 'Solicitud rechazada. Partido vuelto a Pendiente con su horario original.'];
         }
         header('Location: dashboard_repro.php?tab=solicitudes'); exit;
     }
@@ -100,9 +134,10 @@ $partidos_open = $db->query("
     LEFT JOIN recintos rop ON rop.id = ro.superior_id
     LEFT JOIN solicitudes_reprogramacion sr ON sr.id = (
         SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
-        WHERE sr2.partido_id = p.id AND sr2.estado != 'rechazada'
+        WHERE sr2.partido_id = p.id
     )
     WHERE p.estado = 'reprogramado'
+      AND (sr.estado IS NULL OR sr.estado != 'rechazada')
     ORDER BY
         (p.fecha_programada IS NULL OR DATE(p.fecha_programada)='2026-12-31') ASC,
         p.fecha_programada ASC
@@ -156,8 +191,11 @@ $es_reciente = fn($p) => !empty($p['fecha_solicitud'])
 
 $recientes = array_values(array_filter($partidos_open, $es_reciente));
 
-// TODOS los partidos que necesitan gestión (sin filtro de 48h) — para la pestaña SOLICITUDES
-$pendientes_gestion = array_values(array_filter($partidos_open, $necesita_gestion));
+// Partidos que necesitan gestión operativa. Las solicitudes aún pendientes se
+// muestran en su tarjeta propia más abajo, así cada partido aparece una sola vez.
+$pendientes_gestion = array_values(array_filter($partidos_open, function($p) use ($necesita_gestion) {
+    return $necesita_gestion($p) && (($p['sol_estado'] ?? '') !== 'pendiente');
+}));
 // Ordenar: más urgentes (sin fecha) primero, luego por fecha de solicitud descendente
 usort($pendientes_gestion, function($a, $b) {
     $sa = !empty($a['fecha_solicitud']) ? strtotime($a['fecha_solicitud']) : 0;
@@ -212,6 +250,11 @@ $solicitudes_pendientes = $db->query("
     LEFT JOIN recintos r ON r.id = p.recinto_id
     LEFT JOIN recintos rs ON rs.id = r.superior_id
     WHERE sr.estado = 'pendiente'
+      AND sr.id = (
+          SELECT MAX(sr2.id)
+          FROM solicitudes_reprogramacion sr2
+          WHERE sr2.partido_id = sr.partido_id
+      )
       AND p.estado NOT IN ('jugado','walkover','no_presentado')
     ORDER BY sr.created_at DESC
 ")->fetchAll();
@@ -232,11 +275,40 @@ $solicitudes_procesadas = $db->query("
     JOIN equipos ev   ON ev.id = p.equipo_visitante_id
     JOIN jugadores j  ON j.id = sr.solicitante_id
     WHERE sr.estado IN ('aprobada','rechazada')
+      AND sr.id = (
+          SELECT MAX(sr2.id)
+          FROM solicitudes_reprogramacion sr2
+          WHERE sr2.partido_id = sr.partido_id
+      )
       AND sr.created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
     ORDER BY sr.created_at DESC
     LIMIT 20
 ")->fetchAll();
+
+// Si el partido sigue en el flujo activo, se representa por su estado actual
+// (pendiente de gestión o gestionado), no además como una solicitud histórica.
+$partidos_open_ids = array_fill_keys(
+    array_map('intval', array_column($partidos_open, 'id')),
+    true
+);
+$solicitudes_procesadas = array_values(array_filter(
+    $solicitudes_procesadas,
+    fn($s) => !isset($partidos_open_ids[(int)$s['partido_id']])
+));
 $n_procesadas = count($solicitudes_procesadas);
+
+// Los badges cuentan partidos únicos y no la suma de dos listas que pueden
+// representar distintas etapas del mismo flujo.
+$ids_pendientes = array_unique(array_merge(
+    array_map('intval', array_column($pendientes_gestion, 'id')),
+    array_map('intval', array_column($solicitudes_pendientes, 'partido_id'))
+));
+$ids_gestionados = array_unique(array_merge(
+    array_map('intval', array_column($gestionados, 'id')),
+    array_map('intval', array_column($solicitudes_procesadas, 'partido_id'))
+));
+$n_pendientes_total = count($ids_pendientes);
+$n_gestionados_total = count($ids_gestionados);
 
 // Top equipos con más reprogramaciones (para llamar la atención a los que cuelgan más)
 $por_equipo = [];
@@ -497,8 +569,8 @@ require_once '../includes/header.php';
 
     <!-- TABS: Solicitudes | Informe -->
     <?php
-      // Sumar badge de Solicitudes: solicitudes pendientes + partidos pendientes de gestión
-      $badge_solicitudes = $n_solicitudes + $n_pendientes_gestion;
+      // El badge representa partidos únicos que todavía requieren una acción.
+      $badge_solicitudes = $n_pendientes_total;
       // Abrir en Solicitudes si hay algo pendiente; si no, Informe
       $tab_inicial = isset($_GET['tab']) ? $_GET['tab']
           : ($badge_solicitudes > 0 ? 'solicitudes' : ($n_recientes > 0 ? 'informe' : 'informe'));
@@ -531,38 +603,27 @@ require_once '../includes/header.php';
           <button class="estado-btn" data-solfiltro="todos" onclick="filtrarSolicitudes('todos', this)">Todos</button>
           <button class="estado-btn active" data-solfiltro="pendientes" onclick="filtrarSolicitudes('pendientes', this)">
             ⏳ Pendientes
-            <?php if (($n_pendientes_gestion + $n_solicitudes) > 0): ?><span class="tab-badge" style="background:#f59e0b"><?= $n_pendientes_gestion + $n_solicitudes ?></span><?php endif; ?>
+            <?php if ($n_pendientes_total > 0): ?><span class="tab-badge" style="background:#f59e0b"><?= $n_pendientes_total ?></span><?php endif; ?>
           </button>
           <button class="estado-btn" data-solfiltro="gestionados" onclick="filtrarSolicitudes('gestionados', this)">
             ✅ Gestionados
-            <?php if ($n_gestionados > 0): ?><span class="tab-badge" style="background:#10b981"><?= $n_gestionados ?></span><?php endif; ?>
+            <?php if ($n_gestionados_total > 0): ?><span class="tab-badge" style="background:#10b981"><?= $n_gestionados_total ?></span><?php endif; ?>
           </button>
         </div>
       </div>
 
       <!-- ═════════════ GRUPO: PENDIENTES ═════════════ -->
       <div data-sol-grupo="pendientes">
-      <?php if (empty($solicitudes_pendientes) && empty($solicitudes_procesadas)): ?>
+      <?php if (empty($solicitudes_pendientes) && empty($pendientes_gestion)): ?>
         <section class="sec-card">
           <div style="padding:3rem;text-align:center;color:var(--gray-400)">
             <div style="font-size:3rem">✅</div>
-            <p style="font-weight:700;margin-top:.5rem">No hay solicitudes</p>
-            <p style="font-size:.85rem">Cuando un jugador solicite reprogramar un partido, aparecerá acá.</p>
+            <p style="font-weight:700;margin-top:.5rem">No hay reprogramaciones pendientes</p>
+            <p style="font-size:.85rem">Todo lo que requería una acción ya fue gestionado.</p>
           </div>
         </section>
       <?php else: ?>
 
-      <?php if (empty($solicitudes_pendientes)): ?>
-        <section class="sec-card" style="border-left:5px solid #10b981">
-          <div style="padding:1.25rem;text-align:center;color:#15803d">
-            <div style="font-size:1.75rem">✅</div>
-            <p style="font-weight:700;margin-top:.3rem;font-size:.92rem">No hay solicitudes nuevas del jugador</p>
-            <?php if ($n_pendientes_gestion === 0): ?>
-              <p style="font-size:.8rem;color:#64748b">Más abajo podés ver las últimas procesadas.</p>
-            <?php endif; ?>
-          </div>
-        </section>
-      <?php endif; ?>
 
       <!-- ═════════════════════ PENDIENTES DE GESTIÓN ═════════════════════ -->
       <?php if ($n_pendientes_gestion > 0): ?>
@@ -570,7 +631,7 @@ require_once '../includes/header.php';
         <div class="sec-head">
           <div>
             <h2 class="sec-title" style="color:#92400e">⏳ Partidos en gestión</h2>
-            <p class="sec-sub">Reprogramados que todavía esperan acción (aprobar, dar de baja la reserva original o asignar cancha nueva)</p>
+            <p class="sec-sub">Reprogramados que todavía esperan dar de baja la reserva original o asignar una cancha nueva</p>
           </div>
           <div class="sec-count" style="background:#fef3c7;color:#92400e"><?= $n_pendientes_gestion ?></div>
         </div>
@@ -580,9 +641,7 @@ require_once '../includes/header.php';
             $_tag = '';
             $_tag_bg = '#fef3c7';
             $_tag_color = '#92400e';
-            if (($p['sol_estado'] ?? '') === 'pendiente') {
-                $_tag = '📨 Falta aprobar';
-            } elseif (!empty($p['baja_solicitada_at']) && empty($p['baja_confirmada_at'])) {
+            if (!empty($p['baja_solicitada_at']) && empty($p['baja_confirmada_at'])) {
                 $_tag = '⏳ Esperando confirmación del club';
                 $_tag_bg = '#dbeafe'; $_tag_color = '#1e40af';
             } elseif (!empty($p['fecha_original']) && empty($p['baja_confirmada_at'])) {
@@ -754,12 +813,18 @@ require_once '../includes/header.php';
         </section>
       <?php endif; ?>
 
-      <!-- Solicitudes ya procesadas (aprobadas / rechazadas) -->
+      <?php endif; ?>
+      </div><!-- /grupo pendientes -->
+
+      <!-- ═════════════ GRUPO: GESTIONADOS ═════════════ -->
+      <div data-sol-grupo="gestionados" style="display:none">
+
+      <!-- Solicitudes ya gestionadas (aprobadas / rechazadas) -->
       <?php if (!empty($solicitudes_procesadas)): ?>
         <section class="sec-card" style="border-left:5px solid #94a3b8">
           <div class="sec-head">
             <div>
-              <h2 class="sec-title">🗂️ Procesadas recientemente</h2>
+              <h2 class="sec-title">🗂️ Solicitudes gestionadas recientemente</h2>
               <p class="sec-sub">Últimos 14 días — aprobadas y rechazadas</p>
             </div>
             <div class="sec-count" style="background:#f1f5f9;color:#64748b"><?= $n_procesadas ?></div>
@@ -811,25 +876,20 @@ require_once '../includes/header.php';
         </section>
       <?php endif; ?>
 
-      <?php endif; ?>
-      </div><!-- /grupo pendientes -->
-
-      <!-- ═════════════ GRUPO: GESTIONADOS ═════════════ -->
-      <div data-sol-grupo="gestionados" style="display:none">
-        <?php if (empty($gestionados)): ?>
+        <?php if (empty($gestionados) && empty($solicitudes_procesadas)): ?>
           <section class="sec-card">
             <div style="padding:3rem;text-align:center;color:var(--gray-400)">
               <div style="font-size:3rem">📭</div>
               <p style="font-weight:700;margin-top:.5rem">Todavía no hay reprogramados gestionados</p>
-              <p style="font-size:.85rem">Cuando resuelvas un partido (fecha + cancha asignada), aparecerá acá.</p>
+              <p style="font-size:.85rem">Cuando resuelvas un partido (fecha + cancha asignada), aparecerá aquí.</p>
             </div>
           </section>
-        <?php else: ?>
+        <?php elseif (!empty($gestionados)): ?>
           <section class="sec-card" style="border-left:5px solid #10b981">
             <div class="sec-head">
               <div>
                 <h2 class="sec-title" style="color:#15803d">✅ Reprogramados gestionados</h2>
-                <p class="sec-sub">Ya tienen todo resuelto (fecha y cancha). Quedan acá como referencia hasta que se jueguen.</p>
+                <p class="sec-sub">Ya tienen todo resuelto (fecha y cancha). Quedan aquí como referencia hasta que se jueguen.</p>
               </div>
               <div class="sec-count" style="background:#dcfce7;color:#15803d"><?= $n_gestionados ?></div>
             </div>
