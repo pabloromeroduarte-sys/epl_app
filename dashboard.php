@@ -25,12 +25,93 @@ if ($stats && $stats['pj'] > 0) {
     $rendimiento = round(($stats['pg'] / $stats['pj']) * 100);
 }
 
-$proximos  = array_filter($partidos, fn($p) => $p['estado'] === 'pendiente' || $p['estado'] === 'reprogramado');
-$jugados   = array_filter($partidos, fn($p) => $p['estado'] === 'jugado');
+$proximos  = array_filter($partidos, fn($p) => (int)$p['liga_id'] === (int)($liga['id'] ?? 0) && ($p['estado'] === 'pendiente' || $p['estado'] === 'reprogramado'));
+$jugados   = array_filter($partidos, fn($p) => (int)$p['liga_id'] === (int)($liga['id'] ?? 0) && $p['estado'] === 'jugado');
 // Ordenar próximos de más cercano a más lejano
 usort($proximos, fn($a, $b) => strtotime($a['fecha_programada'] ?? '9999-12-31') <=> strtotime($b['fecha_programada'] ?? '9999-12-31'));
-$proximos  = array_values($proximos); // todos, el JS limita a 3 visibles
+$proximos  = array_values($proximos);
 $recientes = array_slice(array_values($jugados), 0, 5);
+
+// Pestañas del dashboard: calendario pendiente y reprogramaciones activas.
+$fecha_placeholder = date('Y') . '-12-31';
+$fecha_dashboard_valida = static function ($fecha) use ($fecha_placeholder): bool {
+    $fecha = trim((string)$fecha);
+    return $fecha !== '' && substr($fecha, 0, 10) !== $fecha_placeholder;
+};
+$fecha_dashboard = static function ($fecha) use ($fecha_dashboard_valida): ?array {
+    if (!$fecha_dashboard_valida($fecha)) {
+        return null;
+    }
+    $ts = strtotime((string)$fecha);
+    if (!$ts) {
+        return null;
+    }
+    $dias = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+    $meses = [1 => 'ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEPT', 'OCT', 'NOV', 'DIC'];
+    return [
+        'dia_semana' => $dias[(int)date('w', $ts)],
+        'dia_mes'    => date('d', $ts),
+        'mes'        => $meses[(int)date('n', $ts)],
+        'hora'       => date('H:i', $ts),
+        'completa'   => date('d/m/Y H:i', $ts),
+        'timestamp'  => $ts,
+    ];
+};
+
+$reprogramados_dashboard = [];
+if ($equipo && $liga) {
+    $stReproDash = $db->prepare("
+        SELECT p.*,
+               el.nombre AS local_nombre,
+               ev.nombre AS visitante_nombre,
+               r.nombre AS recinto_nombre,
+               rs.nombre AS recinto_superior_nombre,
+               ra.nombre AS recinto_abuelo_nombre,
+               sr.id AS solicitud_id,
+               sr.solicitante_id,
+               sr.estado AS solicitud_estado,
+               sr.fecha_propuesta,
+               sr.rival_no_responde,
+               sr.created_at AS solicitud_creada,
+               js.nombre AS solicitante_nombre,
+               js.apellido AS solicitante_apellido
+        FROM partidos p
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        LEFT JOIN recintos r ON r.id = p.recinto_id
+        LEFT JOIN recintos rs ON rs.id = r.superior_id
+        LEFT JOIN recintos ra ON ra.id = rs.superior_id
+        LEFT JOIN solicitudes_reprogramacion sr ON sr.id = (
+            SELECT MAX(sr2.id)
+            FROM solicitudes_reprogramacion sr2
+            WHERE sr2.partido_id = p.id
+        )
+        LEFT JOIN jugadores js ON js.id = sr.solicitante_id
+        WHERE p.liga_id = ?
+          AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
+          AND p.estado IN ('pendiente', 'reprogramado')
+          AND (p.estado = 'reprogramado' OR sr.estado IN ('pendiente', 'aprobada'))
+        ORDER BY
+          CASE
+            WHEN p.fecha_programada IS NULL OR DATE(p.fecha_programada) = ? THEN 0
+            ELSE 1
+          END,
+          p.fecha_programada ASC,
+          p.id ASC
+    ");
+    $stReproDash->execute([(int)$liga['id'], (int)$equipo['id'], (int)$equipo['id'], $fecha_placeholder]);
+    $reprogramados_dashboard = $stReproDash->fetchAll(PDO::FETCH_ASSOC);
+}
+
+$ids_reprogramados_dashboard = array_fill_keys(array_map(static fn(array $p): int => (int)$p['id'], $reprogramados_dashboard), true);
+$pendientes_dashboard = array_values(array_filter($proximos, static fn(array $p): bool => !isset($ids_reprogramados_dashboard[(int)$p['id']])));
+usort($pendientes_dashboard, static function (array $a, array $b) use ($fecha_dashboard): int {
+    $fa = $fecha_dashboard($a['fecha_programada'] ?? null);
+    $fb = $fecha_dashboard($b['fecha_programada'] ?? null);
+    $ta = $fa['timestamp'] ?? PHP_INT_MAX;
+    $tb = $fb['timestamp'] ?? PHP_INT_MAX;
+    return $ta <=> $tb ?: ((int)$a['id'] <=> (int)$b['id']);
+});
 
 // ── Partidos como Galleta (suplente) ────────────────────────────────────────
 $partidos_galleta = [];
@@ -550,6 +631,206 @@ if ($equipo) {
     </div>
     <?php endif; ?>
 
+    <!-- Mis partidos: pendientes al día y reprogramados -->
+    <?php if ($equipo): ?>
+    <section class="dash-matches mb-4" id="mis-partidos-dashboard">
+      <div class="dash-matches-head">
+        <div>
+          <span>Mi calendario</span>
+          <h2>Mis partidos</h2>
+          <p>Consulta las fechas pendientes y todas tus reprogramaciones activas.</p>
+        </div>
+        <div class="dash-matches-total">
+          <strong><?= count($pendientes_dashboard) + count($reprogramados_dashboard) ?></strong>
+          <span>por jugar</span>
+        </div>
+      </div>
+
+      <div class="dash-matches-tabs" role="tablist" aria-label="Partidos del jugador">
+        <button type="button" class="dash-match-tab active" id="tab-pendientes" role="tab" aria-selected="true" aria-controls="panel-pendientes" data-match-tab="pendientes">
+          <span class="dash-match-tab-icon">📅</span>
+          <span><strong>Pendientes</strong><small>Fechas al día</small></span>
+          <b><?= count($pendientes_dashboard) ?></b>
+        </button>
+        <button type="button" class="dash-match-tab" id="tab-reprogramados" role="tab" aria-selected="false" aria-controls="panel-reprogramados" data-match-tab="reprogramados">
+          <span class="dash-match-tab-icon">🔄</span>
+          <span><strong>Reprogramados</strong><small>Pedidos por ti o el rival</small></span>
+          <b><?= count($reprogramados_dashboard) ?></b>
+        </button>
+      </div>
+
+      <div class="dash-match-panel active" id="panel-pendientes" role="tabpanel" aria-labelledby="tab-pendientes" data-match-panel="pendientes">
+        <?php if (!$pendientes_dashboard): ?>
+          <div class="dash-match-empty"><span>✓</span><div><strong>Sin partidos pendientes</strong><small>Tus partidos activos están en Reprogramados o ya tienen resultado.</small></div></div>
+        <?php else: ?>
+          <div class="dash-match-list">
+          <?php foreach ($pendientes_dashboard as $p):
+            $es_local = (int)$p['equipo_local_id'] === (int)$equipo['id'];
+            $rival = $es_local ? $p['visitante_nombre'] : $p['local_nombre'];
+            $fecha = $fecha_dashboard($p['fecha_programada'] ?? null);
+            $vencido = $fecha && $fecha['timestamp'] < time();
+            $sede_partes = array_values(array_unique(array_filter([
+                $p['recinto_abuelo_nombre'] ?? '',
+                $p['recinto_superior_nombre'] ?? '',
+                $p['recinto_nombre'] ?? '',
+            ])));
+            $sede = implode(' · ', $sede_partes);
+            if (!empty($p['cancha']) && stripos($sede, 'cancha') === false) {
+                $sede .= ($sede ? ' · ' : '') . 'Cancha ' . $p['cancha'];
+            }
+          ?>
+            <article class="dash-match-row<?= $vencido ? ' dash-match-row--late' : '' ?>">
+              <div class="dash-match-date<?= !$fecha ? ' dash-match-date--empty' : '' ?>">
+                <?php if ($fecha): ?>
+                  <span><?= $fecha['dia_semana'] ?></span>
+                  <strong><?= $fecha['dia_mes'] ?> <?= $fecha['mes'] ?></strong>
+                  <small><?= $fecha['hora'] ?> hrs</small>
+                <?php else: ?>
+                  <span>PENDIENTE</span>
+                  <strong>SIN FECHA</strong>
+                  <small>Por coordinar</small>
+                <?php endif; ?>
+              </div>
+              <div class="dash-match-info">
+                <div class="dash-match-kicker"><span>J<?= (int)($p['jornada'] ?? 0) ?: '—' ?></span><?= $vencido ? '<b>Falta resultado</b>' : '<b>Próximo partido</b>' ?></div>
+                <h3>Tu pareja <em>vs</em> <?= epl_h($rival) ?></h3>
+                <p><?= $sede ? '📍 ' . epl_h($sede) : '📍 Cancha por confirmar' ?></p>
+              </div>
+              <div class="dash-match-action">
+                <?php if ($vencido): ?>
+                  <a href="<?= epl_url('ingresar_resultado.php?partido_id=' . (int)$p['id']) ?>">Ingresar resultado</a>
+                <?php else: ?>
+                  <a href="<?= epl_url('reprogramar.php?partido_id=' . (int)$p['id']) ?>" class="secondary">Reprogramar</a>
+                <?php endif; ?>
+              </div>
+            </article>
+          <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </div>
+
+      <div class="dash-match-panel" id="panel-reprogramados" role="tabpanel" aria-labelledby="tab-reprogramados" data-match-panel="reprogramados" hidden>
+        <?php if (!$reprogramados_dashboard): ?>
+          <div class="dash-match-empty"><span>✓</span><div><strong>Sin reprogramaciones activas</strong><small>No tienes cambios de fecha pendientes ni partidos reprogramados.</small></div></div>
+        <?php else: ?>
+          <div class="dash-match-list">
+          <?php foreach ($reprogramados_dashboard as $p):
+            $es_local = (int)$p['equipo_local_id'] === (int)$equipo['id'];
+            $rival = $es_local ? $p['visitante_nombre'] : $p['local_nombre'];
+            $solicitante_id = (int)($p['solicitante_id'] ?? 0);
+            $es_mi_solicitud = $solicitante_id > 0 && $solicitante_id === (int)$jugador['id'];
+            $es_del_equipo = $solicitante_id > 0 && in_array($solicitante_id, [(int)$equipo['jugador1_id'], (int)$equipo['jugador2_id']], true);
+            if ($es_mi_solicitud) {
+                $origen = 'Lo solicitaste tú';
+                $origen_clase = 'own';
+            } elseif ($es_del_equipo) {
+                $origen = 'Lo solicitó tu pareja';
+                $origen_clase = 'own';
+            } elseif ($solicitante_id > 0) {
+                $origen = 'Lo solicitó el rival';
+                $origen_clase = 'rival';
+            } else {
+                $origen = 'Reprogramación activa';
+                $origen_clase = 'neutral';
+            }
+            $solicitante_nombre = trim(($p['solicitante_nombre'] ?? '') . ' ' . ($p['solicitante_apellido'] ?? ''));
+            $fecha_vigente = $fecha_dashboard($p['fecha_programada'] ?? null);
+            $fecha_propuesta = $fecha_dashboard($p['fecha_propuesta'] ?? null);
+            $fecha_original = $fecha_dashboard($p['fecha_original'] ?? null);
+            $solicitud_pendiente = ($p['solicitud_estado'] ?? '') === 'pendiente';
+            if ($solicitud_pendiente && $fecha_propuesta) {
+                $fecha_principal = $fecha_propuesta;
+                $fecha_principal_label = 'Fecha propuesta';
+            } elseif ($fecha_vigente) {
+                $fecha_principal = $fecha_vigente;
+                $fecha_principal_label = 'Fecha reprogramada';
+            } else {
+                $fecha_principal = null;
+                $fecha_principal_label = 'Nueva fecha pendiente';
+            }
+            $estado_repro = $solicitud_pendiente ? 'Esperando aprobación' : (($p['estado'] ?? '') === 'reprogramado' ? 'Reprogramado' : 'Aprobado');
+            $destino_repro = $es_del_equipo ? 'reprogramar.php#mis-reprogramaciones' : 'reprogramar.php#otros-reprogramados';
+          ?>
+            <article class="dash-repro-row dash-repro-row--<?= $origen_clase ?>">
+              <div class="dash-repro-origin">
+                <span class="dash-repro-origin-icon"><?= $origen_clase === 'rival' ? '↙' : ($origen_clase === 'own' ? '↗' : '↔') ?></span>
+                <div><strong><?= epl_h($origen) ?></strong><?php if ($solicitante_nombre): ?><small><?= epl_h($solicitante_nombre) ?></small><?php endif; ?></div>
+              </div>
+              <div class="dash-repro-main">
+                <div class="dash-match-kicker"><span>J<?= (int)($p['jornada'] ?? 0) ?: '—' ?></span><b><?= epl_h($estado_repro) ?></b></div>
+                <h3>Tu pareja <em>vs</em> <?= epl_h($rival) ?></h3>
+                <div class="dash-repro-date<?= !$fecha_principal ? ' dash-repro-date--empty' : '' ?>">
+                  <span><?= epl_h($fecha_principal_label) ?></span>
+                  <?php if ($fecha_principal): ?>
+                    <strong><?= $fecha_principal['dia_semana'] ?> <?= $fecha_principal['dia_mes'] ?> <?= $fecha_principal['mes'] ?> · <?= $fecha_principal['hora'] ?> hrs</strong>
+                  <?php else: ?>
+                    <strong>SIN FECHA ACORDADA</strong>
+                  <?php endif; ?>
+                </div>
+                <?php if ($fecha_original): ?>
+                  <p>Fecha original: <?= $fecha_original['completa'] ?> hrs</p>
+                <?php elseif ($solicitud_pendiente && $fecha_vigente && $fecha_vigente !== $fecha_principal): ?>
+                  <p>Fecha actual: <?= $fecha_vigente['completa'] ?> hrs</p>
+                <?php endif; ?>
+              </div>
+              <div class="dash-match-action"><a href="<?= epl_url($destino_repro) ?>" class="secondary">Ver reprogramación</a></div>
+            </article>
+          <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </div>
+    </section>
+
+    <style>
+    .dash-matches{overflow:hidden;border:1px solid var(--gray-100);border-radius:20px;background:#fff;box-shadow:0 6px 26px rgba(28,47,72,.08)}
+    .dash-matches-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.25rem 1.35rem;background:linear-gradient(135deg,#15263c,#243b59);color:#fff}
+    .dash-matches-head>div:first-child>span{display:block;color:var(--gold);font-size:.6rem;font-weight:900;letter-spacing:.18em;text-transform:uppercase}
+    .dash-matches-head h2{margin:.18rem 0 .2rem;color:#fff;font-family:var(--font-head);font-size:1.35rem;text-transform:uppercase}
+    .dash-matches-head p{margin:0;color:rgba(255,255,255,.68);font-size:.75rem}
+    .dash-matches-total{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:76px;height:65px;border:1px solid rgba(201,167,98,.4);border-radius:13px;background:rgba(0,0,0,.15)}
+    .dash-matches-total strong{color:var(--gold);font-family:var(--font-head);font-size:1.55rem;line-height:1}.dash-matches-total span{margin-top:.25rem;font-size:.52rem;font-weight:900;text-transform:uppercase}
+    .dash-matches-tabs{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;padding:.8rem;border-bottom:1px solid var(--gray-100);background:#f8fafc}
+    .dash-match-tab{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.65rem;padding:.72rem .85rem;border:1px solid var(--gray-200);border-radius:12px;color:var(--gray-500);background:#fff;text-align:left;cursor:pointer;transition:.18s ease}
+    .dash-match-tab:hover{border-color:var(--gold)}.dash-match-tab.active{border-color:var(--navy);color:#fff;background:var(--navy);box-shadow:0 5px 14px rgba(28,47,72,.17)}
+    .dash-match-tab-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--gray-100);font-size:.95rem}.dash-match-tab.active .dash-match-tab-icon{background:rgba(255,255,255,.1)}
+    .dash-match-tab>span:nth-child(2){display:flex;min-width:0;flex-direction:column}.dash-match-tab strong{font-size:.72rem;text-transform:uppercase}.dash-match-tab small{margin-top:.08rem;color:var(--gray-400);font-size:.6rem}.dash-match-tab.active small{color:rgba(255,255,255,.6)}
+    .dash-match-tab>b{display:grid;place-items:center;min-width:24px;height:24px;padding:0 .3rem;border-radius:999px;color:var(--navy);background:var(--gray-100);font-size:.65rem}.dash-match-tab.active>b{background:var(--gold)}
+    .dash-match-panel{padding:.85rem}.dash-match-panel:not(.active){display:none}.dash-match-list{display:flex;flex-direction:column;gap:.55rem}
+    .dash-match-row,.dash-repro-row{display:grid;grid-template-columns:120px minmax(0,1fr) auto;align-items:center;gap:1rem;padding:.85rem;border:1px solid var(--gray-100);border-radius:14px;background:#fff;transition:.18s ease}.dash-match-row:hover,.dash-repro-row:hover{border-color:rgba(201,167,98,.55);box-shadow:0 5px 16px rgba(28,47,72,.07)}
+    .dash-match-date{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:72px;border-radius:11px;color:#166534;background:#dcfce7}.dash-match-date>span{font-size:.54rem;font-weight:900;letter-spacing:.12em}.dash-match-date>strong{margin:.18rem 0;color:inherit;font-family:var(--font-head);font-size:1.05rem}.dash-match-date>small{font-size:.66rem;font-weight:800}.dash-match-date--empty{color:#92400e;background:#fef3c7}.dash-match-row--late .dash-match-date{color:#991b1b;background:#fee2e2}
+    .dash-match-info,.dash-repro-main{min-width:0}.dash-match-kicker{display:flex;align-items:center;gap:.35rem;font-size:.58rem;font-weight:900;text-transform:uppercase}.dash-match-kicker>span{padding:.12rem .35rem;border-radius:5px;color:#4338ca;background:#eef2ff}.dash-match-kicker>b{color:var(--gray-400)}.dash-match-row--late .dash-match-kicker>b{color:#dc2626}
+    .dash-match-info h3,.dash-repro-main h3{margin:.3rem 0;color:var(--navy);font-size:.9rem}.dash-match-info h3 em,.dash-repro-main h3 em{margin:0 .25rem;color:var(--gray-300);font-size:.65rem;font-style:normal;text-transform:uppercase}.dash-match-info p,.dash-repro-main p{margin:0;color:var(--gray-500);font-size:.68rem}
+    .dash-match-action a{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:.5rem .75rem;border-radius:9px;color:#fff;background:var(--navy);font-size:.62rem;font-weight:900;text-decoration:none;text-transform:uppercase;white-space:nowrap}.dash-match-action a:hover{color:var(--navy);background:var(--gold)}.dash-match-action a.secondary{color:var(--navy);border:1px solid var(--gray-200);background:#fff}.dash-match-action a.secondary:hover{border-color:var(--gold);background:#fffbeb}
+    .dash-repro-row{grid-template-columns:155px minmax(0,1fr) auto;border-left:4px solid #64748b}.dash-repro-row--own{border-left-color:#2563eb}.dash-repro-row--rival{border-left-color:#d97706}
+    .dash-repro-origin{display:flex;align-items:center;gap:.55rem}.dash-repro-origin-icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:10px;color:#475569;background:#f1f5f9;font-size:1rem;font-weight:900}.dash-repro-row--own .dash-repro-origin-icon{color:#1d4ed8;background:#dbeafe}.dash-repro-row--rival .dash-repro-origin-icon{color:#b45309;background:#fef3c7}.dash-repro-origin div{display:flex;min-width:0;flex-direction:column}.dash-repro-origin strong{color:var(--navy);font-size:.65rem;text-transform:uppercase}.dash-repro-origin small{margin-top:.12rem;overflow:hidden;color:var(--gray-400);font-size:.62rem;text-overflow:ellipsis;white-space:nowrap}
+    .dash-repro-date{display:inline-flex;align-items:center;gap:.45rem;margin:.15rem 0 .25rem;padding:.35rem .55rem;border-radius:8px;color:#1e3a8a;background:#eff6ff}.dash-repro-date>span{font-size:.55rem;font-weight:900;text-transform:uppercase}.dash-repro-date>strong{font-size:.7rem}.dash-repro-date--empty{color:#92400e;background:#fef3c7}
+    .dash-match-empty{display:flex;align-items:center;justify-content:center;gap:.75rem;padding:2rem;color:var(--gray-500);text-align:left}.dash-match-empty>span{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;color:#166534;background:#dcfce7;font-weight:900}.dash-match-empty>div{display:flex;flex-direction:column}.dash-match-empty strong{color:var(--navy);font-size:.8rem;text-transform:uppercase}.dash-match-empty small{margin-top:.15rem;font-size:.68rem}
+    @media(max-width:760px){.dash-match-row,.dash-repro-row{grid-template-columns:100px minmax(0,1fr)}.dash-match-action{grid-column:1/-1}.dash-match-action a{width:100%;box-sizing:border-box}.dash-repro-origin{align-self:start}}
+    @media(max-width:520px){.dash-matches-head{padding:1rem}.dash-matches-head p{font-size:.68rem}.dash-matches-tabs{gap:.4rem;padding:.55rem}.dash-match-tab{gap:.4rem;padding:.6rem}.dash-match-tab-icon{display:none}.dash-match-tab small{line-height:1.2}.dash-match-panel{padding:.6rem}.dash-match-row,.dash-repro-row{grid-template-columns:82px minmax(0,1fr);gap:.7rem;padding:.7rem}.dash-match-date{min-height:68px}.dash-match-date>strong{font-size:.88rem}.dash-repro-origin{grid-column:1/-1;padding-bottom:.5rem;border-bottom:1px solid var(--gray-100)}.dash-repro-main{grid-column:1/-1}.dash-repro-date{display:flex;align-items:flex-start;flex-direction:column;gap:.15rem}.dash-match-info h3,.dash-repro-main h3{font-size:.82rem}}
+    </style>
+
+    <script>
+    (function(){
+      const tabs = document.querySelectorAll('[data-match-tab]');
+      const panels = document.querySelectorAll('[data-match-panel]');
+      function openMatchTab(name){
+        tabs.forEach(function(tab){
+          const active = tab.dataset.matchTab === name;
+          tab.classList.toggle('active', active);
+          tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        panels.forEach(function(panel){
+          const active = panel.dataset.matchPanel === name;
+          panel.classList.toggle('active', active);
+          panel.hidden = !active;
+        });
+      }
+      tabs.forEach(function(tab){ tab.addEventListener('click', function(){ openMatchTab(tab.dataset.matchTab); }); });
+      if (new URLSearchParams(window.location.search).get('partidos') === 'reprogramados') openMatchTab('reprogramados');
+    })();
+    </script>
+    <?php endif; ?>
+
     <!-- Stats del equipo -->
     <?php if ($stats): ?>
     <div class="stats-grid">
@@ -576,66 +857,6 @@ if ($equipo) {
       <div class="stat-card">
         <div class="stat-value" style="color:<?= $rendimiento>=50?'var(--green)':'var(--red)' ?>"><?= $rendimiento ?>%</div>
         <div class="stat-label">Rendimiento</div>
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Próximos partidos -->
-    <?php if ($proximos): ?>
-    <div class="card mb-4">
-      <div class="card-head">
-        <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy)">Próximos partidos</h3>
-        <div style="display:flex;align-items:center;gap:.75rem">
-          <?php if (count($proximos) > 3): ?>
-            <button id="btnVerTodosProximos" onclick="verTodosProximos()" style="font-size:.78rem;color:var(--gold);font-weight:600;background:none;border:none;cursor:pointer;padding:0">Ver todos →</button>
-          <?php endif; ?>
-          <a href="ingresar_resultado.php" class="btn btn-primary btn-sm">+ Ingresar resultado</a>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="partidos-list">
-          <?php foreach ($proximos as $i => $p): ?>
-          <div class="partido-card-v2 proximo-item<?= $i >= 3 ? ' proximo-extra' : '' ?>" style="padding:1rem<?= $i >= 3 ? ';display:none' : '' ?>">
-            <div class="partido-col-info" style="border:none">
-              <span class="fecha-label" style="font-size:.6rem">Fecha <?= $p['jornada'] ?? '' ?></span>
-              <div class="partido-date" style="font-size:.7rem">🗓 <?= $p['fecha_programada'] ? date('d/m', strtotime($p['fecha_programada'])) : 'TBD' ?></div>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex:1">
-              <div style="text-align:right;flex:1"><span class="equipo-nombre-card" style="font-size:.75rem"><?= epl_h($p['local_nombre']) ?></span></div>
-              <div class="marcador-box" style="font-size:1rem;padding:.4rem .8rem;min-width:60px">VS</div>
-              <div style="text-align:left;flex:1"><span class="equipo-nombre-card" style="font-size:.75rem"><?= epl_h($p['visitante_nombre']) ?></span></div>
-            </div>
-            <div class="partido-col-meta" style="border:none;padding-left:0">
-              <?php
-                $r_nombre = $p['recinto_nombre'] ?? '';
-                $r_sup    = $p['recinto_superior_nombre'] ?? '';
-                $r_abu    = $p['recinto_abuelo_nombre'] ?? '';
-                $cancha   = $p['cancha'] ?? '';
-                if ($r_abu) {
-                    $badge_txt = $r_sup;
-                    $label_txt = $r_abu . ($r_nombre ? ' - ' . $r_nombre : '');
-                } elseif ($r_sup) {
-                    $badge_txt = $r_nombre;
-                    $label_txt = $r_sup;
-                } else {
-                    $badge_txt = $r_nombre ?: 'TBD';
-                    $label_txt = '';
-                }
-                if ($cancha && !str_contains(strtolower((string)$label_txt), 'cancha')) {
-                    $label_txt .= ($label_txt ? ' - ' : '') . 'Cancha ' . $cancha;
-                }
-              ?>
-              <span class="cancha-badge" style="margin-bottom:0;font-size:.6rem"><?= epl_h($badge_txt) ?></span>
-              <?php if ($label_txt): ?>
-                <div class="sede-label" style="font-size:.55rem;margin-top:.2rem"><?= epl_h($label_txt) ?></div>
-              <?php endif; ?>
-              <a href="<?= epl_url('ingresar_resultado.php?partido_id=' . $p['id']) ?>" class="btn btn-primary btn-sm" style="font-size:.62rem;padding:.2rem .5rem;margin-top:.45rem;border-radius:6px;font-weight:700">
-                + Resultado
-              </a>
-            </div>
-          </div>
-          <?php endforeach; ?>
-        </div>
       </div>
     </div>
     <?php endif; ?>
@@ -765,13 +986,6 @@ if ($equipo) {
     <?php endif; ?>
 
 </main>
-<script>
-function verTodosProximos() {
-  document.querySelectorAll('.proximo-extra').forEach(el => el.style.display = '');
-  var btn = document.getElementById('btnVerTodosProximos');
-  if (btn) btn.style.display = 'none';
-}
-</script>
 </div>
 
 <?php require_once 'includes/footer.php'; ?>
