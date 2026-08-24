@@ -120,7 +120,7 @@ if ($equipo && $liga) {
     // Una tarjeta por partido: toma únicamente la solicitud más reciente, sin importar
     // si la inició nuestro equipo o el rival. Esta consulta es solo de lectura.
     $stS = $db->prepare("
-        SELECT p.id AS partido_id, p.jornada, p.equipo_local_id, p.equipo_visitante_id,
+        SELECT p.id AS partido_id, p.jornada, p.nombre_fecha, p.equipo_local_id, p.equipo_visitante_id,
                p.fecha_programada, p.fecha_original, p.fecha_jugado,
                p.resultado_ingresado_at, p.estado AS partido_estado,
                p.sets_local, p.sets_visitante,
@@ -1042,6 +1042,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
               && !$fechaCambio
               && $esSolicitudEquipo;
           $partidoStr = $repro['local_nombre'] . ' vs ' . $repro['visitante_nombre'];
+          $jornadaWhatsapp = trim((string)($repro['nombre_fecha'] ?? ''));
+          if ($jornadaWhatsapp === '') {
+              $jornadaWhatsapp = !empty($repro['jornada'])
+                  ? 'Jornada ' . (int)$repro['jornada']
+                  : 'Sin jornada registrada';
+          }
+
+          $whatsappOrganizacionUrl = null;
+          if (!$partidoJugado && $estadoSolicitud === 'pendiente') {
+              $mensajeWhatsapp = implode("\n", [
+                  'Hola Elite Padel League, hice esta reprogramación:',
+                  '',
+                  'Partido: ' . $partidoStr,
+                  'Liga: ' . (string)$liga['nombre'],
+                  'Jornada: ' . $jornadaWhatsapp,
+                  'Fecha original: ' . ($fechaOriginal ?? 'Sin fecha registrada'),
+                  'Fecha propuesta: ' . ($fechaCambio ?? 'Sin fecha'),
+                  'Solicitud: ' . $origenLabel,
+                  '',
+                  'Esta reprogramación sigue pendiente. ¿Me pueden ayudar, por favor?',
+              ]);
+              $whatsappOrganizacionUrl = 'https://wa.me/56988182431?text=' . rawurlencode($mensajeWhatsapp);
+          }
         ?>
         <article class="rp-repro-card rp-repro-card--<?= $origenClase ?><?= $partidoJugado ? ' rp-repro-card--played' : '' ?>">
           <header class="rp-repro-card-head">
@@ -1093,13 +1116,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
                 <span><?= epl_h(ucfirst(str_replace('_', ' ', $repro['partido_estado']))) ?></span>
               <?php endif; ?>
             </div>
-            <?php if ($puedeAsignarFecha): ?>
-              <button type="button" class="btn-asignar-fecha"
-                      data-partido-id="<?= (int)$repro['partido_id'] ?>"
-                      data-partido-str="<?= epl_h($partidoStr) ?>"
-                      onclick="abrirModalAsignar(this)">
-                📅 Asignar fecha
-              </button>
+            <?php if ($whatsappOrganizacionUrl || $puedeAsignarFecha): ?>
+              <div class="rp-repro-card-actions">
+                <?php if ($whatsappOrganizacionUrl): ?>
+                  <a class="rp-repro-contact-btn"
+                     href="<?= epl_h($whatsappOrganizacionUrl) ?>"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     aria-label="Contactar a Elite Padel League por WhatsApp por el partido <?= epl_h($partidoStr) ?>">
+                    <?= $WA_SVG ?> Contactar EPL
+                  </a>
+                <?php endif; ?>
+                <?php if ($puedeAsignarFecha): ?>
+                  <button type="button" class="btn-asignar-fecha"
+                          data-partido-id="<?= (int)$repro['partido_id'] ?>"
+                          data-partido-str="<?= epl_h($partidoStr) ?>"
+                          onclick="abrirModalAsignar(this)">
+                    📅 Asignar fecha
+                  </button>
+                <?php endif; ?>
+              </div>
             <?php endif; ?>
           </footer>
         </article>

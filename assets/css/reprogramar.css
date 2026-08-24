@@ -518,6 +518,46 @@
   font-weight: 800;
 }
 
+.rp-repro-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .5rem;
+}
+
+.rp-repro-contact-btn {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  border: 1px solid #15803d;
+  border-radius: 10px;
+  padding: .52rem .85rem;
+  background: linear-gradient(135deg, #22a447, #15803d);
+  box-shadow: 0 3px 10px rgba(21, 128, 61, .22);
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .035em;
+  line-height: 1;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.rp-repro-contact-btn:hover {
+  background: linear-gradient(135deg, #15803d, #166534);
+  box-shadow: 0 5px 14px rgba(21, 128, 61, .3);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.rp-repro-contact-btn:focus-visible {
+  outline: 3px solid rgba(34, 164, 71, .25);
+  outline-offset: 2px;
+}
+
 .rp-repro-empty {
   border: 1px dashed #cbd5e1;
   border-radius: 18px;
@@ -596,6 +636,11 @@
   }
 
   .rp-repro-card-footer .btn-asignar-fecha {
+    width: 100%;
+  }
+
+  .rp-repro-card-actions,
+  .rp-repro-contact-btn {
     width: 100%;
   }
 }
