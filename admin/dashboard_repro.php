@@ -833,6 +833,8 @@ require_once '../includes/header.php';
                     <input type="hidden" name="fecha_aprobada" value="">
                     <input type="hidden" name="return_to" value="dashboard_repro.php?tab=solicitudes&amp;solicitud=<?= (int)$s['solicitud_id'] ?>">
                     <button type="submit" class="btn-gestionar"
+                            data-confirm="¿Aprobar esta reprogramación sin fecha? El partido quedará 'A coordinar' y se liberará la cancha original."
+                            data-confirm-ok="Sí, liberar cancha"
                             style="width:100%;background:#d97706;color:#fff;border:1px solid #d97706;font-size:.65rem;padding:.35rem .6rem;font-weight:700">
                       Aprobar (Lib.)
                     </button>
