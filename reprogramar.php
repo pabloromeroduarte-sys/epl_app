@@ -98,26 +98,71 @@ if ($equipo && !$bloqueado_reprogs) {
     $partidos_pendientes = $stP->fetchAll();
 }
 
-$mis_solicitudes = [];
-if ($equipo) {
-    // Solo trae la solicitud MÁS RECIENTE por partido (no duplica si hubo rechazada + aprobada)
-    // y excluye solicitudes de partidos que ya se jugaron (ruido)
+$mostrar_historial_repro = ($_GET['historial'] ?? '') === '1';
+$reprogramaciones_equipo = [];
+$reprogramaciones_activas = [];
+$reprogramaciones_jugadas = [];
+$reprogramaciones_visibles = [];
+
+$es_fecha_repro_valida = static function (?string $fecha): bool {
+    if (!$fecha) return false;
+    $ts = strtotime($fecha);
+    if (!$ts) return false;
+    return date('m-d H:i:s', $ts) !== '12-31 00:00:00';
+};
+
+$formatear_fecha_repro = static function (?string $fecha) use ($es_fecha_repro_valida): ?string {
+    if (!$es_fecha_repro_valida($fecha)) return null;
+    return date('d/m/Y · H:i', strtotime($fecha)) . ' hrs';
+};
+
+if ($equipo && $liga) {
+    // Una tarjeta por partido: toma únicamente la solicitud más reciente, sin importar
+    // si la inició nuestro equipo o el rival. Esta consulta es solo de lectura.
     $stS = $db->prepare("
-        SELECT sr.*, el.nombre AS local_nombre, ev.nombre AS visitante_nombre, p.estado AS partido_estado
-        FROM solicitudes_reprogramacion sr
-        JOIN partidos p  ON p.id = sr.partido_id
-        JOIN equipos el  ON el.id = p.equipo_local_id
-        JOIN equipos ev  ON ev.id = p.equipo_visitante_id
-        WHERE sr.solicitante_id = ?
-          AND sr.id = (
-              SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
-              WHERE sr2.partido_id = sr.partido_id AND sr2.solicitante_id = sr.solicitante_id
-          )
-          AND p.estado NOT IN ('jugado', 'walkover', 'no_presentado')
-        ORDER BY sr.created_at DESC LIMIT 10
+        SELECT p.id AS partido_id, p.jornada, p.equipo_local_id, p.equipo_visitante_id,
+               p.fecha_programada, p.fecha_original, p.fecha_jugado,
+               p.resultado_ingresado_at, p.estado AS partido_estado,
+               p.sets_local, p.sets_visitante,
+               el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
+               sr.id AS solicitud_id, sr.solicitante_id, sr.motivo,
+               sr.fecha_propuesta, sr.rival_no_responde, sr.mutuo_acuerdo,
+               sr.estado AS solicitud_estado, sr.fecha_aprobada,
+               sr.cancha_aprobada, sr.created_at AS solicitud_creada,
+               js.nombre AS solicitante_nombre, js.apellido AS solicitante_apellido
+        FROM partidos p
+        JOIN equipos el ON el.id = p.equipo_local_id
+        JOIN equipos ev ON ev.id = p.equipo_visitante_id
+        JOIN solicitudes_reprogramacion sr ON sr.id = (
+            SELECT MAX(sr2.id)
+            FROM solicitudes_reprogramacion sr2
+            WHERE sr2.partido_id = p.id
+        )
+        LEFT JOIN jugadores js ON js.id = sr.solicitante_id
+        WHERE p.liga_id = ?
+          AND (p.equipo_local_id = ? OR p.equipo_visitante_id = ?)
+        ORDER BY sr.created_at DESC, sr.id DESC, p.id DESC
     ");
-    $stS->execute([$jugador['id']]);
-    $mis_solicitudes = $stS->fetchAll();
+    $stS->execute([(int)$liga['id'], (int)$equipo['id'], (int)$equipo['id']]);
+    $reprogramaciones_equipo = $stS->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($reprogramaciones_equipo as &$reproEquipo) {
+        $reproEquipo['_jugado'] = in_array($reproEquipo['partido_estado'], ['jugado', 'walkover', 'no_presentado'], true)
+            || $reproEquipo['resultado_ingresado_at'] !== null;
+    }
+    unset($reproEquipo);
+
+    $reprogramaciones_activas = array_values(array_filter(
+        $reprogramaciones_equipo,
+        static fn(array $repro): bool => !$repro['_jugado']
+    ));
+    $reprogramaciones_jugadas = array_values(array_filter(
+        $reprogramaciones_equipo,
+        static fn(array $repro): bool => $repro['_jugado']
+    ));
+    $reprogramaciones_visibles = $mostrar_historial_repro
+        ? $reprogramaciones_equipo
+        : $reprogramaciones_activas;
 }
 
 $otros_reprogramados = [];
@@ -647,8 +692,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
     </button>
     <button type="button" class="rp-tab-btn" data-tab="mis-reprogramaciones" onclick="rpSwitchTab('mis-reprogramaciones')">
       <span>📅</span> <span class="rp-tab-text">Mis <span class="rp-tab-text-long">Reprogramaciones</span><span class="rp-tab-text-short">Reprogs.</span></span>
-      <?php if ($total_reprogramados > 0): ?>
-        <span class="rp-tab-badge"><?= $total_reprogramados ?></span>
+      <?php if (count($reprogramaciones_activas) > 0): ?>
+        <span class="rp-tab-badge"><?= count($reprogramaciones_activas) ?></span>
       <?php endif; ?>
     </button>
     <button type="button" class="rp-tab-btn" data-tab="otros-reprogramados" onclick="rpSwitchTab('otros-reprogramados')">
@@ -895,83 +940,172 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
     <?php endif; ?>
   </div>
 
-  <!-- Pestaña 2: Mis Reprogramaciones (Activas e Historial) -->
+  <!-- Pestaña 2: Mis Reprogramaciones (vista unificada) -->
   <div id="tab-mis-reprogramaciones" class="rp-tab-panel" style="display:none">
-    
-    <!-- Reprogramaciones Activas (Limite) -->
-    <?php if ($equipo && !empty($partidos_reprogramados_actuales)): ?>
-      <div style="margin-bottom:2.5rem">
-        <h3 style="font-family:var(--font-head);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy);margin-bottom:1rem">
-          🔄 Mis Reprogramaciones Activas (<?= $total_reprogramados ?>/<?= $MAX_REPROGS ?>)
-        </h3>
-        <p style="font-size:.8rem;color:var(--gray-500);margin-bottom:1rem">
-          Partidos reprogramados solicitados por tu equipo. Deberán jugarse antes de poder solicitar nuevas reprogramaciones.
+    <section class="rp-repro-summary">
+      <div class="rp-repro-summary-copy">
+        <span><?= $mostrar_historial_repro ? 'Historial completo' : 'Partidos por resolver' ?></span>
+        <h2><?= $mostrar_historial_repro ? 'Todas tus reprogramaciones' : 'Mis reprogramaciones' ?></h2>
+        <p>
+          <?= $mostrar_historial_repro
+            ? 'Revisa los cambios de fecha activos y los partidos reprogramados que ya se jugaron.'
+            : 'Revisa todos los cambios de fecha de tu pareja, tanto los solicitados por ustedes como por el rival.' ?>
         </p>
-        <div style="display:flex;flex-direction:column;gap:.6rem">
-          <?php foreach ($partidos_reprogramados_actuales as $pr):
-            $rival = ($pr['local_nombre'] === $equipo['nombre']) ? $pr['visitante_nombre'] : $pr['local_nombre'];
-            $sin_fecha = !$pr['fecha_programada'] || date('Y-m-d', strtotime($pr['fecha_programada'])) === '2026-12-31';
-            $fecha_lbl = !$sin_fecha ? date('d/m/Y H:i', strtotime($pr['fecha_programada'])) : 'A coordinar';
-          ?>
-          <div class="rp-historial-row" style="border-left:4px solid <?= $sin_fecha ? '#f97316' : 'var(--gold)' ?>;flex-wrap:wrap">
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:700;font-size:.88rem;color:var(--navy)">
-                <?= epl_h($pr['local_nombre'] . ' vs ' . $pr['visitante_nombre']) ?>
-              </div>
-              <div style="font-size:.75rem;color:var(--gray-500);margin-top:.2rem">
-                <span>Jornada <?= $pr['jornada'] ?: '?' ?></span> ·
-                <span style="color:<?= $sin_fecha ? '#c2410c' : 'var(--navy)' ?>;font-weight:600">Fecha: <?= $fecha_lbl ?></span>
+        <div class="rp-repro-quota">Cupo de solicitudes propias: <strong><?= $total_reprogramados ?>/<?= $MAX_REPROGS ?></strong></div>
+      </div>
+      <div class="rp-repro-summary-actions">
+        <div class="rp-repro-count">
+          <strong><?= $mostrar_historial_repro ? count($reprogramaciones_equipo) : count($reprogramaciones_activas) ?></strong>
+          <span><?= $mostrar_historial_repro ? 'en total' : 'activas' ?></span>
+        </div>
+        <?php if ($mostrar_historial_repro): ?>
+          <a class="rp-repro-history-btn" href="<?= epl_url('reprogramar.php#mis-reprogramaciones') ?>">← Ver activas</a>
+        <?php else: ?>
+          <a class="rp-repro-history-btn" href="<?= epl_url('reprogramar.php?historial=1#mis-reprogramaciones') ?>">
+            Ver historial<?php if ($reprogramaciones_jugadas): ?> (<?= count($reprogramaciones_jugadas) ?>)<?php endif; ?>
+          </a>
+        <?php endif; ?>
+      </div>
+    </section>
+
+    <?php if (!$equipo): ?>
+      <div class="rp-empty">
+        <div class="rp-repro-empty-icon">📅</div>
+        <h3>Sin equipo activo</h3>
+        <p>No encontramos una pareja asociada a tu cuenta en esta liga.</p>
+      </div>
+    <?php elseif (!$reprogramaciones_visibles): ?>
+      <div class="rp-empty rp-repro-empty">
+        <div class="rp-repro-empty-icon">✓</div>
+        <h3><?= $mostrar_historial_repro ? 'Sin historial de cambios' : 'Todo al día' ?></h3>
+        <p><?= $mostrar_historial_repro
+          ? 'Tu pareja todavía no tiene solicitudes de reprogramación registradas.'
+          : 'No tienes reprogramaciones pendientes de jugar.' ?></p>
+      </div>
+    <?php else: ?>
+      <div class="rp-repro-list">
+        <?php foreach ($reprogramaciones_visibles as $repro):
+          $solicitanteId = (int)$repro['solicitante_id'];
+          $esSolicitudMia = $solicitanteId === (int)$jugador['id'];
+          $esSolicitudEquipo = in_array($solicitanteId, [
+            (int)($equipo['jugador1_id'] ?? 0),
+            (int)($equipo['jugador2_id'] ?? 0),
+          ], true);
+
+          if ($esSolicitudMia) {
+              $origenLabel = 'Solicitada por ti';
+              $origenClase = 'own';
+          } elseif ($esSolicitudEquipo) {
+              $origenLabel = 'Solicitada por tu pareja';
+              $origenClase = 'own';
+          } else {
+              $origenLabel = 'Solicitada por el rival';
+              $origenClase = 'rival';
+          }
+
+          $estadoSolicitud = (string)$repro['solicitud_estado'];
+          [$estadoLabel, $estadoClase] = match ($estadoSolicitud) {
+              'aprobada'  => ['Cambio aprobado', 'approved'],
+              'rechazada' => ['Cambio rechazado', 'rejected'],
+              default     => ['Pendiente', 'pending'],
+          };
+
+          if ($estadoSolicitud === 'aprobada') {
+              $fechaCambioRaw = $es_fecha_repro_valida($repro['fecha_aprobada'])
+                  ? $repro['fecha_aprobada']
+                  : $repro['fecha_programada'];
+              $fechaCambioLabel = 'Nueva fecha';
+          } elseif ($estadoSolicitud === 'rechazada') {
+              $fechaCambioRaw = $repro['fecha_propuesta'];
+              $fechaCambioLabel = 'Fecha solicitada';
+          } else {
+              $fechaCambioRaw = $repro['fecha_propuesta'];
+              $fechaCambioLabel = 'Fecha propuesta';
+          }
+
+          $fechaOriginalRaw = $repro['fecha_original'];
+          if (!$es_fecha_repro_valida($fechaOriginalRaw)
+              && $estadoSolicitud !== 'aprobada'
+              && $es_fecha_repro_valida($repro['fecha_programada'])) {
+              // Si el cambio fue rechazado o sigue pendiente, la fecha vigente continúa
+              // siendo la fecha original cuando el registro histórico antiguo está vacío.
+              $fechaOriginalRaw = $repro['fecha_programada'];
+          }
+          $fechaOriginal = $formatear_fecha_repro($fechaOriginalRaw);
+          $fechaCambio = $formatear_fecha_repro($fechaCambioRaw);
+          $solicitanteNombre = trim(($repro['solicitante_nombre'] ?? '') . ' ' . ($repro['solicitante_apellido'] ?? ''));
+          $fechaSolicitud = $formatear_fecha_repro($repro['solicitud_creada']);
+          $partidoJugado = (bool)$repro['_jugado'];
+          $puedeAsignarFecha = !$partidoJugado
+              && $estadoSolicitud === 'aprobada'
+              && $repro['partido_estado'] === 'reprogramado'
+              && !$fechaCambio
+              && $esSolicitudEquipo;
+          $partidoStr = $repro['local_nombre'] . ' vs ' . $repro['visitante_nombre'];
+        ?>
+        <article class="rp-repro-card rp-repro-card--<?= $origenClase ?><?= $partidoJugado ? ' rp-repro-card--played' : '' ?>">
+          <header class="rp-repro-card-head">
+            <div class="rp-repro-origin rp-repro-origin--<?= $origenClase ?>">
+              <span aria-hidden="true"><?= $origenClase === 'rival' ? '↙' : '↗' ?></span>
+              <div>
+                <strong><?= epl_h($origenLabel) ?></strong>
+                <?php if ($solicitanteNombre): ?><small><?= epl_h($solicitanteNombre) ?></small><?php endif; ?>
               </div>
             </div>
-            <span class="badge badge-walkover" style="font-size:.65rem;flex-shrink:0;align-self:flex-start">Reprogramado</span>
-            <?php if ($sin_fecha): ?>
+            <div class="rp-repro-card-statuses">
+              <?php if ($partidoJugado): ?><span class="rp-repro-status rp-repro-status--played">Partido jugado</span><?php endif; ?>
+              <span class="rp-repro-status rp-repro-status--<?= $estadoClase ?>"><?= epl_h($estadoLabel) ?></span>
+            </div>
+          </header>
+
+          <div class="rp-repro-card-body">
+            <div class="rp-repro-card-kicker">
+              <span>Jornada <?= (int)($repro['jornada'] ?? 0) ?: '—' ?></span>
+              <?php if ($fechaSolicitud): ?><span>Solicitud: <?= epl_h($fechaSolicitud) ?></span><?php endif; ?>
+            </div>
+            <h3><?= epl_h($repro['local_nombre']) ?> <em>vs</em> <?= epl_h($repro['visitante_nombre']) ?></h3>
+
+            <div class="rp-repro-timeline">
+              <div class="rp-repro-date-block">
+                <span>Fecha original</span>
+                <strong><?= epl_h($fechaOriginal ?? 'Sin registro') ?></strong>
+              </div>
+              <div class="rp-repro-arrow" aria-hidden="true">→</div>
+              <div class="rp-repro-date-block<?= $fechaCambio ? '' : ' rp-repro-date-block--empty' ?>">
+                <span><?= epl_h($fechaCambioLabel) ?></span>
+                <strong><?= epl_h($fechaCambio ?? 'Sin fecha definida') ?></strong>
+                <?php if ($fechaCambio && $repro['cancha_aprobada']): ?><small><?= epl_h($repro['cancha_aprobada']) ?></small><?php endif; ?>
+              </div>
+            </div>
+
+            <?php if (!empty($repro['motivo'])): ?>
+              <p class="rp-repro-reason"><span>Motivo</span><?= epl_h(mb_strimwidth($repro['motivo'], 0, 150, '...')) ?></p>
+            <?php endif; ?>
+          </div>
+
+          <footer class="rp-repro-card-footer">
+            <div class="rp-repro-tags">
+              <?php if ($repro['rival_no_responde']): ?><span>⚠ Rival no respondió</span><?php endif; ?>
+              <?php if ($repro['mutuo_acuerdo']): ?><span>✓ Mutuo acuerdo</span><?php endif; ?>
+              <?php if ($partidoJugado && $repro['sets_local'] !== null && $repro['sets_visitante'] !== null): ?>
+                <span>Resultado <?= (int)$repro['sets_local'] ?>-<?= (int)$repro['sets_visitante'] ?></span>
+              <?php elseif ($partidoJugado): ?>
+                <span><?= epl_h(ucfirst(str_replace('_', ' ', $repro['partido_estado']))) ?></span>
+              <?php endif; ?>
+            </div>
+            <?php if ($puedeAsignarFecha): ?>
               <button type="button" class="btn-asignar-fecha"
-                      data-partido-id="<?= (int)$pr['id'] ?>"
-                      data-partido-str="<?= epl_h($pr['local_nombre'] . ' vs ' . $pr['visitante_nombre']) ?>"
+                      data-partido-id="<?= (int)$repro['partido_id'] ?>"
+                      data-partido-str="<?= epl_h($partidoStr) ?>"
                       onclick="abrirModalAsignar(this)">
                 📅 Asignar fecha
               </button>
             <?php endif; ?>
-          </div>
-          <?php endforeach; ?>
-        </div>
+          </footer>
+        </article>
+        <?php endforeach; ?>
       </div>
     <?php endif; ?>
-
-    <!-- Historial de Solicitudes -->
-    <div>
-      <h3 style="font-family:var(--font-head);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--navy);margin-bottom:1rem">
-        📋 Historial de Solicitudes
-      </h3>
-      <?php if ($mis_solicitudes): ?>
-        <div style="display:flex;flex-direction:column;gap:.6rem">
-          <?php foreach ($mis_solicitudes as $s):
-            $badgeCls = match($s['estado']) { 'aprobada'=>'badge-jugado', 'rechazada'=>'badge-walkover', default=>'badge-pendiente' };
-          ?>
-          <div class="rp-historial-row">
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:700;font-size:.88rem;color:var(--navy)"><?= epl_h($s['local_nombre'].' vs '.$s['visitante_nombre']) ?></div>
-              <div style="font-size:.75rem;color:var(--gray-400);margin-top:.2rem">
-                <?= $s['fecha_propuesta'] ? date('d/m/Y H:i', strtotime($s['fecha_propuesta'])) : 'Sin fecha' ?>
-                <?php if ($s['rival_no_responde']): ?><span class="badge badge-walkover" style="font-size:.6rem;margin-left:.4rem">Rival no respondió</span><?php endif; ?>
-                <?php if ($s['mutuo_acuerdo']): ?><span class="badge badge-jugado" style="font-size:.6rem;margin-left:.4rem">Mutuo acuerdo</span><?php endif; ?>
-              </div>
-              <?php if ($s['fecha_aprobada'] && $s['estado']==='aprobada'): ?>
-                <div style="font-size:.75rem;color:#22c55e;margin-top:.2rem;font-weight:600">✓ <?= date('d/m/Y H:i', strtotime($s['fecha_aprobada'])) ?> <?= $s['cancha_aprobada']?'· '.$s['cancha_aprobada']:'' ?></div>
-              <?php endif; ?>
-              <div style="font-size:.72rem;color:var(--gray-500);margin-top:.2rem;font-style:italic"><?= epl_h(mb_strimwidth($s['motivo'], 0, 80, '...')) ?></div>
-            </div>
-            <span class="badge <?= $badgeCls ?>" style="flex-shrink:0;align-self:flex-start"><?= ucfirst($s['estado']) ?></span>
-          </div>
-          <?php endforeach; ?>
-        </div>
-      <?php else: ?>
-        <div class="rp-empty" style="padding:1.5rem 0">
-          <p>No tienes solicitudes de reprogramación anteriores.</p>
-        </div>
-      <?php endif; ?>
-    </div>
-
   </div>
 
   <!-- Pestaña 3: Todos los Reprogramados -->
