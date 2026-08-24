@@ -8,6 +8,10 @@ $db     = epl_db();
 $id     = (int)($_POST['id']     ?? 0);
 $accion = $_POST['accion']       ?? '';
 $admin  = epl_jugador_actual();
+$return_to = (string)($_POST['return_to'] ?? 'index.php');
+if (!preg_match('/^(?:index|dashboard_repro)\.php(?:\?[a-z0-9_=&-]+)?$/i', $return_to)) {
+    $return_to = 'index.php';
+}
 
 if ($accion === 'reenviar_notif_cancha') {
     $partido_id = (int)($_POST['partido_id'] ?? 0);
@@ -96,7 +100,8 @@ if ($accion === 'aprobar') {
         );
     }
 
-    header('Location: index.php?ok=reprog_aprobada');
+    $sep = str_contains($return_to, '?') ? '&' : '?';
+    header('Location: ' . $return_to . $sep . 'ok=reprog_aprobada');
 } else {
     $db->prepare("UPDATE solicitudes_reprogramacion SET estado='rechazada', aprobado_por=? WHERE id=?")
        ->execute([$admin['id'], $id]);
@@ -113,6 +118,7 @@ if ($accion === 'aprobar') {
         );
     }
 
-    header('Location: index.php?ok=reprog_rechazada');
+    $sep = str_contains($return_to, '?') ? '&' : '?';
+    header('Location: ' . $return_to . $sep . 'ok=reprog_rechazada');
 }
 exit;

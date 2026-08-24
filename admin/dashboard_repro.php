@@ -3,10 +3,20 @@ $page_title = 'Admin — Reprogramaciones';
 $page_css   = 'repro'; // assets/css/repro.css — se carga desde el <head>
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
+
+// Los enlaces enviados por WhatsApp deben volver a este caso exacto después
+// del login. Las cuentas no administradoras siguen bloqueadas por el control
+// de rol que se ejecuta a continuación.
+if (!epl_jugador_actual()) {
+    $back = urlencode($_SERVER['REQUEST_URI'] ?? '/admin/dashboard_repro.php');
+    header('Location: ' . epl_url("login.php?back=$back"));
+    exit;
+}
 epl_require_admin();
 
 $db = epl_db();
 epl_ensure_partidos_columnas_originales();
+$solicitud_enfoque = max(0, (int)($_GET['solicitud'] ?? 0));
 
 // Auto-limpieza: Si un partido es pre-aprobado (fecha_original es NULL) y ya tiene cancha asignada,
 // no requiere dar de baja nada ni solicitar cancha al club. Limpiar tokens/fechas de solicitud residuales.
@@ -594,8 +604,10 @@ require_once '../includes/header.php';
       // El badge representa partidos únicos que todavía requieren una acción.
       $badge_solicitudes = $n_pendientes_total;
       // Abrir en Solicitudes si hay algo pendiente; si no, Informe
-      $tab_inicial = isset($_GET['tab']) ? $_GET['tab']
-          : ($badge_solicitudes > 0 ? 'solicitudes' : ($n_recientes > 0 ? 'informe' : 'informe'));
+      $tab_inicial = $solicitud_enfoque > 0
+          ? 'solicitudes'
+          : (isset($_GET['tab']) ? $_GET['tab']
+              : ($badge_solicitudes > 0 ? 'solicitudes' : ($n_recientes > 0 ? 'informe' : 'informe')));
     ?>
     <div class="tabs-bar">
       <button class="tab-btn <?= $tab_inicial==='solicitudes'?'active':'' ?>" data-tab="solicitudes" onclick="cambiarTab('solicitudes')">
@@ -694,13 +706,16 @@ require_once '../includes/header.php';
           </div>
           <div class="sec-body">
             <?php foreach ($solicitudes_pendientes as $s):
-              $sol_sin_fecha = empty($s['fecha_propuesta']) || $s['rival_no_responde'];
+              $sol_sin_fecha = empty($s['fecha_propuesta']);
               $fecha_pp = $s['fecha_propuesta']
                   ? date('d/m/Y H:i', strtotime($s['fecha_propuesta']))
                   : 'Sin fecha propuesta';
               $fecha_solicitud = date('d/m H:i', strtotime($s['created_at']));
             ?>
-            <div class="partido-row">
+            <div id="solicitud-<?= (int)$s['solicitud_id'] ?>"
+                 class="partido-row<?= (int)$s['solicitud_id'] === $solicitud_enfoque ? ' repro-direct-focus' : '' ?>"
+                 data-solicitud-id="<?= (int)$s['solicitud_id'] ?>"
+                 data-gestion-tipo="<?= $sol_sin_fecha ? 'sin-fecha' : 'con-fecha' ?>">
               <div class="partido-row-main">
                 <div class="partido-meta">
                   <span class="partido-liga"><?= epl_h($s['liga_nombre']) ?></span>
@@ -712,6 +727,9 @@ require_once '../includes/header.php';
                   <?php endif; ?>
                   <?php if ($s['rival_no_responde']): ?>
                     <span class="partido-tag tag-norespon">⚠ Rival no responde</span>
+                  <?php endif; ?>
+                  <?php if ((int)$s['solicitud_id'] === $solicitud_enfoque): ?>
+                    <span class="partido-tag tag-enfoque">Abierta desde WhatsApp</span>
                   <?php endif; ?>
                 </div>
                 <div class="partido-equipos">
@@ -803,7 +821,7 @@ require_once '../includes/header.php';
               <div style="display:flex;flex-direction:column;gap:.35rem;align-items:stretch">
                 <button type="button" class="btn-gestionar"
                         data-partido-id="<?= $s['partido_id'] ?>"
-                        data-return-to="dashboard_repro.php?tab=solicitudes"
+                        data-return-to="dashboard_repro.php?tab=solicitudes&amp;solicitud=<?= (int)$s['solicitud_id'] ?>"
                         onclick="abrirFichaPartido(this)"
                         style="width:100%;text-align:center">⚙ Gestionar</button>
                 <?php if ($sol_sin_fecha): ?>
@@ -813,11 +831,20 @@ require_once '../includes/header.php';
                     <input type="hidden" name="id" value="<?= $s['solicitud_id'] ?>">
                     <input type="hidden" name="accion" value="aprobar">
                     <input type="hidden" name="fecha_aprobada" value="">
+                    <input type="hidden" name="return_to" value="dashboard_repro.php?tab=solicitudes&amp;solicitud=<?= (int)$s['solicitud_id'] ?>">
                     <button type="submit" class="btn-gestionar"
                             style="width:100%;background:#d97706;color:#fff;border:1px solid #d97706;font-size:.65rem;padding:.35rem .6rem;font-weight:700">
                       Aprobar (Lib.)
                     </button>
                   </form>
+                <?php else: ?>
+                  <button type="button" class="btn-gestionar btn-aprobar-repro"
+                          data-solicitud-id="<?= (int)$s['solicitud_id'] ?>"
+                          data-fecha-propuesta="<?= epl_h(date('Y-m-d\TH:i', strtotime($s['fecha_propuesta']))) ?>"
+                          data-partido="<?= epl_h($s['local_nombre'] . ' vs ' . $s['visitante_nombre']) ?>"
+                          onclick="abrirAprobarRepro(this)">
+                    ✓ Aprobar cambio
+                  </button>
                 <?php endif; ?>
                 <form method="post" style="margin:0"
                       data-confirm="¿Rechazar la solicitud de <?= epl_h($s['local_nombre']) ?> vs <?= epl_h($s['visitante_nombre']) ?>?"
@@ -878,7 +905,10 @@ require_once '../includes/header.php';
                   : ($s['fecha_propuesta'] ? date('d/m/Y H:i', strtotime($s['fecha_propuesta'])) : 'Sin fecha');
               $fecha_solicitud = date('d/m H:i', strtotime($s['created_at']));
             ?>
-            <div class="partido-row" style="opacity:.92">
+            <div id="solicitud-<?= (int)$s['solicitud_id'] ?>"
+                 class="partido-row<?= (int)$s['solicitud_id'] === $solicitud_enfoque ? ' repro-direct-focus' : '' ?>"
+                 data-solicitud-id="<?= (int)$s['solicitud_id'] ?>"
+                 style="opacity:.92">
               <div class="partido-row-main">
                 <div class="partido-meta">
                   <span class="partido-tag" style="background:<?= $estado_bg ?>;color:<?= $estado_color ?>"><?= $estado_label ?></span>
@@ -910,7 +940,7 @@ require_once '../includes/header.php';
               <div class="partido-actions">
                 <button type="button" class="btn-gestionar"
                         data-partido-id="<?= $s['partido_id'] ?>"
-                        data-return-to="dashboard_repro.php?tab=solicitudes"
+                        data-return-to="dashboard_repro.php?tab=solicitudes&amp;solicitud=<?= (int)$s['solicitud_id'] ?>"
                         onclick="abrirFichaPartido(this)"
                         style="background:#94a3b8;color:#fff">⚙ Gestionar</button>
                 <form method="post" style="margin:0"
@@ -1158,7 +1188,85 @@ $modal_return_to = 'dashboard_repro.php?tab=' . ($tab_inicial === 'informe' ? 'i
 include __DIR__ . '/../includes/modal_editar_partido.php';
 ?>
 
+<div id="reproApproveModal" class="repro-approve-modal" hidden
+     onclick="if (event.target === this) cerrarAprobarRepro()">
+  <div class="repro-approve-dialog" role="dialog" aria-modal="true" aria-labelledby="reproApproveTitle">
+    <div class="repro-approve-head">
+      <div>
+        <span>Solicitud pendiente</span>
+        <h3 id="reproApproveTitle">Aprobar reprogramación</h3>
+        <p id="reproApprovePartido"></p>
+      </div>
+      <button type="button" class="repro-approve-close" onclick="cerrarAprobarRepro()" aria-label="Cerrar">×</button>
+    </div>
+    <form method="post" action="api_reprogramacion.php" class="repro-approve-form">
+      <input type="hidden" name="accion" value="aprobar">
+      <input type="hidden" name="id" id="reproApproveId">
+      <input type="hidden" name="return_to" id="reproApproveReturn">
+
+      <label for="reproApproveFecha">Fecha y hora definitiva</label>
+      <input type="datetime-local" name="fecha_aprobada" id="reproApproveFecha" class="form-control" required>
+
+      <label for="reproApproveCancha">Cancha o recinto <small>(opcional)</small></label>
+      <select name="cancha_aprobada" id="reproApproveCancha" class="form-control"
+              onchange="toggleCanchaManualRepro(this.value)">
+        <option value="">— Sin cancha asignada —</option>
+        <?php foreach ($todos_recintos as $recinto): ?>
+          <option value="<?= epl_h($recinto['label']) ?>"><?= epl_h($recinto['label']) ?></option>
+        <?php endforeach; ?>
+        <option value="__otro__">✏ Escribir manualmente…</option>
+      </select>
+      <input type="text" id="reproApproveCanchaManual" class="form-control"
+             placeholder="Nombre de la cancha" hidden>
+
+      <div class="repro-approve-actions">
+        <button type="button" class="btn-sec" onclick="cerrarAprobarRepro()">Cancelar</button>
+        <button type="submit" class="btn-gestionar">Confirmar aprobación</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
+function abrirAprobarRepro(btn) {
+  const modal = document.getElementById('reproApproveModal');
+  const solicitudId = btn.dataset.solicitudId || '';
+  document.getElementById('reproApproveId').value = solicitudId;
+  document.getElementById('reproApproveFecha').value = btn.dataset.fechaPropuesta || '';
+  document.getElementById('reproApprovePartido').textContent = btn.dataset.partido || '';
+  document.getElementById('reproApproveReturn').value =
+    `dashboard_repro.php?tab=solicitudes&solicitud=${solicitudId}`;
+  document.getElementById('reproApproveCancha').value = '';
+  toggleCanchaManualRepro('');
+  modal.hidden = false;
+  requestAnimationFrame(() => modal.classList.add('is-open'));
+  document.getElementById('reproApproveFecha').focus();
+}
+
+function cerrarAprobarRepro() {
+  const modal = document.getElementById('reproApproveModal');
+  modal.classList.remove('is-open');
+  modal.hidden = true;
+}
+
+function toggleCanchaManualRepro(value) {
+  const select = document.getElementById('reproApproveCancha');
+  const manual = document.getElementById('reproApproveCanchaManual');
+  const esManual = value === '__otro__';
+  manual.hidden = !esManual;
+  manual.required = esManual;
+  select.name = esManual ? '_cancha_select_ignored' : 'cancha_aprobada';
+  manual.name = esManual ? 'cancha_aprobada' : '';
+  if (!esManual) manual.value = '';
+  if (esManual) manual.focus();
+}
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !document.getElementById('reproApproveModal').hidden) {
+    cerrarAprobarRepro();
+  }
+});
+
 async function abrirFichaPartido(btn) {
   const partidoId = Number(btn.dataset.partidoId || 0);
   if (!partidoId) return;
@@ -1360,6 +1468,26 @@ function limpiarFiltro() {
   document.querySelectorAll('.estado-btn').forEach(b => b.classList.toggle('active', b.dataset.estado === 'all'));
   aplicarFiltros();
 }
+
+function enfocarSolicitudDesdeEnlace() {
+  const solicitudId = <?= json_encode($solicitud_enfoque) ?>;
+  if (!solicitudId) return;
+
+  cambiarTab('solicitudes');
+  const row = document.querySelector(`[data-solicitud-id="${solicitudId}"]`);
+  if (!row) return;
+
+  const grupo = row.closest('[data-sol-grupo]')?.dataset.solGrupo;
+  if (grupo && typeof filtrarSolicitudes === 'function') {
+    const filtroBtn = document.querySelector(`[data-solfiltro="${grupo}"]`);
+    filtrarSolicitudes(grupo, filtroBtn);
+  }
+
+  row.classList.add('repro-direct-focus');
+  window.setTimeout(() => row.scrollIntoView({behavior: 'smooth', block: 'center'}), 120);
+}
+
+enfocarSolicitudDesdeEnlace();
 </script>
 
 <?php require_once '../includes/footer.php'; ?>

@@ -112,6 +112,48 @@
 .btn-gestionar:hover { background:#C9A762; color:var(--navy); transform:translateY(-1px); }
 .btn-gestionar:disabled { opacity:.65; cursor:wait; transform:none; }
 
+.partido-row.repro-direct-focus {
+  border-color:#c9a762;
+  border-left-color:#c9a762;
+  background:#fffdf5;
+  box-shadow:0 0 0 3px rgba(201,167,98,.22), 0 10px 28px rgba(28,47,72,.12);
+}
+.tag-enfoque { background:#fff4cc; color:#755315; }
+
+.btn-aprobar-repro {
+  width:100%;
+  border:1px solid #15803d;
+  background:#16a34a;
+  color:#fff;
+  font-size:.65rem;
+  padding:.4rem .65rem;
+}
+.btn-aprobar-repro:hover { background:#15803d; color:#fff; }
+
+.repro-approve-modal[hidden] { display:none; }
+.repro-approve-modal {
+  position:fixed; inset:0; z-index:100000; display:flex; align-items:center; justify-content:center;
+  padding:1rem; background:rgba(15,23,42,.62); opacity:0; transition:opacity .16s ease;
+}
+.repro-approve-modal.is-open { opacity:1; }
+.repro-approve-dialog {
+  width:min(100%, 460px); overflow:hidden; border:1px solid #dbe2ea; border-radius:18px;
+  background:#fff; box-shadow:0 24px 70px rgba(15,23,42,.28);
+}
+.repro-approve-head {
+  display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;
+  padding:1.1rem 1.2rem; background:var(--navy); color:#fff;
+}
+.repro-approve-head span { color:#d8bd7a; font-size:.62rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+.repro-approve-head h3 { margin:.12rem 0 0; color:#fff; font-size:1rem; text-transform:uppercase; }
+.repro-approve-head p { margin:.2rem 0 0; color:rgba(255,255,255,.68); font-size:.74rem; }
+.repro-approve-close { border:0; background:transparent; color:#fff; font-size:1.65rem; line-height:1; cursor:pointer; }
+.repro-approve-form { display:grid; gap:.6rem; padding:1.2rem; }
+.repro-approve-form [hidden] { display:none !important; }
+.repro-approve-form label { color:var(--navy); font-size:.72rem; font-weight:800; }
+.repro-approve-form label small { color:#94a3b8; font-weight:600; }
+.repro-approve-actions { display:flex; justify-content:flex-end; gap:.55rem; margin-top:.45rem; }
+
 /* ── Acciones de la fila (Gestionar + secundarias) ───────── */
 .partido-actions { display:flex; flex-direction:column; gap:.4rem; align-items:stretch; min-width:155px; flex-shrink:0; }
 .btn-sec {
@@ -150,6 +192,12 @@
   .partido-row { flex-direction:column; align-items:flex-start; }
   .btn-gestionar { width:100%; text-align:center; }
   .partido-actions { width:100%; min-width:0; }
+}
+
+@media (max-width:520px) {
+  .repro-approve-actions { flex-direction:column-reverse; }
+  .repro-approve-actions .btn-sec,
+  .repro-approve-actions .btn-gestionar { width:100%; }
 }
 
 /* ── Tabs ─────────────────────────────────────────────── */

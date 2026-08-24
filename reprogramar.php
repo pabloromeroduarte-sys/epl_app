@@ -1051,6 +1051,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 
           $whatsappOrganizacionUrl = null;
           if (!$partidoJugado && $estadoSolicitud === 'pendiente') {
+              $urlGestionAdmin = epl_url(
+                  'admin/dashboard_repro.php?tab=solicitudes&solicitud=' . (int)$repro['solicitud_id']
+              );
               $mensajeWhatsapp = implode("\n", [
                   'Hola Elite Padel League, hice esta reprogramación:',
                   '',
@@ -1062,6 +1065,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
                   'Solicitud: ' . $origenLabel,
                   '',
                   'Esta reprogramación sigue pendiente. ¿Me pueden ayudar, por favor?',
+                  'Gestionar solicitud: ' . $urlGestionAdmin,
               ]);
               $whatsappOrganizacionUrl = 'https://wa.me/56988182431?text=' . rawurlencode($mensajeWhatsapp);
           }
