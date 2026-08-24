@@ -1,0 +1,126 @@
+.rp-rival-search {
+  margin-top: 1.15rem;
+}
+
+#rpListaPartidos[hidden],
+.rp-partido-option[hidden],
+.rp-rival-search-empty[hidden],
+.rp-rival-search-clear[hidden] {
+  display: none !important;
+}
+
+.rp-rival-search-label {
+  display: block;
+  margin-bottom: .45rem;
+  color: var(--navy);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.rp-rival-search-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  overflow: hidden;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 14px;
+  background: var(--white);
+  color: var(--gray-400);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.rp-rival-search-control:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 4px rgba(201, 167, 98, .14);
+}
+
+.rp-rival-search-control > svg {
+  flex: 0 0 auto;
+  margin-left: .9rem;
+}
+
+.rp-rival-search-control input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: .75rem .7rem;
+  color: var(--navy);
+  font: inherit;
+  font-size: .88rem;
+}
+
+.rp-rival-search-control input::placeholder {
+  color: var(--gray-400);
+}
+
+.rp-rival-search-control input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.rp-rival-search-clear {
+  align-self: stretch;
+  flex: 0 0 auto;
+  border: 0;
+  border-left: 1px solid var(--gray-100);
+  background: #f8fafc;
+  padding: 0 .9rem;
+  color: var(--navy);
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.rp-rival-search-clear:hover,
+.rp-rival-search-clear:focus-visible {
+  background: #f1f5f9;
+  color: #9a762d;
+}
+
+.rp-rival-search-results {
+  margin: .45rem 0 0;
+  color: var(--gray-500);
+  font-size: .72rem;
+  font-weight: 600;
+}
+
+.rp-rival-search-empty {
+  margin-top: 1rem;
+  border: 1px dashed var(--gray-200);
+  border-radius: 14px;
+  padding: 1.35rem 1rem;
+  text-align: center;
+  color: var(--gray-500);
+}
+
+.rp-rival-search-empty > span {
+  display: block;
+  margin-bottom: .35rem;
+  font-size: 1.4rem;
+}
+
+.rp-rival-search-empty strong {
+  display: block;
+  color: var(--navy);
+  font-size: .88rem;
+}
+
+.rp-rival-search-empty p {
+  margin: .3rem 0 0;
+  font-size: .75rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 576px) {
+  .rp-rival-search-control {
+    min-height: 46px;
+  }
+
+  .rp-rival-search-clear {
+    padding-inline: .7rem;
+  }
+}

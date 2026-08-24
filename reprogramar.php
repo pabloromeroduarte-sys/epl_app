@@ -1,6 +1,7 @@
 <?php
 $page_title = 'Reprogramar Partido';
 $player_tab = 'reprogramar';
+$page_css = 'reprogramar';
 require_once 'includes/auth.php';
 require_once 'includes/functions.php';
 require_once 'includes/mail.php';
@@ -627,7 +628,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 
   <div class="dash-header">
     <h1 class="dash-title">Reprogramar Partido</h1>
-    <p style="color:var(--gray-400);font-size:.88rem">Coordina con tu rival y propone una nueva fecha.</p>
+    <p style="color:var(--gray-400);font-size:.88rem">Coordina con tu rival y propón una nueva fecha.</p>
   </div>
 
   <?php if ($ok): ?>
@@ -735,11 +736,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
             </div>
           </div>
           <input type="hidden" name="partido_id" id="hiddenPartidoIdRp">
+
+          <div class="rp-rival-search" role="search">
+            <label for="rpBuscarRival" class="rp-rival-search-label">Buscar pareja rival</label>
+            <div class="rp-rival-search-control">
+              <svg aria-hidden="true" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path stroke-linecap="round" d="m20 20-4-4"></path>
+              </svg>
+              <input type="search" id="rpBuscarRival"
+                     placeholder="Escribe el nombre de la pareja rival..."
+                     autocomplete="off" spellcheck="false"
+                     aria-controls="rpListaPartidos rpBusquedaVacia">
+              <button type="button" id="rpLimpiarBusqueda" class="rp-rival-search-clear"
+                      aria-label="Limpiar búsqueda" hidden>Limpiar</button>
+            </div>
+            <p id="rpResultadosBusqueda" class="rp-rival-search-results" aria-live="polite">
+              <?= count($partidos_pendientes) ?> partido<?= count($partidos_pendientes) === 1 ? '' : 's' ?> disponible<?= count($partidos_pendientes) === 1 ? '' : 's' ?>
+            </p>
+          </div>
+
           <div class="rp-partidos-list" style="margin-top:1rem" id="rpListaPartidos">
             <?php
               $pre_id = (int)($_GET['partido_id'] ?? 0);
               foreach ($partidos_pendientes as $p):
                 $esLocal = ($p['equipo_local_id'] == $equipo['id']);
+                $rivalNombre = $esLocal ? $p['visitante_nombre'] : $p['local_nombre'];
                 $rivales = [];
                 if ($esLocal) {
                   $rivales[] = ['n'=>$p['v1n'],  'a'=>$p['jv1a'], 't'=>$p['v1t']];
@@ -749,9 +771,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
                   $rivales[] = ['n'=>$p['l2n'],  'a'=>$p['l2a'],  't'=>$p['l2t']];
                 }
                 $dataRivales = htmlspecialchars(base64_encode(json_encode($rivales)), ENT_QUOTES);
+                $rivalJugadoresBusqueda = implode(' ', array_filter(array_map(
+                  static fn($rival) => trim(($rival['n'] ?? '') . ' ' . ($rival['a'] ?? '')),
+                  $rivales
+                )));
+                $dataRivalSearch = trim($rivalNombre . ' ' . $rivalJugadoresBusqueda);
                 $checked = ($p['id'] == $pre_id) ? 'checked' : '';
             ?>
-            <label class="rp-partido-option" for="rpp<?= $p['id'] ?>">
+            <label class="rp-partido-option" for="rpp<?= $p['id'] ?>"
+                   data-rival-search="<?= epl_h($dataRivalSearch) ?>">
               <input type="radio" name="_rp_partido_pick" id="rpp<?= $p['id'] ?>" value="<?= $p['id'] ?>"
                      data-rivales="<?= $dataRivales ?>" <?= $checked ?>
                      onchange="rpSelPartido(this)">
@@ -781,6 +809,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
               </div>
             </label>
             <?php endforeach; ?>
+          </div>
+          <div id="rpBusquedaVacia" class="rp-rival-search-empty" hidden>
+            <span aria-hidden="true">🔎</span>
+            <strong>No encontramos esa pareja rival</strong>
+            <p>Revisa el nombre o limpia la búsqueda para volver a ver todos tus partidos.</p>
           </div>
         </div>
 
@@ -839,7 +872,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
             </div>
           </div>
           <input type="text" name="fecha_propuesta" id="fpFechaPropuesta" class="form-control"
-                 placeholder="Seleccioná día y hora"
+                 placeholder="Selecciona día y hora"
                  data-min="<?= date('Y-m-d H:i', strtotime('+1 hour')) ?>"
                  autocomplete="off" readonly
                  style="margin-top:1rem;max-width:320px;cursor:pointer;background:#fff">
@@ -1169,8 +1202,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
       </h3>
       <p style="color:var(--gray-500);font-size:.8rem;line-height:1.4">
         Cuando te suspenden una fecha, acá ves los equipos a los que <strong>les reprogramaron</strong> un partido
-        (no los que lo solicitaron). Elegí el <strong>día que querés jugar</strong> y se ocultan los que ese día
-        ya tienen otro partido. Si ya jugaste contra ellos verás el <strong>resultado</strong>; si no, podés
+        (no los que lo solicitaron). Elige el <strong>día en que quieres jugar</strong> y se ocultan los que ese día
+        ya tienen otro partido. Si ya jugaste contra ellos verás el <strong>resultado</strong>; si no, puedes
         <strong>contactarlos</strong> para coordinar.
       </p>
       <p style="color:var(--gray-400);font-size:.72rem;margin-top:.35rem">Liga: <strong><?= epl_h($liga['nombre'] ?? '') ?></strong></p>
@@ -1189,9 +1222,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
       <!-- Selector de día para jugar -->
       <div class="adel-date-bar">
         <div style="flex:1;min-width:200px">
-          <label class="adel-date-label">📅 ¿Qué día querés jugar?</label>
+          <label class="adel-date-label">📅 ¿Qué día quieres jugar?</label>
           <input type="text" id="adelFecha" class="form-control"
-                 placeholder="Elegí un día"
+                 placeholder="Elige un día"
                  data-min="<?= date('Y-m-d', strtotime('+1 day')) ?>"
                  autocomplete="off" readonly style="cursor:pointer;background:#fff">
         </div>
@@ -1298,7 +1331,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && !$bloqueado_reprogs) {
 
         <label class="modal-af-label">Nueva fecha y hora</label>
         <input type="text" name="fecha_propuesta" id="fpModalFecha" class="form-control"
-               placeholder="Seleccioná día y hora"
+               placeholder="Selecciona día y hora"
                data-min="<?= date('Y-m-d H:i', strtotime('+48 hours')) ?>"
                autocomplete="off" readonly required
                style="cursor:pointer;background:#fff">
@@ -2002,6 +2035,55 @@ function rpSelPartido(radio) {
   cargarRivales(radio.dataset.rivales);
 }
 
+function rpNormalizarBusqueda(valor) {
+  return (valor || '')
+    .toLocaleLowerCase('es-CL')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function rpFiltrarRivales() {
+  const input = document.getElementById('rpBuscarRival');
+  const lista = document.getElementById('rpListaPartidos');
+  const resumen = document.getElementById('rpResultadosBusqueda');
+  const vacio = document.getElementById('rpBusquedaVacia');
+  const limpiar = document.getElementById('rpLimpiarBusqueda');
+  if (!input || !lista || !resumen || !vacio || !limpiar) return;
+
+  const consulta = rpNormalizarBusqueda(input.value);
+  const terminos = consulta.split(/\s+/).filter(Boolean);
+  const tarjetas = Array.from(lista.querySelectorAll('.rp-partido-option'));
+  let visibles = 0;
+
+  tarjetas.forEach(tarjeta => {
+    const rival = rpNormalizarBusqueda(tarjeta.dataset.rivalSearch);
+    const coincide = terminos.every(termino => rival.includes(termino));
+    tarjeta.hidden = !coincide;
+
+    if (coincide) {
+      visibles++;
+      return;
+    }
+
+    const radio = tarjeta.querySelector('input[type="radio"]');
+    if (radio?.checked) {
+      radio.checked = false;
+      document.getElementById('hiddenPartidoIdRp').value = '';
+      const rivales = document.getElementById('seccionRivales');
+      if (rivales) rivales.style.display = 'none';
+    }
+  });
+
+  const total = tarjetas.length;
+  resumen.textContent = consulta
+    ? `${visibles} de ${total} partido${total === 1 ? '' : 's'}`
+    : `${total} partido${total === 1 ? '' : 's'} disponible${total === 1 ? '' : 's'}`;
+  vacio.hidden = visibles !== 0;
+  lista.hidden = visibles === 0;
+  limpiar.hidden = consulta === '';
+}
+
 function cargarRivales(b64) {
   const wrapper = document.getElementById('seccionRivales');
   const lista   = document.getElementById('listaRivales');
@@ -2126,6 +2208,16 @@ function rpSwitchTab(tabId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const buscarRival = document.getElementById('rpBuscarRival');
+  const limpiarBusqueda = document.getElementById('rpLimpiarBusqueda');
+  buscarRival?.addEventListener('input', rpFiltrarRivales);
+  limpiarBusqueda?.addEventListener('click', () => {
+    buscarRival.value = '';
+    rpFiltrarRivales();
+    buscarRival.focus();
+  });
+  rpFiltrarRivales();
+
   const checked = document.querySelector('input[name="_rp_partido_pick"]:checked');
   if (checked) {
     document.getElementById('hiddenPartidoIdRp').value = checked.value;
