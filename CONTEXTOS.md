@@ -52,7 +52,7 @@ La idea de reconstruir el proyecto en una carpeta paralela usando un framework m
 
 - GitHub: `https://github.com/pabloromeroduarte-sys/epl_app.git`.
 - Rama principal: `main`.
-- Al momento de este documento, `HEAD`, `origin/main` y producción están sincronizados en `4d5ec9bf`.
+- Al momento de este documento, `HEAD`, `origin/main` y producción están sincronizados en `4ee513ba`.
 
 ### Producción
 
@@ -195,7 +195,8 @@ No volver a depender de grandes bloques `<style>` dentro del body para páginas 
 - `ranking.php`: ranking anual de parejas, con filtros, podio, tabla, modelo de puntos y clasificación al Máster.
 - `registro.php`, `login.php`, `recuperar.php`, `cambiar_password.php`.
 - `dashboard.php`: inicio del jugador.
-- `mis_torneos.php`, `clasificacion.php`, `resultados.php`.
+- `mis_torneos.php`: vista de torneos del jugador organizada en 3 sub-pestañas: 📊 **Tabla de Posiciones** (clasificación completa con podio y destaque de su equipo), 🎾 **Mis Partidos** (próximos juegos y últimos resultados con marcadores y compartir WhatsApp) y 📅 **Fixture del Torneo** (calendario completo con filtro interactivo por fecha y buscador en tiempo real).
+- `clasificacion.php`, `resultados.php`.
 - `ingresar_resultado.php`.
 - `reprogramar.php`.
 - `mis_suplentes.php`.
@@ -241,6 +242,15 @@ No volver a depender de grandes bloques `<style>` dentro del body para páginas 
 - `cron/cron_cumpleanos.php`.
 
 ## 9. Funciones deportivas terminadas
+
+### Torneos del Jugador (Mis Torneos)
+
+- Visualización integral del torneo seleccionado sin obligar al jugador a navegar a la vista pública.
+- Sub-pestaña **📊 Tabla de Posiciones**: clasificación completa (# con medallas para el podio, avatares de jugadores, nombre de equipo, badge destacado `MI EQUIPO` / `TÚ`, PJ, PG, PP, GF, GC, diferencia de games coloreada y puntos en negrita).
+- Sub-pestaña **🎾 Mis Partidos**: próximos partidos y últimos resultados disputados por la pareja con marcadores, indicador WIN/LOSS, botón directo para registrar resultado (`+ Marcador`) y enlace WhatsApp para compartir fechas y triunfos.
+- Sub-pestaña **📅 Fixture del Torneo**: calendario de partidos agrupados por jornada, con selector interactivo de fechas y buscador en tiempo real por equipo/jugador (`partido-card-v2`).
+- Soporte para navegación interna por hash (`#tab-posiciones`, `#tab-mis-partidos`, `#tab-fixture`) y conmutación fluida sin recargas.
+- Corrección de estado para torneos activos o finalizados con partidos o posiciones, evitando el recuadro erróneo de "En proceso de inscripción".
 
 ### Resultados
 
@@ -423,8 +433,8 @@ Pendiente: armar la **presentación de calendario en PDF** para ofrecer a los cl
 ### Sincronización
 
 - Rama: `main`.
-- `HEAD`, `origin/main` y producción: sincronizados en `4d5ec9bf`.
-- Último commit: `4d5ec9bf`.
+- `HEAD`, `origin/main` y producción: sincronizados en `4ee513ba`.
+- Último commit: `4ee513ba`.
 
 ### Cambios locales todavía no commiteados
 
@@ -505,7 +515,24 @@ Estos cambios deben probarse y separarse en uno o más commits antes de publicar
 - Las fechas del 31 de diciembre del año actual se respaldan en `reprogramaciones_fecha_normalizada` y luego se convierten a fecha nula.
 - **Eliminar gestión** en Partidos en gestión crea una exclusión reversible en `reprogramaciones_ocultas`; no altera estado, fecha, recinto, resultado ni solicitudes.
 - Prueba local: 12 partidos visibles, 9 fechas `31/12/2026` normalizadas con respaldo, 12 botones renderizados y partido sin cambios después de probar la eliminación.
-- Estado: no commiteado y no publicado; la base productiva no fue modificada.
+### Tabla de Posiciones y Fixture en Mis Torneos publicada el 25 de agosto de 2026
+
+- Se integró la clasificación general completa y el fixture de partidos por jornada directamente en la pestaña del torneo seleccionado en `mis_torneos.php`.
+- Sub-pestañas:
+  1. **📊 Tabla de Posiciones**: clasificación completa (#, podio coloreado, avatares, equipo con badge destacado `MI EQUIPO` / `TÚ`, PJ, PG, PP, GF, GC, Dif. de games y Pts).
+  2. **🎾 Mis Partidos**: próximos partidos y últimos resultados con marcadores, indicador WIN/LOSS, botón `+ Marcador` y enlaces WhatsApp.
+  3. **📅 Fixture del Torneo**: partidos por jornada con filtro interactivo de fecha y buscador en tiempo real.
+- Corrección de estado para torneos activos o finalizados que antes mostraban erróneamente la tarjeta de "En proceso de inscripción".
+- Archivos: `mis_torneos.php`, `ACTUALIZACIONES.md` y `CONTEXTOS.md`.
+- Commits y producción: `4c073bba` y `4ee513ba`; webhook completado con código 0 y OPcache reiniciado en DigitalOcean.
+
+### Simplificación de reprogramaciones del jugador publicada el 25 de agosto de 2026
+
+- Se simplificó la interfaz del jugador en `reprogramar.php` dejando solo dos opciones: **🔄 Solicitar** (con buscador de rivales) y **📅 Mis Reprogramaciones** (solicitudes activas y partidos jugados).
+- Se ocultaron las pestañas secundarias pesadas (*Todos los Reprogramados* y *Adelantar Fecha*).
+- Se redirigió el enlace en `dashboard.php` a `#mis-reprogramaciones`.
+- Archivos: `reprogramar.php`, `dashboard.php`, `CONTEXTOS.md` y `ACTUALIZACIONES.md`.
+- Commit y producción: `4d5ec9bf`; webhook completado con código 0 y OPcache reiniciado en DigitalOcean.
 
 ### Ficha emergente de partido publicada el 18 de agosto de 2026
 
