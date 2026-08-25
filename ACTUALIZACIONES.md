@@ -14,7 +14,7 @@
 - En `dashboard.php`, se simplificó el enlace de reprogramaciones para dirigir de forma consistente a `#mis-reprogramaciones`.
 - Validación: sintaxis PHP sin errores en `reprogramar.php` y `dashboard.php`. No se modificaron datos de la base de datos ni producción.
 - Archivos: `reprogramar.php`, `dashboard.php`, `CONTEXTOS.md` y `ACTUALIZACIONES.md`.
-- Estado: cambio **solo en local, no commiteado y no publicado**.
+- Estado: cambio **desplegado a producción (DigitalOcean) y subido a GitHub (commit `4d5ec9bf`)**.
 
 ## Actualización 24 de agosto de 2026 — flujo definitivo de reprogramación y cancha
 

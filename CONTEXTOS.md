@@ -52,7 +52,7 @@ La idea de reconstruir el proyecto en una carpeta paralela usando un framework m
 
 - GitHub: `https://github.com/pabloromeroduarte-sys/epl_app.git`.
 - Rama principal: `main`.
-- Al momento de este documento, `HEAD` y `origin/main` están sincronizados en `02e389f8`.
+- Al momento de este documento, `HEAD`, `origin/main` y producción están sincronizados en `4d5ec9bf`.
 
 ### Producción
 
@@ -423,8 +423,8 @@ Pendiente: armar la **presentación de calendario en PDF** para ofrecer a los cl
 ### Sincronización
 
 - Rama: `main`.
-- `HEAD` y `origin/main`: sin diferencias al revisar este documento.
-- Último commit: `02e389f8`.
+- `HEAD`, `origin/main` y producción: sincronizados en `4d5ec9bf`.
+- Último commit: `4d5ec9bf`.
 
 ### Cambios locales todavía no commiteados
 
