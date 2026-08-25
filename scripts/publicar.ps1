@@ -75,7 +75,10 @@ Write-Host "GitHub actualizado." -ForegroundColor Green
 
 # Sincronizar local (XAMPP) automáticamente
 Write-Host "Sincronizando local..." -ForegroundColor Cyan
-git -C $root pull origin main --ff-only 2>$null
+& {
+    $ErrorActionPreference = "Continue"
+    git -C $root pull origin main --ff-only 2>&1 | Out-Null
+}
 Write-Host "Local sincronizado." -ForegroundColor Green
 
 if ($Desplegar) {
