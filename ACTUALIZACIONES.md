@@ -4,6 +4,18 @@
 > Objetivo: que Claude, Gemini, Antigravity, Codex u otro agente puedan continuar el trabajo sin perder el contexto.  
 > Este archivo **no debe contener contraseñas, tokens, claves API ni contenido de `.env`**.
 
+## Actualización 25 de agosto de 2026 — integración directa de la Tabla de Posiciones y Fixture en Mis Torneos
+
+- Se integró la **Tabla de Posiciones completa** y el **Fixture del Torneo** directamente en la pestaña del torneo en `mis_torneos.php`, eliminando la necesidad de que el jugador abandone su panel para ver la clasificación.
+- Se organizó el detalle del torneo mediante 3 sub-pestañas ágiles y responsivas:
+  1. 📊 **Tabla de Posiciones**: clasificación general completa (#, avatares, equipo con indicador `MI EQUIPO` / `TÚ`, PJ, PG, PP, GF, GC, Dif. de games y Pts).
+  2. 🎾 **Mis Partidos**: próximos partidos y últimos resultados de la pareja con marcadores y enlaces directos de WhatsApp para compartir partidos y victorias.
+  3. 📅 **Fixture del Torneo**: calendario completo de partidos agrupados por jornada, con filtro interactivo por fecha y buscador en tiempo real por equipo/jugador.
+- Se corrigió la condición de despliegue para torneos activos o finalizados que antes caían erróneamente en el aviso de "En proceso de inscripción" cuando ya contaban con partidos o tabla generada.
+- Validación: PHP sin errores de sintaxis (`php -l mis_torneos.php`). Funciona de manera fluida en desktop y móvil sin recargas de página.
+- Archivos: `mis_torneos.php`, `ACTUALIZACIONES.md` y `CONTEXTOS.md`.
+- Estado: cambio **probado en local, listo para revisión del usuario (no publicado aún)**.
+
 ## Actualización 25 de agosto de 2026 — simplificación de pestañas en reprogramaciones del jugador
 
 - Se simplificó la vista de reprogramaciones del jugador en `reprogramar.php` ocultando las pestañas secundarias **Todos los Reprogramados** y **Adelantar Fecha**.

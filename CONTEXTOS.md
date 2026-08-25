@@ -1,7 +1,7 @@
 # Elite Padel League — contexto integral del proyecto
 
 > Actualizado: **25 de agosto de 2026**  
-> Última edición: simplificación del portal de reprogramación del jugador (se ocultan opciones secundarias y quedan solo Solicitar y Mis Reprogramaciones).  
+> Última edición: integración de la Tabla de Posiciones y Fixture directamente en la vista de Mis Torneos del jugador (`mis_torneos.php`).  
 > Documento compartido para Claude, Gemini, Antigravity, Codex y futuros agentes.  
 > Fuente de verdad operativa complementaria a Git: verificar siempre con `git status`, `git diff` y `git log`.
 
