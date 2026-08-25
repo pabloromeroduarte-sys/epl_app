@@ -50,22 +50,26 @@ function reprog_jugadores_partido(PDO $db, int $partido_id): array {
 
 if ($accion === 'aprobar') {
     $fecha_aprobada  = trim($_POST['fecha_aprobada']  ?? '') ?: $sol['fecha_propuesta'];
-    $cancha_aprobada = trim($_POST['cancha_aprobada'] ?? '');
 
     $db->prepare("UPDATE solicitudes_reprogramacion SET
-        estado='aprobada', fecha_aprobada=?, cancha_aprobada=?, aprobado_por=?
+        estado='aprobada', fecha_aprobada=?, cancha_aprobada=NULL, aprobado_por=?
         WHERE id=?
-    ")->execute([$fecha_aprobada, $cancha_aprobada?:null, $admin['id'], $id]);
+    ")->execute([$fecha_aprobada, $admin['id'], $id]);
 
     // Capturar snapshot original ANTES de cambiar fecha/cancha
     epl_partido_snapshot_original((int)$sol['partido_id']);
 
-    // Actualizar el partido con la nueva fecha y cancha
-    $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=?, cancha=? WHERE id=?")
-       ->execute([$fecha_aprobada, $cancha_aprobada?:null, $sol['partido_id']]);
+    // La organización aprueba la fecha. La cancha nueva queda separada de la
+    // reserva original y solo se confirma cuando responde el club (o cuando el
+    // admin la asigna explícitamente en la ficha).
+    $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=?, recinto_id=NULL, cancha=NULL,
+                    cancha_token=NULL, cancha_solicitada_at=NULL,
+                    cancha_confirmada_at=NULL, cancha_confirmada_por=NULL
+                  WHERE id=?")
+       ->execute([$fecha_aprobada, $sol['partido_id']]);
 
     // Notificar a todos los jugadores del partido
-    $fecha_fmt = $fecha_aprobada ? date('d/m/Y H:i', strtotime($fecha_aprobada)) : 'nueva fecha';
+    $fecha_fmt = $fecha_aprobada ? date('d/m/Y H:i', strtotime($fecha_aprobada)) : 'Sin fecha definida';
 
     // Cargar nombres de equipos para el email visual
     $stPN = $db->prepare("
@@ -78,15 +82,16 @@ if ($accion === 'aprobar') {
     $stPN->execute([$sol['partido_id']]);
     $pnombres = $stPN->fetch(PDO::FETCH_ASSOC);
 
-    $filas_aprob = array_values(array_filter([
+    $filas_aprob = [
         ['icon' => '📅', 'label' => 'Nueva fecha', 'valor' => $fecha_fmt],
-        $cancha_aprobada ? ['icon' => '🏟️', 'label' => 'Cancha', 'valor' => $cancha_aprobada] : null,
-    ]));
+        ['icon' => '🏟️', 'label' => 'Cancha', 'valor' => $fecha_aprobada ? 'Por confirmar con el club' : 'Se coordinará cuando exista una fecha'],
+    ];
 
     foreach (reprog_jugadores_partido($db, $sol['partido_id']) as $j) {
-        $msg = 'Tu partido fue reprogramado para el ' . $fecha_fmt;
-        if ($cancha_aprobada) $msg .= ' en ' . $cancha_aprobada;
-        $msg .= '. Revisa tus partidos para más detalles.';
+        $msg = $fecha_aprobada
+            ? 'La reprogramación fue aprobada para el ' . $fecha_fmt . '. La cancha será confirmada por el club.'
+            : 'La reprogramación fue aprobada sin fecha definida. Coordina una nueva fecha con el rival.';
+        $msg .= ' Revisa tus partidos para más detalles.';
         epl_notif_crear((int)$j['id'], 'reprogramacion', '📅 Partido reprogramado', $msg, epl_url('reprogramar.php#mis-reprogramaciones'), true);
         epl_mail_partido_visual(
             (int)$j['id'],
@@ -94,8 +99,10 @@ if ($accion === 'aprobar') {
             $pnombres ? $pnombres['local_nombre']     : null,
             $pnombres ? $pnombres['visitante_nombre'] : null,
             $filas_aprob,
-            'El administrador aprobó la reprogramación.',
-            '✅ Tu partido quedó confirmado para la nueva fecha. Recuerda llegar 10 minutos antes.',
+            'La organización aprobó la reprogramación.',
+            $fecha_aprobada
+                ? '✅ La fecha quedó aprobada. El club debe confirmar la cancha antes del partido.'
+                : '✅ El cambio quedó aprobado sin fecha definida. Coordina una nueva fecha con el rival.',
             epl_url('reprogramar.php#mis-reprogramaciones')
         );
     }
@@ -106,8 +113,20 @@ if ($accion === 'aprobar') {
     $db->prepare("UPDATE solicitudes_reprogramacion SET estado='rechazada', aprobado_por=? WHERE id=?")
        ->execute([$admin['id'], $id]);
 
-    // Restaurar partido a pendiente
-    $db->prepare("UPDATE partidos SET estado='pendiente' WHERE id=?")->execute([$sol['partido_id']]);
+    // Restaurar partido a pendiente con su fecha/cancha original
+    $pid = (int)$sol['partido_id'];
+    $row = $db->prepare("SELECT fecha_original, recinto_original_id FROM partidos WHERE id=?");
+    $row->execute([$pid]);
+    $orig = $row->fetch(PDO::FETCH_ASSOC);
+
+    $sets = "estado='pendiente', fecha_original=NULL, recinto_original_id=NULL";
+    if ($orig && !empty($orig['fecha_original'])) {
+        $sets .= ", fecha_programada=" . $db->quote($orig['fecha_original']);
+    }
+    if ($orig && !empty($orig['recinto_original_id'])) {
+        $sets .= ", recinto_id=" . (int)$orig['recinto_original_id'];
+    }
+    $db->exec("UPDATE partidos SET $sets WHERE id=$pid");
 
     // Notificar al solicitante que fue rechazada
     if ($sol['solicitante_id']) {

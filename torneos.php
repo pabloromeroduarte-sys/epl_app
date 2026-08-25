@@ -1,11 +1,13 @@
 <?php
-$page_title       = 'Torneos de Pádel';
+$page_title       = 'Calendario de Torneos';
 $active_nav       = 'torneos';
-$meta_description = 'Calendario de torneos de pádel Elite Padel League en Santiago: ligas activas, inscripciones abiertas, americanos y categorías por nivel. Inscribite ahora.';
-$meta_keywords    = 'torneos padel santiago, liga padel chile, inscripcion padel, ligas EPL, americano padel, categorias padel';
+$page_css         = 'torneos-public';
+$meta_description = 'Calendario anual de torneos Elite Padel League en Santiago. Compite en pareja, acumula puntos y clasifica al Máster Final.';
+$meta_keywords    = 'calendario torneos padel santiago, ranking parejas padel, master final padel, circuito anual padel, elite padel league';
 require_once 'includes/functions.php';
 
 $db = epl_db();
+$temporada = (int)date('Y');
 $ligas = $db->query("
     SELECT l.*, r.nombre AS recinto_nombre, rs.nombre AS recinto_superior_nombre
     FROM ligas l
@@ -13,84 +15,68 @@ $ligas = $db->query("
     LEFT JOIN recintos rs ON rs.id = r.superior_id
     ORDER BY FIELD(l.estado,'activa','inscripcion','proximamente','finalizada'), l.id DESC
 ")->fetchAll();
+$modelo_ranking = $ligas[0] ?? [];
 ?>
 <?php require_once 'includes/header.php'; ?>
-
-<style>
-    /* RESET PARA EL CONTENIDO CENTRAL */
-    .epl-body-content {
-        font-family: 'Montserrat', sans-serif !important;
-        background-color: #F5F7F8;
-        width: 100vw !important;
-        position: relative;
-        left: 50%; right: 50%;
-        margin-left: -50vw !important; margin-right: -50vw !important;
-        min-height: 100vh;
-    }
-
-    /* HERO SECTION */
-    .hero-section {
-        background-color: #0A1421;
-        background-image: linear-gradient(to bottom, rgba(10, 20, 33, 0.90) 0%, rgba(28, 47, 72, 0.75) 50%, rgba(10, 20, 33, 0.95) 100%),
-                          url('<?= epl_url('assets/img/landing/accion-padel.jpg') ?>');
-        background-size: cover; background-position: center center; width: 100%; display: block;
-    }
-    .giant-title { line-height: 0.9; letter-spacing: -0.02em; }
-
-    /* Cards con jerarquía visual mejorada */
-    .torneo-card { transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease; }
-    .torneo-card:hover { transform: translateY(-4px); }
-    .filter-chip { padding:.5rem 1.1rem;border-radius:999px;font-size:.72rem;font-weight:800;
-                    text-transform:uppercase;letter-spacing:.08em;border:1.5px solid #e2e8f0;
-                    background:#fff;color:#475569;cursor:pointer;transition:all .18s; }
-    .filter-chip.active { background:#1C2F48;color:#C9A762;border-color:#1C2F48; }
-    .filter-chip:hover:not(.active) { border-color:#1C2F48;color:#1C2F48; }
-
-    /* CONTENEDORES BÁSICOS */
-    .sidebar-card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.02); border-left: 6px solid #C9A762; margin-bottom: 1.5rem; }
-    @media (min-width: 640px) { .sidebar-card { padding: 2.5rem; margin-bottom: 2rem; } }
-    
-    /* ANIMACIÓN DEL BOTÓN EN VIVO */
-    @keyframes pulse-live {
-        0% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.5; transform: scale(1.2); }
-        100% { opacity: 1; transform: scale(1); }
-    }
-    .animate-pulse-live { animation: pulse-live 1.5s infinite; }
-</style>
 
 <div class="epl-body-content antialiased">
 
     <!-- HERO SECTION TORNEOS -->
-    <header class="hero-section pt-28 pb-14 md:pt-[240px] md:pb-44 text-center px-4 md:px-6">
-        <div class="max-w-5xl mx-auto">
-            <span class="font-secondary font-black text-epl-gold tracking-[0.4em] md:tracking-[0.6em] uppercase text-[10px] md:text-xs mb-5 md:mb-8 block opacity-90 drop-shadow-lg">
-                Plataforma de Encuentros Oficiales
-            </span>
-            <h1 class="giant-title text-5xl md:text-8xl lg:text-[9rem] text-white font-primary mb-6 md:mb-10 drop-shadow-2xl uppercase">
-                Ligas y <span class="text-epl-gold">Resultados</span>
-            </h1>
-            <p class="mt-3 md:mt-4 max-w-2xl mx-auto text-base md:text-xl text-gray-200 font-secondary font-medium mb-8 md:mb-12 leading-relaxed opacity-90">
-                Inscríbete en las próximas fechas, sigue el calendario oficial al instante y vive la experiencia de nuestra comunidad.
-            </p>
+    <header class="tournaments-hero">
+        <div class="tournaments-hero__outline" aria-hidden="true">1D</div>
+        <div class="tournaments-hero__inner">
+            <div class="tournaments-hero__copy">
+                <span class="tournaments-hero__pill"><i></i> Circuito anual EPL <?= $temporada ?></span>
+                <p>Calendario por categoría · Santiago</p>
+                <h1>Todo el año.<br><span>Una gran final.</span></h1>
+                <div class="tournaments-hero__lead">Elige tus fechas, compite en torneos de un día y acumula puntos con tu pareja para llegar al Máster Final EPL.</div>
+                <div class="tournaments-hero__actions">
+                    <a href="#proximas-fechas">Ver próximas fechas ↓</a>
+                    <a href="<?= epl_url('ranking.php') ?>">Explorar ranking ↗</a>
+                </div>
+            </div>
+
+            <aside class="tournaments-score-card" aria-label="Puntos que entrega cada torneo">
+                <div class="tournaments-score-card__head"><span>Puntos por fecha</span><b>Carrera al Máster</b></div>
+                <div class="tournaments-score-card__row tournaments-score-card__row--first"><span>01 <small>Campeón</small></span><strong><?= (int)($modelo_ranking['puntos_1'] ?? 100) ?> <i>pts</i></strong></div>
+                <div class="tournaments-score-card__row"><span>02 <small>Finalista</small></span><strong><?= (int)($modelo_ranking['puntos_2'] ?? 70) ?> <i>pts</i></strong></div>
+                <div class="tournaments-score-card__row"><span>03 <small>Tercer lugar</small></span><strong><?= (int)($modelo_ranking['puntos_3'] ?? 50) ?> <i>pts</i></strong></div>
+                <div class="tournaments-score-card__row"><span>+ <small>Participación</small></span><strong><?= (int)($modelo_ranking['puntos_grupos'] ?? 10) ?> <i>pts</i></strong></div>
+                <p>Los resultados de la pareja se acumulan durante toda la temporada.</p>
+            </aside>
         </div>
     </header>
 
+    <section class="tournaments-road" aria-label="Ruta anual hacia el Máster Final">
+        <div class="tournaments-road__inner">
+            <div class="tournaments-road__head">
+                <span>Rumbo al Máster <?= $temporada ?></span>
+                <h2>Una temporada. Cuatro etapas.</h2>
+            </div>
+            <div class="tournaments-road__steps">
+                <article><b>01</b><span><strong>Elige tus fechas</strong><small>Calendario anual por categoría.</small></span></article>
+                <article><b>02</b><span><strong>Compite</strong><small>Cada torneo se define en un día.</small></span></article>
+                <article><b>03</b><span><strong>Acumula puntos</strong><small>Tu pareja escala en el ranking.</small></span></article>
+                <article class="tournaments-road__master"><b>04</b><span><strong>Máster Final</strong><small>Las mejores parejas clasifican.</small></span></article>
+            </div>
+        </div>
+    </section>
+
     <!-- ZONA 1: DIRECTORIO DE TORNEOS -->
-    <section class="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-20">
+    <section class="max-w-7xl mx-auto px-4 md:px-8 py-10 md:py-20" id="proximas-fechas">
         <div class="mb-8 md:mb-12 border-b-4 border-epl-gold/20 pb-4 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-                <span class="text-epl-gold font-black text-[10px] uppercase tracking-[0.2em] mb-2 block">Calendario</span>
-                <h2 class="text-4xl text-epl-blue font-primary uppercase tracking-tight">Directorio de <span class="text-epl-gold">Ligas</span></h2>
+                <span class="text-epl-gold font-black text-[10px] uppercase tracking-[0.2em] mb-2 block">Temporada <?= $temporada ?></span>
+                <h2 class="text-4xl text-epl-blue font-primary uppercase tracking-tight">Calendario <span class="text-epl-gold">Anual</span></h2>
             </div>
-            <p class="text-xs text-gray-500 font-medium"><?= count($ligas) ?> torneo<?= count($ligas)!==1?'s':'' ?> en el calendario</p>
+            <p class="text-xs text-gray-500 font-medium"><?= count($ligas) ?> fecha<?= count($ligas)!==1?'s':'' ?> en el calendario</p>
         </div>
 
         <?php if (empty($ligas)): ?>
           <div class="text-center py-16 bg-white rounded-3xl border border-gray-100">
             <div class="text-6xl mb-4">🏆</div>
             <p class="text-gray-500 font-medium">No hay torneos disponibles aún.</p>
-            <p class="text-xs text-gray-400 mt-2">Volvé pronto — estamos preparando la próxima temporada.</p>
+            <p class="text-xs text-gray-400 mt-2">Vuelve pronto — estamos preparando la próxima fecha de un día.</p>
           </div>
         <?php else:
           // Conteos por estado para filtros
@@ -138,7 +124,7 @@ $ligas = $db->query("
               }
 
               // Nombre corto para la miniatura
-              $nombre_corto = $l['categoria'] ? $l['categoria'] . ' Categoría' : ($l['tipo'] === 'liga' ? 'Liga Padel' : 'Americano');
+              $nombre_corto = $l['categoria'] ? $l['categoria'] . 'ª categoría' : ($l['tipo'] === 'liga' ? 'Liga de pádel' : 'Americano');
             ?>
             <div class="torneo-card bg-white rounded-[24px] overflow-hidden shadow-[0_5px_15px_rgba(0,0,0,0.05)] border border-gray-100 flex flex-col hover:shadow-[0_10px_25px_rgba(201,167,98,0.15)] hover:border-epl-gold group" data-estado="<?= epl_h($l['estado']) ?>">
               
@@ -210,7 +196,7 @@ $ligas = $db->query("
                         <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
                         RESULTADOS EN VIVO
                       <?php elseif ($l['estado'] === 'inscripcion'): ?>
-                        INSCRIBIR PAREJA AHORA
+                        ASEGURAR MI CUPO
                       <?php else: ?>
                         VER DETALLES
                       <?php endif; ?>
@@ -228,7 +214,7 @@ $ligas = $db->query("
     <!-- ZONA 2: BENEFICIOS (REEMPLAZA AL ANTIGUO CENTRO DE ESTADÍSTICAS) -->
     <main class="max-w-7xl mx-auto px-4 sm:px-8 py-10 md:py-24 border-t border-gray-200">
         <div class="mb-10 border-b-4 border-epl-gold/20 pb-4">
-            <h2 class="text-4xl text-epl-blue font-primary uppercase tracking-tight">El Circuito <span class="text-epl-gold">EPL</span></h2>
+            <h2 class="text-4xl text-epl-blue font-primary uppercase tracking-tight">Cada Fecha <span class="text-epl-gold">Cuenta</span></h2>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-12">
@@ -240,29 +226,29 @@ $ligas = $db->query("
                     <!-- Beneficio 1 -->
                     <div class="bg-white p-8 md:p-10 rounded-[30px] border border-gray-100 shadow-[0_5px_20px_rgba(0,0,0,0.03)] hover:border-epl-gold hover:shadow-xl transition-all group">
                         <div class="w-14 h-14 bg-epl-blue text-epl-gold rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform shadow-md">📊</div>
-                        <h3 class="font-primary text-2xl text-epl-blue uppercase tracking-wide mb-3">Estadísticas Pro</h3>
-                        <p class="text-gray-500 text-sm font-medium leading-relaxed">Olvídate de los Excel. Al unirte, tendrás un perfil profesional con tu win-rate, historial detallado de partidos y puntos acumulados en tiempo real.</p>
+                        <h3 class="font-primary text-2xl text-epl-blue uppercase tracking-wide mb-3">Ranking de Parejas</h3>
+                        <p class="text-gray-500 text-sm font-medium leading-relaxed">Cada resultado suma a la pareja durante la temporada. La constancia en el calendario construye la clasificación.</p>
                     </div>
 
                     <!-- Beneficio 2 -->
                     <div class="bg-white p-8 md:p-10 rounded-[30px] border border-gray-100 shadow-[0_5px_20px_rgba(0,0,0,0.03)] hover:border-epl-gold hover:shadow-xl transition-all group">
                         <div class="w-14 h-14 bg-epl-blue text-epl-gold rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform shadow-md">⚖️</div>
-                        <h3 class="font-primary text-2xl text-epl-blue uppercase tracking-wide mb-3">Nivel Garantizado</h3>
-                        <p class="text-gray-500 text-sm font-medium leading-relaxed">Filtramos estrictamente las categorías. Jugarás partidos verdaderamente competitivos y parejos contra rivales de tu mismo nivel, sin sorpresas.</p>
+                        <h3 class="font-primary text-2xl text-epl-blue uppercase tracking-wide mb-3">Formato de Un Día</h3>
+                        <p class="text-gray-500 text-sm font-medium leading-relaxed">Fase de grupos y definición en una sola jornada. Llegas a competir y vuelves a casa sabiendo tu posición y tus puntos.</p>
                     </div>
 
                     <!-- Beneficio 3 -->
                     <div class="bg-white p-8 md:p-10 rounded-[30px] border border-gray-100 shadow-[0_5px_20px_rgba(0,0,0,0.03)] hover:border-epl-gold hover:shadow-xl transition-all group">
                         <div class="w-14 h-14 bg-epl-blue text-epl-gold rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform shadow-md">🎁</div>
-                        <h3 class="font-primary text-2xl text-epl-blue uppercase tracking-wide mb-3">Welcome Pack</h3>
-                        <p class="text-gray-500 text-sm font-medium leading-relaxed">En cada fecha oficial te espera hidratación, regalos de nuestros auspiciadores e increíbles premios reservados para los campeones de liga.</p>
+                        <h3 class="font-primary text-2xl text-epl-blue uppercase tracking-wide mb-3">Nivel Garantizado</h3>
+                        <p class="text-gray-500 text-sm font-medium leading-relaxed">Las categorías se revisan para crear partidos competitivos y parejas equivalentes. El desafío es real desde el primer punto.</p>
                     </div>
 
                     <!-- Beneficio 4 -->
                     <div class="bg-white p-8 md:p-10 rounded-[30px] border border-gray-100 shadow-[0_5px_20px_rgba(0,0,0,0.03)] hover:border-epl-gold hover:shadow-xl transition-all group">
                         <div class="w-14 h-14 bg-epl-blue text-epl-gold rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform shadow-md">🍻</div>
-                        <h3 class="font-primary text-2xl text-epl-blue uppercase tracking-wide mb-3">Ambiente de Club</h3>
-                        <p class="text-gray-500 text-sm font-medium leading-relaxed">Fomentamos la comunidad por sobre todo. Conoce a tus rivales, haz *networking* y comparte un gran rato después de dejarlo todo en la pista.</p>
+                        <h3 class="font-primary text-2xl text-epl-blue uppercase tracking-wide mb-3">Máster Final</h3>
+                        <p class="text-gray-500 text-sm font-medium leading-relaxed">El calendario tiene una meta: cerrar el año reuniendo a las mejores parejas de cada categoría en una gran definición.</p>
                     </div>
 
                 </div>
@@ -271,18 +257,18 @@ $ligas = $db->query("
             <!-- SIDEBAR -->
             <aside class="lg:col-span-1 order-1 lg:order-2">
                 
-                <!-- CAJA 1: REPROGRAMACIÓN -->
+                <!-- CAJA 1: CARRERA AL MÁSTER -->
                 <div class="sidebar-card">
-                    <h4 class="font-primary text-2xl text-epl-blue mb-4 uppercase tracking-tight leading-none">Reprogramar <br><span class="text-epl-gold">Partido</span></h4>
+                    <h4 class="font-primary text-2xl text-epl-blue mb-4 uppercase tracking-tight leading-none">Tu temporada. <br><span class="text-epl-gold">Tu objetivo.</span></h4>
                     <p class="font-secondary text-xs text-gray-500 font-bold leading-relaxed mb-4">
-                        ¿Necesitas reagendar un partido? Recuerda hacerlo acá.
+                        Cada torneo del año alimenta la clasificación de tu pareja rumbo al Máster Final.
                     </p>
                     <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-6">
-                        <p class="text-[10px] text-yellow-800 font-black uppercase tracking-wider">⚠️ REGLA IMPORTANTE</p>
-                        <p class="text-[10px] text-yellow-700 font-medium leading-tight mt-1">Debe solicitarse con un mínimo de <strong>48 horas de anticipación</strong>.</p>
+                        <p class="text-[10px] text-yellow-800 font-black uppercase tracking-wider">RUMBO AL MÁSTER</p>
+                        <p class="text-[10px] text-yellow-700 font-medium leading-tight mt-1">Cada fecha es una oportunidad de sumar. Al cerrar la temporada, las mejores parejas <strong>clasifican</strong>.</p>
                     </div>
-                    <a href="<?= epl_url('reprogramar.php') ?>" class="block w-full text-center bg-epl-blue text-white py-4 rounded-xl font-secondary font-black text-[11px] uppercase tracking-[0.15em] hover:bg-epl-gold hover:text-epl-blue transition-all text-decoration-none shadow-md">
-                        SOLICITAR CAMBIO
+                    <a href="<?= epl_url('ranking.php') ?>" class="block w-full text-center bg-epl-blue text-white py-4 rounded-xl font-secondary font-black text-[11px] uppercase tracking-[0.15em] hover:bg-epl-gold hover:text-epl-blue transition-all text-decoration-none shadow-md">
+                        VER RANKING
                     </a>
                 </div>
 
@@ -292,7 +278,7 @@ $ligas = $db->query("
                     <div class="relative z-10">
                         <h4 class="font-primary text-xl text-epl-gold mb-3 uppercase leading-none">Mi Perfil</h4>
                         <p class="font-secondary text-xs text-gray-300 leading-relaxed mb-6">
-                            Revisa tus estadísticas individuales, tu win-rate y el registro de tus enfrentamientos históricos.
+                            Revisa tus estadísticas individuales, tu porcentaje de victorias y el historial de tus enfrentamientos.
                         </p>
                         <a href="<?= epl_url('mi_perfil.php') ?>" class="block w-full text-center bg-white text-epl-blue py-3.5 rounded-xl font-secondary font-black text-[10px] uppercase tracking-widest hover:bg-epl-gold hover:text-white transition-colors text-decoration-none shadow-lg">
                             Ver Mis Estadísticas

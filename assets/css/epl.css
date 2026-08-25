@@ -568,6 +568,7 @@ button { cursor: pointer; font-family: inherit; border: none; }
 }
 .dash-nav-link:hover { background: rgba(255,255,255,.08); color: var(--white); }
 .dash-nav-link.active { background: var(--gold); color: var(--navy); }
+.dash-nav-link[aria-current="page"] { background: var(--gold) !important; color: var(--navy) !important; box-shadow: 0 3px 12px rgba(201,167,98,.28); }
 .dash-nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
 
 /* ── Sidebar ADMIN: colores invertidos (fondo dorado, texto navy) ────────── */
@@ -1375,6 +1376,7 @@ button { cursor: pointer; font-family: inherit; border: none; }
   color: var(--gold);
   background: rgba(212,175,55,0.13);
 }
+.dash-bottom-link[aria-current="page"] { color: var(--gold) !important; background: rgba(212,175,55,.18) !important; }
 .dash-bottom-link.active svg {
   color: var(--gold);
 }

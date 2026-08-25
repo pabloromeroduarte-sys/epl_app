@@ -43,19 +43,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 3) Aplicar nueva fecha (y cancha si el admin la asignó)
         if ($fecha_nueva) {
             if ($rec_nuevo_id) {
-                $db->prepare("UPDATE partidos SET estado='pendiente', fecha_programada=?,
+                $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=?,
                                 recinto_id=?, cancha_token=NULL, cancha_solicitada_at=NULL,
                                 cancha_confirmada_at=NOW(), cancha_confirmada_por='Admin (manual)'
                               WHERE id = ?")->execute([$fecha_nueva, $rec_nuevo_id, $id]);
             } else {
-                $db->prepare("UPDATE partidos SET estado='pendiente', fecha_programada=?,
+                $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=?,
                                 recinto_id=NULL, cancha_token=NULL, cancha_solicitada_at=NULL,
                                 cancha_confirmada_at=NULL, cancha_confirmada_por=NULL
                               WHERE id = ?")->execute([$fecha_nueva, $id]);
             }
         } else {
-            // Sin fecha propuesta → solo pasar a pendiente
-            $db->prepare("UPDATE partidos SET estado='pendiente' WHERE id = ?")->execute([$id]);
+            // Sin fecha propuesta → queda reprogramado y a coordinar.
+            $db->prepare("UPDATE partidos SET estado='reprogramado', fecha_programada=NULL, recinto_id=NULL WHERE id = ?")->execute([$id]);
         }
 
         // 4) Marcar la solicitud como aprobada
@@ -75,8 +75,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: partido_detalle.php?id=$id"); exit;
     }
     if ($action === 'revertir_pendiente') {
-        $db->prepare("UPDATE partidos SET estado='pendiente' WHERE id = ?")->execute([$id]);
-        if (session_status() === PHP_SESSION_NONE) session_start(); $_SESSION['_epl_flash'] = ['tipo'=>'ok','msg'=>'Partido revertido a Pendiente.'];
+        // Restaurar fecha_programada/recinto_id desde fecha_original si existen
+        $row = $db->prepare("SELECT fecha_original, recinto_original_id FROM partidos WHERE id=?");
+        $row->execute([$id]);
+        $orig = $row->fetch(PDO::FETCH_ASSOC);
+
+        $sets = "estado='pendiente', fecha_original=NULL, recinto_original_id=NULL";
+        if ($orig && !empty($orig['fecha_original'])) {
+            $sets .= ", fecha_programada=" . $db->quote($orig['fecha_original']);
+        }
+        if ($orig && !empty($orig['recinto_original_id'])) {
+            $sets .= ", recinto_id=" . (int)$orig['recinto_original_id'];
+        }
+        $db->exec("UPDATE partidos SET $sets WHERE id=$id");
+
+        if (session_status() === PHP_SESSION_NONE) session_start(); $_SESSION['_epl_flash'] = ['tipo'=>'ok','msg'=>'Partido revertido a Pendiente con su horario original.'];
         header("Location: partido_detalle.php?id=$id"); exit;
     }
     if ($action === 'cancelar_partido') {
@@ -191,7 +204,8 @@ $_fo_lbl = $p['fecha_original'] ? date('d/m/Y H:i', strtotime($p['fecha_original
 $es_reprog = $p['estado'] === 'reprogramado';
 $tiene_original = !empty($p['fecha_original']) || !empty($p['rec_o_id']);
 $baja_confirmada = !empty($p['baja_confirmada_at']);
-$baja_solicitada = !empty($p['baja_solicitada_at']) && !$baja_confirmada;
+// El timestamp antiguo podía haberse creado al solo abrir una pantalla, por lo
+// que ya no se usa para afirmar que el mensaje fue enviado.
 
 // ── Estado del flujo de reprogramación ──────────────────────────────
 // Determinar si hay una solicitud pendiente de ser procesada visualmente por el admin.
@@ -245,16 +259,20 @@ if ($_tiene_fecha_nueva && $_baja_fecha && $_propuesta_raw) {
     }
 }
 
-$_baja_fecha_lbl = ($_baja_fecha && date('Y-m-d', strtotime($_baja_fecha)) !== '2026-12-31')
+$_reserva_original_vigente = epl_reserva_fecha_vigente($_baja_fecha);
+$_baja_fecha_lbl = $_reserva_original_vigente
                    ? date('d/m/Y H:i', strtotime($_baja_fecha)) : null;
 // Etiqueta legible "Cancha 12 (Santa Blanca)"
 $_baja_recinto_full = $_baja_recinto_nom
     ? $_baja_recinto_nom . ($_baja_recinto_sup ? ' (' . $_baja_recinto_sup . ')' : '')
     : null;
 
-// ¿Necesita asignar cancha nueva? (post-aprobado con fecha nueva pero sin cancha)
-$_necesita_cancha = $_post_aprobado && $_tiene_fecha_nueva && empty($p['recinto_id']);
+// La cancha solo está resuelta con confirmación explícita del club o del admin.
+// recinto_id puede contener una referencia antigua y por sí solo no confirma nada.
+$_necesita_cancha = $_post_aprobado && $_tiene_fecha_nueva
+    && (empty($p['cancha_confirmada_at']) || empty($p['recinto_id']));
 $_pedir_cancha    = $_necesita_cancha;
+$_requiere_accion_club = !$baja_confirmada && ($_reserva_original_vigente || $_necesita_cancha);
 
 // ── Canchas disponibles del club (para que admin asigne manualmente al aprobar) ──
 $_canchas_club = [];
@@ -286,7 +304,7 @@ $_host  = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
 // ── Token y link unificado (baja + cancha nueva en una sola página) ──────────
 $_baja_link = '';
-if (!$baja_confirmada) {
+if ($_requiere_accion_club) {
     $_token = epl_partido_baja_token($id);
     $_baja_link = "$_proto://$_host/gestion_reserva.php?t=$_token";
 }
@@ -308,7 +326,7 @@ if ($_tiene_fecha_nueva) {
         if ($_baja_recinto_full) $_msg_wsp .= "   🎾 $_baja_recinto_full\n";
         $_msg_wsp .= "\n";
     } else {
-        $_msg_wsp .= "ℹ️ Esta cancha ya se bajó y solo necesitamos asignar.\n\n";
+        $_msg_wsp .= "ℹ️ La reserva original ya no está vigente; solo necesitamos asignar cancha.\n\n";
     }
     $_msg_wsp .= "✅ Fecha nueva del partido:\n";
     $_msg_wsp .= "   📅 $_propuesta_lbl\n";
@@ -328,9 +346,9 @@ if ($_tiene_fecha_nueva) {
 if ($_baja_link) {
     if ($_tiene_fecha_nueva) {
         if ($_baja_fecha_lbl) {
-            $_msg_wsp .= "\nDesde este link podés confirmar la baja Y elegir la cancha nueva en un solo paso:\n$_baja_link";
+            $_msg_wsp .= "\nDesde este enlace puedes confirmar la baja y elegir la cancha nueva en un solo paso:\n$_baja_link";
         } else {
-            $_msg_wsp .= "\nDesde este link podés elegir y confirmar la cancha nueva:\n$_baja_link";
+            $_msg_wsp .= "\nDesde este enlace puedes elegir y confirmar la cancha nueva:\n$_baja_link";
         }
     } else {
         if ($_baja_fecha_lbl) {
@@ -392,25 +410,27 @@ require_once '../includes/header.php';
 
     <!-- ═══════════ FLUJO BAJA DE CANCHA ═══════════ -->
     <?php if ($es_reprog): ?>
-    <section class="card mb-3" style="border-left:5px solid <?= $baja_confirmada ? '#10b981' : ($baja_solicitada ? '#f59e0b' : '#dc2626') ?>">
+    <section class="card mb-3" style="border-left:5px solid <?= $baja_confirmada ? '#10b981' : ($_requiere_accion_club ? '#dc2626' : '#94a3b8') ?>">
       <div class="card-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
         <h2 style="font-family:'Anton',sans-serif;font-size:1.05rem;color:var(--navy);text-transform:uppercase;margin:0">
           🏟️ Baja de cancha
         </h2>
-        <span style="background:<?= $baja_confirmada ? '#dcfce7' : ($baja_solicitada ? '#fef3c7' : '#fee2e2') ?>;color:<?= $baja_confirmada ? '#15803d' : ($baja_solicitada ? '#92400e' : '#991b1b') ?>;padding:.3rem .85rem;border-radius:999px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em">
-          <?= $baja_confirmada ? '✅ Confirmada' : ($baja_solicitada ? '⏳ Esperando' : '🚫 Pendiente') ?>
+        <span style="background:<?= $baja_confirmada ? '#dcfce7' : ($_requiere_accion_club ? '#fee2e2' : '#f1f5f9') ?>;color:<?= $baja_confirmada ? '#15803d' : ($_requiere_accion_club ? '#991b1b' : '#64748b') ?>;padding:.3rem .85rem;border-radius:999px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em">
+          <?= $baja_confirmada ? '✅ Confirmada' : ($_requiere_accion_club ? '🚫 Acción pendiente' : '✓ Sin baja vigente') ?>
         </span>
       </div>
       <div class="card-body">
 
         <?php
-          // Hay info útil si hay algo que dar de baja, O BIEN si hay una propuesta nueva que mostrar
-          $_hay_info = $_baja_fecha_lbl || $_baja_recinto_nom || $_tiene_fecha_nueva;
+          $_hay_info = $baja_confirmada || $_requiere_accion_club;
         ?>
         <?php if (!$_hay_info): ?>
-          <!-- Sin ningún dato útil: pedir registrar -->
-          <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:10px;padding:1rem;font-size:.88rem;color:#92400e;margin-bottom:1rem">
-            ⚠️ Este partido no tiene fecha ni cancha original asignada para dar de baja, y aún no hay propuesta nueva.
+          <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:1rem;font-size:.88rem;color:#475569;margin-bottom:1rem">
+            <?php if (!empty($_baja_fecha) && !$_reserva_original_vigente): ?>
+              ✓ La reserva original ya venció y no requiere seguimiento. Gestiona la nueva fecha del partido en la ficha.
+            <?php else: ?>
+              Este partido no tiene una reserva vigente que liberar. Gestiona su fecha y cancha directamente en la ficha.
+            <?php endif; ?>
           </div>
         <?php else: ?>
           <!-- Cards: lo que se va a dar de baja + (si hay snapshot) la nueva fecha -->
@@ -438,7 +458,7 @@ require_once '../includes/header.php';
               <div style="font-weight:900;color:#1e3a8a;font-size:1rem;margin-top:.2rem"><?= $_propuesta_lbl ?></div>
               <?php if (!$_post_aprobado): ?>
                 <div style="font-size:.72rem;color:#92400e;margin-top:.35rem;background:#fef3c7;padding:.35rem .55rem;border-radius:6px;font-weight:700">
-                  ⏳ Aprobá la reprogramación abajo para aplicar esta fecha
+                  ⏳ Aprueba la reprogramación abajo para aplicar esta fecha
                 </div>
               <?php elseif (!empty($p['cancha_confirmada_at']) && $p['recinto_nombre']): ?>
                 <div style="font-size:.82rem;color:#15803d;margin-top:.25rem;font-weight:700">🎾 <?= epl_h($p['recinto_nombre']) ?></div>
@@ -466,7 +486,7 @@ require_once '../includes/header.php';
             <?php if (empty($contactos_club)): ?>
               <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:1rem;font-size:.88rem;color:#991b1b">
                 ⚠️ Este recinto (ni sus superiores) tiene contactos cargados.
-                <a href="recintos.php" style="color:#1c2f48;font-weight:800;text-decoration:underline">Cargá los contactos del club acá →</a>
+                <a href="recintos.php" style="color:#1c2f48;font-weight:800;text-decoration:underline">Agrega los contactos del club acá →</a>
               </div>
             <?php else: ?>
                 <p style="font-size:.85rem;color:#475569;margin-bottom:.5rem;font-weight:600">
@@ -505,11 +525,6 @@ require_once '../includes/header.php';
                   <pre style="margin:.6rem 0 0;padding:.85rem;background:#fff;border-radius:8px;font-family:inherit;font-size:.78rem;color:#475569;white-space:pre-wrap;line-height:1.5"><?= epl_h($_msg_wsp) ?></pre>
                 </details>
 
-                <?php if ($baja_solicitada): ?>
-                  <div style="margin-top:.5rem;padding:.65rem .85rem;background:#fef3c7;border-radius:8px;font-size:.78rem;color:#92400e">
-                    ⏳ Ya enviaste el mensaje (<?= date('d/m/Y H:i', strtotime($p['baja_solicitada_at'])) ?>). Esperando que el club confirme el link.
-                  </div>
-                <?php endif; ?>
             <?php endif; ?>  <!-- contactos_club -->
           <?php endif; ?>  <!-- baja_confirmada -->
 
@@ -554,7 +569,7 @@ require_once '../includes/header.php';
     <?php
       // ¿Ya confirmó cancha el club vía el link?
       $_cancha_ya_conf = !empty($p['cancha_confirmada_at']);
-      $_pedir_cancha_visible = $es_reprog && $_tiene_fecha_nueva && (empty($p['recinto_id']) || !empty($p['cancha_solicitada_at']));
+      $_pedir_cancha_visible = $es_reprog && $_tiene_fecha_nueva && empty($p['cancha_confirmada_at']);
     ?>
     <?php if ($_pedir_cancha_visible): ?>
     <section class="card mb-3" style="border-left:5px solid <?= $_cancha_ya_conf ? '#10b981' : '#3b82f6' ?>">
@@ -607,7 +622,7 @@ require_once '../includes/header.php';
           <?php if (empty($contactos_club)): ?>
             <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:1rem;font-size:.88rem;color:#991b1b">
               ⚠️ Este recinto no tiene contactos cargados.
-              <a href="recintos.php" style="color:#1c2f48;font-weight:800;text-decoration:underline">Cargá los contactos del club acá →</a>
+              <a href="recintos.php" style="color:#1c2f48;font-weight:800;text-decoration:underline">Agrega los contactos del club acá →</a>
             </div>
           <?php else: ?>
             <p style="font-size:.85rem;color:#475569;margin-bottom:.5rem;font-weight:600">

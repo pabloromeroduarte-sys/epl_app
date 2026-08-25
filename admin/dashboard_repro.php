@@ -18,20 +18,74 @@ $db = epl_db();
 epl_ensure_partidos_columnas_originales();
 $solicitud_enfoque = max(0, (int)($_GET['solicitud'] ?? 0));
 
-// Auto-limpieza: Si un partido es pre-aprobado (fecha_original es NULL) y ya tiene cancha asignada,
-// no requiere dar de baja nada ni solicitar cancha al club. Limpiar tokens/fechas de solicitud residuales.
-$db->query("
-    UPDATE partidos 
-    SET baja_solicitada_at = NULL, 
-        baja_confirmada_at = NULL,
-        baja_token = NULL, 
-        cancha_solicitada_at = NULL, 
-        cancha_confirmada_at = NULL,
-        cancha_token = NULL
-    WHERE estado = 'reprogramado' 
-      AND fecha_original IS NULL 
-      AND recinto_id IS NOT NULL
+/**
+ * El 31 de diciembre del año actual se usó históricamente como marcador de
+ * "sin fecha". El panel lo normaliza a NULL, pero conserva una copia para
+ * auditoría y eventual recuperación.
+ */
+$fecha_marcador_sin_fecha = date('Y') . '-12-31';
+
+function repro_es_sin_fecha(?string $fecha): bool {
+    return empty($fecha) || date('Y-m-d', strtotime($fecha)) === date('Y') . '-12-31';
+}
+
+/**
+ * Una reserva original solo requiere seguimiento mientras su día no haya
+ * terminado. Las fechas pasadas y el marcador histórico del 31/12 quedan como
+ * antecedente, pero no deben mantener una tarjeta en la bandeja operativa.
+ */
+function repro_reserva_original_vigente(array $partido, ?DateTimeInterface $referencia = null): bool {
+    return epl_reserva_fecha_vigente($partido['fecha_original'] ?? null, $referencia);
+}
+
+$db->exec("
+    CREATE TABLE IF NOT EXISTS reprogramaciones_fecha_normalizada (
+        partido_id INT UNSIGNED NOT NULL PRIMARY KEY,
+        fecha_anterior DATETIME NOT NULL,
+        normalizada_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 ");
+$db->exec("
+    CREATE TABLE IF NOT EXISTS reprogramaciones_ocultas (
+        partido_id INT UNSIGNED NOT NULL PRIMARY KEY,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+");
+
+$normalizados_fecha = 0;
+try {
+    $db->beginTransaction();
+    $respaldar_fechas = $db->prepare("
+        INSERT IGNORE INTO reprogramaciones_fecha_normalizada (partido_id, fecha_anterior)
+        SELECT id, fecha_programada
+        FROM partidos
+        WHERE estado NOT IN ('jugado','walkover','no_presentado')
+          AND ganador_id IS NULL
+          AND DATE(fecha_programada) = ?
+    ");
+    $respaldar_fechas->execute([$fecha_marcador_sin_fecha]);
+
+    $normalizar_fechas = $db->prepare("
+        UPDATE partidos
+        SET fecha_programada = NULL
+        WHERE estado NOT IN ('jugado','walkover','no_presentado')
+          AND ganador_id IS NULL
+          AND DATE(fecha_programada) = ?
+    ");
+    $normalizar_fechas->execute([$fecha_marcador_sin_fecha]);
+    $normalizados_fecha = $normalizar_fechas->rowCount();
+    $db->commit();
+} catch (Throwable $e) {
+    if ($db->inTransaction()) $db->rollBack();
+    error_log('dashboard_repro normalizar fecha sin asignar: ' . $e->getMessage());
+}
+
+if ($normalizados_fecha > 0 && empty($_SESSION['_epl_flash'])) {
+    $_SESSION['_epl_flash'] = [
+        'tipo' => 'ok',
+        'msg' => "$normalizados_fecha partido(s) del 31/12 quedaron sin fecha y se incorporaron a la gestión.",
+    ];
+}
 
 // ── POST: acciones administrativas de reprogramación ─────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -58,6 +112,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             $_SESSION['_epl_flash'] = ['tipo' => 'error', 'msg' => 'No se pudo identificar la gestión.'];
+        }
+
+        header('Location: dashboard_repro.php?tab=' . $return_tab); exit;
+    }
+
+    if ($action === 'ocultar_gestion_partido') {
+        $pid = (int)($_POST['partido_id'] ?? 0);
+        $return_tab = ($_POST['return_tab'] ?? '') === 'informe' ? 'informe' : 'solicitudes';
+
+        if ($pid) {
+            $partido_st = $db->prepare("
+                SELECT id FROM partidos
+                WHERE id = ? AND estado NOT IN ('jugado','walkover','no_presentado')
+            ");
+            $partido_st->execute([$pid]);
+
+            if ($partido_st->fetchColumn()) {
+                // Solo retira la tarjeta del panel. No modifica el partido ni
+                // elimina solicitudes, para que la acción sea reversible.
+                $db->prepare("INSERT IGNORE INTO reprogramaciones_ocultas (partido_id) VALUES (?)")
+                   ->execute([$pid]);
+                $_SESSION['_epl_flash'] = [
+                    'tipo' => 'ok',
+                    'msg' => 'Gestión eliminada del panel. El partido mantuvo todos sus datos sin cambios.',
+                ];
+            } else {
+                $_SESSION['_epl_flash'] = ['tipo' => 'error', 'msg' => 'El partido ya no está pendiente de gestión.'];
+            }
+        } else {
+            $_SESSION['_epl_flash'] = ['tipo' => 'error', 'msg' => 'No se pudo identificar el partido.'];
         }
 
         header('Location: dashboard_repro.php?tab=' . $return_tab); exit;
@@ -141,17 +225,29 @@ $partidos_open = $db->query("
         SELECT MAX(sr2.id) FROM solicitudes_reprogramacion sr2
         WHERE sr2.partido_id = p.id
     )
-    WHERE p.estado = 'reprogramado'
-      AND (sr.estado IS NULL OR sr.estado != 'rechazada')
+    LEFT JOIN reprogramaciones_ocultas rgo ON rgo.partido_id = p.id
+    WHERE p.estado NOT IN ('jugado','walkover','no_presentado')
+      AND p.ganador_id IS NULL
+      AND rgo.partido_id IS NULL
+      AND (
+          (p.estado = 'reprogramado' AND (sr.estado IS NULL OR sr.estado != 'rechazada'))
+          OR p.fecha_programada IS NULL
+      )
     ORDER BY
-        (p.fecha_programada IS NULL OR DATE(p.fecha_programada)='2026-12-31') ASC,
+        (p.fecha_programada IS NULL) DESC,
         p.fecha_programada ASC
 ")->fetchAll();
 
-// Reservas a dar de baja (partidos reprogramados con fecha/cancha original conocida)
-$reservas_baja = array_values(array_filter($partidos_open, function($p) {
-    return !empty($p['fecha_original']) || !empty($p['recinto_original_id']);
-}));
+// Helpers
+$hoy = new DateTimeImmutable('today');
+$es_sin_fecha = fn($p) => repro_es_sin_fecha($p['fecha_programada']);
+$es_vencido   = fn($p) => !$es_sin_fecha($p) && new DateTimeImmutable($p['fecha_programada']) < $hoy;
+
+// Reservas originales que todavía están vigentes y realmente se pueden liberar.
+$reservas_baja = array_values(array_filter(
+    $partidos_open,
+    fn($p) => repro_reserva_original_vigente($p, $hoy) && empty($p['baja_confirmada_at'])
+));
 // Ordenar por fecha_original ascendente para que las más cercanas aparezcan primero
 usort($reservas_baja, function($a, $b) {
     $ta = $a['fecha_original'] ? strtotime($a['fecha_original']) : PHP_INT_MAX;
@@ -159,33 +255,32 @@ usort($reservas_baja, function($a, $b) {
     return $ta <=> $tb;
 });
 
-// Helpers
-$hoy = new DateTime('today');
-$es_sin_fecha = fn($p) => !$p['fecha_programada'] || date('Y-m-d', strtotime($p['fecha_programada'])) === '2026-12-31';
-$es_vencido   = fn($p) => !$es_sin_fecha($p) && new DateTime($p['fecha_programada']) < $hoy;
-
 // Recientes: solicitudes creadas en las últimas 48h Y que aún necesitan gestión
-$limite_reciente = new DateTime('-48 hours');
+$limite_reciente = new DateTimeImmutable('-48 hours');
 
 /**
  * ¿Este partido todavía necesita acción del admin o del club?
  * Si está todo resuelto (baja confirmada + cancha asignada, o partido sin gestión pendiente),
  * no aparece en "Nuevas".
  */
-$necesita_gestion = function(array $p): bool {
-    $tiene_fecha_nueva = !empty($p['fecha_programada']) && date('Y-m-d', strtotime($p['fecha_programada'])) !== '2026-12-31';
+$necesita_gestion = function(array $p) use ($hoy): bool {
+    $tiene_fecha_nueva = !repro_es_sin_fecha($p['fecha_programada']);
+
+    // 0) Todo partido sin resultado y sin fecha siempre requiere gestión,
+    // aunque la solicitud administrativa se haya eliminado.
+    if (!$tiene_fecha_nueva) return true;
 
     // 1) Solicitud aún pendiente de aprobación del admin
     if (($p['sol_estado'] ?? '') === 'pendiente') return true;
 
-    // 2) Baja iniciada pero no confirmada por el club
-    if (!empty($p['baja_solicitada_at']) && empty($p['baja_confirmada_at'])) return true;
+    // 2) Solo una reserva original vigente necesita seguimiento. Si la fecha
+    // original ya pasó, queda en el historial y no ensucia la bandeja activa.
+    if (repro_reserva_original_vigente($p, $hoy) && empty($p['baja_confirmada_at'])) return true;
 
-    // 3) Post-aprobado (con snapshot) y la baja todavía no fue resuelta
-    if (!empty($p['fecha_original']) && empty($p['baja_confirmada_at']) && (($p['sol_estado'] ?? 'aprobada') !== 'pendiente')) return true;
-
-    // 4) Hay fecha nueva pero falta asignar cancha
-    if ($tiene_fecha_nueva && empty($p['cancha_confirmada_at']) && empty($p['recinto_id'])) return true;
+    // 3) La fecha ya está definida, pero el club todavía no confirmó la
+    // cancha nueva. recinto_id por sí solo no basta: en datos antiguos puede
+    // seguir apuntando a la cancha original.
+    if ($tiene_fecha_nueva && (empty($p['cancha_confirmada_at']) || empty($p['recinto_id']))) return true;
 
     return false;
 };
@@ -238,14 +333,19 @@ $pct_avance     = $total_partidos > 0 ? round(($total_jugados / $total_partidos)
 $solicitudes_pendientes = $db->query("
     SELECT sr.id AS solicitud_id, sr.partido_id, sr.solicitante_id, sr.motivo,
            sr.fecha_propuesta, sr.rival_no_responde, sr.mutuo_acuerdo, sr.estado AS sol_estado, sr.created_at,
-           p.jornada, p.fecha_programada, p.recinto_id,
+           p.jornada, p.fecha_programada, p.fecha_original,
+           p.recinto_id, p.recinto_original_id,
            l.id AS liga_id, l.nombre AS liga_nombre,
            el.nombre AS local_nombre, ev.nombre AS visitante_nombre,
            j.nombre AS sol_nombre, j.apellido AS sol_apellido,
            r.nombre AS recinto_nombre, rs.nombre AS recinto_sup,
-           r.contacto1_nombre, r.contacto1_telefono,
-           r.contacto2_nombre, r.contacto2_telefono,
-           r.contacto3_nombre, r.contacto3_telefono
+           ro.nombre AS recinto_original_nombre, ros.nombre AS recinto_original_sup,
+           COALESCE(ro.contacto1_nombre, r.contacto1_nombre) AS contacto1_nombre,
+           COALESCE(ro.contacto1_telefono, r.contacto1_telefono) AS contacto1_telefono,
+           COALESCE(ro.contacto2_nombre, r.contacto2_nombre) AS contacto2_nombre,
+           COALESCE(ro.contacto2_telefono, r.contacto2_telefono) AS contacto2_telefono,
+           COALESCE(ro.contacto3_nombre, r.contacto3_nombre) AS contacto3_nombre,
+           COALESCE(ro.contacto3_telefono, r.contacto3_telefono) AS contacto3_telefono
     FROM solicitudes_reprogramacion sr
     JOIN partidos p   ON p.id = sr.partido_id
     JOIN ligas l      ON l.id = p.liga_id
@@ -254,6 +354,8 @@ $solicitudes_pendientes = $db->query("
     JOIN jugadores j  ON j.id = sr.solicitante_id
     LEFT JOIN recintos r ON r.id = p.recinto_id
     LEFT JOIN recintos rs ON rs.id = r.superior_id
+    LEFT JOIN recintos ro ON ro.id = p.recinto_original_id
+    LEFT JOIN recintos ros ON ros.id = ro.superior_id
     WHERE sr.estado = 'pendiente'
       AND sr.id = (
           SELECT MAX(sr2.id)
@@ -264,6 +366,35 @@ $solicitudes_pendientes = $db->query("
     ORDER BY sr.created_at DESC
 ")->fetchAll();
 $n_solicitudes = count($solicitudes_pendientes);
+
+// Flujo principal simplificado: solo dos grupos operativos.
+// La existencia de una fecha propuesta define el grupo, mientras que
+// "rival no responde" se conserva únicamente como alerta de urgencia.
+$solicitudes_sin_fecha = array_values(array_filter(
+    $solicitudes_pendientes,
+    fn($s) => empty($s['fecha_propuesta'])
+));
+$solicitudes_con_fecha = array_values(array_filter(
+    $solicitudes_pendientes,
+    fn($s) => !empty($s['fecha_propuesta'])
+));
+$partidos_gestion_sin_fecha = array_values(array_filter($pendientes_gestion, $es_sin_fecha));
+$partidos_gestion_con_fecha = array_values(array_filter(
+    $pendientes_gestion,
+    fn($p) => !$es_sin_fecha($p)
+));
+
+$ids_gestion_sin_fecha = array_unique(array_merge(
+    array_map('intval', array_column($partidos_gestion_sin_fecha, 'id')),
+    array_map('intval', array_column($solicitudes_sin_fecha, 'partido_id'))
+));
+$ids_gestion_con_fecha = array_unique(array_merge(
+    array_map('intval', array_column($partidos_gestion_con_fecha, 'id')),
+    array_map('intval', array_column($solicitudes_con_fecha, 'partido_id'))
+));
+$n_gestion_sin_fecha = count($ids_gestion_sin_fecha);
+$n_gestion_con_fecha = count($ids_gestion_con_fecha);
+$filtro_gestion_inicial = $n_gestion_sin_fecha > 0 ? 'sin-fecha' : 'con-fecha';
 
 // Solicitudes procesadas recientes (aprobadas o rechazadas en últimos 14 días)
 $solicitudes_procesadas = $db->query("
@@ -286,6 +417,10 @@ $solicitudes_procesadas = $db->query("
           WHERE sr2.partido_id = sr.partido_id
       )
       AND sr.created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+      AND NOT EXISTS (
+          SELECT 1 FROM reprogramaciones_ocultas rgo
+          WHERE rgo.partido_id = sr.partido_id
+      )
     ORDER BY sr.created_at DESC
     LIMIT 20
 ")->fetchAll();
@@ -350,7 +485,7 @@ foreach ($partidos_open as $p) {
 uasort($por_equipo, fn($a,$b) => count($b['partidos']) - count($a['partidos']));
 
 // Función de fila partido (reutilizable)
-function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resuelto = false, string $tag_html = '', string $return_tab = 'solicitudes'): string {
+function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resuelto = false, string $tag_html = '', string $return_tab = 'solicitudes', bool $permitir_ocultar = false): string {
     $cls = 'partido-row';
     if ($resuelto) $cls .= ' pr-resuelto';
     elseif ($vencido) $cls .= ' pr-vencido';
@@ -359,7 +494,7 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
         $tag_html = '<span class="partido-tag" style="background:#dcfce7;color:#15803d">✅ Resuelto</span>';
     }
     ob_start(); ?>
-    <div class="<?= $cls ?>" data-sf="<?= $sin_fecha?'1':'0' ?>" data-venc="<?= $vencido?'1':'0' ?>" data-resuelto="<?= $resuelto?'1':'0' ?>" data-est="<?= epl_h($p['estado']) ?>" data-eq="<?= $p['local_id'] ?>,<?= $p['visitante_id'] ?>" data-search="<?= epl_h(strtolower($p['local_nombre'].' '.$p['visitante_nombre'].' '.$p['liga_nombre'])) ?>">
+    <div class="<?= $cls ?>" data-gestion-tipo="<?= $sin_fecha ? 'sin-fecha' : 'con-fecha' ?>" data-sf="<?= $sin_fecha?'1':'0' ?>" data-venc="<?= $vencido?'1':'0' ?>" data-resuelto="<?= $resuelto?'1':'0' ?>" data-est="<?= epl_h($p['estado']) ?>" data-eq="<?= $p['local_id'] ?>,<?= $p['visitante_id'] ?>" data-search="<?= epl_h(strtolower($p['local_nombre'].' '.$p['visitante_nombre'].' '.$p['liga_nombre'])) ?>">
       <div class="partido-row-main">
         <div class="partido-meta">
           <span class="partido-liga"><?= epl_h($p['liga_nombre']) ?></span>
@@ -384,13 +519,15 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
             if (empty($p['fecha_original']) && !empty($p['fecha_propuesta'])) {
                 $_fecha_mostrar = $p['fecha_propuesta'];
             }
-            $_sf_mostrar = !$_fecha_mostrar || date('Y-m-d', strtotime($_fecha_mostrar)) === '2026-12-31';
+            $_sf_mostrar = repro_es_sin_fecha($_fecha_mostrar);
           ?>
           <?php if (!$_sf_mostrar): ?>
             <span class="extra-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <?= date('d/m H:i', strtotime($_fecha_mostrar)) ?></span>
           <?php endif; ?>
-          <?php if ($p['recinto_nombre']): ?>
+          <?php if ($p['recinto_nombre'] && !$_sf_mostrar && !empty($p['cancha_confirmada_at'])): ?>
             <span class="extra-item" style="color:#15803d;font-weight:600">✅ <?= epl_h($p['recinto_nombre']) ?></span>
+          <?php elseif (!$_sf_mostrar && empty($p['cancha_confirmada_at'])): ?>
+            <span class="extra-item" style="color:#1d4ed8;font-weight:700">🎾 Cancha por confirmar</span>
           <?php endif; ?>
           <?php if (!empty($p['motivo'])): ?>
             <span class="extra-item motivo">"<?= epl_h(mb_strimwidth($p['motivo'], 0, 70, '…')) ?>"</span>
@@ -398,28 +535,34 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
         </div>
         <?php
           // ── Datos del partido ───────────────────────────────────────
-          $_es_post        = !empty($p['fecha_original']) && ($p['sol_estado'] ?? 'aprobada') !== 'pendiente';
+          $_es_post        = ($p['sol_estado'] ?? 'aprobada') !== 'pendiente';
           $_fo             = $p['fecha_original'] ?: $p['fecha_programada'];
-          $_fo_lbl         = ($_fo && date('Y-m-d', strtotime($_fo)) !== '2026-12-31') ? date('d/m/Y H:i', strtotime($_fo)) : null;
+          $_fo_lbl         = !repro_es_sin_fecha($_fo) ? date('d/m/Y H:i', strtotime($_fo)) : null;
           $_rec_orig       = $p['recinto_original_nombre'] ?: ($p['recinto_nombre'] ?? null);
           $_rec_orig_sup   = $p['recinto_original_sup'] ?: ($p['recinto_sup'] ?? null);
           // "Cancha 12 (Santa Blanca)"
           $_rec_orig_full  = $_rec_orig ? $_rec_orig . ($_rec_orig_sup ? " ($_rec_orig_sup)" : '') : null;
-          $_rec_actual_full = $_es_post ? ($p['recinto_nombre']
+          $_rec_actual_full = $_es_post && !empty($p['cancha_confirmada_at']) ? ($p['recinto_nombre']
               ? $p['recinto_nombre'] . (!empty($p['recinto_sup']) ? ' (' . $p['recinto_sup'] . ')' : '')
               : null) : null;
-          $_tiene_original = $_es_post && ($_fo_lbl || $_rec_orig);
+          $_reserva_original_vigente = repro_reserva_original_vigente($p);
+          $_tiene_original = $_es_post && $_reserva_original_vigente && ($_fo_lbl || $_rec_orig);
 
-          $_fecha_nueva_raw = $_es_post ? $p['fecha_programada'] : ($p['fecha_propuesta'] ?? $p['fecha_programada']);
-          $_sf_nueva    = !$_fecha_nueva_raw || date('Y-m-d', strtotime($_fecha_nueva_raw)) === '2026-12-31';
+          $_fecha_nueva_raw = $_es_post
+              ? ($p['fecha_programada'] ?: ($p['fecha_propuesta'] ?? null))
+              : ($p['fecha_propuesta'] ?? $p['fecha_programada']);
+          $_sf_nueva    = repro_es_sin_fecha($_fecha_nueva_raw);
           $_fecha_nueva = !$_sf_nueva ? date('d/m/Y H:i', strtotime($_fecha_nueva_raw)) : null;
-          $_necesita_cancha = $_fecha_nueva && ($_es_post ? empty($p['recinto_nombre']) : empty($p['recinto_id']));
+          $_necesita_cancha = $_es_post && $_fecha_nueva
+              && (empty($p['cancha_confirmada_at']) || empty($p['recinto_id']));
 
-          $_confirmada  = !empty($p['baja_confirmada_at']);
-          $_solicitada  = !empty($p['baja_solicitada_at']);
-
-          // Mostrar bloque cuando: hay algo de baja O necesita asignar cancha nueva
-          $_mostrar_bloque = $_tiene_original || $_necesita_cancha;
+          $_baja_confirmada = !empty($p['baja_confirmada_at']);
+          $_cancha_confirmada = !empty($p['cancha_confirmada_at']) && !empty($p['recinto_id']);
+          $_necesita_baja = $_tiene_original && !$_baja_confirmada;
+          // Mostrar el bloque solo para una reserva original todavía vigente o
+          // cuando falta una cancha nueva. Una reserva vencida queda como dato
+          // histórico y no genera una tarea ni mensajes al club.
+          $_mostrar_bloque = $_necesita_baja || $_necesita_cancha;
 
           // Contactos: prueba en el orden: recinto_original_id → recinto_id (subiendo la jerarquía)
           // Si la cancha exacta no tiene contactos, busca en la sede / club padre.
@@ -455,12 +598,12 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
           // Token + link (baja + cancha en una sola página)
           $_proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
           $_host  = $_SERVER['HTTP_HOST'] ?? 'epleague.cl';
-          $_token = (!$_confirmada && $_mostrar_bloque) ? epl_partido_baja_token((int)$p['id']) : '';
+          $_token = $_mostrar_bloque ? epl_partido_baja_token((int)$p['id']) : '';
           $_link  = $_token ? "$_proto://$_host/gestion_reserva.php?t=$_token" : '';
 
           // ── Construir mensaje WhatsApp ──────────────────────────────
           $_msg = "Hola, te hablo de Elite Padel League.\n\n";
-          if ($_tiene_original) {
+          if ($_necesita_baja) {
               $_msg .= "Necesitamos DAR DE BAJA esta reserva:\n";
               if ($_fo_lbl)  $_msg .= "📅 $_fo_lbl\n";
               if ($_rec_orig_full) $_msg .= "🎾 $_rec_orig_full\n";
@@ -475,7 +618,7 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
               $_msg .= "👥 {$p['local_nombre']} vs {$p['visitante_nombre']}\n";
           }
           if ($_link) {
-              if ($_necesita_cancha && $_tiene_original) {
+              if ($_necesita_cancha && $_necesita_baja) {
                   $_msg .= "\nDesde este enlace confirmas la baja y eliges la cancha para la nueva fecha:\n$_link\n(¡Solo toca la cancha y queda todo listo!)";
               } elseif ($_necesita_cancha) {
                   $_msg .= "\nElige la cancha para la nueva fecha desde acá:\n$_link\n(¡Solo toca la cancha y queda confirmada!)";
@@ -487,32 +630,23 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
 
           if ($_mostrar_bloque):
             // Colores del bloque según estado
-            if ($_confirmada) {
-                [$_bg,$_bd,$_tc,$_lbl] = ['#dcfce7','#10b981','#15803d','✅ BAJA CONFIRMADA'];
-            } elseif ($_necesita_cancha && !$_tiene_original) {
+            if ($_necesita_cancha && !$_necesita_baja) {
                 [$_bg,$_bd,$_tc,$_lbl] = ['#dbeafe','#3b82f6','#1e40af','🎾 ASIGNAR CANCHA'];
-            } elseif ($_solicitada) {
-                [$_bg,$_bd,$_tc,$_lbl] = ['#fef3c7','#f59e0b','#92400e','⏳ ESPERANDO CONFIRMACIÓN'];
             } else {
-                [$_bg,$_bd,$_tc,$_lbl] = ['#fee2e2','#dc2626','#991b1b', $_necesita_cancha ? '🚫 BAJA + 🎾 ELEGIR CANCHA' : '🚫 DAR DE BAJA'];
+                [$_bg,$_bd,$_tc,$_lbl] = ['#fee2e2','#dc2626','#991b1b', $_necesita_cancha ? '🚫 LIBERAR RESERVA + 🎾 ELEGIR CANCHA' : '🚫 LIBERAR RESERVA ORIGINAL'];
             }
         ?>
           <div style="margin-top:.5rem;padding:.55rem .75rem;background:<?= $_bg ?>;border-left:3px solid <?= $_bd ?>;border-radius:6px;font-size:.75rem;color:<?= $_tc ?>;line-height:1.5">
             <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;font-weight:800;margin-bottom:.2rem">
               <?= $_lbl ?>
-              <?php if ($_fo_lbl): ?><span style="font-weight:600"><?= $_fo_lbl ?></span><?php endif; ?>
-              <?php if ($_rec_orig): ?><span style="font-weight:600">· <?= epl_h($_rec_orig) ?></span><?php endif; ?>
+              <?php if ($_necesita_baja && $_fo_lbl): ?><span style="font-weight:600"><?= $_fo_lbl ?></span><?php endif; ?>
+              <?php if ($_necesita_baja && $_rec_orig): ?><span style="font-weight:600">· <?= epl_h($_rec_orig) ?></span><?php endif; ?>
               <?php if ($_necesita_cancha && $_fecha_nueva): ?>
                 <span style="font-weight:600;color:#1d4ed8">→ Nueva: <?= $_fecha_nueva ?></span>
               <?php endif; ?>
             </div>
 
-            <?php if ($_confirmada): ?>
-              <div style="font-size:.7rem;font-weight:600;opacity:.85">
-                Confirmado <?= date('d/m H:i', strtotime($p['baja_confirmada_at'])) ?>
-                <?php if ($p['baja_confirmada_por']): ?>· por <?= epl_h($p['baja_confirmada_por']) ?><?php endif; ?>
-              </div>
-            <?php elseif (!empty($_contactos)): ?>
+            <?php if (!empty($_contactos)): ?>
               <?php if ($_contactos_recomendados): ?>
                 <div style="font-size:.68rem;margin:.25rem 0 .15rem;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;padding:.2rem .5rem;border-radius:5px;display:inline-block;font-weight:700">
                   ★ Recomendado · <?= epl_h($_contactos_origen_nombre ?: 'club habitual') ?>
@@ -545,12 +679,25 @@ function repro_fila_partido(array $p, bool $sin_fecha, bool $vencido, bool $resu
                 data-partido-id="<?= $p['id'] ?>"
                 data-return-to="dashboard_repro.php?tab=<?= epl_h($return_tab) ?>"
                 onclick="abrirFichaPartido(this)">⚙ Gestionar</button>
-        <?php if ($_confirmada && $p['recinto_id']): ?>
+        <?php if ($_cancha_confirmada): ?>
           <button type="button" class="btn-sec" onclick="reenviarNotifCancha(<?= $p['id'] ?>, this)">
             📢 Reenviar notif.
           </button>
         <?php endif; ?>
-        <?php if (!empty($p['solicitud_id'])): ?>
+        <?php if ($permitir_ocultar): ?>
+        <form method="post" style="margin:0"
+              data-confirm="¿Eliminar esta gestión de <?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?>? Solo se quitará del panel; el partido, su fecha, estado, cancha, resultado y solicitudes permanecerán sin cambios."
+              data-confirm-ok="Sí, eliminar gestión">
+          <input type="hidden" name="action" value="ocultar_gestion_partido">
+          <input type="hidden" name="partido_id" value="<?= $p['id'] ?>">
+          <input type="hidden" name="return_tab" value="<?= epl_h($return_tab) ?>">
+          <button type="submit" class="btn-text-danger"
+                  data-confirm="¿Eliminar esta gestión de <?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?>? Solo se quitará del panel; el partido, su fecha, estado, cancha, resultado y solicitudes permanecerán sin cambios."
+                  data-confirm-ok="Sí, eliminar gestión">
+            🗑 Eliminar gestión
+          </button>
+        </form>
+        <?php elseif (!empty($p['solicitud_id'])): ?>
         <form method="post" style="margin:0"
               data-confirm="¿Eliminar esta gestión de <?= epl_h($p['local_nombre']) ?> vs <?= epl_h($p['visitante_nombre']) ?>? Solo se borrará la solicitud; el partido mantendrá su estado, fecha y recinto actuales."
               data-confirm-ok="Sí, eliminar gestión">
@@ -589,7 +736,7 @@ require_once '../includes/header.php';
         <div>
           <span style="font-size:.65rem;font-weight:900;letter-spacing:.25em;color:#C9A762;text-transform:uppercase">Panel admin</span>
           <h1 style="color:#fff;margin:.2rem 0 .15rem;font-size:clamp(1.5rem,3.5vw,2rem);font-family:'Anton',sans-serif;text-transform:uppercase;line-height:1">Re<span style="color:#C9A762">programaciones</span></h1>
-          <p style="color:rgba(255,255,255,.7);margin-top:.2rem;font-size:.82rem">Solo partidos reprogramados — primero los urgentes, después los agendados.</p>
+          <p style="color:rgba(255,255,255,.7);margin-top:.2rem;font-size:.82rem">Solo casos que requieren acción — decide solicitudes y completa lo aprobado.</p>
         </div>
         <div style="text-align:right">
           <div style="font-size:.65rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.15em;font-weight:700">Avance del torneo</div>
@@ -606,18 +753,19 @@ require_once '../includes/header.php';
       // Abrir en Solicitudes si hay algo pendiente; si no, Informe
       $tab_inicial = $solicitud_enfoque > 0
           ? 'solicitudes'
-          : (isset($_GET['tab']) ? $_GET['tab']
-              : ($badge_solicitudes > 0 ? 'solicitudes' : ($n_recientes > 0 ? 'informe' : 'informe')));
+          : (isset($_GET['tab'])
+              ? $_GET['tab']
+              : ($badge_solicitudes > 0 ? 'solicitudes' : 'informe'));
     ?>
     <div class="tabs-bar">
       <button class="tab-btn <?= $tab_inicial==='solicitudes'?'active':'' ?>" data-tab="solicitudes" onclick="cambiarTab('solicitudes')">
-        📨 Solicitudes
+        🎯 Gestionar
         <?php if ($badge_solicitudes > 0): ?>
           <span class="tab-badge"><?= $badge_solicitudes ?></span>
         <?php endif; ?>
       </button>
       <button class="tab-btn <?= $tab_inicial==='informe'?'active':'' ?>" data-tab="informe" onclick="cambiarTab('informe')">
-        📊 Informe
+        📊 Resumen general
         <?php if ($n_recientes > 0): ?>
           <span class="tab-badge" style="background:#8b5cf6"><?= $n_recientes ?> nuevo<?= $n_recientes>1?'s':'' ?></span>
         <?php endif; ?>
@@ -627,23 +775,39 @@ require_once '../includes/header.php';
     <!-- ═══════════════════ TAB SOLICITUDES ═══════════════════ -->
     <div id="tab-solicitudes" class="tab-content" style="display:<?= $tab_inicial==='solicitudes'?'block':'none' ?>">
 
-      <!-- Buscador + Toggle Todos / Pendientes / Gestionados -->
-      <div class="filtros-bar">
+      <!-- Menú operativo: dos flujos principales y el historial aparte -->
+      <div class="gestion-menu" aria-label="Tipo de reprogramación">
+        <button type="button" class="gestion-menu-card sin-fecha <?= $filtro_gestion_inicial === 'sin-fecha' ? 'active' : '' ?>" data-gestion-filtro="sin-fecha" onclick="filtrarGestion('sin-fecha', this)">
+          <span class="gestion-menu-icon">⚠</span>
+          <span class="gestion-menu-copy">
+            <strong>Sin fecha</strong>
+            <small>Coordinar una nueva fecha</small>
+          </span>
+          <span class="gestion-menu-count"><?= $n_gestion_sin_fecha ?></span>
+        </button>
+        <button type="button" class="gestion-menu-card con-fecha <?= $filtro_gestion_inicial === 'con-fecha' ? 'active' : '' ?>" data-gestion-filtro="con-fecha" onclick="filtrarGestion('con-fecha', this)">
+          <span class="gestion-menu-icon">📅</span>
+          <span class="gestion-menu-copy">
+            <strong>Con fecha propuesta</strong>
+            <small>Confirmar la cancha con el club</small>
+          </span>
+          <span class="gestion-menu-count"><?= $n_gestion_con_fecha ?></span>
+        </button>
+      </div>
+
+      <div class="filtros-bar gestion-herramientas">
         <div class="busqueda">
           <svg width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          <input type="text" id="buscarSol" placeholder="Buscar pareja, partido o liga…" oninput="buscarSolicitudes(this.value)">
+          <input type="text" id="buscarSol" placeholder="Buscar pareja o liga…" oninput="buscarSolicitudes(this.value)">
         </div>
-        <div class="estado-filtro">
-          <button class="estado-btn" data-solfiltro="todos" onclick="filtrarSolicitudes('todos', this)">Todos</button>
-          <button class="estado-btn active" data-solfiltro="pendientes" onclick="filtrarSolicitudes('pendientes', this)">
-            ⏳ Pendientes
-            <?php if ($n_pendientes_total > 0): ?><span class="tab-badge" style="background:#f59e0b"><?= $n_pendientes_total ?></span><?php endif; ?>
-          </button>
-          <button class="estado-btn" data-solfiltro="gestionados" onclick="filtrarSolicitudes('gestionados', this)">
-            ✅ Gestionados
-            <?php if ($n_gestionados_total > 0): ?><span class="tab-badge" style="background:#10b981"><?= $n_gestionados_total ?></span><?php endif; ?>
-          </button>
-        </div>
+        <button type="button" class="btn-ver-historial" data-solfiltro="gestionados" onclick="mostrarGestionados(this)">
+          Ver gestionados
+          <?php if ($n_gestionados_total > 0): ?><span><?= $n_gestionados_total ?></span><?php endif; ?>
+        </button>
+      </div>
+
+      <div class="gestion-regla">
+        <strong>Flujo claro:</strong> EPL aprueba el cambio; el club solo libera la reserva original vigente y confirma la cancha de la nueva fecha.
       </div>
 
       <!-- ═════════════ GRUPO: PENDIENTES ═════════════ -->
@@ -661,11 +825,11 @@ require_once '../includes/header.php';
 
       <!-- ═════════════════════ PENDIENTES DE GESTIÓN ═════════════════════ -->
       <?php if ($n_pendientes_gestion > 0): ?>
-      <section class="sec-card sec-urgente" style="border-left:5px solid #f59e0b">
+      <section class="sec-card sec-urgente sec-pendientes-operativos" style="border-left:5px solid #f59e0b">
         <div class="sec-head">
           <div>
-            <h2 class="sec-title" style="color:#92400e">⏳ Partidos en gestión</h2>
-            <p class="sec-sub">Reprogramados que todavía esperan dar de baja la reserva original o asignar una cancha nueva</p>
+            <h2 class="sec-title" style="color:#92400e">🛠 Partidos por completar</h2>
+            <p class="sec-sub">Solicitudes ya aprobadas: falta definir fecha o recibir la confirmación de cancha del club</p>
           </div>
           <div class="sec-count" style="background:#fef3c7;color:#92400e"><?= $n_pendientes_gestion ?></div>
         </div>
@@ -675,32 +839,35 @@ require_once '../includes/header.php';
             $_tag = '';
             $_tag_bg = '#fef3c7';
             $_tag_color = '#92400e';
-            if (!empty($p['baja_solicitada_at']) && empty($p['baja_confirmada_at'])) {
-                $_tag = '⏳ Esperando confirmación del club';
+            $sf = $es_sin_fecha($p);
+            if ($sf) {
+                $_tag = '⚠ Sin fecha · asignar fecha';
+                $_tag_bg = '#fef3c7'; $_tag_color = '#92400e';
+            } elseif (repro_reserva_original_vigente($p, $hoy) && empty($p['baja_confirmada_at']) && empty($p['cancha_confirmada_at'])) {
+                $_tag = '🎾 Club: liberar reserva y confirmar cancha';
                 $_tag_bg = '#dbeafe'; $_tag_color = '#1e40af';
-            } elseif (!empty($p['fecha_original']) && empty($p['baja_confirmada_at'])) {
-                $_tag = '🚫 Falta dar de baja la cancha original';
+            } elseif (repro_reserva_original_vigente($p, $hoy) && empty($p['baja_confirmada_at'])) {
+                $_tag = '🚫 Club: liberar reserva original';
                 $_tag_bg = '#fee2e2'; $_tag_color = '#991b1b';
             } else {
-                $_tag = '🎾 Falta asignar cancha nueva';
+                $_tag = '🎾 Club: confirmar cancha nueva';
                 $_tag_bg = '#dbeafe'; $_tag_color = '#1e40af';
             }
-            $sf = $es_sin_fecha($p);
             $vc = $es_vencido($p);
             $_tag_html = '<span class="partido-tag" style="background:'.$_tag_bg.';color:'.$_tag_color.'">'.$_tag.'</span>';
           ?>
-          <?= repro_fila_partido($p, $sf, $vc, false, $_tag_html) ?>
+          <?= repro_fila_partido($p, $sf, $vc, false, $_tag_html, 'solicitudes', true) ?>
           <?php endforeach; ?>
         </div>
       </section>
       <?php endif; ?>
 
       <?php if (!empty($solicitudes_pendientes)): ?>
-        <section class="sec-card sec-urgente">
+        <section class="sec-card sec-urgente sec-solicitudes-aprobacion">
           <div class="sec-head">
             <div>
-              <h2 class="sec-title">📨 Solicitudes de reprogramación pendientes</h2>
-              <p class="sec-sub">Revisa cada una, aprueba o rechaza desde la página del torneo</p>
+              <h2 class="sec-title">📨 Solicitudes por aprobar</h2>
+              <p class="sec-sub">Primero decide estas solicitudes; después completa fecha y cancha cuando corresponda</p>
             </div>
             <div class="sec-count danger"><?= $n_solicitudes ?></div>
           </div>
@@ -711,6 +878,10 @@ require_once '../includes/header.php';
                   ? date('d/m/Y H:i', strtotime($s['fecha_propuesta']))
                   : 'Sin fecha propuesta';
               $fecha_solicitud = date('d/m H:i', strtotime($s['created_at']));
+              $sol_reserva_vigente = repro_reserva_original_vigente($s, $hoy);
+              $aprobar_sin_fecha_msg = $sol_reserva_vigente
+                  ? "¿Aprobar esta reprogramación sin fecha? El partido quedará 'A coordinar' y la reserva original seguirá pendiente de liberación."
+                  : "¿Aprobar esta reprogramación sin fecha? El partido quedará 'A coordinar'. No se modificará ninguna reserva anterior.";
             ?>
             <div id="solicitud-<?= (int)$s['solicitud_id'] ?>"
                  class="partido-row<?= (int)$s['solicitud_id'] === $solicitud_enfoque ? ' repro-direct-focus' : '' ?>"
@@ -750,12 +921,12 @@ require_once '../includes/header.php';
                   <?php if (!empty($s['motivo'])): ?>
                     <span class="extra-item motivo">"<?= epl_h(mb_strimwidth($s['motivo'], 0, 80, '…')) ?>"</span>
                   <?php endif; ?>
-                  <?php if ($sol_sin_fecha): ?>
+                  <?php if ($sol_sin_fecha && $sol_reserva_vigente): ?>
                     <div style="margin-top:.45rem;padding:.45rem .75rem;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:4px;font-size:.75rem;color:#92400e;font-weight:600;line-height:1.4">
-                      ⚠️ Solicita reprogramar SIN FECHA. Se debe liberar la cancha original:
+                      ⚠️ Solicita reprogramar sin fecha y la reserva original todavía está vigente:
                       <div style="margin-top:.2rem;font-weight:700;font-size:.72rem">
-                        <?php if ($s['fecha_programada']): ?>📅 <?= date('d/m/Y H:i', strtotime($s['fecha_programada'])) ?><?php endif; ?>
-                        <?php if ($s['recinto_nombre']): ?> · 🏟️ <?= epl_h($s['recinto_nombre']) ?><?php endif; ?>
+                        <?php if ($s['fecha_original']): ?>📅 <?= date('d/m/Y H:i', strtotime($s['fecha_original'])) ?><?php endif; ?>
+                        <?php if ($s['recinto_original_nombre']): ?> · 🏟️ <?= epl_h($s['recinto_original_nombre']) ?><?php endif; ?>
                       </div>
                     </div>
                     <?php
@@ -765,8 +936,8 @@ require_once '../includes/header.php';
                               $contactos[] = ['nombre' => $s["contacto{$i}_nombre"] ?? '', 'telefono' => $s["contacto{$i}_telefono"]];
                           }
                       }
-                      if (empty($contactos) && !empty($s['recinto_id'])) {
-                          $h = epl_recinto_contactos_jerarquico((int)$s['recinto_id']);
+                      if (empty($contactos) && !empty($s['recinto_original_id'])) {
+                          $h = epl_recinto_contactos_jerarquico((int)$s['recinto_original_id']);
                           if (!empty($h['contactos'])) {
                               $contactos = $h['contactos'];
                           }
@@ -778,11 +949,11 @@ require_once '../includes/header.php';
                           }
                       }
                       if (!empty($contactos)) {
-                          $fo_lbl = ($s['fecha_programada'] && date('Y-m-d', strtotime($s['fecha_programada'])) !== '2026-12-31') 
-                              ? date('d/m/Y H:i', strtotime($s['fecha_programada'])) 
+                          $fo_lbl = !repro_es_sin_fecha($s['fecha_original'])
+                              ? date('d/m/Y H:i', strtotime($s['fecha_original']))
                               : null;
-                          $rec_orig = $s['recinto_nombre'];
-                          $rec_orig_sup = $s['recinto_sup'];
+                          $rec_orig = $s['recinto_original_nombre'];
+                          $rec_orig_sup = $s['recinto_original_sup'];
                           $rec_orig_full = $rec_orig ? $rec_orig . ($rec_orig_sup ? " ($rec_orig_sup)" : '') : null;
                           
                           $wsp_msg = "Hola, te hablo de Elite Padel League.\n\n"
@@ -815,6 +986,11 @@ require_once '../includes/header.php';
                           <?php
                       }
                     ?>
+                  <?php elseif ($sol_sin_fecha): ?>
+                    <div class="solicitud-sin-reserva">
+                      <strong>📅 Quedará sin fecha</strong>
+                      <span>Si la apruebas, aparecerá abajo en “Partidos por completar” para que le asignes una fecha. No hay una reserva vigente que liberar.</span>
+                    </div>
                   <?php endif; ?>
                 </div>
               </div>
@@ -826,17 +1002,17 @@ require_once '../includes/header.php';
                         style="width:100%;text-align:center">⚙ Gestionar</button>
                 <?php if ($sol_sin_fecha): ?>
                   <form method="post" action="api_reprogramacion.php" style="margin:0"
-                        data-confirm="¿Aprobar esta reprogramación sin fecha? El partido quedará 'A coordinar' y se liberará la cancha original."
-                        data-confirm-ok="Sí, liberar cancha">
+                        data-confirm="<?= epl_h($aprobar_sin_fecha_msg) ?>"
+                        data-confirm-ok="Sí, aprobar">
                     <input type="hidden" name="id" value="<?= $s['solicitud_id'] ?>">
                     <input type="hidden" name="accion" value="aprobar">
                     <input type="hidden" name="fecha_aprobada" value="">
                     <input type="hidden" name="return_to" value="dashboard_repro.php?tab=solicitudes&amp;solicitud=<?= (int)$s['solicitud_id'] ?>">
                     <button type="submit" class="btn-gestionar"
-                            data-confirm="¿Aprobar esta reprogramación sin fecha? El partido quedará 'A coordinar' y se liberará la cancha original."
-                            data-confirm-ok="Sí, liberar cancha"
+                            data-confirm="<?= epl_h($aprobar_sin_fecha_msg) ?>"
+                            data-confirm-ok="Sí, aprobar"
                             style="width:100%;background:#d97706;color:#fff;border:1px solid #d97706;font-size:.65rem;padding:.35rem .6rem;font-weight:700">
-                      Aprobar (Lib.)
+                      Aprobar sin fecha
                     </button>
                   </form>
                 <?php else: ?>
@@ -880,6 +1056,12 @@ require_once '../includes/header.php';
         </section>
       <?php endif; ?>
 
+        <div id="gestionVaciaFiltro" class="gestion-vacia-filtro" style="display:none">
+          <div>✅</div>
+          <strong id="gestionVaciaTitulo">No hay casos en este grupo</strong>
+          <span id="gestionVaciaTexto">Prueba el otro tipo de reprogramación o revisa los gestionados.</span>
+        </div>
+
       <?php endif; ?>
       </div><!-- /grupo pendientes -->
 
@@ -907,10 +1089,10 @@ require_once '../includes/header.php';
                   : ($s['fecha_propuesta'] ? date('d/m/Y H:i', strtotime($s['fecha_propuesta'])) : 'Sin fecha');
               $fecha_solicitud = date('d/m H:i', strtotime($s['created_at']));
             ?>
-            <div id="solicitud-<?= (int)$s['solicitud_id'] ?>"
-                 class="partido-row<?= (int)$s['solicitud_id'] === $solicitud_enfoque ? ' repro-direct-focus' : '' ?>"
-                 data-solicitud-id="<?= (int)$s['solicitud_id'] ?>"
-                 style="opacity:.92">
+              <div id="solicitud-<?= (int)$s['solicitud_id'] ?>"
+                   class="partido-row<?= (int)$s['solicitud_id'] === $solicitud_enfoque ? ' repro-direct-focus' : '' ?>"
+                   data-solicitud-id="<?= (int)$s['solicitud_id'] ?>"
+                   style="opacity:.92">
               <div class="partido-row-main">
                 <div class="partido-meta">
                   <span class="partido-tag" style="background:<?= $estado_bg ?>;color:<?= $estado_color ?>"><?= $estado_label ?></span>
@@ -942,7 +1124,7 @@ require_once '../includes/header.php';
               <div class="partido-actions">
                 <button type="button" class="btn-gestionar"
                         data-partido-id="<?= $s['partido_id'] ?>"
-                        data-return-to="dashboard_repro.php?tab=solicitudes&amp;solicitud=<?= (int)$s['solicitud_id'] ?>"
+                        data-return-to="dashboard_repro.php?tab=solicitudes"
                         onclick="abrirFichaPartido(this)"
                         style="background:#94a3b8;color:#fff">⚙ Gestionar</button>
                 <form method="post" style="margin:0"
@@ -1208,18 +1390,7 @@ include __DIR__ . '/../includes/modal_editar_partido.php';
 
       <label for="reproApproveFecha">Fecha y hora definitiva</label>
       <input type="datetime-local" name="fecha_aprobada" id="reproApproveFecha" class="form-control" required>
-
-      <label for="reproApproveCancha">Cancha o recinto <small>(opcional)</small></label>
-      <select name="cancha_aprobada" id="reproApproveCancha" class="form-control"
-              onchange="toggleCanchaManualRepro(this.value)">
-        <option value="">— Sin cancha asignada —</option>
-        <?php foreach ($todos_recintos as $recinto): ?>
-          <option value="<?= epl_h($recinto['label']) ?>"><?= epl_h($recinto['label']) ?></option>
-        <?php endforeach; ?>
-        <option value="__otro__">✏ Escribir manualmente…</option>
-      </select>
-      <input type="text" id="reproApproveCanchaManual" class="form-control"
-             placeholder="Nombre de la cancha" hidden>
+      <p class="repro-approve-help">La organización aprueba la fecha. El club confirmará la cancha en el paso siguiente.</p>
 
       <div class="repro-approve-actions">
         <button type="button" class="btn-sec" onclick="cerrarAprobarRepro()">Cancelar</button>
@@ -1238,8 +1409,6 @@ function abrirAprobarRepro(btn) {
   document.getElementById('reproApprovePartido').textContent = btn.dataset.partido || '';
   document.getElementById('reproApproveReturn').value =
     `dashboard_repro.php?tab=solicitudes&solicitud=${solicitudId}`;
-  document.getElementById('reproApproveCancha').value = '';
-  toggleCanchaManualRepro('');
   modal.hidden = false;
   requestAnimationFrame(() => modal.classList.add('is-open'));
   document.getElementById('reproApproveFecha').focus();
@@ -1249,18 +1418,6 @@ function cerrarAprobarRepro() {
   const modal = document.getElementById('reproApproveModal');
   modal.classList.remove('is-open');
   modal.hidden = true;
-}
-
-function toggleCanchaManualRepro(value) {
-  const select = document.getElementById('reproApproveCancha');
-  const manual = document.getElementById('reproApproveCanchaManual');
-  const esManual = value === '__otro__';
-  manual.hidden = !esManual;
-  manual.required = esManual;
-  select.name = esManual ? '_cancha_select_ignored' : 'cancha_aprobada';
-  manual.name = esManual ? 'cancha_aprobada' : '';
-  if (!esManual) manual.value = '';
-  if (esManual) manual.focus();
 }
 
 document.addEventListener('keydown', event => {
@@ -1343,30 +1500,100 @@ function cambiarTab(tab) {
   window.history.replaceState({}, '', url);
 }
 
-// Toggle Todos / Pendientes / Gestionados dentro de la pestaña Solicitudes
-function filtrarSolicitudes(grupo, btn) {
-  document.querySelectorAll('[data-solfiltro]').forEach(b => b.classList.toggle('active', b.dataset.solfiltro === grupo));
-  document.querySelectorAll('[data-sol-grupo]').forEach(g => {
-    g.style.display = (grupo === 'todos' || g.dataset.solGrupo === grupo) ? '' : 'none';
+let filtroGestion = <?= json_encode($filtro_gestion_inicial) ?>;
+let busquedaGestion = '';
+
+// Solo dos flujos operativos: sin fecha y con fecha propuesta.
+function filtrarGestion(tipo, btn) {
+  filtroGestion = tipo;
+  document.querySelectorAll('[data-gestion-filtro]').forEach(b => {
+    b.classList.toggle('active', b.dataset.gestionFiltro === tipo);
   });
+  document.querySelectorAll('[data-sol-grupo]').forEach(g => {
+    g.style.display = g.dataset.solGrupo === 'pendientes' ? '' : 'none';
+  });
+  document.querySelectorAll('[data-solfiltro="gestionados"]').forEach(b => b.classList.remove('active'));
+  aplicarFiltroGestion();
 }
 
-// Buscar dentro de la pestaña Solicitudes (pareja, partido o liga) sobre el texto visible de cada fila
+function mostrarGestionados(btn) {
+  document.querySelectorAll('[data-gestion-filtro]').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('[data-sol-grupo]').forEach(g => {
+    g.style.display = g.dataset.solGrupo === 'gestionados' ? '' : 'none';
+  });
+  btn.classList.add('active');
+}
+
 function buscarSolicitudes(q) {
-  q = (q || '').toLowerCase().trim();
+  busquedaGestion = (q || '').toLowerCase().trim();
+  aplicarFiltroGestion();
+}
+
+function aplicarFiltroGestion() {
   const cont = document.getElementById('tab-solicitudes');
   if (!cont) return;
-  cont.querySelectorAll('.partido-row').forEach(row => {
-    row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
+  const pendientes = cont.querySelector('[data-sol-grupo="pendientes"]');
+  if (!pendientes) return;
+
+  pendientes.querySelectorAll('.partido-row').forEach(row => {
+    const coincideTipo = row.dataset.gestionTipo === filtroGestion;
+    const coincideTexto = !busquedaGestion || row.textContent.toLowerCase().includes(busquedaGestion);
+    row.style.display = coincideTipo && coincideTexto ? '' : 'none';
   });
-  // ocultar secciones que quedaron sin filas visibles (sin tocar las tarjetas de estado vacío)
-  cont.querySelectorAll('section.sec-card').forEach(sec => {
+
+  pendientes.querySelectorAll('section.sec-card').forEach(sec => {
     const rows = sec.querySelectorAll('.partido-row');
     if (!rows.length) return;
     const visible = [...rows].some(r => r.style.display !== 'none');
-    sec.style.display = (!q || visible) ? '' : 'none';
+    sec.style.display = visible ? '' : 'none';
   });
+
+  const visibles = [...pendientes.querySelectorAll('.partido-row')]
+    .filter(row => row.style.display !== 'none').length;
+  const vacio = document.getElementById('gestionVaciaFiltro');
+  const tituloVacio = document.getElementById('gestionVaciaTitulo');
+  const textoVacio = document.getElementById('gestionVaciaTexto');
+  if (vacio) {
+    vacio.style.display = visibles === 0 ? '' : 'none';
+    if (tituloVacio) {
+      tituloVacio.textContent = busquedaGestion
+        ? 'No encontramos coincidencias'
+        : (filtroGestion === 'sin-fecha' ? 'No hay partidos sin fecha pendientes' : 'No hay propuestas con fecha pendientes');
+    }
+    if (textoVacio) {
+      textoVacio.textContent = busquedaGestion
+        ? 'Prueba con otro nombre de pareja o liga.'
+        : 'Este grupo está al día. Puedes revisar el otro grupo o abrir Gestionados.';
+    }
+  }
 }
+
+// Aplicar la vista simple apenas termina de renderizar la página.
+aplicarFiltroGestion();
+
+function enfocarSolicitudDesdeEnlace() {
+  const solicitudId = <?= json_encode($solicitud_enfoque) ?>;
+  if (!solicitudId) return;
+
+  cambiarTab('solicitudes');
+  const row = document.querySelector(`[data-solicitud-id="${solicitudId}"]`);
+  if (!row) return;
+
+  const grupo = row.closest('[data-sol-grupo]')?.dataset.solGrupo;
+  if (grupo === 'gestionados') {
+    const historialBtn = document.querySelector('[data-solfiltro="gestionados"]');
+    if (historialBtn) mostrarGestionados(historialBtn);
+  } else {
+    const tipo = row.dataset.gestionTipo;
+    const filtroBtn = tipo ? document.querySelector(`[data-gestion-filtro="${tipo}"]`) : null;
+    if (tipo && filtroBtn) filtrarGestion(tipo, filtroBtn);
+  }
+
+  row.classList.add('repro-direct-focus');
+  window.setTimeout(() => row.scrollIntoView({behavior: 'smooth', block: 'center'}), 120);
+}
+
+enfocarSolicitudDesdeEnlace();
 
 let filtroActual = null;
 let filtroEstado = 'all';
@@ -1470,26 +1697,6 @@ function limpiarFiltro() {
   document.querySelectorAll('.estado-btn').forEach(b => b.classList.toggle('active', b.dataset.estado === 'all'));
   aplicarFiltros();
 }
-
-function enfocarSolicitudDesdeEnlace() {
-  const solicitudId = <?= json_encode($solicitud_enfoque) ?>;
-  if (!solicitudId) return;
-
-  cambiarTab('solicitudes');
-  const row = document.querySelector(`[data-solicitud-id="${solicitudId}"]`);
-  if (!row) return;
-
-  const grupo = row.closest('[data-sol-grupo]')?.dataset.solGrupo;
-  if (grupo && typeof filtrarSolicitudes === 'function') {
-    const filtroBtn = document.querySelector(`[data-solfiltro="${grupo}"]`);
-    filtrarSolicitudes(grupo, filtroBtn);
-  }
-
-  row.classList.add('repro-direct-focus');
-  window.setTimeout(() => row.scrollIntoView({behavior: 'smooth', block: 'center'}), 120);
-}
-
-enfocarSolicitudDesdeEnlace();
 </script>
 
 <?php require_once '../includes/footer.php'; ?>

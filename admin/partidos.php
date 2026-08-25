@@ -251,13 +251,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Notificar cambios
         $fecha_cambio   = $fecha_p && $fecha_p !== ($p2['fecha_programada'] ?? '');
         $recinto_cambio = $recinto_id !== ((int)($p2['recinto_id'] ?? 0) ?: null);
+
+        // En una reprogramación, escoger una cancha distinta desde la ficha es
+        // una confirmación explícita de la organización. Si vuelve a quedar sin
+        // fecha o cancha, se abre nuevamente la tarea para el club.
+        if ($est === 'reprogramado') {
+            if ($fecha_p && $recinto_id && $recinto_cambio) {
+                $db->prepare("UPDATE partidos SET cancha_confirmada_at=NOW(), cancha_confirmada_por='Admin (manual)', cancha_solicitada_at=NULL WHERE id=?")
+                   ->execute([$pid]);
+            } elseif (!$fecha_p || !$recinto_id) {
+                $db->prepare("UPDATE partidos SET cancha_confirmada_at=NULL, cancha_confirmada_por=NULL WHERE id=?")
+                   ->execute([$pid]);
+            }
+        }
+
         if ($fecha_cambio || $recinto_cambio) {
             $partes = [];
             if ($fecha_cambio)   $partes[] = 'nueva fecha: ' . date('d/m/Y H:i', strtotime($fecha_p));
             if ($recinto_cambio) $partes[] = 'nueva cancha asignada';
             $cambios_str = ucfirst(implode(' · ', $partes));
             epl_notif_partido($pid, 'reprogramacion', '📅 Cambio en tu partido',
-                $cambios_str . '. Revisá los detalles en Mis Partidos.',
+                $cambios_str . '. Revisa los detalles en Mis Partidos.',
                 epl_url('mis_torneos.php'), false, [], true);
         }
         partidos_redirect('Partido actualizado.');

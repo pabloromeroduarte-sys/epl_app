@@ -399,7 +399,7 @@ function epl_mensaje_torneo_inscripcion(array $liga, int $jugador_id): array {
     if ($equipo_completo) {
         $titulo = $liga_st === 'finalizada' ? 'Torneo finalizado' : 'Inscripción confirmada';
         if ($liga_st === 'finalizada') {
-            $texto = 'Este torneo ya terminó. Podés ver resultados y clasificación en la vista pública.';
+            $texto = 'Este torneo ya terminó. Puedes ver resultados y clasificación en la vista pública.';
         } elseif ($liga_st === 'activa') {
             $texto = 'Tu equipo ya está validado. En breve verás acá tus partidos y la clasificación cuando estén programados.';
         } else {
@@ -1394,6 +1394,25 @@ function epl_recintos_recomendados_liga(int $liga_id): array {
 }
 
 /**
+ * Indica si una reserva todavía merece una acción operativa. Se compara por día
+ * para conservar como gestionable una reserva de hoy, y se ignora el 31/12 usado
+ * históricamente como marcador de "sin fecha".
+ */
+function epl_reserva_fecha_vigente(?string $fecha, ?DateTimeInterface $referencia = null): bool {
+    if (empty($fecha)) return false;
+
+    $timestamp = strtotime($fecha);
+    if ($timestamp === false) return false;
+
+    $base = $referencia ?? new DateTimeImmutable('today');
+    if (date('Y-m-d', $timestamp) === $base->format('Y') . '-12-31') return false;
+
+    $hoy = new DateTimeImmutable($base->format('Y-m-d'));
+    $dia_reserva = new DateTimeImmutable(date('Y-m-d', $timestamp));
+    return $dia_reserva >= $hoy;
+}
+
+/**
  * Genera (o devuelve si ya existe) un token único para confirmar la baja de cancha
  * de un partido específico. El link de confirmación se incluye en el mensaje de WhatsApp.
  */
@@ -1405,7 +1424,11 @@ function epl_partido_baja_token(int $partido_id): string {
     $tok = $st->fetchColumn();
     if ($tok) return (string)$tok;
     $tok = bin2hex(random_bytes(16)); // 32 chars hex
-    $db->prepare("UPDATE partidos SET baja_token=?, baja_solicitada_at=NOW() WHERE id=?")->execute([$tok, $partido_id]);
+    // Preparar el enlace no significa que el aviso haya sido enviado. Antes se
+    // llenaba baja_solicitada_at al solo renderizar una pantalla, lo que creaba
+    // falsos estados de "esperando confirmación". El momento real del flujo lo
+    // determina baja_confirmada_at cuando el club confirma la acción.
+    $db->prepare("UPDATE partidos SET baja_token=? WHERE id=?")->execute([$tok, $partido_id]);
     return $tok;
 }
 

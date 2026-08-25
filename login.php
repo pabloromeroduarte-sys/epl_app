@@ -5,8 +5,8 @@ require_once 'includes/functions.php';
 // Redirigir si ya está logueado
 if (epl_jugador_actual()) {
     $back = $_GET['back'] ?? 'dashboard.php';
-    $es_mcp_oauth = str_starts_with($back, '/mcp/oauth/authorize.php');
-    if ((epl_jugador_actual()['rol'] ?? '') === 'club' && !$es_mcp_oauth) { header('Location: ' . epl_url('club/resultados.php')); exit; }
+    $es_ai_oauth = str_contains($back, '/mcp/oauth/authorize.php') || str_contains($back, '/gpt-api/oauth/authorize.php');
+    if ((epl_jugador_actual()['rol'] ?? '') === 'club' && !$es_ai_oauth) { header('Location: ' . epl_url('club/resultados.php')); exit; }
     $dest = (str_starts_with($back, '/') && !str_contains($back, '//') && !str_contains($back, '..'))
         ? $back
         : ((str_contains($back, 'inscribirse') || str_contains($back, '.php'))
@@ -17,7 +17,7 @@ if (epl_jugador_actual()) {
 }
 
 $error = '';
-$back  = isset($_GET['back']) ? $_GET['back'] : 'dashboard.php';
+$back  = (string)($_POST['back'] ?? $_GET['back'] ?? 'dashboard.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = trim($_POST['email']    ?? '');
@@ -27,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Completa todos los campos.';
     } elseif (epl_login($email, $password, !empty($_POST['remember']))) {
         $jugador = epl_jugador_actual();
-        $es_mcp_oauth = str_starts_with($back, '/mcp/oauth/authorize.php');
-        if (($jugador['rol'] ?? '') === 'club' && !$es_mcp_oauth) { header('Location: ' . epl_url('club/resultados.php')); exit; }
+        $es_ai_oauth = str_contains($back, '/mcp/oauth/authorize.php') || str_contains($back, '/gpt-api/oauth/authorize.php');
+        if (($jugador['rol'] ?? '') === 'club' && !$es_ai_oauth) { header('Location: ' . epl_url('club/resultados.php')); exit; }
         // Redirigir al destino original (back debe ser path absoluto con /)
         $dest = (str_starts_with($back, '/') && !str_contains($back, '//') && !str_contains($back, '..'))
             ? $back

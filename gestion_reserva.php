@@ -34,11 +34,12 @@ if (!preg_match('/^[a-f0-9]{32}$/i', $token)) {
     ");
     $st->execute([$token]);
     $partido = $st->fetch(PDO::FETCH_ASSOC);
-    $error_msg = $partido ? '' : 'No encontramos esta solicitud. Pedile al admin un link nuevo.';
+    $error_msg = $partido ? '' : 'No encontramos esta solicitud. Pídele al administrador un enlace nuevo.';
 }
 
 // ── ¿Tiene nueva fecha y necesita cancha? ──
 $nueva_fecha_lbl = null;
+$necesita_baja   = false;
 $necesita_cancha = false;
 $canchas         = [];
 $canchas_grupos  = []; // [['sede'=>nombre, 'sede_id'=>id, 'canchas'=>[...]]]
@@ -69,8 +70,12 @@ if ($partido) {
         $fecha_baja_real = null;
     }
 
-    // Necesita cancha: hay nueva fecha y el club todavía no confirmó qué cancha asignan
-    $necesita_cancha = $nueva_fecha_lbl && empty($partido['cancha_confirmada_at']) && ($es_nueva_fecha_aplicada ? empty($partido['recinto_id']) : true);
+    // EPL aprueba la fecha; el club solo opera canchas. Una propuesta que aún
+    // no se aplicó no puede ser aprobada desde este enlace.
+    $necesita_baja = epl_reserva_fecha_vigente($fecha_baja_real)
+        && empty($partido['baja_confirmada_at']);
+    $necesita_cancha = $nueva_fecha_lbl && $es_nueva_fecha_aplicada
+        && empty($partido['cancha_confirmada_at']);
 
     if ($necesita_cancha) {
         $ref = ($es_post_aprobado ? $partido['recinto_original_id'] : $partido['recinto_id']) ?: null;
@@ -138,28 +143,19 @@ if ($partido) {
     }
 }
 
-// ── POST: club confirma baja (+ cancha opcional) ──
+// ── POST: el club solo confirma operaciones de cancha ──
 $confirmado   = false;
 $cancha_nombre = null;
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['baja_confirmada_at']) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && ($necesita_baja || $necesita_cancha)) {
     $quien       = trim($_POST['quien'] ?? '');
     $recinto_nuevo = (int)($_POST['recinto_id'] ?? 0);
+    $accion_realizada = false;
 
-    // Si la fecha nueva aún no ha sido aplicada a la tabla partidos, la aplicamos.
-    if (!$es_nueva_fecha_aplicada) {
-        epl_partido_snapshot_original((int)$partido['id']);
-        if ($fecha_nueva_real) {
-            $db->prepare("UPDATE partidos SET fecha_programada=? WHERE id=?")
-               ->execute([$fecha_nueva_real, $partido['id']]);
-            
-            // Marcar la solicitud de reprogramación pendiente como aprobada
-            $db->prepare("UPDATE solicitudes_reprogramacion SET estado='aprobada', fecha_aprobada=NOW() WHERE partido_id=? AND estado='pendiente'")
-               ->execute([$partido['id']]);
-        }
+    if ($necesita_baja) {
+        $db->prepare("UPDATE partidos SET baja_confirmada_at=NOW(), baja_confirmada_por=? WHERE id=?")
+           ->execute([$quien ?: 'Club', $partido['id']]);
+        $accion_realizada = true;
     }
-
-    $db->prepare("UPDATE partidos SET baja_confirmada_at=NOW(), baja_confirmada_por=? WHERE id=?")
-       ->execute([$quien ?: 'Club', $partido['id']]);
 
     // Si eligió cancha y el partido aún no la tiene asignada
     if ($recinto_nuevo && $necesita_cancha) {
@@ -170,13 +166,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['baja_confirm
             $cancha_nombre = $st3->fetchColumn();
             $db->prepare("UPDATE partidos SET recinto_id=?, cancha_confirmada_at=NOW(), cancha_confirmada_por=? WHERE id=?")
                ->execute([$recinto_nuevo, $quien ?: 'Club', $partido['id']]);
-
-            // Si la fecha nueva aún no ha sido aplicada, también guardamos la cancha aprobada en solicitudes_reprogramacion
-            if (!$es_nueva_fecha_aplicada) {
-                $db->prepare("UPDATE solicitudes_reprogramacion SET cancha_aprobada=? WHERE partido_id=? AND estado='aprobada'")
-                   ->execute([$cancha_nombre, $partido['id']]);
-            }
+            $accion_realizada = true;
         }
+    }
+
+    if ($necesita_cancha && !$cancha_nombre && !$necesita_baja) {
+        $error_msg = 'Selecciona la cancha que corresponde a la nueva fecha.';
     }
 
     $pid = (int)$partido['id'];
@@ -184,14 +179,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['baja_confirm
     $visita = $partido['visitante_nombre'];
     $url_admin = epl_url('admin/partido_detalle.php?id=' . $pid);
 
-    // Notificar admins: baja confirmada
-    try {
-        $msg_adm = "El club confirmó la baja de la reserva del partido $local vs $visita.";
-        if ($quien) $msg_adm .= " Confirmó: $quien.";
-        foreach (epl_admins_ids() as $aid) {
-            epl_notif_crear((int)$aid, 'admin', '✅ Baja confirmada', $msg_adm, $url_admin, false);
-        }
-    } catch (Throwable $e) {}
+    // Notificar admins únicamente por las operaciones que efectivamente se confirmaron.
+    if ($necesita_baja && $accion_realizada) {
+        try {
+            $msg_adm = "El club confirmó la baja de la reserva del partido $local vs $visita.";
+            if ($quien) $msg_adm .= " Confirmó: $quien.";
+            foreach (epl_admins_ids() as $aid) {
+                epl_notif_crear((int)$aid, 'admin', '✅ Baja confirmada', $msg_adm, $url_admin, false);
+            }
+        } catch (Throwable $e) {}
+    }
 
     // Notificar jugadores y admins: cancha nueva asignada
     if ($cancha_nombre) {
@@ -202,18 +199,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $partido && !$partido['baja_confirm
         }
     }
 
-    $confirmado = true;
+    $confirmado = $accion_realizada && !$error_msg;
 }
 
 // ── Fecha original (reserva a dar de baja) ──
-$baja_fecha_lbl   = $partido && $fecha_baja_real && date('Y-m-d', strtotime($fecha_baja_real)) !== '2026-12-31'
+$baja_fecha_lbl   = $partido && $necesita_baja && $fecha_baja_real
     ? date('d/m/Y H:i', strtotime($fecha_baja_real)) : null;
 $baja_recinto_nom = $es_post_aprobado ? ($partido['recinto_original'] ?? null) : ($partido['recinto_nuevo'] ?? null);
 
 // Calcular si "ya todo confirmado" (baja + cancha si aplica)
-$todo_confirmado = $partido
-    && !empty($partido['baja_confirmada_at'])
-    && (!$necesita_cancha || !empty($partido['cancha_confirmada_at']));
+$todo_confirmado = $partido && !$necesita_baja && $nueva_fecha_lbl
+    && !empty($partido['cancha_confirmada_at']);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -297,7 +293,7 @@ $todo_confirmado = $partido
     <h1>Elite <span class="gold">Padel</span> League</h1>
     <p style="color:#C9A762;font-size:.68rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-top:.4rem">
       <?php
-         $hay_baja = $baja_fecha_lbl || $baja_recinto_nom;
+         $hay_baja = $necesita_baja;
          if ($hay_baja && $necesita_cancha) echo 'Confirmar baja + asignar cancha';
          elseif ($hay_baja && !$necesita_cancha) echo 'Confirmar baja de cancha';
          elseif (!$hay_baja && $necesita_cancha) echo 'Asignar cancha';
@@ -316,7 +312,8 @@ $todo_confirmado = $partido
     <?php if ($cancha_nombre): ?>
       <div class="alert alert-ok">
         <strong>¡Todo listo!</strong><br>
-        Baja confirmada y cancha asignada: <strong><?= epl_h($cancha_nombre) ?></strong>.<br>
+        <?= $necesita_baja ? 'Reserva original liberada y cancha nueva confirmada:' : 'Cancha nueva confirmada:' ?>
+        <strong><?= epl_h($cancha_nombre) ?></strong>.<br>
         Los jugadores y el admin de EPL ya fueron notificados.
       </div>
     <?php else: ?>
@@ -328,10 +325,12 @@ $todo_confirmado = $partido
   <?php elseif ($todo_confirmado && !$confirmado): ?>
     <!-- ── Ya estaba todo confirmado previamente ── -->
     <div class="check-big">✅</div>
-    <div class="alert alert-ok">
-      <strong>Ya está todo confirmado.</strong><br>
-      Baja: <?= date('d/m/Y H:i', strtotime($partido['baja_confirmada_at'])) ?>
-      <?php if ($partido['baja_confirmada_por']): ?> · por <strong><?= epl_h($partido['baja_confirmada_por']) ?></strong><?php endif; ?>
+      <div class="alert alert-ok">
+        <strong>Ya está todo confirmado.</strong><br>
+      <?php if (!empty($partido['baja_confirmada_at'])): ?>
+        Baja: <?= date('d/m/Y H:i', strtotime($partido['baja_confirmada_at'])) ?>
+        <?php if ($partido['baja_confirmada_por']): ?> · por <strong><?= epl_h($partido['baja_confirmada_por']) ?></strong><?php endif; ?>
+      <?php endif; ?>
       <?php if (!empty($partido['cancha_confirmada_at'])): ?>
         <br>Cancha: <strong><?= epl_h($partido['recinto_nuevo'] ?? '—') ?></strong>
         · <?= date('d/m/Y H:i', strtotime($partido['cancha_confirmada_at'])) ?>
@@ -353,11 +352,17 @@ $todo_confirmado = $partido
       </div>
     </div>
 
+    <?php if (!$necesita_baja && !$necesita_cancha): ?>
+      <div class="alert alert-warn">
+        No hay una operación de cancha pendiente en este momento. Si el partido todavía está sin fecha, EPL debe definirla antes de solicitar una cancha nueva.
+      </div>
+    <?php endif; ?>
+
     <form method="post" id="frmGestionar">
       <input type="hidden" name="t" value="<?= epl_h($token) ?>">
 
       <!-- Sección 1: FECHA ORIGINAL (dar de baja) -->
-      <?php if ($baja_fecha_lbl || $baja_recinto_nom): ?>
+      <?php if ($necesita_baja): ?>
       <div class="section-box baja">
         <div class="section-head baja">🚫 Fecha original — DAR DE BAJA</div>
         <?php if ($baja_fecha_lbl): ?>
@@ -390,7 +395,7 @@ $todo_confirmado = $partido
           </div>
           <?php if (empty($canchas)): ?>
             <div style="background:#fee2e2;border-radius:8px;padding:.6rem .8rem;font-size:.78rem;color:#991b1b">
-              ⚠️ No hay canchas registradas. Avisale al administrador.
+              ⚠️ No hay canchas registradas. Avísale al administrador.
             </div>
           <?php else: ?>
             <?php foreach ($canchas_grupos as $grupo): ?>
@@ -414,7 +419,7 @@ $todo_confirmado = $partido
               </div>
             <?php endforeach; ?>
             <p style="font-size:.68rem;color:#64748b;margin-top:.4rem">
-              Si aún no lo saben, podés confirmar solo la baja y responder después con la cancha.
+              <?php if ($necesita_baja): ?>Si aún no la saben, puedes confirmar solo la liberación y responder después con la cancha.<?php else: ?>Selecciona la cancha para confirmar la nueva programación.<?php endif; ?>
             </p>
           <?php endif; ?>
         <?php elseif (!empty($partido['cancha_confirmada_at'])): ?>
@@ -429,8 +434,8 @@ $todo_confirmado = $partido
       </div>
       <?php endif; ?>
 
-      <!-- Campo nombre + botón (solo si la baja no está confirmada) -->
-      <?php if (empty($partido['baja_confirmada_at'])): ?>
+      <!-- Campo nombre + botón mientras exista una operación de cancha pendiente -->
+      <?php if ($necesita_baja || $necesita_cancha): ?>
         <label class="form-lbl">Tu nombre (opcional)</label>
         <input type="text" name="quien" placeholder="Ej: Hugo, encargado" maxlength="100">
 

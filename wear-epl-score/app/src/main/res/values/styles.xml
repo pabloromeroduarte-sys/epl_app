@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.EPLScore" parent="android:style/Theme.DeviceDefault">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">#07101C</item>
+        <item name="android:colorAccent">#C9A762</item>
+        <item name="android:navigationBarColor">#07101C</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

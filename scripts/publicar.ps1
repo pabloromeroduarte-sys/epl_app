@@ -54,6 +54,7 @@ else {
   # No subir secretos por accidente
     git reset HEAD .env 2>$null
     git reset HEAD .env.* 2>$null
+    git reset HEAD .claude 2>$null
     $staged = git diff --cached --name-only
     if (-not $staged) {
         Write-Host "Tras excluir .env no queda nada que commitear." -ForegroundColor Yellow

@@ -6,17 +6,20 @@ $_j       = epl_jugador_actual();
 $_liga    = epl_liga_activa();
 $_equipo  = ($_liga && $_j) ? epl_equipo_del_jugador($_j['id'], $_liga['id']) : null;
 
-// Ranking global del jugador (ventana 52 semanas)
+// Puntos de la pareja activa durante la temporada anual.
 $_db = epl_db();
-$_rk = $_db->prepare("
-    SELECT SUM(puntos) as total,
-           RANK() OVER (ORDER BY SUM(puntos) DESC) as posicion
-    FROM ranking_puntos
-    WHERE jugador_id = ?
-      AND fecha_competicion >= DATE_SUB(CURDATE(), INTERVAL 52 WEEK)
-");
-$_rk->execute([$_j['id']]);
-$_ranking = $_rk->fetch();
+$_ranking = null;
+if ($_equipo) {
+  $_rk = $_db->prepare("
+      SELECT SUM(LEAST(rp1.puntos,rp2.puntos)) AS total
+      FROM liga_equipos le
+      JOIN ranking_puntos rp1 ON rp1.liga_id=le.liga_id AND rp1.jugador_id=?
+      JOIN ranking_puntos rp2 ON rp2.liga_id=le.liga_id AND rp2.jugador_id=?
+      WHERE le.equipo_id=? AND YEAR(rp1.fecha_competicion)=YEAR(CURDATE())
+  ");
+  $_rk->execute([(int)$_equipo['jugador1_id'],(int)$_equipo['jugador2_id'],(int)$_equipo['id']]);
+  $_ranking = $_rk->fetch();
+}
 ?>
 <aside class="dash-sidebar">
 
@@ -51,7 +54,7 @@ $_ranking = $_rk->fetch();
         <svg class="dash-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         Dashboard
       </a>
-      
+
       <a href="<?= epl_url('mis_torneos.php') ?>" class="dash-nav-link <?= $_ptab==='mis_torneos'?'active':'' ?>">
         <svg class="dash-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
         Mis Torneos
@@ -86,6 +89,11 @@ $_ranking = $_rk->fetch();
         <svg class="dash-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         Tutoriales
       </a>
+
+      <a href="<?= epl_url('conectar_ia.php') ?>" class="dash-nav-link <?= $_ptab==='conectar_ia'?'active':'' ?>" <?= $_ptab==='conectar_ia'?'aria-current="page"':'' ?>>
+        <svg class="dash-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5m9.25-11.396v5.714c0 .597.237 1.169.659 1.591L19 14.5M5 14.5h14M7.5 19.5h9M12 14.5v5"/></svg>
+        Conectar IA
+      </a>
     </div>
 
     <div class="dash-nav-section">
@@ -118,6 +126,10 @@ $_ranking = $_rk->fetch();
     <a href="<?= epl_url('dashboard.php') ?>" class="dash-bottom-link <?= $_ptab==='dashboard'?'active':'' ?>">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
       <span>Inicio</span>
+    </a>
+    <a href="<?= epl_url('conectar_ia.php') ?>" class="dash-bottom-link <?= $_ptab==='conectar_ia'?'active':'' ?>" <?= $_ptab==='conectar_ia'?'aria-current="page"':'' ?>>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5m9.25-11.396v5.714c0 .597.237 1.169.659 1.591L19 14.5M5 14.5h14M7.5 19.5h9M12 14.5v5"/></svg>
+      <span>IA</span>
     </a>
     <a href="<?= epl_url('mis_torneos.php') ?>" class="dash-bottom-link <?= $_ptab==='mis_torneos'?'active':'' ?>">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>

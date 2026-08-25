@@ -749,7 +749,7 @@ if ($equipo) {
                 $fecha_principal_label = 'Nueva fecha pendiente';
             }
             $estado_repro = $solicitud_pendiente ? 'Esperando aprobación' : (($p['estado'] ?? '') === 'reprogramado' ? 'Reprogramado' : 'Aprobado');
-            $destino_repro = $es_del_equipo ? 'reprogramar.php#mis-reprogramaciones' : 'reprogramar.php#otros-reprogramados';
+            $destino_repro = 'reprogramar.php#mis-reprogramaciones';
           ?>
             <article class="dash-repro-row dash-repro-row--<?= $origen_clase ?>">
               <div class="dash-repro-origin">

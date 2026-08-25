@@ -99,6 +99,14 @@ require_once 'includes/header.php';
 
     <div class="tut-grid">
 
+      <a href="conectar_ia.php" class="tut-card" style="text-decoration:none;cursor:pointer;border-color:#C9A762">
+        <div class="tut-card-head">
+          <div class="tut-icon" style="background:#e0e7ff;">🤖</div>
+          <div><h2>Conectar ChatGPT, Claude o Gemini</h2><small>Controla tus partidos desde la IA del teléfono</small></div>
+        </div>
+        <div style="padding:0 1rem 1rem;font-size:.78rem;color:#64748b">Tutorial completo para conectar tu cuenta EPL de forma segura →</div>
+      </a>
+
       <!-- ── 1. Registrar resultado ── -->
       <div class="tut-card" onclick="toggleTut(this)">
         <div class="tut-card-head">

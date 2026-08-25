@@ -8,13 +8,13 @@ $jugador_nav = epl_jugador_actual();
 if (!isset($jugador)) {
     $jugador = $jugador_nav;
 }
-$title   = isset($page_title) ? epl_h($page_title) . ' — Elite Padel League' : 'Elite Padel League — Liga Premium de Pádel Amateur en Santiago';
+$title   = isset($page_title) ? epl_h($page_title) . ' — Elite Padel League' : 'Elite Padel League — Circuito anual y Máster Final';
 $active  = $active_nav ?? '';
 
 // ── SEO: variables que cada página puede sobrescribir ───────────────────────────
-$_seo_default_desc = 'Elite Padel League (EPL) es el circuito más competitivo de pádel amateur en Santiago. Temporadas premium, comunidad, ranking en vivo, Tercer Tiempo y experiencia deportiva de alto nivel. Inscríbete ahora.';
+$_seo_default_desc = 'Elite Padel League (EPL): circuito anual de torneos de pádel en Santiago. Compite en pareja, acumula puntos y clasifica al Máster Final.';
 $meta_description = $meta_description ?? $_seo_default_desc;
-$meta_keywords    = $meta_keywords    ?? 'pádel santiago, liga de pádel, torneos pádel chile, padel amateur, elite padel league, EPL, padel competitivo, ranking padel, conecta santa blanca';
+$meta_keywords    = $meta_keywords    ?? 'circuito anual de pádel, ranking de parejas pádel, master final pádel, torneos de pádel de un día, pádel santiago, elite padel league, EPL, puntos pádel';
 $og_image         = $og_image         ?? epl_url('assets/img/logo-epl-square.png');
 $og_type          = $og_type          ?? 'website';
 
@@ -137,13 +137,13 @@ $site_url = $_proto . '://' . $_host;
 
   <link rel="icon" href="<?= epl_url('assets/img/favicon.png') ?>" type="image/png">
   <!-- PWA -->
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="<?= epl_url('manifest.json') ?>">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="EPL">
   <meta name="theme-color" content="#0a1632">
-  <link rel="apple-touch-icon" href="/assets/img/logo-epl-square.png">
+  <link rel="apple-touch-icon" href="<?= epl_url('assets/img/logo-epl-square.png') ?>">
   <!-- Web Push nativo -->
   <script>
   (function(){
@@ -170,7 +170,7 @@ $site_url = $_proto . '://' . $_host;
         userVisibleOnly: true,
         applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC)
       }).then(function(sub) {
-        return fetch('/push_subscribe.php', {
+        return fetch('<?= epl_url('push_subscribe.php') ?>', {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify(sub)
@@ -185,7 +185,7 @@ $site_url = $_proto . '://' . $_host;
       });
     };
 
-    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+    navigator.serviceWorker.register('<?= epl_url('sw.js') ?>').then(function(reg) {
       if (Notification.permission !== 'granted' || !VAPID_PUBLIC) return;
 
       reg.pushManager.getSubscription().then(function(existing) {
@@ -324,6 +324,7 @@ $_is_admin_page = strpos($_uri, '/admin/') !== false;
             <div class="hidden lg:flex items-center gap-10">
                 <a href="<?= epl_url() ?>" class="nav-link-new <?= $active==='inicio'?'active':'' ?>">Inicio</a>
                 <a href="<?= epl_url('torneos.php') ?>" class="nav-link-new <?= $active==='torneos'?'active':'' ?>">Torneos</a>
+                <a href="<?= epl_url('ranking.php') ?>" class="nav-link-new <?= $active==='ranking'?'active':'' ?>">Ranking</a>
                 <a href="<?= epl_url('reglamento.php') ?>" class="nav-link-new <?= $active==='reglamento'?'active':'' ?>">Reglamento</a>
 
                 <div class="nav-divider"></div>
@@ -363,7 +364,7 @@ $_is_admin_page = strpos($_uri, '/admin/') !== false;
             </div>
 
             <!-- BOTÓN MÓVIL -->
-            <button id="mobileBtn" class="lg:hidden text-epl-blue focus:outline-none p-2">
+            <button id="mobileBtn" class="lg:hidden text-epl-blue focus:outline-none p-2" type="button" aria-label="Abrir menú" aria-controls="mobileMenu" aria-expanded="false">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
         </div>
@@ -373,13 +374,14 @@ $_is_admin_page = strpos($_uri, '/admin/') !== false;
     <div id="mobileMenu" class="mobile-menu-overlay">
         <div class="flex justify-between items-center mb-16">
             <img src="<?= epl_url('assets/img/logo-epl-lateral.png') ?>" class="h-10 brightness-0 invert" alt="Logo">
-            <button id="closeBtn" class="text-white p-2">
+            <button id="closeBtn" class="text-white p-2" type="button" aria-label="Cerrar menú">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </div>
         <div class="flex flex-col gap-8 font-primary text-4xl uppercase text-white tracking-widest">
             <a href="<?= epl_url() ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Inicio</a>
             <a href="<?= epl_url('torneos.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Torneos</a>
+            <a href="<?= epl_url('ranking.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Ranking</a>
             <a href="<?= epl_url('reglamento.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Reglamento</a>
 
             <?php if ($jugador_nav): ?>
@@ -432,10 +434,12 @@ $_is_admin_page = strpos($_uri, '/admin/') !== false;
         if(btnOpen && btnClose && menu) {
             btnOpen.addEventListener('click', () => {
                 menu.classList.add('open');
+                btnOpen.setAttribute('aria-expanded', 'true');
                 document.body.style.overflow = 'hidden';
             });
             btnClose.addEventListener('click', () => {
                 menu.classList.remove('open');
+                btnOpen.setAttribute('aria-expanded', 'false');
                 document.body.style.overflow = '';
             });
         }
