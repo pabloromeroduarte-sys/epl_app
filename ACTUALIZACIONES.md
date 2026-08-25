@@ -14,7 +14,7 @@
 - Se corrigió la condición de despliegue para torneos activos o finalizados que antes caían erróneamente en el aviso de "En proceso de inscripción" cuando ya contaban con partidos o tabla generada.
 - Validación: PHP sin errores de sintaxis (`php -l mis_torneos.php`). Funciona de manera fluida en desktop y móvil sin recargas de página.
 - Archivos: `mis_torneos.php`, `ACTUALIZACIONES.md` y `CONTEXTOS.md`.
-- Estado: cambio **probado en local, listo para revisión del usuario (no publicado aún)**.
+- Estado: cambio **desplegado a producción (DigitalOcean) y subido a GitHub (commit `4c073bba`)**.
 
 ## Actualización 25 de agosto de 2026 — simplificación de pestañas en reprogramaciones del jugador
 
