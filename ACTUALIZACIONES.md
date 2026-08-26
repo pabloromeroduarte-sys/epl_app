@@ -1,8 +1,58 @@
 # Elite Padel League — bitácora compartida entre agentes
 
-> Última actualización: **25 de agosto de 2026**  
+> Última actualización: **26 de agosto de 2026**  
 > Objetivo: que Claude, Gemini, Antigravity, Codex u otro agente puedan continuar el trabajo sin perder el contexto.  
 > Este archivo **no debe contener contraseñas, tokens, claves API ni contenido de `.env`**.
+
+## Actualización 26 de agosto de 2026 — despliegue del Ranking Individual EPL y fachada pública
+
+- Se implementó y desplegó el **Ranking Individual EPL** con ventana móvil de 365 días (52 semanas):
+  1. **Motor de ranking (`includes/ranking.php`)**: generación automática de tablas `ranking_reglas`, `partido_jugadores`, `ranking_movimientos`, `ranking_incidencias` y trazabilidad de suplencias (`reemplaza_jugador_id`).
+  2. **Reglas**: +3 pts por victoria (incluye WO 6-0, 6-0), premios Top 5 por categoría (4ª: 50-40-25-14-10; 5ª: 30-20-15-10-5), vencimiento estricto a 365 días, puntos asignados al jugador individual.
+  3. **Nueva pantalla pública (`ranking.php`)**: Podio Top 3, Tabla Top 100 con avatares, victorias, premios, puntos vigentes y aviso de puntos próximos a vencer en 30 días.
+  4. **Fachada pública y navegación**: actualización de `index.php`, `torneos.php`, `torneo.php`, `reglamento.php`, `includes/header.php`, `includes/footer.php` y `includes/player_sidebar.php` comunicando el Doble Ranking EPL (Ranking por Liga + Ranking Individual).
+  5. **Panel Admin y Suplentes**: asignación y recálculo de premios finales Top 5 en `admin/liga_detalle.php` y `admin/ligas.php`, soporte de ganador de WO en `admin/partidos.php`, y selección del titular sustituido en `mis_suplentes.php`.
+- Validación: PHP sin errores de sintaxis; script de pruebas `scripts/probar_ranking_individual.php` completado con 100% de éxito.
+- Estado: cambio **desplegado a producción (DigitalOcean) y subido a GitHub**.
+
+## Actualización 25 de agosto de 2026 — Meta Business Suite y traspaso a Antigravity
+
+- Se creó una página nueva **Elite Padel League** dentro del portafolio comercial EPL y se configuró como página principal del portafolio.
+- Portafolio EPL: `37762280810081771`. Activo/página nueva en Business Suite: `1293129607212519`. Perfil público asociado: `61593570759669`.
+- La cuenta habitual del usuario mostraba únicamente su portafolio de EvoluciónAI/Servicios Informáticos. La causa era que la invitación anterior había quedado asociada a otro contexto de sesión de Meta.
+- Se envió una invitación nueva al alias `+epl` del Gmail principal. El alias entrega en el mismo buzón y no crea una cuenta de correo nueva; solo permitió a Meta emitir una invitación distinta.
+- La invitación se dejó con acceso total al portafolio y el usuario abrió el formulario para aceptarla desde su perfil habitual. Queda pendiente confirmar que completó **Aceptar invitación / Unirte** y que EPL ya aparece en su selector.
+- El usuario decidió utilizar el portafolio como estructura profesional para varios emprendimientos: él conservará acceso total y los colaboradores recibirán acceso parcial solamente a los activos que deban administrar.
+- Se recomendó separar marcas mediante grupos de activos, exigir verificación en dos pasos y conservar un segundo administrador de respaldo de máxima confianza.
+- La página anterior vacía (`1194519510401248`, perfil público `61590099902136`) no fue eliminada porque no se verificó quién tiene control total. Antigravity no debe borrarla, trasladarla ni reclamarla sin autorización expresa.
+- No se solicitaron ni almacenaron contraseñas, códigos de verificación, cookies o tokens.
+- Archivos modificados por esta actualización: `CONTEXTOS.md` y `ACTUALIZACIONES.md`.
+- GitHub/DigitalOcean: **no aplica; no publicado**. Este trabajo fue de configuración externa en Meta y documentación local.
+- Próximo paso: confirmar la aceptación desde el perfil habitual, verificar acceso a la página nueva y luego definir nombre general del portafolio, grupos de activos y permisos parciales.
+
+## Actualización 25 de agosto de 2026 — doble ranking EPL en la fachada
+
+- Se reforzó en la portada y en **Ligas y Americanos** un modelo de dos clasificaciones complementarias: **ranking por liga** para ordenar a las parejas dentro de cada competencia de 10 fechas y **ranking individual EPL** para seguir el recorrido personal del jugador.
+- El ranking por liga se comunica como una función vigente de cada competencia. El ranking individual se identifica siempre como **próxima evolución** o **próximamente**, porque sus reglas y su pantalla definitiva todavía no están implementadas.
+- Se añadió el acceso público **Rankings** en escritorio, móvil y footer. Este enlace lleva a la explicación de ambos modelos en la portada y no reactiva la antigua página `ranking.php`.
+- Se actualizaron hero, beneficios, sección de formato, FAQ, SEO y llamados a la acción, manteniendo la fachada moderna y el foco principal en ligas de 10 fechas más americanos.
+- Validación local: PHP sin errores; HTTP 200 en portada, Ligas y Americanos, ficha de liga y Reglamento; revisión visual en escritorio sin desborde horizontal ni imágenes rotas.
+- Archivos de este ajuste: `index.php`, `torneos.php`, `assets/css/home.css`, `includes/header.php`, `includes/footer.php`, `ACTUALIZACIONES.md` y `CONTEXTOS.md`.
+- Estado: cambio **solo en local, no commiteado y no publicado**.
+- Próximo paso: definir el modelo del ranking individual — período, categorías, puntos, peso de ligas/americanos, cambios de pareja y desempates— antes de desarrollar `ranking.php`.
+
+## Actualización 25 de agosto de 2026 — regreso a ligas de 10 fechas y americanos
+
+- Se redefinió la propuesta pública de EPL: la modalidad principal vuelve a ser una **liga de 10 fechas por categoría**, complementada durante la temporada con torneos **americanos de una jornada**.
+- Se mantuvo intacta la nueva fachada visual de la portada, pero se retiraron sus referencias al circuito anual, ranking de parejas y Máster Final. El hero ahora comunica **“Diez fechas. Una gran liga.”**
+- La portada presenta el flujo real: inscripción de la pareja, fixture de 10 jornadas, resultados, tabla de posiciones, reprogramaciones y americanos complementarios.
+- `torneos.php` pasó a presentarse como **Ligas y Americanos**, con filtros independientes por formato y estado. Las tarjetas distinguen **Liga 10 fechas** y **Americano** sin cambiar la estructura existente de datos.
+- La ficha pública `torneo.php` utiliza el nombre correcto según el tipo de competencia y corrigió el texto SEO chileno. `reglamento.php`, la navegación, el footer y los metadatos globales quedaron alineados al nuevo enfoque.
+- `ranking.php` no fue modificado y su acceso se retiró temporalmente de la navegación pública: el siguiente trabajo acordado es reemplazar el ranking de parejas por un **ranking individual**, con reglas todavía por definir.
+- Validación local: PHP sin errores, HTTP 200 en portada, Ligas y Americanos y Reglamento; revisión visual de escritorio sin desborde ni imágenes rotas; filtros de formato operativos y ficha pública de liga correcta.
+- Archivos: `index.php`, `torneos.php`, `torneo.php`, `reglamento.php`, `includes/header.php` e `includes/footer.php`.
+- Estado: cambio **solo en local, no commiteado y no publicado**.
+- Próximo paso: revisión del usuario y, una vez aprobado el enfoque, diseño del ranking individual.
 
 ## Actualización 25 de agosto de 2026 — integración directa de la Tabla de Posiciones y Fixture en Mis Torneos
 
@@ -437,6 +487,23 @@ El árbol local contiene cambios que no deben mezclarse ni publicarse automátic
 - `CONTEXTOS.md`: fotografía integral y actual del proyecto.
 - `ACTUALIZACIONES.md`: esta bitácora de estado compartida.
 - `.env`: configuración secreta local; **no leerla en voz alta, no copiarla a conversaciones y no commitearla**.
+
+### 2026-08-26 — Ranking individual móvil desarrollado y migrado en local
+
+- Solicitud: construir completo en local el ranking individual EPL con puntos por victorias, premios Top 5 de 4ta/5ta, suplentes reales y vencimiento móvil de 365 días.
+- Se creó un libro de movimientos idempotente, snapshots de los cuatro participantes e incidencias de datos dudosos.
+- Se conectaron los ingresos y correcciones de resultados al motor central. Los WO requieren ganador y se computan 6-0, 6-0.
+- Se formalizó a quién reemplaza cada suplente para asignar puntos a quien efectivamente jugó y aplicar la regla de titularidad superior al 50%.
+- Los premios finales ahora usan escalas fijas: 4ta 50/40/25/14/10 y 5ta 30/20/15/10/5.
+- Se reemplazó el ranking público anual de parejas por un Top 100 individual global de los últimos 365 días y se actualizó la navegación y los textos públicos relacionados.
+- Migración local: 95 partidos, 190 movimientos, 570 puntos vigentes, 35 jugadores y 0 incidencias. Segunda ejecución produjo exactamente el mismo resultado.
+- Pruebas: sintaxis de archivos modificados, script funcional completo, HTTP 200 en portada/directorio/ranking, revisión visual escritorio y móvil sin desborde ni errores de consola.
+- Archivos principales: `includes/ranking.php`, `includes/functions.php`, `ranking.php`, `mis_suplentes.php`, `admin/partidos.php`, `admin/liga_detalle.php`, `admin/ligas.php`, `includes/player_sidebar.php`, `scripts/migrar_ranking_individual.php`, `scripts/probar_ranking_individual.php`.
+- Commit: no.
+- Publicado en GitHub: no.
+- Publicado en producción: no.
+- Base de datos productiva: no tocada.
+- Pendiente: revisión del usuario en local y autorización explícita antes de publicar.
 
 ## Plantilla para futuras actualizaciones
 

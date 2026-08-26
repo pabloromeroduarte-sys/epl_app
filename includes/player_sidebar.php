@@ -6,20 +6,8 @@ $_j       = epl_jugador_actual();
 $_liga    = epl_liga_activa();
 $_equipo  = ($_liga && $_j) ? epl_equipo_del_jugador($_j['id'], $_liga['id']) : null;
 
-// Puntos de la pareja activa durante la temporada anual.
-$_db = epl_db();
-$_ranking = null;
-if ($_equipo) {
-  $_rk = $_db->prepare("
-      SELECT SUM(LEAST(rp1.puntos,rp2.puntos)) AS total
-      FROM liga_equipos le
-      JOIN ranking_puntos rp1 ON rp1.liga_id=le.liga_id AND rp1.jugador_id=?
-      JOIN ranking_puntos rp2 ON rp2.liga_id=le.liga_id AND rp2.jugador_id=?
-      WHERE le.equipo_id=? AND YEAR(rp1.fecha_competicion)=YEAR(CURDATE())
-  ");
-  $_rk->execute([(int)$_equipo['jugador1_id'],(int)$_equipo['jugador2_id'],(int)$_equipo['id']]);
-  $_ranking = $_rk->fetch();
-}
+// Puntos individuales vigentes en la ventana móvil de 365 días.
+$_ranking = $_j ? epl_ranking_resumen_jugador((int)$_j['id']) : null;
 ?>
 <aside class="dash-sidebar">
 
@@ -38,9 +26,9 @@ if ($_equipo) {
         <?= epl_h($_equipo['nombre']) ?>
       </div>
     <?php endif; ?>
-    <?php if (!empty($_ranking['total'])): ?>
+    <?php if (!empty($_ranking['puntos'])): ?>
       <div style="margin-top:.6rem;display:inline-flex;align-items:center;gap:.4rem;background:rgba(201,167,98,.15);border:1px solid rgba(201,167,98,.3);border-radius:20px;padding:.2rem .65rem">
-        <span style="color:var(--gold);font-size:.72rem;font-weight:700">🏅 <?= (int)$_ranking['total'] ?> pts</span>
+        <a href="<?= epl_url('ranking.php') ?>" style="color:var(--gold);font-size:.72rem;font-weight:700;text-decoration:none">🏅 <?= (int)$_ranking['puntos'] ?> pts individuales</a>
       </div>
     <?php endif; ?>
   </div>

@@ -1,7 +1,7 @@
 # Elite Padel League — contexto integral del proyecto
 
-> Actualizado: **25 de agosto de 2026**  
-> Última edición: integración de la Tabla de Posiciones y Fixture directamente en la vista de Mis Torneos del jugador (`mis_torneos.php`).  
+> Actualizado: **26 de agosto de 2026**  
+> Última edición: despliegue del Ranking Individual EPL (móvil 365 días), nueva pantalla ranking.php y fachada de doble ranking.
 > Documento compartido para Claude, Gemini, Antigravity, Codex y futuros agentes.  
 > Fuente de verdad operativa complementaria a Git: verificar siempre con `git status`, `git diff` y `git log`.
 
@@ -34,7 +34,7 @@ Elite Padel League (EPL) es una aplicación web propia para administrar ligas y 
 - Integraciones de IA mediante MCP y GPT Actions con OAuth.
 - Simulador administrativo de Torneo Copa.
 
-La dirección comercial pública vigente es potenciar un **circuito anual de torneos por categoría**, con cada fecha resuelta en un día. Cada posición entrega puntos a la pareja y alimenta su ranking durante la temporada; al cerrar el calendario, las mejores parejas de cada categoría clasifican al **Máster Final EPL**. La estructura histórica de ligas/equipos sigue disponible para conservar datos y compatibilidad.
+La dirección comercial pública vigente vuelve a priorizar **ligas de 10 fechas por categoría**, con fixture, resultados, tabla de posiciones y reprogramaciones administradas desde la plataforma. Durante la temporada se ofrecerán además algunos **americanos de una jornada** como formato complementario. La propuesta deportiva tiene dos niveles: el **ranking por liga**, que ordena a las parejas dentro de cada competencia, y el **ranking individual EPL móvil de 365 días**, desarrollado y migrado localmente el 26/08/2026 para seguir el rendimiento personal aunque cambie la pareja. La nueva fachada visual se conserva. Este conjunto todavía no está publicado.
 
 La idea de reconstruir el proyecto en una carpeta paralela usando un framework moderno quedó propuesta para el futuro, pero **no se ha iniciado una migración oficial**. El sistema PHP actual sigue siendo producción.
 
@@ -52,7 +52,7 @@ La idea de reconstruir el proyecto en una carpeta paralela usando un framework m
 
 - GitHub: `https://github.com/pabloromeroduarte-sys/epl_app.git`.
 - Rama principal: `main`.
-- Al momento de este documento, `HEAD`, `origin/main` y producción están sincronizados en `4ee513ba`.
+- Al momento de este documento, `HEAD` y `origin/main` están sincronizados en `24228a1b`. La adaptación a ligas y americanos sigue únicamente en local.
 
 ### Producción
 
@@ -190,9 +190,9 @@ No volver a depender de grandes bloques `<style>` dentro del body para páginas 
 
 ### Portal público y jugadores
 
-- `index.php`: inicio público centrado en calendario anual, puntos de pareja y camino al Máster Final.
-- `torneos.php`: directorio público de fechas, categorías, cupos y resultados históricos.
-- `ranking.php`: ranking anual de parejas, con filtros, podio, tabla, modelo de puntos y clasificación al Máster.
+- `index.php`: inicio público localmente adaptado a ligas de 10 fechas, gestión digital y americanos complementarios.
+- `torneos.php`: directorio público **Ligas y Americanos**, con filtros por formato y estado, categorías, cupos y resultados.
+- `ranking.php`: Top 100 individual global de los últimos 365 días, operativo en local y enlazado desde la navegación pública local; pendiente de autorización para publicar.
 - `registro.php`, `login.php`, `recuperar.php`, `cambiar_password.php`.
 - `dashboard.php`: inicio del jugador.
 - `mis_torneos.php`: vista de torneos del jugador organizada en 3 sub-pestañas: 📊 **Tabla de Posiciones** (clasificación completa con podio y destaque de su equipo), 🎾 **Mis Partidos** (próximos juegos y últimos resultados con marcadores y compartir WhatsApp) y 📅 **Fixture del Torneo** (calendario completo con filtro interactivo por fecha y buscador en tiempo real).
@@ -433,38 +433,24 @@ Pendiente: armar la **presentación de calendario en PDF** para ofrecer a los cl
 ### Sincronización
 
 - Rama: `main`.
-- `HEAD`, `origin/main` y producción: sincronizados en `4ee513ba`.
-- Último commit: `4ee513ba`.
+- `HEAD` y `origin/main`: sincronizados en `24228a1b` antes de los cambios locales actuales.
+- Producción no fue modificada ni verificada durante la adaptación a ligas de 10 fechas.
 
 ### Cambios locales todavía no commiteados
 
 No publicar con `git add -A` sin revisar. Actualmente existen:
 
-- `CLAUDE.md`: referencia al contexto compartido.
-- `admin/dashboard_repro.php`: recupera partidos sin resultado/sin fecha, trata el marcador 31/12 como sin fecha, permite eliminar una gestión sin modificar el partido y excluye de la bandeja activa las reservas originales ya vencidas.
-- `assets/css/repro.css`: menú visual de gestión rápida para separar casos sin fecha y con fecha propuesta, priorizar solicitudes por aprobar y mostrar estados vacíos claros.
-- `admin/api_reprogramacion.php`: al rechazar una solicitud restaura estado, fecha y recinto originales.
-- `admin/partido_detalle.php`: “revertir a pendiente” restaura fecha/recinto originales y la ficha deja de pedir la baja de reservas vencidas.
-- `admin/partidos.php`: una cancha escogida explícitamente para un reprogramado queda confirmada por el administrador; volver a dejarlo sin fecha/cancha reabre la tarea.
-- `reprogramar.php`: separa la reserva original de la cancha nueva, simplifica las pestañas a Solicitar y Mis Reprogramaciones (ocultando Todos los Reprogramados y Adelantar Fecha), y aplica de inmediato la fecha cuando existe mutuo acuerdo.
-- `dashboard.php`: actualiza el enlace de reprogramaciones hacia la vista unificada del jugador (`#mis-reprogramaciones`).
-- `gestion_reserva.php`: el enlace público del club solo libera reservas vigentes y confirma canchas; no aprueba solicitudes ni fechas.
-- `includes/functions.php`: generar un enlace de confirmación ya no marca falsamente el aviso como enviado; incorpora la regla común de vigencia de reservas.
-- `assets/css/epl.css`: estado activo consistente mediante `aria-current`.
-- `includes/player_sidebar.php`: acceso a Conectar IA en sidebar y navegación móvil.
-- `login.php`: conserva correctamente el retorno OAuth para MCP y GPT Actions, incluido rol Club.
-- `tutoriales.php`: tarjeta para conectar ChatGPT, Claude o Gemini.
-- `index.php`: portada pública modernizada y orientada al circuito anual, puntos de pareja y Máster Final.
-- `assets/css/home.css`: estilos específicos de la portada y sus módulos de formato/ranking.
-- `ranking.php` y `assets/css/ranking.css`: clasificación pública anual de parejas rumbo al Máster Final.
-- `torneos.php` y `assets/css/torneos-public.css`: calendario público modernizado, puntos por posición y ruta de cuatro etapas al Máster.
-- `includes/header.php` y `includes/footer.php`: navegación y contenido público coherentes con el nuevo formato; rutas PWA aptas para subcarpeta local.
-- `ACTUALIZACIONES.md`: bitácora todavía no rastreada.
-- `AGENTS.md`: instrucciones para agentes todavía no rastreadas.
+- `index.php`: conserva la fachada moderna y presenta ligas de 10 fechas, ranking por liga, ranking individual activo en local y americanos; retiró la vista previa del antiguo ranking de parejas.
+- `torneos.php`: directorio **Ligas y Americanos**, con filtros por formato/estado y explicación del doble ranking EPL.
+- `torneo.php`: título, SEO e información pública según sea liga de 10 fechas o americano.
+- `reglamento.php`: presentación pública como reglamento de ligas.
+- `assets/css/home.css`: estilos de la nueva sección que diferencia ambos rankings.
+- `includes/header.php` e `includes/footer.php`: navegación, SEO global y propuesta de valor actualizados; **Ranking individual** lleva al Top 100 local.
+- `includes/ranking.php`, `ranking.php` y scripts de migración/prueba: motor individual móvil, interfaz pública y respaldo reproducible del histórico local.
+- `ACTUALIZACIONES.md` y `CONTEXTOS.md`: documentación de esta adaptación local.
 - `.claude/worktrees/confident-chaplygin-e5fd5c`: aparece modificado; no agregar automáticamente.
-- `CONTEXTOS.md`: este archivo nuevo.
 
-Estos cambios deben probarse y separarse en uno o más commits antes de publicar.
+El ranking individual ya fue implementado y probado en local; convive con el ranking por liga, que sigue siendo la clasificación de parejas dentro de cada competencia. Todo este conjunto debe revisarse con el usuario antes de publicar.
 
 ### Menú simple de Reprogramaciones pendiente de publicación
 
@@ -701,9 +687,10 @@ Validar especialmente:
 
 ### Portal público
 
-- Revisar con el usuario la nueva dirección visual disponible en local antes de publicar.
-- Portada, ranking de parejas y calendario de torneos validados en escritorio y viewport móvil 390×844, sin desborde horizontal ni imágenes rotas.
-- El ranking muestra un estado inicial cuando `ranking_puntos` no tiene movimientos; al asignar posiciones desde los torneos, consolida como pareja los puntos idénticos de sus dos integrantes mediante `equipo_id`.
+- Revisar con el usuario la fachada local ya adaptada a ligas de 10 fechas, doble ranking EPL y americanos antes de publicar.
+- Portada, directorio y ficha de liga validados localmente en escritorio, sin desborde horizontal ni imágenes rotas.
+- El ranking individual de 365 días ya está desarrollado y migrado **solo en local**. La fachada lo presenta como una función operativa y `ranking.php` muestra el Top 100 individual.
+- Falta la revisión final del usuario y su autorización explícita antes de publicar la fachada y el ranking.
 - La estructura histórica de ligas y parejas se conserva para no romper la operación existente.
 - La base local `epldb` fue restaurada desde `migration/dump_vps_maria.sql` para pruebas; no corresponde a una sincronización actual de producción.
 
@@ -738,7 +725,93 @@ Antes de limpiar o borrar cualquiera, confirmar si está rastreado por Git y obt
 6. Esperar aprobación antes de publicar.
 7. Después de desplegar, verificar GitHub, producción y OPcache.
 
-## 19. Plantilla para actualizar este contexto
+## 19. Meta Business Suite — traspaso para Antigravity
+
+Este trabajo es externo al código de EPL. No requiere commit, webhook, cambios en DigitalOcean ni modificaciones de base de datos.
+
+### Estado confirmado
+
+- Existe el portafolio comercial **Elite Padel League**, con identificador `37762280810081771`.
+- Se creó una página nueva de Facebook **Elite Padel League** dentro de ese portafolio.
+- Identificador del activo/página dentro de Business Suite: `1293129607212519`.
+- Perfil público asociado: `61593570759669`.
+- La página nueva quedó como página principal del portafolio y figura como propiedad de **Elite Padel League**.
+- El administrador que creó el portafolio conserva acceso total.
+- La sesión habitual de Pablo mostraba únicamente el portafolio de EvoluciónAI/Servicios Informáticos; por eso EPL no aparecía inicialmente en su selector.
+- Meta consideró consumida la primera invitación. Se emitió una invitación nueva usando el alias `+epl` del Gmail principal. Ese alias no es otro buzón: llega al mismo Gmail, pero Meta lo acepta como una dirección de invitación distinta.
+- La invitación nueva se configuró con acceso total al portafolio. El formulario de aceptación ya fue abierto desde el correo; falta confirmar con el usuario que terminó de aceptarlo desde su perfil habitual y que EPL aparece en el selector.
+- Que una persona con acceso total muestre “ningún activo asignado” no implica falta de control: el acceso total al portafolio permite administrar sus activos. Si Meta limita alguna herramienta concreta, asignar explícitamente la página desde **Asignar activos**.
+
+### Activo anterior que no debe tocarse
+
+- Existe una página anterior y vacía con identificador de activo `1194519510401248` y perfil público `61590099902136`.
+- El perfil/sesión disponible no demostró control total sobre esa página anterior.
+- **No eliminarla, reclamarla, trasladarla ni desconectarla** hasta identificar a la cuenta propietaria y recibir autorización explícita del usuario.
+
+### Instrucciones concretas para Antigravity
+
+1. Antes de cualquier acción, confirmar cuál pestaña y cuál perfil personal de Meta están activos. Hay sesiones/contextos diferentes y no deben confundirse.
+2. Verificar primero que la invitación con alias `+epl` fue aceptada desde el perfil habitual de Pablo y que el selector muestra **Elite Padel League**.
+3. No eliminar al administrador creador ni modificar propietarios mientras el acceso desde el perfil habitual no esté comprobado.
+4. No mezclar activos de EvoluciónAI o Servicios Informáticos con EPL. El usuario quiere controlar varios emprendimientos, pero asignar a colaboradores únicamente los activos que correspondan.
+5. Si el portafolio pasa a ser un contenedor general de emprendimientos, se puede renombrar el portafolio sin renombrar la página **Elite Padel League**. Organizar cada marca mediante grupos de activos.
+6. El usuario mantiene acceso total. Colaboradores, agencias o proveedores deben recibir acceso parcial y solo a páginas, Instagram, WhatsApp o cuentas publicitarias necesarias.
+7. Recomendar verificación en dos pasos obligatoria y un segundo administrador de respaldo de máxima confianza, pero no activar ni invitar a nadie sin aprobación.
+8. No pedir, guardar ni copiar contraseñas, códigos de verificación, cookies o tokens.
+9. No borrar la página antigua ni el portafolio de EPL como forma de “limpiar”; primero documentar propiedad y dependencias.
+
+### Próximo paso verificable
+
+1. El usuario completa **Aceptar invitación / Unirte** desde su perfil habitual.
+2. Recarga Business Suite y confirma que **Elite Padel League** aparece junto a los otros portafolios, pero separado.
+3. Abre la página nueva y comprueba que puede editarla y entrar a Configuración.
+4. Solo después se define el nombre general del portafolio, los grupos de activos y los permisos parciales de futuros colaboradores.
+
+## 20. Ranking individual EPL — desarrollado en local el 26/08/2026
+
+### Reglas confirmadas
+
+- Es un ranking global de jugadores, no se separa por división.
+- Ventana móvil exacta: cada movimiento vence a los 365 días de su propia fecha y solo suma si `fecha_vencimiento > CURDATE()`.
+- Liga regular: cada victoria entrega 3 puntos a los dos jugadores que realmente disputaron el partido. Una derrota entrega 0.
+- WO: cuenta como victoria y como resultado 6-0, 6-0; entrega los mismos 3 puntos.
+- Premio final Top 5 de 4ta: 50, 40, 25, 14 y 10 puntos.
+- Premio final Top 5 de 5ta: 30, 20, 15, 10 y 5 puntos.
+- Ligas y americanos usan esas escalas por categoría. Los americanos no entregan +3 por cada partido; entregan el premio final.
+- Un suplente recibe los puntos del partido que efectivamente jugó; el titular ausente no los recibe.
+- Los puntos históricos quedan asociados al jugador que los obtuvo, aunque luego cambie de equipo.
+- El premio final queda para la pareja titular al cierre. Si un suplente disputó más del 50% de los partidos y está formalizado a quién reemplazó, pasa a ocupar ese lugar para el premio.
+- Desempate global: puntos, victorias, mejor resultado en 4ta y mejor resultado en 5ta.
+
+### Implementación
+
+- Motor central: `includes/ranking.php`.
+- Tablas nuevas locales: `ranking_reglas`, `partido_jugadores`, `ranking_movimientos`, `ranking_incidencias`.
+- `suplente_partidos` incorpora `reemplaza_jugador_id` para no adivinar quién fue reemplazado.
+- `epl_recalcular_clasificacion()` sincroniza victorias, correcciones y WO; si los premios finales ya existían, también recalcula el Top 5 después de una corrección.
+- La ficha de suplentes obliga a elegir al titular reemplazado y regenera el snapshot de participantes si el resultado ya existía.
+- El admin asigna/recalcula premios finales desde la competencia finalizada. Las escalas dejaron de ser editables y se fijan por categoría.
+- El admin de partidos permite elegir al ganador de un WO y guarda automáticamente 6-0, 6-0.
+- `ranking.php` reemplazó el ranking anual de parejas por el ranking individual móvil Top 100.
+- Navegación, portada, listado de competencias, footer y sidebar del jugador apuntan al ranking individual operativo.
+
+### Migración y prueba local
+
+- Ejecutar migración idempotente: `C:\xampp\php\php.exe scripts\migrar_ranking_individual.php`.
+- Ejecutar pruebas: `C:\xampp\php\php.exe scripts\probar_ranking_individual.php`.
+- Resultado local al 26/08/2026: 95 partidos ganados, 190 movimientos individuales, 570 puntos vigentes y 35 jugadores con puntos.
+- Las 11 fechas antiguas sin `fecha_jugado` usaron `fecha_programada`; si tampoco existe una fecha real, se usa la fecha de ingreso y se registra la fuente.
+- Migración repetida sin duplicados y con 0 incidencias pendientes en la base local.
+- Pruebas verificadas: vencimiento estricto, escalas 4ta/5ta, Top 100, idempotencia, cuatro participantes por partido, WO 6-0/6-0 y premios Top 5 a dos jugadores por equipo.
+- Validación web local: portada, `torneos.php` y `ranking.php` responden HTTP 200 sin errores PHP. Ranking revisado visualmente en escritorio y 390 px sin desborde horizontal ni errores de consola.
+- Estado: **solo local; GitHub no, DigitalOcean no, base productiva no tocada**.
+
+### Decisión de datos importante
+
+- Los partidos migrados congelan los participantes actuales porque el sistema anterior no guardaba alineación histórica completa. En adelante `partido_jugadores` conserva quién disputó cada encuentro y evita que un cambio de pareja mueva puntos antiguos.
+- Si una suplencia antigua no permite identificar de forma segura al reemplazado, el motor no inventa el dato: crea una incidencia administrativa y no asigna esos puntos hasta resolverla.
+
+## 21. Plantilla para actualizar este contexto
 
 ```markdown
 ### Cambio: título breve

@@ -5,6 +5,7 @@ require_once '../includes/functions.php';
 epl_require_admin();
 
 $db  = epl_db();
+epl_ranking_ensure_schema();
 epl_ensure_ligas_columnas_mp_precio();
 $_flash = epl_flash_get();
 $ok     = ($_flash && $_flash['tipo']==='ok') ? $_flash['msg'] : '';
@@ -17,7 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nombre    = trim($_POST['nombre']    ?? '');
         $tipo      = in_array($_POST['tipo']??'liga',['liga','torneo']) ? $_POST['tipo'] : 'liga';
         $formato   = in_array($_POST['formato']??'',['liga_regular','mata_mata','grupos_mata_mata','liga_playoff']) ? $_POST['formato'] : 'liga_regular';
-        $cat       = (int)($_POST['categoria'] ?? 0);
+        $catPost   = (int)($_POST['categoria'] ?? 5);
+        $cat       = in_array($catPost, [4, 5], true) ? $catPost : 5;
         $estado    = in_array($_POST['estado']??'inscripcion',['proximamente','inscripcion','activa','finalizada']) ? $_POST['estado'] : 'inscripcion';
         $recinto_id = (int)($_POST['recinto_id'] ?? 0) ?: null;
         $sede_txt  = trim($_POST['recinto'] ?? '');
@@ -26,11 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $f_fin     = trim($_POST['fecha_fin']    ?? '') ?: null;
         $i_inicio  = trim($_POST['inscripcion_inicio'] ?? '') ?: null;
         $i_fin     = trim($_POST['inscripcion_fin']    ?? '') ?: null;
-        $p1        = max(0,(int)($_POST['puntos_1']      ?? 100));
-        $p2        = max(0,(int)($_POST['puntos_2']      ?? 70));
-        $p3        = max(0,(int)($_POST['puntos_3']      ?? 50));
-        $p4        = max(0,(int)($_POST['puntos_4']      ?? 30));
-        $pg        = max(0,(int)($_POST['puntos_grupos'] ?? 10));
+        $escala    = epl_ranking_escala_categoria($cat);
+        $p1        = $escala[1];
+        $p2        = $escala[2];
+        $p3        = $escala[3];
+        $p4        = $escala[4];
+        $pg        = $escala[5];
         $sexo      = in_array($_POST['sexo']??'', ['masculino','femenino','mixto']) ? $_POST['sexo'] : 'masculino';
 
         $pErr = '';
@@ -69,6 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->prepare("DELETE FROM clasificacion       WHERE liga_id=?")->execute([$id]);
                 $db->prepare("DELETE FROM liga_equipos        WHERE liga_id=?")->execute([$id]);
                 $db->prepare("DELETE FROM inscripciones       WHERE liga_id=?")->execute([$id]);
+                if ($db->query("SHOW TABLES LIKE 'ranking_movimientos'")->fetchColumn()) {
+                    $db->prepare("DELETE FROM ranking_movimientos WHERE liga_id=?")->execute([$id]);
+                    $db->prepare("DELETE FROM ranking_incidencias WHERE partido_id IN (SELECT id FROM partidos WHERE liga_id=?)")->execute([$id]);
+                    $db->prepare("DELETE FROM partido_jugadores WHERE partido_id IN (SELECT id FROM partidos WHERE liga_id=?)")->execute([$id]);
+                }
                 $db->prepare("DELETE FROM ranking_puntos      WHERE liga_id=?")->execute([$id]);
                 $db->prepare("DELETE FROM partidos            WHERE liga_id=?")->execute([$id]);
                 $db->prepare("DELETE FROM ligas               WHERE id=?")->execute([$id]);
@@ -270,9 +278,8 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
           <div class="form-group">
             <label class="form-label">Categoría</label>
             <select name="categoria" class="form-control">
-              <?php for ($n=1;$n<=8;$n++): ?>
-                <option value="<?= $n ?>" <?= $n===5?'selected':'' ?>><?= $n ?>ª categoría</option>
-              <?php endfor; ?>
+              <option value="4">4ª categoría</option>
+              <option value="5" selected>5ª categoría</option>
             </select>
           </div>
         </div>
@@ -383,34 +390,10 @@ $estado_badge= ['proximamente'=>'badge-reprog','inscripcion'=>'badge-pendiente',
         })();
         </script>
 
-        <!-- Puntos de ranking -->
-        <p style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);margin:1rem 0 .75rem;border-top:1px solid var(--gray-200);padding-top:1rem">
-          Puntos de ranking (ventana 52 semanas)
-        </p>
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">🥇 1° lugar</label>
-            <input type="number" name="puntos_1" class="form-control" min="0" value="100">
-          </div>
-          <div class="form-group">
-            <label class="form-label">🥈 2° lugar</label>
-            <input type="number" name="puntos_2" class="form-control" min="0" value="70">
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">🥉 3° lugar</label>
-            <input type="number" name="puntos_3" class="form-control" min="0" value="50">
-          </div>
-          <div class="form-group">
-            <label class="form-label">4° lugar</label>
-            <input type="number" name="puntos_4" class="form-control" min="0" value="30">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Participación (5° en adelante)</label>
-          <input type="number" name="puntos_grupos" class="form-control" min="0" value="10">
-          <span class="form-hint">Puntos por participar sin llegar al top 4</span>
+        <div style="margin:1rem 0;padding:1rem;border-radius:12px;background:#f8f5eb;border:1px solid #ead9aa;font-size:.78rem;color:var(--navy)">
+          <strong>Ranking individual automático · 365 días</strong><br>
+          4ta: 50 · 40 · 25 · 14 · 10. &nbsp; 5ta: 30 · 20 · 15 · 10 · 5.<br>
+          En ligas, cada victoria también entrega 3 puntos a quienes jugaron.
         </div>
 
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Crear competición</button>

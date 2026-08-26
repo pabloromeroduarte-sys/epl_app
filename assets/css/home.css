@@ -479,7 +479,7 @@
 .stat-num { color: var(--home-gold); font-family: 'Anton', sans-serif; font-size: 3rem; line-height: 1; }
 .stat-lbl { margin-top: .4rem; color: #cbd5e1; font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 
-/* Ruta anual + vista previa del ranking de parejas. */
+/* Formato de temporada + vista previa de los dos rankings EPL. */
 .home-circuit-section {
     padding: clamp(3rem, 7vw, 6.5rem) 1.25rem;
     border-top: 1px solid #dfe5ea;
@@ -676,6 +676,61 @@
 .home-ranking-scale span { display: grid; gap: .18rem; padding: .75rem; border-radius: 10px; background: #f3f6f8; color: #7b8a9c; font-size: .55rem; font-weight: 800; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
 .home-ranking-scale b { color: var(--home-blue); font-family: 'Anton', sans-serif; font-size: 1.55rem; line-height: 1; }
 
+.home-ranking-types {
+    flex: 1;
+    display: grid;
+    gap: .75rem;
+    margin: 1.1rem 0 1.35rem;
+}
+
+.home-ranking-type {
+    display: grid;
+    grid-template-columns: 3.2rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1.15rem;
+    border: 1px solid #e6ebef;
+    border-radius: 14px;
+    background: #f8fafb;
+}
+
+.home-ranking-type > b {
+    color: var(--home-gold);
+    font-family: 'Anton', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 400;
+    line-height: 1;
+}
+
+.home-ranking-type > div { min-width: 0; }
+.home-ranking-type span {
+    display: block;
+    margin-bottom: .25rem;
+    color: #8391a0;
+    font-size: .5rem;
+    font-weight: 900;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+}
+.home-ranking-type strong {
+    display: block;
+    color: var(--home-blue);
+    font-family: 'Anton', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 400;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+.home-ranking-type p {
+    margin: .45rem 0 0;
+    color: #64748b;
+    font-size: .68rem;
+    line-height: 1.55;
+}
+.home-ranking-type--next {
+    border-color: rgba(201,167,98,.48);
+    background: #fbf9f4;
+}
+
 .home-leaderboard-card__footer {
     display: flex;
     justify-content: space-between;
@@ -813,6 +868,9 @@
     .home-leaderboard-row__duo img + img { margin-left: -.9rem; }
     .home-ranking-empty { min-height: 160px; padding: 1rem; }
     .home-ranking-empty__number { font-size: 3.2rem; }
+    .home-ranking-type { grid-template-columns: 2.5rem minmax(0, 1fr); gap: .75rem; padding: .9rem; }
+    .home-ranking-type > b { font-size: 2.15rem; }
+    .home-ranking-type strong { font-size: 1.15rem; }
     .home-leaderboard-card__footer { margin: 1rem -1.15rem -1.15rem; padding: .9rem 1.15rem; }
 }
 

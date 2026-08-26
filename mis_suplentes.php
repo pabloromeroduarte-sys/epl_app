@@ -7,8 +7,16 @@ epl_require_login();
 
 $jugador = epl_jugador_actual();
 $db      = epl_db();
+epl_ranking_ensure_schema();
 $liga    = epl_liga_activa();
 $equipo  = $liga ? epl_equipo_del_jugador($jugador['id'], $liga['id']) : null;
+
+$titulares_equipo = [];
+if ($equipo) {
+    $stTitulares = $db->prepare("SELECT id,nombre,apellido FROM jugadores WHERE id IN (?,?) ORDER BY id");
+    $stTitulares->execute([(int)$equipo['jugador1_id'], (int)$equipo['jugador2_id']]);
+    $titulares_equipo = $stTitulares->fetchAll();
+}
 
 // Recuperar flash del redirect anterior
 $_flash = epl_flash_get();
@@ -88,19 +96,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $equipo && $liga) {
     } elseif ($action === 'registrar_partido') {
         $suplente_id = (int)($_POST['suplente_id'] ?? 0);
         $partido_id  = (int)($_POST['partido_id']  ?? 0);
+        $reemplaza_jugador_id = (int)($_POST['reemplaza_jugador_id'] ?? 0);
         $stV = $db->prepare("SELECT * FROM suplentes WHERE id=? AND equipo_id=? AND liga_id=?");
         $stV->execute([$suplente_id, $equipo['id'], $liga['id']]);
         $sup = $stV->fetch();
+        $titularesIds = [(int)$equipo['jugador1_id'], (int)$equipo['jugador2_id']];
+        $stPartidoValido = $db->prepare("SELECT COUNT(*) FROM partidos WHERE id=? AND liga_id=? AND (equipo_local_id=? OR equipo_visitante_id=?)");
+        $stPartidoValido->execute([$partido_id, $liga['id'], $equipo['id'], $equipo['id']]);
         if (!$sup) {
             $error = 'Suplente no válido.';
+        } elseif (!(bool)$stPartidoValido->fetchColumn()) {
+            $error = 'El partido seleccionado no corresponde a tu equipo.';
+        } elseif (!in_array($reemplaza_jugador_id, $titularesIds, true)) {
+            $error = 'Indica a qué titular reemplazó el suplente.';
         } elseif (($partidos_suplente[$suplente_id] ?? 0) >= 9) {
             $error = 'Este suplente ya alcanzó el máximo de 9 partidos.';
         } else {
             try {
-                $db->prepare("INSERT INTO suplente_partidos (suplente_id, partido_id, registrado_por) VALUES (?,?,?)")
-                   ->execute([$suplente_id, $partido_id, $jugador['id']]);
+                $db->prepare("INSERT INTO suplente_partidos (suplente_id, partido_id, reemplaza_jugador_id, registrado_por) VALUES (?,?,?,?)")
+                   ->execute([$suplente_id, $partido_id, $reemplaza_jugador_id, $jugador['id']]);
                 $db->prepare("UPDATE suplentes SET partidos_jugados = partidos_jugados + 1 WHERE id=?")->execute([$suplente_id]);
-                epl_redirect_ok('Partido de suplente registrado.');
+                $db->prepare("DELETE FROM partido_jugadores WHERE partido_id=?")->execute([$partido_id]);
+                epl_ranking_sincronizar_liga_partidos((int)$liga['id']);
+                epl_redirect_ok('Partido de suplente registrado. Sus puntos quedarán para quien realmente jugó.');
             } catch (PDOException $e) {
                 epl_redirect_error('Ese partido ya fue registrado para este suplente.');
             }
@@ -487,6 +505,16 @@ if ($equipo && $liga) {
             ⭐ El partido más cercano ya está seleccionado — cambialo si el suplente jugó en otro.
           </p>
           <?php endif; ?>
+        </div>
+        <div class="form-group" style="margin-bottom:1.25rem">
+          <label class="form-label">Titular a quien reemplazó</label>
+          <select name="reemplaza_jugador_id" class="form-control" required>
+            <option value="">— Selecciona al titular ausente —</option>
+            <?php foreach ($titulares_equipo as $titular): ?>
+              <option value="<?= (int)$titular['id'] ?>"><?= epl_h($titular['nombre'].' '.$titular['apellido']) ?></option>
+            <?php endforeach; ?>
+          </select>
+          <p style="font-size:.72rem;color:var(--gray-400);margin-top:.4rem">Así los puntos del partido se asignan a quienes realmente jugaron.</p>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Confirmar</button>
       </form>

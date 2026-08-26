@@ -1,8 +1,8 @@
 <?php
-$page_title       = 'Reglamento del Circuito';
+$page_title       = 'Reglamento de Ligas';
 $active_nav       = 'reglamento';
-$meta_description = 'Reglamento oficial Elite Padel League: sistema de juego, categorías, puntuación, reprogramaciones, fair play y normativa completa de torneos amateur.';
-$meta_keywords    = 'reglamento padel, normativa torneo padel, reglas EPL, categorias padel chile, sistema puntuacion padel';
+$meta_description = 'Reglamento oficial de las ligas Elite Padel League: sistema de juego, categorías, 10 fechas, reprogramaciones, fair play y normativa deportiva.';
+$meta_keywords    = 'reglamento liga padel, liga padel 10 fechas, reglas EPL, categorias padel chile, reprogramaciones padel';
 require_once 'includes/functions.php';
 require_once 'includes/header.php';
 ?>
@@ -93,7 +93,7 @@ require_once 'includes/header.php';
                 Acuerdos de Convivencia &bull; Temporada 2026
             </span>
             <h1 class="giant-title text-6xl md:text-8xl lg:text-[8rem] text-white font-primary mb-10 drop-shadow-2xl uppercase">
-                Reglamento del <span class="text-epl-gold">Circuito</span>
+                Reglamento de <span class="text-epl-gold">Ligas</span>
             </h1>
             <p class="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-gray-200 font-secondary font-medium mb-12 leading-relaxed opacity-90">
                 Garantizamos un entorno de respeto, pertenencia y el más puro nivel deportivo, donde la comunidad es lo primordial.

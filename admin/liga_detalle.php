@@ -6,6 +6,7 @@ require_once '../includes/mail.php';
 epl_require_admin();
 
 $db  = epl_db();
+epl_ranking_ensure_schema();
 epl_ensure_ligas_columnas_mp_precio();
 $id  = (int)($_GET['id'] ?? 0);
 
@@ -69,7 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tipo      = in_array($_POST['tipo']??'',['liga','torneo']) ? $_POST['tipo'] : $liga['tipo'];
         $sexo      = in_array($_POST['sexo']??'',['masculino','femenino','mixto']) ? $_POST['sexo'] : $liga['sexo'];
         $formato   = in_array($_POST['formato']??'',['liga_regular','mata_mata','grupos_mata_mata','liga_playoff']) ? $_POST['formato'] : $liga['formato'];
-        $cat       = (int)($_POST['categoria'] ?? 0);
+        $catPost   = (int)($_POST['categoria'] ?? ($liga['categoria'] ?? 5));
+        $cat       = in_array($catPost, [4, 5], true) ? $catPost : 5;
         $estado    = in_array($_POST['estado']??'',['proximamente','inscripcion','activa','finalizada']) ? $_POST['estado'] : $liga['estado'];
         $recinto_id = (int)($_POST['recinto_id'] ?? 0) ?: null;
         $url_maps  = trim($_POST['url_maps']  ?? '');
@@ -77,11 +79,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $f_fin     = trim($_POST['fecha_fin']    ?? '') ?: null;
         $i_inicio  = trim($_POST['inscripcion_inicio'] ?? '') ?: null;
         $i_fin     = trim($_POST['inscripcion_fin']    ?? '') ?: null;
-        $p1        = max(0,(int)($_POST['puntos_1']      ?? $liga['puntos_1']));
-        $p2        = max(0,(int)($_POST['puntos_2']      ?? $liga['puntos_2']));
-        $p3        = max(0,(int)($_POST['puntos_3']      ?? $liga['puntos_3']));
-        $p4        = max(0,(int)($_POST['puntos_4']      ?? $liga['puntos_4']));
-        $pg        = max(0,(int)($_POST['puntos_grupos'] ?? $liga['puntos_grupos']));
+        $escala    = epl_ranking_escala_categoria($cat);
+        $p1        = $escala[1];
+        $p2        = $escala[2];
+        $p3        = $escala[3];
+        $p4        = $escala[4];
+        $pg        = $escala[5];
         $sede_txt  = trim($_POST['recinto'] ?? '');
         if (!$nombre) { ld_redirect($id, $tab, '', 'El nombre es obligatorio.'); }
         elseif (($parsed = epl_liga_precio_desde_post($_POST, $pErr)) === null) { ld_redirect($id, $tab, '', $pErr ?: 'Revisa los datos del precio.'); }
@@ -166,6 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $ids_str = implode(',', array_map('intval', $partido_ids));
             $msg = '';
+            $ligas_afectadas = array_map('intval', $db->query("SELECT DISTINCT liga_id FROM partidos WHERE id IN ($ids_str)")->fetchAll(PDO::FETCH_COLUMN));
 
             // ── Exportar a CSV/Excel ──────────────────────────────
             if ($bulk_action === 'exportar_excel') {
@@ -251,6 +255,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if ($bulk_action === 'eliminar') {
+                $db->query("DELETE FROM ranking_incidencias WHERE partido_id IN ($ids_str)");
+                $db->query("DELETE FROM partido_jugadores WHERE partido_id IN ($ids_str)");
                 $db->query("DELETE FROM partidos WHERE id IN ($ids_str)");
                 $msg = count($partido_ids) . ' partidos eliminados.';
             } elseif ($bulk_action === 'estado_pendiente') {
@@ -375,7 +381,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } elseif ($bulk_action === 'cambiar_estado') {
                 $nuevo_estado = $_POST['bulk_estado'] ?? '';
-                $estados_validos = ['pendiente','jugado','reprogramado','walkover','no_presentado'];
+                $estados_validos = ['pendiente','reprogramado','no_presentado'];
                 if (in_array($nuevo_estado, $estados_validos, true)) {
                     $db->prepare("UPDATE partidos SET estado=? WHERE id IN ($ids_str)")->execute([$nuevo_estado]);
                     // Si se reprograma, limpiar recinto en los que no tienen fecha
@@ -388,6 +394,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $alerta = trim($_POST['bulk_alerta'] ?? '');
                 $db->prepare("UPDATE partidos SET alerta_admin=? WHERE id IN ($ids_str)")->execute([$alerta ?: null]);
                 $msg = 'Alertas actualizadas.';
+            }
+            if (in_array($bulk_action, ['eliminar','estado_pendiente','cambiar_estado'], true)) {
+                foreach ($ligas_afectadas as $ligaAfectada) epl_recalcular_clasificacion($ligaAfectada);
             }
             ld_redirect($id, 'partidos', $msg ?: 'Acción aplicada.', '', ld_filtros_desde_post());
         }
@@ -410,22 +419,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'asignar_puntos') {
         if ($liga['estado'] !== 'finalizada') { ld_redirect($id, $tab, '', 'La competición debe estar finalizada.'); }
         else {
-            $rows = $db->prepare("SELECT c.posicion,c.equipo_id,e.jugador1_id,e.jugador2_id FROM clasificacion c JOIN equipos e ON e.id=c.equipo_id WHERE c.liga_id=? ORDER BY c.posicion ASC, c.puntos DESC");
-            $rows->execute([$id]);
-            $clasificados = $rows->fetchAll();
-            $map = [1=>$liga['puntos_1'],2=>$liga['puntos_2'],3=>$liga['puntos_3'],4=>$liga['puntos_4']];
-            $fecha_comp = $liga['fecha_fin'] ?: date('Y-m-d');
-            $asignados  = 0;
-            foreach ($clasificados as $pos => $row) {
-                $posicion = $row['posicion'] ?: ($pos + 1);
-                $pts = $map[$posicion] ?? $liga['puntos_grupos'];
-                foreach ([$row['jugador1_id'], $row['jugador2_id']] as $jid) {
-                    $db->prepare("INSERT INTO ranking_puntos (jugador_id,liga_id,posicion_final,puntos,fecha_competicion) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE posicion_final=VALUES(posicion_final),puntos=VALUES(puntos),fecha_competicion=VALUES(fecha_competicion)")
-                       ->execute([$jid,$id,$posicion,$pts,$fecha_comp]);
-                    $asignados++;
-                }
+            try {
+                $resultadoPremios = epl_ranking_asignar_premios($id);
+                ld_redirect($id, $tab, "Premios de ranking asignados a {$resultadoPremios['asignados']} jugadores.");
+            } catch (Throwable $e) {
+                ld_redirect($id, $tab, '', $e->getMessage());
             }
-            ld_redirect($id, $tab, "Puntos asignados a {$asignados} jugadores.");
         }
 
     // ── Crear partido ───────────────────────────────────────
@@ -633,9 +632,17 @@ $fechas_disponibles = array_column($fechas_disponibles->fetchAll(), 'nombre_fech
 
 $todos_jugadores = $db->query("SELECT id,nombre,apellido FROM jugadores WHERE estado='activo' ORDER BY apellido,nombre")->fetchAll();
 
-$ranking_asignado = $db->prepare("SELECT rp.*,j.nombre,j.apellido,j.foto FROM ranking_puntos rp JOIN jugadores j ON j.id=rp.jugador_id WHERE rp.liga_id=? ORDER BY rp.posicion_final ASC,rp.puntos DESC");
+$ranking_asignado = $db->prepare("SELECT rm.*,j.nombre,j.apellido,j.foto FROM ranking_movimientos rm JOIN jugadores j ON j.id=rm.jugador_id WHERE rm.liga_id=? AND rm.tipo='premio_final' AND rm.anulado_at IS NULL ORDER BY rm.posicion_final ASC,rm.puntos DESC");
 $ranking_asignado->execute([$id]);
 $ranking_asignado = $ranking_asignado->fetchAll();
+$ranking_incidencias = $db->prepare("SELECT ri.*,p.jornada,el.nombre AS local_nombre,ev.nombre AS visitante_nombre
+    FROM ranking_incidencias ri
+    JOIN partidos p ON p.id=ri.partido_id
+    JOIN equipos el ON el.id=p.equipo_local_id
+    JOIN equipos ev ON ev.id=p.equipo_visitante_id
+    WHERE p.liga_id=? AND ri.resuelta_at IS NULL ORDER BY ri.created_at DESC");
+$ranking_incidencias->execute([$id]);
+$ranking_incidencias = $ranking_incidencias->fetchAll();
 
 // Construir árbol jerárquico de recintos para selects
 $_recintos_raw = $db->query("SELECT id, nombre, superior_id FROM recintos ORDER BY nombre")->fetchAll();
@@ -751,7 +758,7 @@ $total_equipos  = count($equipos_liga);
             <?php if ($liga['categoria']): ?><span>📊 <?= $liga['categoria'] ?>ª cat.</span><?php endif; ?>
           </div>
           <div style="margin-top:.5rem;font-size:.75rem;color:var(--gray-400)">
-            Puntos ranking: 🥇<?= $liga['puntos_1'] ?> · 🥈<?= $liga['puntos_2'] ?> · 🥉<?= $liga['puntos_3'] ?> · 4°<?= $liga['puntos_4'] ?> · Part.<?= $liga['puntos_grupos'] ?>
+            Puntos ranking: 🥇<?= $liga['puntos_1'] ?> · 🥈<?= $liga['puntos_2'] ?> · 🥉<?= $liga['puntos_3'] ?> · 4°<?= $liga['puntos_4'] ?> · 5°<?= $liga['puntos_grupos'] ?>
           </div>
         </div>
         <div class="ld-header-acts">
@@ -899,6 +906,17 @@ $total_equipos  = count($equipos_liga);
       </div>
     </div>
 
+    <?php if ($ranking_incidencias): ?>
+    <div class="card" style="margin-top:1.5rem;border-left:4px solid #dc2626;padding:1rem">
+      <strong style="color:#991b1b">⚠ <?= count($ranking_incidencias) ?> resultado<?= count($ranking_incidencias)===1?'':'s' ?> sin puntos por revisar</strong>
+      <?php foreach ($ranking_incidencias as $inc): ?>
+        <div style="margin-top:.55rem;font-size:.78rem;color:var(--gray-600)">
+          J<?= (int)$inc['jornada'] ?> · <?= epl_h($inc['local_nombre'].' vs '.$inc['visitante_nombre']) ?> — <?= epl_h($inc['detalle']) ?>
+        </div>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
     <?php if ($ranking_asignado): ?>
     <h3 style="font-family:var(--font-head);font-size:1rem;text-transform:uppercase;color:var(--navy);margin:2rem 0 .75rem">Puntos de Ranking Asignados</h3>
     <div class="card">
@@ -921,7 +939,7 @@ $total_equipos  = count($equipos_liga);
               </td>
               <td style="padding:.65rem 1rem;text-align:center;font-weight:700;color:var(--gold)"><?= $r['posicion_final'] ?>°</td>
               <td style="padding:.65rem 1rem;text-align:center;font-weight:700;font-size:1rem"><?= $r['puntos'] ?></td>
-              <td style="padding:.65rem 1rem;text-align:center;font-size:.78rem;color:var(--gray-400)"><?= date('d/m/Y',strtotime($r['fecha_competicion'])) ?></td>
+              <td style="padding:.65rem 1rem;text-align:center;font-size:.78rem;color:var(--gray-400)"><?= date('d/m/Y',strtotime($r['fecha_obtencion'])) ?></td>
             </tr>
             <?php endforeach; ?>
           </tbody>
@@ -1010,9 +1028,7 @@ $total_equipos  = count($equipos_liga);
         <div id="bulkExtraEstado" style="display:none">
           <select name="bulk_estado" class="form-control" style="width:auto; font-size:.75rem; color:var(--navy)">
             <option value="pendiente">Pendiente</option>
-            <option value="jugado">Jugado</option>
             <option value="reprogramado">Reprogramado</option>
-            <option value="walkover">Walkover</option>
             <option value="no_presentado">No presentado</option>
           </select>
         </div>
@@ -1218,9 +1234,8 @@ $total_equipos  = count($equipos_liga);
           <div class="form-group">
             <label class="form-label">Categoría</label>
             <select name="categoria" class="form-control">
-              <?php for ($n=1;$n<=8;$n++): ?>
-                <option value="<?= $n ?>" <?= ($liga['categoria']??5)==$n?'selected':'' ?>><?= $n ?>ª categoría</option>
-              <?php endfor; ?>
+              <option value="4" <?= (int)($liga['categoria']??5)===4?'selected':'' ?>>4ª categoría</option>
+              <option value="5" <?= (int)($liga['categoria']??5)===5?'selected':'' ?>>5ª categoría</option>
             </select>
           </div>
         </div>
@@ -1329,16 +1344,11 @@ $total_equipos  = count($equipos_liga);
           toggle();
         })();
         </script>
-        <p style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);margin:1rem 0 .75rem;border-top:1px solid var(--gray-200);padding-top:1rem">Puntos de ranking</p>
-        <div class="grid-2">
-          <div class="form-group"><label class="form-label">🥇 1°</label><input type="number" name="puntos_1" class="form-control" min="0" value="<?= $liga['puntos_1'] ?>"></div>
-          <div class="form-group"><label class="form-label">🥈 2°</label><input type="number" name="puntos_2" class="form-control" min="0" value="<?= $liga['puntos_2'] ?>"></div>
+        <div style="margin:1rem 0;padding:1rem;border-radius:12px;background:#f8f5eb;border:1px solid #ead9aa;font-size:.78rem;color:var(--navy)">
+          <strong>Puntos automáticos según categoría</strong><br>
+          4ta: 50 · 40 · 25 · 14 · 10. &nbsp; 5ta: 30 · 20 · 15 · 10 · 5.<br>
+          En ligas, cada victoria entrega además 3 puntos a quienes jugaron.
         </div>
-        <div class="grid-2">
-          <div class="form-group"><label class="form-label">🥉 3°</label><input type="number" name="puntos_3" class="form-control" min="0" value="<?= $liga['puntos_3'] ?>"></div>
-          <div class="form-group"><label class="form-label">4°</label><input type="number" name="puntos_4" class="form-control" min="0" value="<?= $liga['puntos_4'] ?>"></div>
-        </div>
-        <div class="form-group"><label class="form-label">Participación</label><input type="number" name="puntos_grupos" class="form-control" min="0" value="<?= $liga['puntos_grupos'] ?>"></div>
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Guardar cambios</button>
       </form>
     </div>

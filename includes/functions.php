@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/ranking.php';
 
 // ── reCAPTCHA v3 ─────────────────────────────────────────────────────────────
 /**
@@ -478,14 +479,20 @@ function epl_recalcular_clasificacion(int $liga_id): void {
         $stats[$eid] = ['pj'=>0,'pg'=>0,'pp'=>0,'gf'=>0,'gc'=>0,'pts'=>0];
     }
 
-    // Leer partidos jugados
-    $partidos = $db->prepare("SELECT * FROM partidos WHERE liga_id = ? AND estado = 'jugado'");
+    // Leer partidos resueltos. Un WO cuenta como 6-0, 6-0.
+    $partidos = $db->prepare("SELECT * FROM partidos WHERE liga_id = ? AND estado IN ('jugado','walkover')");
     $partidos->execute([$liga_id]);
     foreach ($partidos->fetchAll() as $p) {
         $lo = $p['equipo_local_id'];
         $vi = $p['equipo_visitante_id'];
-        $gf = (int)($p['games_s1_local'] ?? 0) + (int)($p['games_s2_local'] ?? 0) + (int)($p['games_s3_local'] ?? 0);
-        $gc = (int)($p['games_s1_visitante'] ?? 0) + (int)($p['games_s2_visitante'] ?? 0) + (int)($p['games_s3_visitante'] ?? 0);
+        if ($p['estado'] === 'walkover' && !empty($p['ganador_id'])) {
+            $localGana = (int)$p['ganador_id'] === (int)$lo;
+            $gf = $localGana ? 12 : 0;
+            $gc = $localGana ? 0 : 12;
+        } else {
+            $gf = (int)($p['games_s1_local'] ?? 0) + (int)($p['games_s2_local'] ?? 0) + (int)($p['games_s3_local'] ?? 0);
+            $gc = (int)($p['games_s1_visitante'] ?? 0) + (int)($p['games_s2_visitante'] ?? 0) + (int)($p['games_s3_visitante'] ?? 0);
+        }
 
         if (!isset($stats[$lo])) $stats[$lo] = ['pj'=>0,'pg'=>0,'pp'=>0,'gf'=>0,'gc'=>0,'pts'=>0];
         if (!isset($stats[$vi])) $stats[$vi] = ['pj'=>0,'pg'=>0,'pp'=>0,'gf'=>0,'gc'=>0,'pts'=>0];
@@ -525,6 +532,20 @@ function epl_recalcular_clasificacion(int $liga_id): void {
     $updPos = $db->prepare("UPDATE clasificacion SET posicion = ? WHERE id = ?");
     foreach ($ranking->fetchAll() as $row) {
         $updPos->execute([$pos++, $row['id']]);
+    }
+
+    // Mantener el ranking individual sincronizado con altas y correcciones.
+    epl_ranking_sincronizar_liga_partidos($liga_id);
+
+    // Si los premios finales ya habían sido entregados, una corrección posterior
+    // también debe actualizar automáticamente el Top 5.
+    $stPremio = $db->prepare("SELECT l.estado,
+        EXISTS(SELECT 1 FROM ranking_movimientos rm WHERE rm.liga_id=l.id AND rm.tipo='premio_final') AS tiene_premios
+        FROM ligas l WHERE l.id=?");
+    $stPremio->execute([$liga_id]);
+    $estadoPremio = $stPremio->fetch();
+    if ($estadoPremio && $estadoPremio['estado'] === 'finalizada' && (bool)$estadoPremio['tiene_premios']) {
+        epl_ranking_asignar_premios($liga_id);
     }
 }
 

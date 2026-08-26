@@ -8,13 +8,13 @@ $jugador_nav = epl_jugador_actual();
 if (!isset($jugador)) {
     $jugador = $jugador_nav;
 }
-$title   = isset($page_title) ? epl_h($page_title) . ' — Elite Padel League' : 'Elite Padel League — Circuito anual y Máster Final';
+$title   = isset($page_title) ? epl_h($page_title) . ' — Elite Padel League' : 'Elite Padel League — Ligas de pádel y Rankings EPL';
 $active  = $active_nav ?? '';
 
 // ── SEO: variables que cada página puede sobrescribir ───────────────────────────
-$_seo_default_desc = 'Elite Padel League (EPL): circuito anual de torneos de pádel en Santiago. Compite en pareja, acumula puntos y clasifica al Máster Final.';
+$_seo_default_desc = 'Elite Padel League (EPL): ligas de pádel de 10 fechas, ranking por liga, ranking individual de 365 días y torneos americanos en Santiago.';
 $meta_description = $meta_description ?? $_seo_default_desc;
-$meta_keywords    = $meta_keywords    ?? 'circuito anual de pádel, ranking de parejas pádel, master final pádel, torneos de pádel de un día, pádel santiago, elite padel league, EPL, puntos pádel';
+$meta_keywords    = $meta_keywords    ?? 'liga de pádel santiago, ranking liga pádel, ranking individual pádel, liga de pádel 10 fechas, americano pádel, elite padel league, EPL';
 $og_image         = $og_image         ?? epl_url('assets/img/logo-epl-square.png');
 $og_type          = $og_type          ?? 'website';
 
@@ -323,8 +323,8 @@ $_is_admin_page = strpos($_uri, '/admin/') !== false;
             <!-- MENÚ DERECHA -->
             <div class="hidden lg:flex items-center gap-10">
                 <a href="<?= epl_url() ?>" class="nav-link-new <?= $active==='inicio'?'active':'' ?>">Inicio</a>
-                <a href="<?= epl_url('torneos.php') ?>" class="nav-link-new <?= $active==='torneos'?'active':'' ?>">Torneos</a>
-                <a href="<?= epl_url('ranking.php') ?>" class="nav-link-new <?= $active==='ranking'?'active':'' ?>">Ranking</a>
+                <a href="<?= epl_url('torneos.php') ?>" class="nav-link-new <?= $active==='torneos'?'active':'' ?>">Ligas y torneos</a>
+                <a href="<?= epl_url('ranking.php') ?>" class="nav-link-new <?= $active==='ranking'?'active':'' ?>">Ranking individual</a>
                 <a href="<?= epl_url('reglamento.php') ?>" class="nav-link-new <?= $active==='reglamento'?'active':'' ?>">Reglamento</a>
 
                 <div class="nav-divider"></div>
@@ -380,8 +380,8 @@ $_is_admin_page = strpos($_uri, '/admin/') !== false;
         </div>
         <div class="flex flex-col gap-8 font-primary text-4xl uppercase text-white tracking-widest">
             <a href="<?= epl_url() ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Inicio</a>
-            <a href="<?= epl_url('torneos.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Torneos</a>
-            <a href="<?= epl_url('ranking.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Ranking</a>
+            <a href="<?= epl_url('torneos.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Ligas y torneos</a>
+            <a href="<?= epl_url('ranking.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Ranking individual</a>
             <a href="<?= epl_url('reglamento.php') ?>" class="text-white no-underline hover:text-epl-gold transition-colors">Reglamento</a>
 
             <?php if ($jugador_nav): ?>

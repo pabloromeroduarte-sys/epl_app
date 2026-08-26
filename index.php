@@ -2,43 +2,13 @@
 $page_title       = null; // usamos el default optimizado SEO del header
 $active_nav       = 'inicio';
 $page_css         = 'home';
-$meta_description = 'Elite Padel League: circuito anual de torneos de pádel en Santiago. Compite en pareja, acumula puntos y clasifica al Máster Final EPL.';
+$meta_description = 'Elite Padel League: ligas de pádel de 10 fechas con ranking por liga, ranking individual de 365 días y torneos americanos en Santiago.';
 $og_image         = null; // usa el default del header
 $og_type          = 'website';
 
 require_once 'includes/functions.php';
 
-$db = epl_db();
 $temporada = (int)date('Y');
-$modelo_puntos = $db->query("SELECT puntos_1,puntos_2,puntos_3,puntos_4,puntos_grupos FROM ligas ORDER BY (tipo='torneo') DESC,id DESC LIMIT 1")->fetch() ?: [];
-$puntos = [
-    1 => (int)($modelo_puntos['puntos_1'] ?? 100),
-    2 => (int)($modelo_puntos['puntos_2'] ?? 70),
-    3 => (int)($modelo_puntos['puntos_3'] ?? 50),
-    4 => (int)($modelo_puntos['puntos_4'] ?? 30),
-    5 => (int)($modelo_puntos['puntos_grupos'] ?? 10),
-];
-
-$ranking_preview = $db->query("
-    SELECT e.id,e.nombre AS equipo_nombre,
-           e.jugador1_id,e.jugador2_id,
-           j1.nombre AS j1_nombre,j1.apellido AS j1_apellido,j1.foto AS j1_foto,
-           j2.nombre AS j2_nombre,j2.apellido AS j2_apellido,j2.foto AS j2_foto,
-           SUM(LEAST(rp1.puntos,rp2.puntos)) AS puntos_total,
-           COUNT(DISTINCT le.liga_id) AS torneos,
-           SUM(LEAST(rp1.posicion_final,rp2.posicion_final)=1) AS titulos
-    FROM liga_equipos le
-    JOIN equipos e ON e.id=le.equipo_id
-    JOIN jugadores j1 ON j1.id=e.jugador1_id
-    JOIN jugadores j2 ON j2.id=e.jugador2_id
-    JOIN ranking_puntos rp1 ON rp1.liga_id=le.liga_id AND rp1.jugador_id=e.jugador1_id
-    JOIN ranking_puntos rp2 ON rp2.liga_id=le.liga_id AND rp2.jugador_id=e.jugador2_id
-    WHERE YEAR(rp1.fecha_competicion)=YEAR(CURDATE())
-    GROUP BY e.id,e.nombre,e.jugador1_id,e.jugador2_id,
-             j1.nombre,j1.apellido,j1.foto,j2.nombre,j2.apellido,j2.foto
-    ORDER BY puntos_total DESC,titulos DESC,torneos DESC,e.nombre
-    LIMIT 5
-")->fetchAll();
 ?>
 <?php require_once 'includes/header.php'; ?>
 
@@ -56,24 +26,24 @@ $ranking_preview = $db->query("
             <div class="home-hero__copy">
                 <div class="home-live-pill">
                     <span class="home-live-pill__dot"></span>
-                    Circuito anual EPL · Temporada <?= $temporada ?>
+                    Ligas EPL · Temporada <?= $temporada ?>
                 </div>
 
-                <p class="home-hero__eyebrow">Torneos de un día. Una temporada para clasificar.</p>
+                <p class="home-hero__eyebrow">Ligas de 10 fechas. Americanos para seguir compitiendo.</p>
                 <h1 class="home-hero__title">
-                    Todo el año.<br>
-                    <span>Una gran final.</span>
+                    Diez fechas.<br>
+                    <span>Una gran liga.</span>
                 </h1>
 
                 <p class="home-hero__lead">
-                    Un calendario de torneos por categoría para competir fecha a fecha.
-                    <strong>Acumula puntos con tu pareja y clasifica al Máster Final.</strong>
+                    Compite con tu pareja en una temporada ordenada, con fixture y tabla de posiciones.
+                    <strong>Sigue el ranking de tu liga y construye también tu ranking individual EPL durante 365 días.</strong>
                 </p>
 
                 <div class="home-hero__actions">
                     <?php if (!epl_jugador_actual()): ?>
                     <a href="<?= epl_url('torneos.php') ?>" class="home-btn home-btn--primary">
-                        Ver calendario y competir
+                        Ver ligas y americanos
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                     </a>
                     <?php else: ?>
@@ -82,56 +52,56 @@ $ranking_preview = $db->query("
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                     </a>
                     <?php endif; ?>
-                    <a href="<?= epl_url('ranking.php') ?>" class="home-btn home-btn--ghost">Ver carrera al Máster</a>
+                    <a href="#formato-epl" class="home-btn home-btn--ghost">Conocer el formato</a>
                 </div>
 
                 <div class="home-hero__trust" aria-label="Beneficios de Elite Padel League">
-                    <span><i>✓</i> Calendario anual</span>
-                    <span><i>✓</i> Ranking de parejas</span>
-                    <span><i>✓</i> Máster Final</span>
+                    <span><i>✓</i> Ranking por liga</span>
+                    <span><i>✓</i> Ranking individual activo</span>
+                    <span><i>✓</i> Americanos</span>
                 </div>
             </div>
 
-            <aside class="home-match-card" aria-label="Sistema de puntos de la carrera al Máster Final">
+            <aside class="home-match-card" aria-label="Formato de las ligas Elite Padel League">
                 <div class="home-match-card__topline">
-                    <span>Rumbo al Máster</span>
+                    <span>Formato principal</span>
                     <span class="home-match-card__status"><i></i> <?= $temporada ?></span>
                 </div>
 
                 <div class="home-match-card__league">
-                    <span>Sistema de puntos</span>
-                    <strong>Cada fecha acerca a la final</strong>
+                    <span>Liga EPL</span>
+                    <strong>Una temporada clara de principio a fin</strong>
                 </div>
 
                 <div class="home-points-grid">
                     <div class="home-points-grid__item home-points-grid__item--gold">
                         <span>01</span>
-                        <strong><?= $puntos[1] ?></strong>
-                        <small>Campeón</small>
+                        <strong>10</strong>
+                        <small>Fechas</small>
                     </div>
                     <div class="home-points-grid__item">
                         <span>02</span>
-                        <strong><?= $puntos[2] ?></strong>
-                        <small>Finalista</small>
+                        <strong>1</strong>
+                        <small>Fixture</small>
                     </div>
                     <div class="home-points-grid__item">
                         <span>03</span>
-                        <strong><?= $puntos[3] ?></strong>
-                        <small>Tercer lugar</small>
+                        <strong>RL</strong>
+                        <small>Ranking liga</small>
                     </div>
                     <div class="home-points-grid__item">
                         <span>+</span>
-                        <strong><?= $puntos[5] ?></strong>
-                        <small>Participar</small>
+                        <strong>RI</strong>
+                        <small>Individual</small>
                     </div>
                 </div>
 
                 <div class="home-ranking-note">
-                    <span>La pareja construye su camino</span>
-                    <p>Compite junto a tu pareja durante el calendario. Cada resultado suma en la carrera al Máster.</p>
+                    <span>Dos rankings complementarios</span>
+                    <p>Tu pareja compite por la liga y cada jugador construye su propio recorrido dentro de EPL.</p>
                 </div>
 
-                <a href="<?= epl_url('ranking.php') ?>" class="home-match-card__link">Explorar carrera al Máster <span>↘</span></a>
+                <a href="#rankings-epl" class="home-match-card__link">Conocer los rankings EPL <span>↘</span></a>
             </aside>
         </div>
     </header>
@@ -139,31 +109,31 @@ $ranking_preview = $db->query("
     <!-- ==========================================
          2. STATS BAR (Social proof)
          ========================================== -->
-    <section class="stats-bar" aria-label="Formato del circuito EPL">
+    <section class="stats-bar" aria-label="Formato de las ligas EPL">
         <div class="stats-grid">
             <div>
-                <div class="stat-num">+ fechas</div>
-                <div class="stat-lbl">Durante todo el año</div>
+                <div class="stat-num">10 fechas</div>
+                <div class="stat-lbl">Por temporada de liga</div>
             </div>
             <div>
-                <div class="stat-num">+ puntos</div>
-                <div class="stat-lbl">Cada fecha suma</div>
+                <div class="stat-num">Doble ranking</div>
+                <div class="stat-lbl">Por liga + individual</div>
             </div>
             <div>
-                <div class="stat-num">1 Máster</div>
-                <div class="stat-lbl">Las mejores parejas</div>
+                <div class="stat-num">+ Americanos</div>
+                <div class="stat-lbl">Durante la temporada</div>
             </div>
         </div>
     </section>
 
     <!-- ==========================================
-         3. PILARES DEL NUEVO CIRCUITO
+         3. PILARES DE LA EXPERIENCIA EPL
          ========================================== -->
     <section class="py-12 md:py-24 bg-white px-4 md:px-6 relative z-20" id="pilares">
         <div class="max-w-6xl mx-auto">
             <div class="text-center mb-8 md:mb-16">
-                <span class="text-epl-gold font-black text-[10px] uppercase tracking-[0.2em] mb-2 block">El circuito anual EPL</span>
-                <h2 class="text-4xl md:text-5xl text-epl-blue font-primary uppercase tracking-tight">Muchas fechas. <span class="text-epl-gold">Un solo objetivo.</span></h2>
+                <span class="text-epl-gold font-black text-[10px] uppercase tracking-[0.2em] mb-2 block">La experiencia EPL</span>
+                <h2 class="text-4xl md:text-5xl text-epl-blue font-primary uppercase tracking-tight">Liga competitiva. <span class="text-epl-gold">Calendario claro.</span></h2>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -171,93 +141,79 @@ $ranking_preview = $db->query("
                     <div class="feature-icon-wrapper-tw">
                         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
                     </div>
-                    <h3 class="font-primary text-2xl text-epl-blue uppercase mb-3">Elige tus fechas</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed font-medium">El calendario se extiende durante el año con torneos por categoría, cada uno resuelto en una sola jornada.</p>
+                    <h3 class="font-primary text-2xl text-epl-blue uppercase mb-3">Liga de 10 fechas</h3>
+                    <p class="text-sm text-gray-500 leading-relaxed font-medium">Juega una temporada completa contra parejas de tu categoría, con una jornada programada para cada fecha.</p>
                 </article>
 
                 <article class="feature-card-tw">
                     <div class="feature-icon-wrapper-tw">
                         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5c-2.2 0-4 1.8-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </div>
-                    <h3 class="font-primary text-2xl text-epl-blue uppercase mb-3">Suma con tu pareja</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed font-medium">Campeones, finalistas, semifinalistas o participantes: cada resultado agrega puntos a la misma pareja.</p>
+                    <h3 class="font-primary text-2xl text-epl-blue uppercase mb-3">Ranking por liga</h3>
+                    <p class="text-sm text-gray-500 leading-relaxed font-medium">Cada liga tiene su propia clasificación. La pareja suma con sus resultados durante las 10 fechas y compite por el primer lugar.</p>
                 </article>
 
                 <article class="feature-card-tw">
                     <div class="feature-icon-wrapper-tw">
                         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
-                    <h3 class="font-primary text-2xl text-epl-blue uppercase mb-3">Clasifica al Máster</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed font-medium">Al cerrar el calendario, las mejores parejas de cada categoría avanzan al gran Máster Final EPL.</p>
+                    <h3 class="font-primary text-2xl text-epl-blue uppercase mb-3">Ranking individual EPL</h3>
+                    <p class="text-sm text-gray-500 leading-relaxed font-medium">La siguiente evolución reunirá el rendimiento personal de cada jugador en ligas y americanos, aunque cambie de pareja.</p>
                 </article>
             </div>
         </div>
     </section>
 
     <!-- ==========================================
-         4. RUTA DE TEMPORADA + RANKING DE PAREJAS
+         4. FORMATO DE TEMPORADA + AMERICANOS
          ========================================== -->
-    <section id="el-circuito" class="home-circuit-section">
+    <section id="formato-epl" class="home-circuit-section">
         <div class="home-circuit-section__inner">
             <article class="home-format-card">
-                <div class="home-format-card__eyebrow">Ruta de la temporada <?= $temporada ?></div>
-                <h2>Fecha a fecha.<br><span>Hasta el</span><br>Máster Final.</h2>
-                <p>Cada torneo empieza y termina el mismo día, pero la historia continúa durante todo el año. La pareja acumula resultados hasta conseguir su lugar en la gran final.</p>
+                <div class="home-format-card__eyebrow">Temporada de liga <?= $temporada ?></div>
+                <h2>10 fechas.<br><span>Una tabla.</span><br>Todo por jugar.</h2>
+                <p>Tu pareja compite durante diez jornadas, enfrenta rivales de su categoría y construye su posición partido a partido.</p>
 
                 <div class="home-format-flow">
-                    <div><b>01</b><span><strong>Calendario anual</strong><small>Elige las fechas de tu categoría.</small></span></div>
-                    <div><b>02</b><span><strong>Ranking de parejas</strong><small>Cada posición suma puntos en la temporada.</small></span></div>
-                    <div><b>03</b><span><strong>Máster Final</strong><small>Las mejores parejas clasifican a la definición.</small></span></div>
+                    <div><b>01</b><span><strong>Inscribe tu pareja</strong><small>Elige la liga correspondiente a tu categoría.</small></span></div>
+                    <div><b>02</b><span><strong>Juega 10 fechas</strong><small>Un partido por jornada, con calendario y reprogramaciones.</small></span></div>
+                    <div><b>03</b><span><strong>Sube en tu liga</strong><small>Cada resultado actualiza el ranking de la pareja.</small></span></div>
                 </div>
 
-                <a href="<?= epl_url('torneos.php') ?>" class="home-btn home-btn--primary">Explorar calendario →</a>
+                <a href="<?= epl_url('torneos.php') ?>" class="home-btn home-btn--primary">Explorar ligas →</a>
             </article>
 
-            <article class="home-leaderboard-card">
+            <article class="home-leaderboard-card" id="rankings-epl">
                 <div class="home-leaderboard-card__head">
                     <div>
-                        <span>Temporada <?= $temporada ?></span>
-                        <h2>Carrera al Máster</h2>
+                        <span>Sistema EPL · Temporada <?= $temporada ?></span>
+                        <h2>Dos rankings</h2>
                     </div>
-                    <a href="<?= epl_url('ranking.php') ?>">Ver completo ↗</a>
+                    <a href="<?= epl_url('ranking.php') ?>">Ver ranking individual ↗</a>
                 </div>
 
-                <?php if ($ranking_preview): ?>
-                <div class="home-leaderboard-list">
-                    <?php foreach ($ranking_preview as $i => $r):
-                        $j1_ranking = trim($r['j1_nombre'].' '.$r['j1_apellido']);
-                        $j2_ranking = trim($r['j2_nombre'].' '.$r['j2_apellido']);
-                        $nombre_ranking = trim($r['equipo_nombre']) ?: $j1_ranking.' / '.$j2_ranking;
-                    ?>
-                    <div class="home-leaderboard-row">
-                        <b><?= str_pad((string)($i+1), 2, '0', STR_PAD_LEFT) ?></b>
-                        <span class="home-leaderboard-row__duo" aria-hidden="true">
-                            <img src="<?= epl_h(epl_foto_jugador($r['j1_foto'], $j1_ranking)) ?>" alt="" loading="lazy">
-                            <img src="<?= epl_h(epl_foto_jugador($r['j2_foto'], $j2_ranking)) ?>" alt="" loading="lazy">
-                        </span>
-                        <span><strong><?= epl_h($nombre_ranking) ?></strong><small><?= epl_h($j1_ranking) ?> · <?= epl_h($j2_ranking) ?> · <?= (int)$r['torneos'] ?> fecha<?= (int)$r['torneos'] === 1 ? '' : 's' ?></small></span>
-                        <em><?= (int)$r['puntos_total'] ?> pts</em>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-                <?php else: ?>
-                <div class="home-ranking-empty">
-                    <span class="home-ranking-empty__number">01</span>
+                <div class="home-ranking-types">
+                  <section class="home-ranking-type">
+                    <b>01</b>
                     <div>
-                        <strong>La carrera comienza en la primera fecha</strong>
-                        <p>Todas las parejas parten desde cero. Cada torneo las acerca al Máster Final.</p>
+                        <span>Disponible en cada competencia</span>
+                        <strong>Ranking por liga</strong>
+                        <p>Ordena a las parejas según sus resultados durante las 10 fechas. Cada liga y categoría tiene su propia clasificación.</p>
                     </div>
+                  </section>
+                  <section class="home-ranking-type home-ranking-type--next">
+                    <b>02</b>
+                    <div>
+                        <span>Disponible y actualizado</span>
+                        <strong>Ranking individual</strong>
+                        <p>Sigue el rendimiento de cada jugador durante los últimos 365 días, independiente de la pareja con la que compita.</p>
+                    </div>
+                  </section>
                 </div>
-                <div class="home-ranking-scale">
-                    <span><b><?= $puntos[1] ?></b> Campeón</span>
-                    <span><b><?= $puntos[2] ?></b> Finalista</span>
-                    <span><b><?= $puntos[3] ?></b> Tercero</span>
-                </div>
-                <?php endif; ?>
 
                 <div class="home-leaderboard-card__footer">
-                    <span>Compite. Suma. Clasifica.</span>
-                    <strong>El Máster te espera.</strong>
+                    <span>Pareja en la liga. Jugador en EPL.</span>
+                    <strong>Dos formas de medir tu temporada.</strong>
                 </div>
             </article>
         </div>
@@ -302,12 +258,12 @@ $ranking_preview = $db->query("
                 <div class="absolute -top-6 -left-6 w-32 h-32 bg-epl-gold/20 rounded-full blur-2xl"></div>
                 <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-epl-blue/10 rounded-full blur-2xl"></div>
 
-                <img src="<?= epl_url('assets/img/landing/filosofia.jpg') ?>" alt="Comunidad Elite Padel League — más que un torneo, una familia" class="rounded-3xl shadow-2xl relative z-10 w-full object-cover aspect-[4/3]" loading="lazy">
+                <img src="<?= epl_url('assets/img/landing/filosofia.jpg') ?>" alt="Comunidad Elite Padel League — más que una liga, una familia" class="rounded-3xl shadow-2xl relative z-10 w-full object-cover aspect-[4/3]" loading="lazy">
 
                 <div class="absolute -bottom-8 right-8 bg-white p-5 rounded-2xl shadow-xl z-20 flex items-center gap-4">
                     <div class="w-12 h-12 bg-epl-blue rounded-full flex items-center justify-center text-white font-['Anton'] text-xl">1°</div>
                     <div>
-                        <p class="font-black text-epl-blue text-sm uppercase leading-tight">Circuito amateur</p>
+                        <p class="font-black text-epl-blue text-sm uppercase leading-tight">Liga amateur</p>
                         <p class="text-xs text-gray-500 font-medium">De alto rendimiento</p>
                     </div>
                 </div>
@@ -315,7 +271,7 @@ $ranking_preview = $db->query("
 
             <div class="lg:w-1/2 mt-10 lg:mt-0">
                 <span class="text-epl-gold font-black text-[10px] uppercase tracking-[0.2em] mb-4 block">Nuestra Filosofía</span>
-                <h2 class="text-4xl md:text-5xl text-epl-blue font-primary uppercase tracking-tight mb-6 leading-none">Más que un torneo,<br> <span class="text-epl-gold">una familia</span></h2>
+                <h2 class="text-4xl md:text-5xl text-epl-blue font-primary uppercase tracking-tight mb-6 leading-none">Más que una liga,<br> <span class="text-epl-gold">una familia</span></h2>
 
                 <div class="space-y-5 text-gray-600 font-medium leading-relaxed mb-8">
                     <p>Elite Padel League nació de la pasión de un grupo de jugadores que buscaban algo más que arrendar una cancha los fines de semana. Buscábamos la adrenalina de una competencia estructurada, sin perder el espíritu amateur ni la cercanía con la comunidad.</p>
@@ -355,7 +311,7 @@ $ranking_preview = $db->query("
                         </div>
                         <div class="md:mt-8">
                             <h3 class="text-2xl font-primary uppercase tracking-wide text-white mb-2 group-hover:text-epl-gold transition-colors">Inscríbete</h3>
-                            <p class="text-gray-400 text-sm leading-relaxed font-medium">Crea tu ficha, elige tu categoría y asegura tu lugar en la próxima fecha de un día.</p>
+                            <p class="text-gray-400 text-sm leading-relaxed font-medium">Crea tu ficha, forma tu pareja y asegura un lugar en la liga de tu categoría.</p>
                         </div>
                     </div>
 
@@ -365,8 +321,8 @@ $ranking_preview = $db->query("
                             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
                         </div>
                         <div class="md:mt-8">
-                            <h3 class="text-2xl font-primary uppercase tracking-wide text-white mb-2 group-hover:text-epl-gold transition-colors">Compite en un día</h3>
-                            <p class="text-gray-400 text-sm leading-relaxed font-medium">Juega la fase de grupos y avanza a las finales contra parejas de tu mismo nivel.</p>
+                            <h3 class="text-2xl font-primary uppercase tracking-wide text-white mb-2 group-hover:text-epl-gold transition-colors">Juega 10 fechas</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed font-medium">Enfrenta a parejas de tu nivel durante una temporada con fixture, tabla y resultados actualizados.</p>
                         </div>
                     </div>
 
@@ -376,8 +332,8 @@ $ranking_preview = $db->query("
                             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 11h1.22a2 2 0 0 1 1.94 1.51l1.68 6.4a2 2 0 0 1-1.94 2.51H17"/><path d="M13 3h-2v4h2Z"/><path d="M9 11H5.82a2 2 0 0 0-1.94 1.51l-1.68 6.4a2 2 0 0 0 1.94 2.51H9"/><rect width="8" height="18" x="8" y="3" rx="2"/></svg>
                         </div>
                         <div class="md:mt-8">
-                            <h3 class="text-2xl font-primary uppercase tracking-wide text-white mb-2 group-hover:text-epl-gold transition-colors">Suma puntos</h3>
-                            <p class="text-gray-400 text-sm leading-relaxed font-medium">El resultado suma al ranking anual de la pareja y los acerca al Máster Final. Después, quédate a vivir el Tercer Tiempo.</p>
+                            <h3 class="text-2xl font-primary uppercase tracking-wide text-white mb-2 group-hover:text-epl-gold transition-colors">Sigue la competencia</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed font-medium">Registra resultados, revisa tu posición y participa en los americanos que complementan la temporada.</p>
                         </div>
                     </div>
                 </div>
@@ -403,7 +359,7 @@ $ranking_preview = $db->query("
                         <div class="w-11 h-11 rounded-full bg-epl-blue text-epl-gold flex items-center justify-center font-['Anton'] text-lg">MC</div>
                         <div>
                             <p class="font-bold text-epl-blue text-sm">Matías Castro</p>
-                            <p class="text-xs text-gray-500 font-medium">Circuito 4ta · Ranking 2026</p>
+                            <p class="text-xs text-gray-500 font-medium">Liga EPL · 4ta categoría</p>
                         </div>
                     </div>
                 </article>
@@ -415,19 +371,19 @@ $ranking_preview = $db->query("
                         <div class="w-11 h-11 rounded-full bg-epl-blue text-epl-gold flex items-center justify-center font-['Anton'] text-lg">JR</div>
                         <div>
                             <p class="font-bold text-epl-blue text-sm">Javiera Riquelme</p>
-                            <p class="text-xs text-gray-500 font-medium">Circuito 5ta Femenino · Ranking 2026</p>
+                            <p class="text-xs text-gray-500 font-medium">Liga EPL · 5ta femenino</p>
                         </div>
                     </div>
                 </article>
 
                 <article class="testimonio-card">
                     <div class="testimonio-stars mb-3">★★★★★</div>
-                    <p class="text-gray-600 text-sm leading-relaxed mb-5 font-medium">"La plataforma es lejos lo mejor: ranking actualizado, historial, todo desde el celular. Se nota que es un circuito profesional."</p>
+                    <p class="text-gray-600 text-sm leading-relaxed mb-5 font-medium">"La plataforma es lejos lo mejor: fixture, tabla, historial y resultados, todo desde el celular. Se nota que es una liga bien organizada."</p>
                     <div class="flex items-center gap-3 mt-auto pt-3 border-t border-gray-100">
                         <div class="w-11 h-11 rounded-full bg-epl-blue text-epl-gold flex items-center justify-center font-['Anton'] text-lg">DA</div>
                         <div>
                             <p class="font-bold text-epl-blue text-sm">Diego Aravena</p>
-                            <p class="text-xs text-gray-500 font-medium">Circuito 3ra · Ranking 2026</p>
+                            <p class="text-xs text-gray-500 font-medium">Liga EPL · 3ra categoría</p>
                         </div>
                     </div>
                 </article>
@@ -488,12 +444,12 @@ $ranking_preview = $db->query("
             </div>
 
             <details class="faq-item">
-                <summary class="faq-q">¿Cómo me inscribo a un torneo de Elite Padel League?</summary>
-                <div class="faq-a">Creas tu ficha de jugador gratis en menos de 2 minutos, eliges tu categoría y te inscribes con tu pareja desde la sección Torneos. Recibes confirmación inmediata por correo electrónico y notificación.</div>
+                <summary class="faq-q">¿Cómo me inscribo a una liga de Elite Padel League?</summary>
+                <div class="faq-a">Creas tu ficha de jugador, eliges tu categoría y te inscribes con tu pareja desde la sección Ligas y torneos. Recibes la confirmación por correo electrónico y notificación.</div>
             </details>
             <details class="faq-item">
                 <summary class="faq-q">¿Cuánto cuesta participar?</summary>
-                <div class="faq-a">El valor depende del torneo y la categoría. Cada inscripción incluye paquete de bienvenida, agua, Tercer Tiempo y acceso completo a la plataforma con la carrera anual actualizada.</div>
+                <div class="faq-a">El valor depende de la liga, el americano y la categoría. Antes de inscribirte verás el precio y las condiciones de cada competencia.</div>
             </details>
             <details class="faq-item">
                 <summary class="faq-q">¿Qué nivel necesito para jugar?</summary>
@@ -504,20 +460,24 @@ $ranking_preview = $db->query("
                 <div class="faq-a">Nuestra sede principal es <strong>Conecta Santa Blanca</strong>, en Santiago. Es nuestro club oficial y donde se vive cada fecha y cada Tercer Tiempo.</div>
             </details>
             <details class="faq-item">
-                <summary class="faq-q">¿Cuándo son los torneos?</summary>
-                <div class="faq-a">Cada torneo EPL se juega y se define en una sola jornada. Las nuevas fechas se publican en la sección Torneos con su día, categoría, sede y cupos disponibles.</div>
+                <summary class="faq-q">¿Cuánto dura una liga EPL?</summary>
+                <div class="faq-a">La modalidad principal contempla 10 fechas. Cada jornada tiene un partido programado y el fixture completo se puede revisar desde la plataforma.</div>
             </details>
             <details class="faq-item">
-                <summary class="faq-q">¿Cómo funciona el ranking de parejas?</summary>
-                <div class="faq-a">Cada resultado suma puntos a la pareja durante la temporada: 100 para los campeones, 70 para los finalistas, 50 para el tercer lugar y puntos por participación. Todas las fechas del calendario ayudan a escalar.</div>
+                <summary class="faq-q">¿Cuál es la diferencia entre el ranking por liga y el ranking individual?</summary>
+                <div class="faq-a">El ranking por liga ordena a las parejas dentro de cada competencia. El ranking individual reúne los puntos vigentes de cada jugador en ligas y americanos durante los últimos 365 días, aunque cambie de pareja.</div>
             </details>
             <details class="faq-item">
-                <summary class="faq-q">¿Cómo se clasifica al Máster Final?</summary>
-                <div class="faq-a">Al terminar el calendario anual, las mejores parejas de cada categoría en el ranking EPL obtienen su lugar en el Máster Final.</div>
+                <summary class="faq-q">¿Qué pasa si no puedo jugar en la fecha programada?</summary>
+                <div class="faq-a">Puedes solicitar una reprogramación desde tu panel. El cambio queda registrado, el rival y la organización pueden hacer seguimiento, y el club confirma la cancha cuando corresponde.</div>
+            </details>
+            <details class="faq-item">
+                <summary class="faq-q">¿Qué es un americano EPL?</summary>
+                <div class="faq-a">Es una competencia complementaria que se resuelve en una jornada. Permite jugar varios partidos, conocer rivales y seguir compitiendo fuera del calendario regular de liga.</div>
             </details>
             <details class="faq-item">
                 <summary class="faq-q">¿Puedo jugar si no tengo pareja?</summary>
-                <div class="faq-a">Sí. Tenemos un sistema de búsqueda de pareja y un formato americano donde puedes inscribirte sin compañero o compañera; te ayudamos a encontrar una pareja de nivel equivalente.</div>
+                <div class="faq-a">Para las ligas necesitas inscribirte con pareja. En algunos americanos podrás participar individualmente o solicitar apoyo para encontrar jugadores de nivel equivalente, según las condiciones publicadas.</div>
             </details>
 
             <!-- JSON-LD FAQ Schema -->
@@ -526,14 +486,15 @@ $ranking_preview = $db->query("
               "@context":"https://schema.org",
               "@type":"FAQPage",
               "mainEntity":[
-                {"@type":"Question","name":"¿Cómo me inscribo a un torneo de Elite Padel League?","acceptedAnswer":{"@type":"Answer","text":"Creas tu ficha gratis en menos de 2 minutos, eliges categoría y te inscribes con tu pareja desde la sección Torneos."}},
-                {"@type":"Question","name":"¿Cuánto cuesta participar?","acceptedAnswer":{"@type":"Answer","text":"Depende del torneo y la categoría. Incluye paquete de bienvenida, Tercer Tiempo y acceso a la plataforma."}},
+                {"@type":"Question","name":"¿Cómo me inscribo a una liga de Elite Padel League?","acceptedAnswer":{"@type":"Answer","text":"Creas tu ficha, eliges categoría y te inscribes con tu pareja desde la sección Ligas y torneos."}},
+                {"@type":"Question","name":"¿Cuánto cuesta participar?","acceptedAnswer":{"@type":"Answer","text":"Depende de la liga, el americano y la categoría. El precio y las condiciones aparecen antes de la inscripción."}},
                 {"@type":"Question","name":"¿Qué nivel necesito para jugar?","acceptedAnswer":{"@type":"Answer","text":"Categorías desde principiante (5ta) hasta avanzado (1ra). Se asignan rivales del mismo nivel."}},
                 {"@type":"Question","name":"¿Dónde se juegan los partidos?","acceptedAnswer":{"@type":"Answer","text":"Sede oficial: Conecta Santa Blanca, Santiago de Chile."}},
-                {"@type":"Question","name":"¿Cuándo son los torneos?","acceptedAnswer":{"@type":"Answer","text":"Cada torneo se juega y se define en una sola jornada. Las fechas se publican con día, categoría, sede y cupos disponibles."}},
-                {"@type":"Question","name":"¿Cómo funciona el ranking de parejas?","acceptedAnswer":{"@type":"Answer","text":"Cada resultado suma puntos a la pareja durante la temporada y todas las fechas del calendario ayudan a escalar."}},
-                {"@type":"Question","name":"¿Cómo se clasifica al Máster Final?","acceptedAnswer":{"@type":"Answer","text":"Las mejores parejas de cada categoría al cerrar el calendario anual obtienen un lugar en el Máster Final."}},
-                {"@type":"Question","name":"¿Puedo jugar si no tengo pareja?","acceptedAnswer":{"@type":"Answer","text":"Sí, hay un sistema de búsqueda y un formato americano para encontrar una pareja de nivel equivalente."}}
+                {"@type":"Question","name":"¿Cuánto dura una liga EPL?","acceptedAnswer":{"@type":"Answer","text":"La modalidad principal contempla 10 fechas, con un partido por jornada y fixture disponible en la plataforma."}},
+                {"@type":"Question","name":"¿Cuál es la diferencia entre el ranking por liga y el ranking individual?","acceptedAnswer":{"@type":"Answer","text":"El ranking por liga ordena a las parejas dentro de cada competencia. El ranking individual EPL reúne los puntos vigentes de cada jugador en ligas y americanos durante los últimos 365 días."}},
+                {"@type":"Question","name":"¿Qué pasa si no puedo jugar en la fecha programada?","acceptedAnswer":{"@type":"Answer","text":"Puedes solicitar una reprogramación desde tu panel y seguir el cambio hasta la confirmación de la nueva cancha."}},
+                {"@type":"Question","name":"¿Qué es un americano EPL?","acceptedAnswer":{"@type":"Answer","text":"Es una competencia complementaria de una jornada que permite jugar varios partidos y conocer nuevos rivales."}},
+                {"@type":"Question","name":"¿Puedo jugar si no tengo pareja?","acceptedAnswer":{"@type":"Answer","text":"Las ligas requieren pareja. Algunos americanos pueden admitir inscripción individual según sus condiciones."}}
               ]
             }
             </script>
@@ -558,7 +519,7 @@ $ranking_preview = $db->query("
                     </li>
                     <li class="flex gap-3 items-start">
                         <svg width="20" height="20" fill="none" stroke="#C9A762" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>Torneos de un día: viernes, sábados o domingos según calendario</span>
+                        <span>Fechas de liga y americanos según el calendario de cada categoría</span>
                     </li>
                     <li class="flex gap-3 items-start">
                         <svg width="20" height="20" fill="none" stroke="#C9A762" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -593,13 +554,13 @@ $ranking_preview = $db->query("
             <h2 class="text-4xl md:text-5xl text-epl-blue font-primary uppercase tracking-tight mb-6 relative z-10">¿Listo para entrar a <span class="text-epl-gold">la cancha?</span></h2>
 
             <p class="text-gray-500 font-medium mb-10 max-w-2xl mx-auto relative z-10 leading-relaxed">
-                Crea tu ficha, arma tu pareja y elige las fechas con las que quieres construir tu temporada.
-                <strong class="text-epl-blue">Cada torneo es un paso más hacia el Máster Final.</strong>
+                Crea tu ficha, arma tu pareja y elige la liga correspondiente a tu categoría.
+                <strong class="text-epl-blue">Tendrás 10 fechas para competir, un ranking por liga y una plataforma para gestionar toda la temporada.</strong>
             </p>
 
             <?php if (!epl_jugador_actual()): ?>
               <a href="<?= epl_url('registro.php') ?>" class="inline-flex items-center justify-center gap-3 bg-epl-blue text-white px-10 py-5 rounded-xl font-black uppercase text-[14px] tracking-widest hover:bg-epl-gold transition-all shadow-xl hover:-translate-y-1 relative z-10 no-underline">
-                  Comenzar el camino al Máster
+                  Buscar una liga
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </a>
             <?php else: ?>

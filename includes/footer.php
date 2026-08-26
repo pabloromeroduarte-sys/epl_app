@@ -24,7 +24,7 @@
                 <img src="<?= epl_url('assets/img/logo-epl-lateral.png') ?>" class="brightness-0 invert h-8 md:h-16 opacity-80" alt="Logo Elite Padel League">
 
                 <p class="hidden md:block text-gray-400 text-sm font-secondary leading-loose max-w-sm">
-                    <strong class="text-white">Elite Padel League</strong> es el circuito anual donde cada torneo suma puntos y las mejores parejas de cada categoría clasifican al Máster Final.
+                    <strong class="text-white">Elite Padel League</strong> organiza ligas de 10 fechas con ranking por liga y un ranking individual móvil de 365 días.
                 </p>
 
                 <a href="https://www.instagram.com/epleaguecl/" target="_blank" class="flex items-center gap-2 md:gap-4 text-gray-400 hover:text-epl-gold transition-all duration-300 group">
@@ -44,8 +44,8 @@
                 <h4 class="font-primary text-base md:text-2xl mb-2 md:mb-12 text-epl-gold uppercase tracking-widest">Navegación</h4>
                 <nav class="grid grid-cols-2 md:flex md:flex-col gap-y-1 gap-x-4 md:space-y-5 font-secondary font-black text-xs uppercase tracking-widest text-gray-400">
                     <a href="<?= epl_url() ?>" class="hover:text-white transition-colors">Inicio</a>
-                    <a href="<?= epl_url('torneos.php') ?>" class="hover:text-white transition-colors">Torneos</a>
-                    <a href="<?= epl_url('ranking.php') ?>" class="hover:text-white transition-colors">Ranking</a>
+                    <a href="<?= epl_url('torneos.php') ?>" class="hover:text-white transition-colors">Ligas y torneos</a>
+                    <a href="<?= epl_url('ranking.php') ?>" class="hover:text-white transition-colors">Ranking individual</a>
                     <a href="<?= epl_url('reglamento.php') ?>" class="hover:text-white transition-colors">Reglamento</a>
                 </nav>
             </div>
@@ -54,7 +54,7 @@
             <div class="hidden md:block">
                 <h4 class="font-primary text-2xl mb-12 text-epl-gold uppercase tracking-widest">Experiencia EPL</h4>
                 <div class="space-y-8">
-                    <p class="text-gray-500 text-xs font-secondary leading-relaxed">Elige tus fechas, acumula puntos con tu pareja y construye el camino al Máster Final EPL.</p>
+                    <p class="text-gray-500 text-xs font-secondary leading-relaxed">Compite con tu pareja por el ranking de la liga y construye tu recorrido individual en EPL.</p>
                     <a href="<?= epl_url('registro.php') ?>" class="inline-block border-2 border-white/20 px-8 py-4 rounded-xl font-secondary font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white hover:text-epl-blue transition-all">
                         Inscribirme
                     </a>
@@ -64,7 +64,7 @@
 
         <!-- Derechos de Autor -->
         <div class="max-w-7xl mx-auto px-4 md:px-8 mt-4 md:mt-24 pt-3 md:pt-12 border-t border-white/5 text-center">
-            <p class="text-gray-600 font-secondary text-[10px] uppercase tracking-[0.4em]">&copy; <?= date('Y') ?> Elite Padel League. Todo el año. Una gran final.</p>
+            <p class="text-gray-600 font-secondary text-[10px] uppercase tracking-[0.4em]">&copy; <?= date('Y') ?> Elite Padel League. Tu liga. Tu ranking.</p>
         </div>
     </footer>
 </div>

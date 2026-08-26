@@ -6,6 +6,7 @@ require_once '../includes/mail.php';
 epl_require_admin();
 
 $db = epl_db();
+epl_ranking_ensure_schema();
 
 // ────────────────────────────────────────────────────────────────────────
 // Helper redirect que preserva filtros
@@ -56,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $ids_str = implode(',', array_map('intval', $partido_ids));
         $msg = '';
+        $ligas_afectadas = array_map('intval', $db->query("SELECT DISTINCT liga_id FROM partidos WHERE id IN ($ids_str)")->fetchAll(PDO::FETCH_COLUMN));
 
         // Exportar a CSV/Excel
         if ($bulk_action === 'exportar_excel') {
@@ -114,6 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($bulk_action === 'eliminar') {
+            $db->query("DELETE FROM ranking_incidencias WHERE partido_id IN ($ids_str)");
+            $db->query("DELETE FROM partido_jugadores WHERE partido_id IN ($ids_str)");
             $db->query("DELETE FROM partidos WHERE id IN ($ids_str)");
             $msg = count($partido_ids) . ' partidos eliminados.';
         } elseif ($bulk_action === 'estado_pendiente') {
@@ -157,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($bulk_action === 'cambiar_estado') {
             $nuevo_estado = $_POST['bulk_estado'] ?? '';
-            if (in_array($nuevo_estado, ['pendiente','jugado','reprogramado','walkover','no_presentado'], true)) {
+            if (in_array($nuevo_estado, ['pendiente','reprogramado','no_presentado'], true)) {
                 // Si pasa a reprogramado, guardar snapshot original
                 if ($nuevo_estado === 'reprogramado') {
                     foreach ($partido_ids as $_pid) { epl_partido_snapshot_original((int)$_pid); }
@@ -172,6 +176,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $alerta = trim($_POST['bulk_alerta'] ?? '');
             $db->prepare("UPDATE partidos SET alerta_admin=? WHERE id IN ($ids_str)")->execute([$alerta ?: null]);
             $msg = 'Alertas actualizadas.';
+        }
+        if (in_array($bulk_action, ['eliminar','estado_pendiente','cambiar_estado'], true)) {
+            foreach ($ligas_afectadas as $ligaAfectada) epl_recalcular_clasificacion($ligaAfectada);
         }
         partidos_redirect($msg ?: 'Acción aplicada.');
     }
@@ -210,6 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $alerta_a   = trim($_POST['alerta_admin'] ?? '') ?: null;
         $fecha_orig_in   = trim($_POST['fecha_original'] ?? '');
         $recinto_orig_id = (int)($_POST['recinto_original_id'] ?? 0) ?: null;
+        $ganador_wo_id   = (int)($_POST['ganador_wo_id'] ?? 0);
 
         $sets_l = 0; $sets_v = 0; $sets = [];
         for ($s = 1; $s <= 3; $s++) {
@@ -226,6 +234,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ganador_id = null;
         if ($est === 'jugado') {
             $ganador_id = $sets_l > $sets_v ? $p2['equipo_local_id'] : $p2['equipo_visitante_id'];
+        } elseif ($est === 'walkover') {
+            $equiposPartido = [(int)$p2['equipo_local_id'], (int)$p2['equipo_visitante_id']];
+            if (!in_array($ganador_wo_id, $equiposPartido, true)) {
+                partidos_redirect('', 'Selecciona al equipo ganador del WO.');
+            }
+            $ganador_id = $ganador_wo_id;
+            $ganaLocal = $ganador_id === (int)$p2['equipo_local_id'];
+            $sets_l = $ganaLocal ? 2 : 0;
+            $sets_v = $ganaLocal ? 0 : 2;
+            $sets = [
+                1 => ['l' => $ganaLocal ? 6 : 0, 'v' => $ganaLocal ? 0 : 6],
+                2 => ['l' => $ganaLocal ? 6 : 0, 'v' => $ganaLocal ? 0 : 6],
+                3 => ['l' => null, 'v' => null],
+            ];
+            $fecha_j = $fecha_j ?: ($fecha_p ?: date('Y-m-d H:i:s'));
         }
         if ($est === 'reprogramado' && !$fecha_p) $recinto_id = null;
 
@@ -591,9 +614,7 @@ require_once '../includes/header.php';
         <div id="bulkExtraEstado" style="display:none">
           <select name="bulk_estado" class="form-control" style="width:auto;font-size:.75rem;color:var(--navy)">
             <option value="pendiente">Pendiente</option>
-            <option value="jugado">Jugado</option>
             <option value="reprogramado">Reprogramado</option>
-            <option value="walkover">Walkover</option>
             <option value="no_presentado">No presentado</option>
           </select>
         </div>
@@ -968,6 +989,14 @@ require_once '../includes/header.php';
           </div>
         </div>
 
+        <div class="form-group" id="editGanadorWoWrap" style="display:none;margin-bottom:1rem;padding:.8rem;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px">
+          <label class="form-label">Equipo ganador del WO</label>
+          <select name="ganador_wo_id" id="editGanadorWo" class="form-control">
+            <option value="">— Selecciona al ganador —</option>
+          </select>
+          <span class="form-hint">Se registrará automáticamente como 6-0, 6-0.</span>
+        </div>
+
         <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;color:var(--navy);margin:.75rem 0 .5rem">Resultado</p>
         <?php for ($s = 1; $s <= 3; $s++): ?>
         <div class="score-input-row">
@@ -1044,6 +1073,19 @@ window.editarPartido = function (btn) {
   // Reserva original
   setVal('input[name="fecha_original"]', p.fecha_original ? String(p.fecha_original).replace(' ', 'T').substring(0,16) : '');
   setVal('select[name="recinto_original_id"]', p.recinto_original_id || '');
+
+  var ganadorWo = document.getElementById('editGanadorWo');
+  ganadorWo.innerHTML = '<option value="">— Selecciona al ganador —</option>'
+    + '<option value="' + p.equipo_local_id + '">' + p.local_nombre + '</option>'
+    + '<option value="' + p.equipo_visitante_id + '">' + p.visitante_nombre + '</option>';
+  ganadorWo.value = p.estado === 'walkover' ? (p.ganador_id || '') : '';
+  function mostrarGanadorWo() {
+    var esWo = document.getElementById('editEstado').value === 'walkover';
+    document.getElementById('editGanadorWoWrap').style.display = esWo ? 'block' : 'none';
+    ganadorWo.required = esWo;
+  }
+  document.getElementById('editEstado').onchange = mostrarGanadorWo;
+  mostrarGanadorWo();
 
   // Contactos WhatsApp
   var contactList = document.getElementById('editContactosList');

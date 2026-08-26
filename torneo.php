@@ -10,8 +10,26 @@ $stL->execute([$id]);
 $liga = $stL->fetch();
 if (!$liga) { header('Location: torneos.php'); exit; }
 
-$page_title = $liga['nombre'] . ' — Torneo';
-$active_nav = '';
+$is_women = ($liga['sexo'] === 'femenino');
+$is_americano = ($liga['tipo'] === 'torneo');
+$tipo_competencia = $is_americano ? 'Americano' : 'Liga de 10 fechas';
+
+if ($liga['foto_portada']) {
+    $portada_hero_url = epl_url('uploads/ligas/'.$liga['foto_portada']);
+} else {
+    if ($is_americano && $is_women) {
+        $portada_hero_url = epl_url('assets/img/portada-americano-women.png');
+    } elseif ($is_americano && !$is_women) {
+        $portada_hero_url = epl_url('assets/img/portada-americano-men.png');
+    } elseif (!$is_americano && $is_women) {
+        $portada_hero_url = epl_url('assets/img/portada-liga-women.png');
+    } else {
+        $portada_hero_url = epl_url('assets/img/portada-liga-men.png');
+    }
+}
+
+$page_title = $liga['nombre'] . ' — ' . $tipo_competencia;
+$active_nav = 'torneos';
 
 // ── SEO: meta tags específicos por torneo ────────────────────────────────────
 $_cat_label = $liga['categoria'] ? $liga['categoria'].'ª Categoría' : '';
@@ -21,13 +39,13 @@ $_estado_lbl = match($liga['estado'] ?? '') {
     'activa'       => 'En juego',
     'proximamente' => 'Próximamente',
     'finalizada'   => 'Finalizado',
-    default        => 'Torneo',
+    default        => $tipo_competencia,
 };
 $meta_description = trim("{$_estado_lbl}: ".$liga['nombre'].". "
                   . ($_cat_label ? "$_cat_label · " : '')
                   . ($_sex_label ? "$_sex_label · " : '')
-                  . "Torneo de pádel organizado por Elite Padel League en Santiago. Mirá clasificación, fixture y resultados en vivo.");
-$meta_keywords    = $liga['nombre'].", torneo padel santiago, ".strtolower($_cat_label).", padel ".strtolower($_sex_label).", EPL, liga padel chile";
+                  . "$tipo_competencia de pádel organizado por Elite Padel League en Santiago. Revisa clasificación, fixture y resultados en línea.");
+$meta_keywords    = $liga['nombre'].", liga padel santiago, americano padel, ".strtolower($_cat_label).", padel ".strtolower($_sex_label).", EPL";
 
 $clasificacion = epl_clasificacion($liga['id']);
 $partidos_jugados  = epl_partidos_liga($liga['id'], 'jugado');
@@ -94,25 +112,7 @@ if (!empty($liga['fecha_fin'])) {
 ?>
 <script type="application/ld+json"><?= json_encode($_event_schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
 
-<!-- Hero Torneo -->
-<?php
-$is_women = ($liga['sexo'] === 'femenino');
-$is_americano = ($liga['tipo'] === 'torneo');
-
-if ($liga['foto_portada']) {
-    $portada_hero_url = epl_url('uploads/ligas/'.$liga['foto_portada']);
-} else {
-    if ($is_americano && $is_women) {
-        $portada_hero_url = epl_url('assets/img/portada-americano-women.png');
-    } elseif ($is_americano && !$is_women) {
-        $portada_hero_url = epl_url('assets/img/portada-americano-men.png');
-    } elseif (!$is_americano && $is_women) {
-        $portada_hero_url = epl_url('assets/img/portada-liga-women.png');
-    } else {
-        $portada_hero_url = epl_url('assets/img/portada-liga-men.png');
-    }
-}
-?>
+<!-- Hero de liga o americano -->
 <section style="background:var(--navy);position:relative;overflow:hidden">
     <div style="position:absolute;inset:0;background-image:url('<?= $portada_hero_url ?>');background-size:cover;background-position:center;opacity:.2"></div>
   <div class="container" style="position:relative;z-index:1;padding-top:3rem;padding-bottom:3rem">
@@ -231,7 +231,7 @@ if ($jugador_sesion) {
   <div style="display: grid; grid-template-cols: 1fr; gap: 1rem; md:grid-template-cols: 3fr 1fr 1fr;" class="actions-grid">
     <a href="torneos.php" class="action-btn">
       <svg style="width:1.4rem;height:1.4rem" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-      Volver a Torneos
+      Volver a Ligas y torneos
     </a>
     <?php if (in_array($liga['estado'], ['activa','inscripcion'])): ?>
     <a href="reprogramar.php" class="action-btn">
@@ -418,7 +418,7 @@ if ($jugador_sesion) {
           
           if(empty($partidos_all)):
           ?>
-            <p style="text-align:center; padding:3rem; color:var(--gray-400)">No hay partidos programados para este torneo.</p>
+            <p style="text-align:center; padding:3rem; color:var(--gray-400)">No hay partidos programados para esta competencia.</p>
           <?php
           else:
             foreach($agrupados as $jor => $ps): 
@@ -443,7 +443,7 @@ if ($jugador_sesion) {
   <section class="section">
     <div class="container">
       <div class="torneo-info-card" style="background:#fff; border-radius:24px; padding:3rem; box-shadow:0 10px 40px rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.05)">
-        <h2 class="section-title">Información del Torneo</h2>
+        <h2 class="section-title">Información: <?= epl_h($tipo_competencia) ?></h2>
         
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:2rem; margin-top:2rem">
           <div>
